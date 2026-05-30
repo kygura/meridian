@@ -21,7 +21,7 @@ function fakeIata(name: string): string {
 }
 
 export function loadCities(): void {
-  const csvPath = join(process.cwd(), "worldcities_clean.csv");
+  const csvPath = join(process.cwd(), "data/worldcities.csv");
   const raw = readFileSync(csvPath, "utf-8");
   const records = parse(raw, {
     columns: true,
