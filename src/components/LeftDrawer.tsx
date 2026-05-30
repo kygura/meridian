@@ -1,4 +1,5 @@
 import { useMeridianStore } from "../store";
+import TripManager from "./TripManager";
 
 export default function LeftDrawer() {
   const {
@@ -66,6 +67,11 @@ export default function LeftDrawer() {
             </div>
           )}
         </div>
+
+        <div className="hairline" />
+
+        {/* Trip Manager */}
+        <TripManager />
 
         <div className="hairline" />
 

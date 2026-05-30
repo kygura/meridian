@@ -6,13 +6,13 @@ import RightDrawer from "./components/RightDrawer";
 import BottomBar from "./components/BottomBar";
 import Globe from "./components/Globe";
 import CommandPalette from "./components/CommandPalette";
+import ThemeWipe from "./components/ThemeWipe";
 import { apiUrl } from "./lib/api";
 
 export default function App() {
   const {
     setCities,
     setShortlist,
-    setTicker,
     toggleLeftDrawer,
     setRightDrawer,
     toggleCommand,
@@ -32,13 +32,6 @@ export default function App() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) useMeridianStore.getState().setShortlist(data);
-      })
-      .catch(() => {});
-
-    fetch(apiUrl("/api/agent/ticker"), { method: "POST" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) useMeridianStore.getState().setTicker(data);
       })
       .catch(() => {});
   }, []);
@@ -93,6 +86,7 @@ export default function App() {
       <LeftDrawer />
       <RightDrawer />
       <CommandPalette />
+      <ThemeWipe />
     </div>
   );
 }

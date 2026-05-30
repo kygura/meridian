@@ -99,11 +99,76 @@ export interface AgentBrief {
   score?: number;
 }
 
+export interface ResearchSection {
+  title: string;
+  items: string[];
+}
+
+export interface CostBreakdown {
+  rent: string;
+  food: string;
+  transport: string;
+  coworking: string;
+  healthcare: string;
+  totalBudget: string;
+  currency: string;
+}
+
+export interface VisaInfo {
+  touristVisa: string;
+  visaOnArrival: string;
+  eVisa: string;
+  digitalNomadVisa: string;
+  commonPassportNotes: string;
+}
+
+export interface ConnectivityInfo {
+  avgDownloadMbps: string;
+  mobileCoverage: string;
+  coworkingSpaces: string;
+  cafeWifi: string;
+}
+
+export interface CityResearch {
+  cityId: string;
+  generatedAt: string;
+  summary: string;
+  livingConditions: ResearchSection;
+  costBreakdown: CostBreakdown;
+  visa: VisaInfo;
+  connectivity: ConnectivityInfo;
+  safetyNotes: string[];
+  seasonalAdvice: string;
+  nearbyDestinations: NearbyDestination[];
+}
+
+export interface NearbyDestination {
+  cityId: string;
+  name: string;
+  country: string;
+  iata?: string;
+  lat: number;
+  lng: number;
+  distance: string;
+  reason: string;
+}
+
+export interface TripOption {
+  id: string;
+  label: string;
+  type: "single" | "multi-hop";
+  nodes: TripNode[];
+  totalDistance?: string;
+  highlight: string;
+}
+
 export interface TickerItem {
   glyph: "alert" | "hazard" | "info" | "good";
   location: string;
   text: string;
   time: string;
+  source?: string;
+  url?: string;
 }
 
 export interface CityMetrics {

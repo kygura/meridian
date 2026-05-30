@@ -4,20 +4,13 @@ import { parse } from "csv-parse/sync";
 import type { City } from "../../src/types.js";
 
 let cities: City[] = [];
+let iataMap: Record<string, string> = {};
 
 function slugify(city: string, country: string): string {
   return `${city}-${country}`
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-}
-
-function fakeIata(name: string): string {
-  return name
-    .replace(/[^a-zA-Z]/g, "")
-    .slice(0, 3)
-    .toUpperCase()
-    .padEnd(3, "X");
 }
 
 export function loadCities(): void {
@@ -35,6 +28,15 @@ export function loadCities(): void {
     population: string;
   }>;
 
+  // Load IATA code mapping
+  const mapPath = join(process.cwd(), "data/iata_map.json");
+  try {
+    iataMap = JSON.parse(readFileSync(mapPath, "utf-8"));
+  } catch {
+    console.warn("[cities] iata_map.json not found, will use city names as fallback");
+    iataMap = {};
+}
+
   cities = records.map((r) => ({
     id: slugify(r.city, r.country),
     name: r.city,
@@ -42,7 +44,7 @@ export function loadCities(): void {
     lng: parseFloat(r.lng),
     country: r.country,
     population: parseInt(r.population, 10) || 0,
-    iata: fakeIata(r.city),
+    iata: iataMap[r.city] || undefined,
   }));
 
   console.log(`[cities] Loaded ${cities.length} cities`);

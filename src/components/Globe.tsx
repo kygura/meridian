@@ -440,6 +440,19 @@ export default function Globe() {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
+      // Active route glow (behind main lines)
+      map.addLayer({
+        id: "route-glow",
+        type: "line",
+        source: "routes",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": ["case", ["boolean", ["get", "active"], false], 8, 0],
+          "line-opacity": ["case", ["boolean", ["get", "active"], false], 0.18, 0],
+          "line-blur": 4,
+        },
+      });
       map.addLayer({
         id: "route-lines",
         type: "line",
@@ -447,14 +460,59 @@ export default function Globe() {
         layout: { "line-cap": "round", "line-join": "round" },
         paint: {
           "line-color": ["get", "color"],
-          "line-width": ["case", ["boolean", ["get", "active"], false], 2.6, 1.6],
-          "line-opacity": ["case", ["boolean", ["get", "suggested"], false], 0.5, 0.9],
+          "line-width": ["case", ["boolean", ["get", "active"], false], 2.8, 1.4],
+          "line-opacity": ["case", ["boolean", ["get", "suggested"], false], 0.45, 0.9],
           "line-dasharray": [
             "case",
             ["boolean", ["get", "suggested"], false],
             ["literal", [2, 2]],
             ["literal", [1, 0]],
           ],
+        },
+      });
+      // Route endpoint markers
+      map.addSource("route-endpoints", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "route-endpoint-pulse",
+        type: "circle",
+        source: "route-endpoints",
+        paint: {
+          "circle-radius": 8,
+          "circle-color": ["get", "color"],
+          "circle-opacity": 0.2,
+          "circle-blur": 1,
+        },
+      });
+      map.addLayer({
+        id: "route-endpoint-markers",
+        type: "circle",
+        source: "route-endpoints",
+        paint: {
+          "circle-radius": ["case", ["boolean", ["get", "isOrigin"], false], 5, 3.5],
+          "circle-color": ["get", "color"],
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": getCSSVar("--bg") || "#f4ecd8",
+        },
+      });
+      map.addLayer({
+        id: "route-endpoint-labels",
+        type: "symbol",
+        source: "route-endpoints",
+        layout: {
+          "text-field": ["get", "iata"],
+          "text-font": FONT,
+          "text-size": 11,
+          "text-offset": [0, -1.6],
+          "text-anchor": "bottom",
+          "text-allow-overlap": false,
+        },
+        paint: {
+          "text-color": ["get", "color"],
+          "text-halo-color": getCSSVar("--bg") || "#f4ecd8",
+          "text-halo-width": 1.5,
         },
       });
 
@@ -720,9 +778,11 @@ export default function Globe() {
     if (!map) return;
     const apply = () => {
       const src = map.getSource("routes") as maplibregl.GeoJSONSource;
+      const epSrc = map.getSource("route-endpoints") as maplibregl.GeoJSONSource | null;
       if (!src) return;
       if (!layers.routes) {
         src.setData({ type: "FeatureCollection", features: [] });
+        if (epSrc) epSrc.setData({ type: "FeatureCollection", features: [] });
         return;
       }
       const colorMap: Record<string, string> = {
@@ -731,8 +791,12 @@ export default function Globe() {
         c: getCSSVar("--trip-c") || "#6d28d9",
       };
       const features: GeoJSON.Feature[] = [];
+      const endpointFeatures: GeoJSON.Feature[] = [];
 
       for (const trip of trips) {
+        const color = colorMap[trip.color] || colorMap.a;
+        const isActive = trip.id === activeTripId;
+
         for (let i = 0; i < trip.nodes.length - 1; i++) {
           const a = trip.nodes[i];
           const b = trip.nodes[i + 1];
@@ -743,9 +807,28 @@ export default function Globe() {
               coordinates: greatCircle([a.lng, a.lat], [b.lng, b.lat]),
             },
             properties: {
-              color: colorMap[trip.color] || colorMap.a,
-              active: trip.id === activeTripId,
+              color,
+              active: isActive,
               suggested: false,
+            },
+          });
+        }
+
+        // Endpoint markers for each node in the trip
+        for (let i = 0; i < trip.nodes.length; i++) {
+          const node = trip.nodes[i];
+          endpointFeatures.push({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [node.lng, node.lat],
+            },
+            properties: {
+              color,
+              iata: node.iata || "",
+              name: node.name,
+              isOrigin: i === 0,
+              active: isActive,
             },
           });
         }
@@ -768,6 +851,7 @@ export default function Globe() {
       }
 
       src.setData({ type: "FeatureCollection", features });
+      if (epSrc) epSrc.setData({ type: "FeatureCollection", features: endpointFeatures });
     };
     if (loadedRef.current) apply();
     else map.once("load", apply);

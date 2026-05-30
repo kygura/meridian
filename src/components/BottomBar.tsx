@@ -128,46 +128,20 @@ export default function BottomBar() {
         {trips.map((trip) => (
           <button
             key={trip.id}
+            className={`bb-trip-btn ${trip.id === activeTripId ? "active" : ""}`}
+            data-color={trip.color}
             onClick={() => setActiveTrip(trip.id)}
-            style={{
-              padding: "4px 10px",
-              border:
-                trip.id === activeTripId
-                  ? "1px solid var(--ink)"
-                  : "1px solid var(--hairline2)",
-              background:
-                trip.id === activeTripId ? "var(--ink)" : "transparent",
-              color: trip.id === activeTripId ? "var(--bg)" : "var(--ink2)",
-              fontFamily: "var(--mono)",
-              fontSize: 10,
-              letterSpacing: "0.08em",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
           >
             {trip.name.slice(0, 8)}
           </button>
         ))}
 
         <button
+          className="bb-terminal-btn"
           onClick={() => setCommandOpen(true)}
-          style={{
-            padding: "4px 10px",
-            border: "1px solid var(--ink)",
-            background: "var(--ink)",
-            color: "var(--bg)",
-            fontFamily: "var(--mono)",
-            fontSize: 10,
-            letterSpacing: "0.12em",
-            cursor: "pointer",
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
           title="Open command console"
         >
-          ADD CITY <span style={{ opacity: 0.6 }}>⌘K</span>
+          OPEN TERMINAL <span style={{ opacity: 0.6 }}>⌘K</span>
         </button>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useMeridianStore } from "../store";
+import NewsTicker from "./NewsTicker";
 
 export default function TopBar() {
-  const { theme, toggleTheme, toggleLeftDrawer, ticker } = useMeridianStore();
+  const { theme, toggleTheme, toggleLeftDrawer } = useMeridianStore();
   const [utc, setUtc] = useState("");
   const [local, setLocal] = useState("");
 
@@ -107,18 +108,20 @@ export default function TopBar() {
         </div> */}
         <span
           style={{
-            fontWeight: 700,
-            letterSpacing: "0.32em",
-            fontSize: 12,
-            color: "var(--ink)",
+            fontFamily: "var(--display)",
+            fontStyle: "italic",
+            fontSize:25,
+            color: "var(--ink3)",
+            marginLeft: "auto",
+            letterSpacing: "0.07em",
           }}
         >
-          MERIDIAN
+          Meridian
+          
         </span>
         <span
           style={{
             fontFamily: "var(--display)",
-            fontStyle: "italic",
             fontSize: 14,
             color: "var(--ink3)",
             marginLeft: "auto",
@@ -129,34 +132,8 @@ export default function TopBar() {
         </span>
       </div>
 
-      {/* Ticker */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 22,
-          padding: "0 18px",
-          overflow: "hidden",
-          fontSize: 11,
-          letterSpacing: "0.02em",
-          color: "var(--ink2)",
-          whiteSpace: "nowrap",
-          fontFamily: "var(--sans)",
-        }}
-      >
-        {ticker.map((item, i) => (
-          <span key={i} style={{ display: "contents" }}>
-            <span className="tk-item">
-              <span className={`tk-glyph ${item.glyph}`} />
-              <span className="tk-loc">{item.location}</span>
-              <span>{item.text}</span>
-              <span className="tk-time">{item.time}</span>
-            </span>
-            {i < ticker.length - 1 && <span className="tk-sep" />}
-          </span>
-        ))}
-      </div>
+      {/* News Ticker */}
+      <NewsTicker />
 
       {/* Clock */}
       <div
@@ -180,21 +157,8 @@ export default function TopBar() {
 
       {/* Theme toggle */}
       <div
-        onClick={toggleTheme}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          borderLeft: "1px solid var(--hairline)",
-          padding: "0 14px",
-          cursor: "pointer",
-          color: "var(--ink2)",
-          fontFamily: "var(--mono)",
-          fontSize: 10,
-          letterSpacing: "0.14em",
-          userSelect: "none",
-          gap: 8,
-          transition: "color 0.15s",
-        }}
+        className="theme-toggle-btn"
+        onClick={(e) => toggleTheme(e.clientX, e.clientY)}
         title="Toggle day/night"
       >
         <span className="tt-glyph" />
