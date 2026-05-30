@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
 
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
@@ -30,7 +31,7 @@ export default function MetricPanels() {
     if (!selectedCityId) return;
     if (cityMetrics[selectedCityId]) return;
 
-    fetch(`/api/metrics/city/${selectedCityId}`)
+    fetch(apiUrl(`/api/metrics/city/${selectedCityId}`))
       .then((r) => r.json())
       .then((data) => {
         const s = data?.metrics;

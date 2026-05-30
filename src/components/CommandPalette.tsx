@@ -1,5 +1,6 @@
 import { useChat } from "ai/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
 import type { City, LayerKey } from "../types";
 
@@ -41,7 +42,9 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
-  const { messages, append, isLoading } = useChat({ api: "/api/agent/chat" });
+  const { messages, append, isLoading } = useChat({
+    api: apiUrl("/api/agent/chat"),
+  });
 
   // City-name index for turning agent prose into clickable chips.
   const cityIndex = useMemo(() => {
@@ -73,7 +76,7 @@ export default function CommandPalette() {
       return;
     }
     const t = setTimeout(() => {
-      fetch(`/api/cities/search?q=${encodeURIComponent(q)}`)
+      fetch(apiUrl(`/api/cities/search?q=${encodeURIComponent(q)}`))
         .then((r) => r.json())
         .then((d) => setCityResults((d?.cities ?? []).slice(0, 8)))
         .catch(() => setCityResults([]));
@@ -133,7 +136,7 @@ export default function CommandPalette() {
       addedAt: new Date().toISOString(),
       score: undefined,
     });
-    fetch("/api/shortlist", {
+    fetch(apiUrl("/api/shortlist"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cityId: c.id }),

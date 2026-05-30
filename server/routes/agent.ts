@@ -1,20 +1,19 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { getCityById, getCities } from "../lib/cities.js";
 import { computeFullScore } from "../lib/scoring.js";
+import { ensureDataDir } from "../lib/paths.js";
 import type { TickerItem, AgentBrief, City } from "../../src/types.js";
 
 const agent = new Hono();
 
-const CACHE_DIR = join(process.cwd(), "data", "cache");
+const CACHE_DIR = ensureDataDir("cache");
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function ensureCacheDir(): void {
-  if (!existsSync(CACHE_DIR)) {
-    mkdirSync(CACHE_DIR, { recursive: true });
-  }
+  ensureDataDir("cache");
 }
 
 function hasOpenAIKey(): boolean {

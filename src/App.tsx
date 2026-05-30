@@ -6,6 +6,7 @@ import RightDrawer from "./components/RightDrawer";
 import BottomBar from "./components/BottomBar";
 import Globe from "./components/Globe";
 import CommandPalette from "./components/CommandPalette";
+import { apiUrl } from "./lib/api";
 
 export default function App() {
   const {
@@ -19,7 +20,7 @@ export default function App() {
 
   // Fetch initial data on mount
   useEffect(() => {
-    fetch("/api/cities?limit=5000")
+    fetch(apiUrl("/api/cities?limit=5000"))
       .then((r) => r.json())
       .then((data) => {
         const cities = data?.cities ?? data;
@@ -27,14 +28,14 @@ export default function App() {
       })
       .catch(() => {});
 
-    fetch("/api/shortlist")
+    fetch(apiUrl("/api/shortlist"))
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) useMeridianStore.getState().setShortlist(data);
       })
       .catch(() => {});
 
-    fetch("/api/agent/ticker", { method: "POST" })
+    fetch(apiUrl("/api/agent/ticker"), { method: "POST" })
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) useMeridianStore.getState().setTicker(data);

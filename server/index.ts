@@ -38,7 +38,7 @@ app.get("/api/health", (c) => {
 // Serve static files from dist/ in production
 app.use("/*", serveStatic({ root: "./dist" }));
 
-const port = 3001;
+const port = Number(process.env.PORT ?? 3001);
 
 console.log(`[meridian] Server starting on http://localhost:${port}`);
 

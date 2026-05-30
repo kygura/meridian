@@ -20,7 +20,6 @@ export default function BottomBar() {
     trips,
     activeTripId,
     setActiveTrip,
-    addTrip,
     setCommandOpen,
   } = useMeridianStore();
 
@@ -149,32 +148,6 @@ export default function BottomBar() {
             {trip.name.slice(0, 8)}
           </button>
         ))}
-
-        <button
-          onClick={() => {
-            const id = `trip-${Date.now()}`;
-            addTrip({
-              id,
-              name: `TRIP ${trips.length + 1}`,
-              color: (["a", "b", "c"] as const)[trips.length % 3],
-              status: "draft",
-              nodes: [],
-            });
-            setActiveTrip(id);
-          }}
-          style={{
-            padding: "4px 10px",
-            border: "1px dashed var(--hairline2)",
-            background: "transparent",
-            color: "var(--ink3)",
-            fontFamily: "var(--mono)",
-            fontSize: 10,
-            letterSpacing: "0.12em",
-            cursor: "pointer",
-          }}
-        >
-          + NEW
-        </button>
 
         <button
           onClick={() => setCommandOpen(true)}

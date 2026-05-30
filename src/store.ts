@@ -39,7 +39,6 @@ export interface MeridianState {
   trips: Trip[];
   activeTripId: string | null;
   setActiveTrip: (id: string) => void;
-  addTrip: (trip: Trip) => void;
   addCityToTrip: (tripId: string, node: TripNode) => void;
   addCityToActiveTrip: (node: TripNode) => void;
   removeTrip: (id: string) => void;
@@ -121,7 +120,6 @@ export const useMeridianStore = create<MeridianState>((set) => ({
   trips: [],
   activeTripId: null,
   setActiveTrip: (id) => set({ activeTripId: id }),
-  addTrip: (trip) => set((state) => ({ trips: [...state.trips, trip] })),
   addCityToTrip: (tripId, node) =>
     set((state) => ({
       trips: state.trips.map((t) =>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
 
 export default function AgentBrief() {
@@ -24,7 +25,7 @@ export default function AgentBrief() {
     setContent("");
     setLoading(true);
 
-    fetch("/api/agent/profile", {
+    fetch(apiUrl("/api/agent/profile"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cityId: selectedCityId }),

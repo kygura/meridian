@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
+import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
 import {
   conflictFeatures,
@@ -338,7 +339,7 @@ export default function Globe() {
   useEffect(() => {
     for (const id of activeMetrics) {
       if (surfaces[id]) continue;
-      fetch(`/api/metrics/surface/${id}`)
+      fetch(apiUrl(`/api/metrics/surface/${id}`))
         .then((r) => r.json())
         .then((data) => {
           if (data && Array.isArray(data.values)) setSurface(id, data);

@@ -1,14 +1,16 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { readFileSync, writeFileSync } from "fs";
-import { join } from "path";
 import { getCityById } from "../lib/cities.js";
 import { computeFullScore } from "../lib/scoring.js";
+import { ensureDataDir, getDataPath } from "../lib/paths.js";
 import type { ShortlistEntry } from "../../src/types.js";
 
 const shortlist = new Hono();
 
-const SHORTLIST_PATH = join(process.cwd(), "data", "shortlist.json");
+ensureDataDir();
+
+const SHORTLIST_PATH = getDataPath("shortlist.json");
 
 function readShortlist(): ShortlistEntry[] {
   try {

@@ -1,9 +1,10 @@
 import { useChat } from "ai/react";
+import { apiUrl } from "../lib/api";
 
 export default function ChatPanel() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
     useChat({
-      api: "/api/agent/chat",
+      api: apiUrl("/api/agent/chat"),
     });
 
   return (
