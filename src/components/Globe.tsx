@@ -2,12 +2,10 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
-import {
-  conflictFeatures,
-  disasterFeatures,
-  greatCircle,
-} from "../lib/phenomena";
-import type { MetricSurface } from "../types";
+import { conflictFeatures, disasterFeatures } from "../lib/phenomena";
+import { flightPath, haversineKm } from "../lib/geo";
+import { resolveTripColor } from "../lib/tripColors";
+import type { LayerKey, MetricSurface } from "../types";
 
 const COUNTRIES_GEOJSON =
   "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson";
@@ -30,6 +28,10 @@ const LAYER_LABELS: Record<MetricKey, string> = {
   weather: "WEATHER",
   cost: "COST",
 };
+
+// Capitals and major connectivity hubs render prominently.
+const CAPITAL_COLOR = "#b3261e";
+const HUB_COLOR = "#1a6f8f";
 
 // Colour shown where active signals disagree (high spread).
 const DISCREPANCY_COLOR = "#7c3aed";
@@ -57,6 +59,31 @@ function getCSSVar(name: string): string {
   return getComputedStyle(document.documentElement)
     .getPropertyValue(name)
     .trim();
+}
+
+// Default (no metric mesh) circle styling: capitals and large hubs pop.
+function cityCircleColorExpr(): maplibregl.ExpressionSpecification {
+  return [
+    "case",
+    ["boolean", ["get", "capital"], false],
+    CAPITAL_COLOR,
+    ["==", ["get", "hub"], "large"],
+    HUB_COLOR,
+    getCSSVar("--ink") || "#1c1814",
+  ];
+}
+
+function cityCircleRadiusExpr(): maplibregl.ExpressionSpecification {
+  return [
+    "case",
+    ["boolean", ["get", "selected"], false],
+    7,
+    ["boolean", ["get", "capital"], false],
+    5.5,
+    ["==", ["get", "hub"], "large"],
+    5,
+    4,
+  ];
 }
 
 function buildStyle(): maplibregl.StyleSpecification {
@@ -385,6 +412,8 @@ export default function Globe() {
             name: city.name,
             iata: city.iata || "",
             selected: city.id === selectedId,
+            capital: !!city.capital,
+            hub: city.hub ?? "",
             mean,
             spread,
             fill,
@@ -492,15 +521,34 @@ export default function Globe() {
         layout: {
           "text-field": ["get", "iata"],
           "text-font": FONT,
-          "text-size": 11,
+          "text-size": 12,
           "text-offset": [0, -1.6],
           "text-anchor": "bottom",
           "text-allow-overlap": false,
         },
         paint: {
-          "text-color": ["get", "color"],
+          // Ink-on-bg reads in both themes; the colored endpoint dot already
+          // carries the trip identity — colored text against the halo did not.
+          "text-color": getCSSVar("--ink") || "#1c1814",
           "text-halo-color": getCSSVar("--bg") || "#f4ecd8",
-          "text-halo-width": 1.5,
+          "text-halo-width": 2,
+        },
+      });
+
+      // Draw-mode cursor preview (dashed arc from last trip node to cursor)
+      map.addSource("draw-preview", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "draw-preview-line",
+        type: "line",
+        source: "draw-preview",
+        paint: {
+          "line-color": getCSSVar("--accent") || "#c2680c",
+          "line-width": 1.6,
+          "line-dasharray": [2, 2],
+          "line-opacity": 0.8,
         },
       });
 
@@ -547,8 +595,8 @@ export default function Globe() {
         type: "circle",
         source: "city-points",
         paint: {
-          "circle-radius": ["case", ["boolean", ["get", "selected"], false], 7, 4],
-          "circle-color": getCSSVar("--ink") || "#1c1814",
+          "circle-radius": cityCircleRadiusExpr(),
+          "circle-color": cityCircleColorExpr(),
           "circle-stroke-width": 1,
           "circle-stroke-color": getCSSVar("--bg") || "#f4ecd8",
           "circle-opacity": 0.9,
@@ -571,6 +619,37 @@ export default function Globe() {
           "text-color": getCSSVar("--ink") || "#1c1814",
           "text-halo-color": getCSSVar("--bg") || "#f4ecd8",
           "text-halo-width": 1.2,
+        },
+      });
+
+      // Capitals + major hubs get their names early, in their accent color.
+      map.addLayer({
+        id: "city-labels-major",
+        type: "symbol",
+        source: "city-points",
+        minzoom: 1.5,
+        filter: [
+          "any",
+          ["boolean", ["get", "capital"], false],
+          ["==", ["get", "hub"], "large"],
+        ],
+        layout: {
+          "text-field": ["get", "name"],
+          "text-font": FONT,
+          "text-size": 11,
+          "text-offset": [0.9, -0.7],
+          "text-anchor": "left",
+          "text-allow-overlap": false,
+        },
+        paint: {
+          "text-color": [
+            "case",
+            ["boolean", ["get", "capital"], false],
+            CAPITAL_COLOR,
+            HUB_COLOR,
+          ],
+          "text-halo-color": getCSSVar("--bg") || "#f4ecd8",
+          "text-halo-width": 1.6,
         },
       });
 
@@ -650,6 +729,7 @@ export default function Globe() {
     });
 
     map.on("click", "city-circles", (e) => {
+      if (useMeridianStore.getState().drawMode) return;
       const f = e.features?.[0];
       if (f?.properties?.id)
         useMeridianStore.getState().selectCity(f.properties.id as string);
@@ -728,13 +808,8 @@ export default function Globe() {
       );
       map.setLayoutProperty("metric-heat", "visibility", "visible");
     } else {
-      map.setPaintProperty("city-circles", "circle-color", getCSSVar("--ink") || "#1c1814");
-      map.setPaintProperty("city-circles", "circle-radius", [
-        "case",
-        ["boolean", ["get", "selected"], false],
-        7,
-        4,
-      ]);
+      map.setPaintProperty("city-circles", "circle-color", cityCircleColorExpr());
+      map.setPaintProperty("city-circles", "circle-radius", cityCircleRadiusExpr());
       map.setPaintProperty(
         "city-circles",
         "circle-stroke-color",
@@ -760,6 +835,79 @@ export default function Globe() {
       });
   }, [selectedCityId, cities]);
 
+  // ── Draw mode: click the globe to append the nearest airport city ─
+  const drawMode = useMeridianStore((s) => s.drawMode);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.getCanvas().style.cursor = drawMode ? "crosshair" : "";
+    if (!drawMode) {
+      const src = map.getSource("draw-preview") as maplibregl.GeoJSONSource | null;
+      if (src) src.setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+
+    const nearestAirportCity = (lng: number, lat: number) => {
+      const cs = useMeridianStore.getState().cities;
+      let best: { c: (typeof cs)[number]; d: number } | null = null;
+      for (const c of cs) {
+        if (!c.iata) continue;
+        const d = haversineKm([lng, lat], [c.lng, c.lat]);
+        if (!best || d < best.d) best = { c, d };
+      }
+      return best && best.d <= 500 ? best.c : null;
+    };
+
+    const onClick = (e: maplibregl.MapMouseEvent) => {
+      const c = nearestAirportCity(e.lngLat.lng, e.lngLat.lat);
+      if (!c) return;
+      useMeridianStore.getState().addCityToActiveTrip({
+        cityId: c.id,
+        name: c.name,
+        iata: c.iata,
+        lat: c.lat,
+        lng: c.lng,
+      });
+    };
+
+    let raf = 0;
+    const onMove = (e: maplibregl.MapMouseEvent) => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const state = useMeridianStore.getState();
+        const trip = state.trips.find((t) => t.id === state.activeTripId);
+        const last = trip?.nodes[trip.nodes.length - 1];
+        const src = map.getSource("draw-preview") as maplibregl.GeoJSONSource | null;
+        if (!src || !last) return;
+        src.setData({
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: flightPath(
+                  [last.lng, last.lat],
+                  [e.lngLat.lng, e.lngLat.lat]
+                ).segments[0],
+              },
+              properties: {},
+            },
+          ],
+        });
+      });
+    };
+
+    map.on("click", onClick);
+    map.on("mousemove", onMove);
+    return () => {
+      map.off("click", onClick);
+      map.off("mousemove", onMove);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [drawMode]);
+
   // ── Unified routes: trip arcs + suggested shortlist arcs ────────
   useEffect(() => {
     const map = mapRef.current;
@@ -773,36 +921,37 @@ export default function Globe() {
         if (epSrc) epSrc.setData({ type: "FeatureCollection", features: [] });
         return;
       }
-      const colorMap: Record<string, string> = {
-        a: getCSSVar("--trip-a") || "#b3261e",
-        b: getCSSVar("--trip-b") || "#0f766e",
-        c: getCSSVar("--trip-c") || "#6d28d9",
-      };
       const features: GeoJSON.Feature[] = [];
       const endpointFeatures: GeoJSON.Feature[] = [];
 
+      // Large-hub airports for routing near-antipodal legs realistically.
+      const hubList = useMeridianStore
+        .getState()
+        .cities.filter((c) => c.hub === "large" && c.iata)
+        .map((c) => ({ coord: [c.lng, c.lat] as [number, number], label: c.iata! }));
+
       for (const trip of trips) {
-        const color = colorMap[trip.color] || colorMap.a;
+        const color = resolveTripColor(trip.color);
         const isActive = trip.id === activeTripId;
         const isCandidate = trip.origin === "agent";
 
         for (let i = 0; i < trip.nodes.length - 1; i++) {
           const a = trip.nodes[i];
           const b = trip.nodes[i + 1];
-          features.push({
-            type: "Feature",
-            geometry: {
-              type: "LineString",
-              coordinates: greatCircle([a.lng, a.lat], [b.lng, b.lat]),
-            },
-            properties: {
-              color,
-              active: isActive,
-              // Unconfirmed candidates render dashed/dim like suggested arcs;
-              // the focused (active) candidate still glows so paging is visible.
-              suggested: isCandidate,
-            },
-          });
+          const path = flightPath([a.lng, a.lat], [b.lng, b.lat], hubList);
+          for (const seg of path.segments) {
+            features.push({
+              type: "Feature",
+              geometry: { type: "LineString", coordinates: seg },
+              properties: {
+                color,
+                active: isActive,
+                // Unconfirmed candidates render dashed/dim like suggested arcs;
+                // the focused (active) candidate still glows so paging is visible.
+                suggested: isCandidate,
+              },
+            });
+          }
         }
 
         // Endpoint markers for each node in the trip
@@ -831,14 +980,14 @@ export default function Globe() {
       for (let i = 0; i < pts.length - 1; i++) {
         const a = pts[i];
         const b = pts[i + 1];
-        features.push({
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: greatCircle([a.lng, a.lat], [b.lng, b.lat]),
-          },
-          properties: { color: accent, active: false, suggested: true },
-        });
+        const path = flightPath([a.lng, a.lat], [b.lng, b.lat], hubList);
+        for (const seg of path.segments) {
+          features.push({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: seg },
+            properties: { color: accent, active: false, suggested: true },
+          });
+        }
       }
 
       src.setData({ type: "FeatureCollection", features });
@@ -915,6 +1064,8 @@ export default function Globe() {
       map.setLayoutProperty("city-circles", "visibility", vis);
     if (map.getLayer("city-labels"))
       map.setLayoutProperty("city-labels", "visibility", vis);
+    if (map.getLayer("city-labels-major"))
+      map.setLayoutProperty("city-labels-major", "visibility", vis);
   }, [layers.cities]);
 
   // ── Theme repaint ───────────────────────────────────────────────
@@ -934,12 +1085,19 @@ export default function Globe() {
       if (map.getLayer("countries-border"))
         map.setPaintProperty("countries-border", "line-color", borderCountry);
       if (map.getLayer("city-circles") && !hasMetric) {
-        map.setPaintProperty("city-circles", "circle-color", ink);
+        map.setPaintProperty("city-circles", "circle-color", cityCircleColorExpr());
         map.setPaintProperty("city-circles", "circle-stroke-color", bg);
       }
       if (map.getLayer("city-labels")) {
         map.setPaintProperty("city-labels", "text-color", ink);
         map.setPaintProperty("city-labels", "text-halo-color", bg);
+      }
+      if (map.getLayer("city-labels-major")) {
+        map.setPaintProperty("city-labels-major", "text-halo-color", bg);
+      }
+      if (map.getLayer("route-endpoint-labels")) {
+        map.setPaintProperty("route-endpoint-labels", "text-color", ink);
+        map.setPaintProperty("route-endpoint-labels", "text-halo-color", bg);
       }
       registerPhenomenonImages(map);
     }, 60);
@@ -1050,6 +1208,22 @@ export default function Globe() {
         <div style={{ color: "var(--ink)", fontWeight: 700 }}>4 MIN AGO</div>
       </div>
 
+      <div className="globe-tools">
+        <button
+          className={`globe-tool ${drawMode ? "on" : ""}`}
+          onClick={() => useMeridianStore.getState().setDrawMode(!drawMode)}
+          title="Draw a route: click cities on the globe (esc to exit)"
+        >
+          ✎ DRAW ROUTE
+        </button>
+        <LayersControl />
+      </div>
+      {drawMode && (
+        <div className="draw-banner">
+          DRAW MODE — click the globe to add the nearest airport · esc to exit
+        </div>
+      )}
+
       <div className="zoom-ctrl">
         <button onClick={handleZoomIn} title="Zoom in">
           +
@@ -1063,5 +1237,39 @@ export default function Globe() {
         </button>
       </div>
     </>
+  );
+}
+
+const GLOBE_LAYERS: { key: LayerKey; label: string }[] = [
+  { key: "routes", label: "ROUTES" },
+  { key: "cities", label: "CITIES" },
+  { key: "weather", label: "WEATHER" },
+  { key: "cost", label: "COST" },
+  { key: "conflict", label: "CONFLICT" },
+  { key: "disaster", label: "DISASTER" },
+];
+
+function LayersControl() {
+  const { layers, toggleLayer } = useMeridianStore();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="layers-ctrl">
+      <button className={`globe-tool ${open ? "on" : ""}`} onClick={() => setOpen(!open)}>
+        ◍ LAYERS
+      </button>
+      {open && (
+        <div className="layers-pop">
+          {GLOBE_LAYERS.map(({ key, label }) => (
+            <button
+              key={key}
+              className={`layers-item ${layers[key] ? "on" : ""}`}
+              onClick={() => toggleLayer(key)}
+            >
+              <span className="layers-dot" /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
