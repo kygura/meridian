@@ -1,4 +1,7 @@
 import type { City } from "../types";
+import { greatCirclePoints, haversineKm } from "./geo";
+
+export { greatCirclePoints as greatCircle } from "./geo";
 
 export interface Phenomenon {
   lat: number;
@@ -44,52 +47,6 @@ export function disasterFeatures(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: toFeatures(DISASTERS) };
 }
 
-function haversine(a: City, b: City): number {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const la1 = (a.lat * Math.PI) / 180;
-  const la2 = (b.lat * Math.PI) / 180;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-export function greatCircle(
-  a: [number, number],
-  b: [number, number],
-  steps = 32
-): [number, number][] {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const toDeg = (r: number) => (r * 180) / Math.PI;
-  const [lon1, lat1] = [toRad(a[0]), toRad(a[1])];
-  const [lon2, lat2] = [toRad(b[0]), toRad(b[1])];
-  const d =
-    2 *
-    Math.asin(
-      Math.sqrt(
-        Math.sin((lat2 - lat1) / 2) ** 2 +
-          Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2
-      )
-    );
-  if (d === 0) return [a, b];
-  const pts: [number, number][] = [];
-  for (let i = 0; i <= steps; i++) {
-    const f = i / steps;
-    const A = Math.sin((1 - f) * d) / Math.sin(d);
-    const B = Math.sin(f * d) / Math.sin(d);
-    const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
-    const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
-    const z = A * Math.sin(lat1) + B * Math.sin(lat2);
-    pts.push([
-      toDeg(Math.atan2(y, x)),
-      toDeg(Math.atan2(z, Math.sqrt(x * x + y * y))),
-    ]);
-  }
-  return pts;
-}
-
 /**
  * Build a sparse air-route network from the most populous cities. Each hub
  * connects to its nearest neighbours, producing a faithful "flight web".
@@ -110,7 +67,7 @@ export function buildAirRoutes(
   for (const hub of hubs) {
     const nearest = hubs
       .filter((o) => o.id !== hub.id)
-      .map((o) => ({ o, d: haversine(hub, o) }))
+      .map((o) => ({ o, d: haversineKm([hub.lng, hub.lat], [o.lng, o.lat]) }))
       .sort((a, b) => a.d - b.d)
       .slice(0, linksPerHub);
 
@@ -122,7 +79,7 @@ export function buildAirRoutes(
         type: "Feature",
         geometry: {
           type: "LineString",
-          coordinates: greatCircle([hub.lng, hub.lat], [o.lng, o.lat]),
+          coordinates: greatCirclePoints([hub.lng, hub.lat], [o.lng, o.lat]),
         },
         properties: { from: hub.id, to: o.id },
       });
