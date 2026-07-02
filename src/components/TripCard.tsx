@@ -1,4 +1,5 @@
 import type { Trip } from "../types";
+import { resolveTripColor } from "../lib/tripColors";
 
 interface TripCardProps {
   trip: Trip;
@@ -12,10 +13,9 @@ export default function TripCard({ trip, active, onClick }: TripCardProps) {
   return (
     <div
       className={`trip-card ${active ? "active" : ""}`}
-      data-color={trip.color}
       onClick={onClick}
     >
-      <div className="tg-bar" />
+      <div className="tg-bar" style={{ background: resolveTripColor(trip.color) }} />
       <div className="tg-row1">
         <div className="tg-name">{trip.name}</div>
         <div className={`tg-status ${trip.status}`}>{statusLabel}</div>

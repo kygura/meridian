@@ -17,29 +17,17 @@ const FONT = ["Noto Sans Regular"];
 
 // Metric layers — each has its own identity hue. When several are active they
 // are meshed (mean-tinted-by-dominant-hue) and disagreement is surfaced as a ring.
-const METRIC_LAYERS = [
-  "weather",
-  "density",
-  "tourism",
-  "stability",
-  "cost",
-] as const;
+const METRIC_LAYERS = ["weather", "cost"] as const;
 
 type MetricKey = (typeof METRIC_LAYERS)[number];
 
 const LAYER_COLORS: Record<MetricKey, string> = {
   weather: "#d98a2b",
-  density: "#4f63c4",
-  tourism: "#b6477f",
-  stability: "#2f8f7f",
   cost: "#2f86b5",
 };
 
 const LAYER_LABELS: Record<MetricKey, string> = {
   weather: "WEATHER",
-  density: "DENSITY",
-  tourism: "TOURISM",
-  stability: "STABILITY",
   cost: "COST",
 };
 

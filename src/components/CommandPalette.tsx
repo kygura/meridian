@@ -13,9 +13,6 @@ interface Command {
 
 const LAYER_COMMANDS: { key: LayerKey; label: string }[] = [
   { key: "weather", label: "WEATHER" },
-  { key: "stability", label: "STABILITY" },
-  { key: "density", label: "DENSITY" },
-  { key: "tourism", label: "TOURISM" },
   { key: "cost", label: "COST" },
   { key: "routes", label: "ROUTES" },
   { key: "cities", label: "CITIES" },

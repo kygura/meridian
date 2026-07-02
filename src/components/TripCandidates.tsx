@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
+import { resolveTripColor } from "../lib/tripColors";
 import type { City, Trip } from "../types";
 
 function durationDays(trip: Trip): number {
@@ -225,7 +226,10 @@ export default function TripCandidates() {
                 onMouseEnter={() => setSel(i)}
                 onClick={() => confirm(c.id)}
               >
-                <span className={`candidate-color-bar`} data-color={c.color} />
+                <span
+                  className="candidate-color-bar"
+                  style={{ background: resolveTripColor(c.color) }}
+                />
                 <div className="candidate-main">
                   <div className="candidate-route">
                     {c.nodes.map((n, ni) => (

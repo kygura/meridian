@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useMeridianStore } from "../store";
+import { navigate } from "../lib/router";
+import { TRIP_COLORS, resolveTripColor, randomTripColor } from "../lib/tripColors";
 import type { Trip, TripNode } from "../types";
 
 const STATUS_OPTIONS: Trip["status"][] = ["draft", "scouting", "confirmed"];
-const COLOR_OPTIONS: Trip["color"][] = ["a", "b", "c"];
 
 export default function TripsOverlay() {
   const {
@@ -16,7 +17,8 @@ export default function TripsOverlay() {
     updateTripName,
     updateTripStatus,
     updateTripColor,
-    removeNodeFromTrip,
+    removeNodeAt,
+    replaceNodeAt,
     reorderTripNodes,
     duplicateTrip,
     removeTrip,
@@ -30,6 +32,10 @@ export default function TripsOverlay() {
   const [showCityPicker, setShowCityPicker] = useState<string | null>(null);
   const [citySearch, setCitySearch] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [replacingIndex, setReplacingIndex] = useState<{
+    tripId: string;
+    index: number;
+  } | null>(null);
   const [dragState, setDragState] = useState<{
     tripId: string;
     fromIndex: number;
@@ -64,22 +70,30 @@ export default function TripsOverlay() {
     [editingName, updateTripName]
   );
 
-  const handleAddCityToTrip = useCallback(
-    (tripId: string, cityId: string) => {
+  const cityToNode = useCallback(
+    (cityId: string): TripNode | null => {
       const city = cities.find((c) => c.id === cityId);
-      if (!city) return;
-      const node: TripNode = {
+      if (!city) return null;
+      return {
         cityId: city.id,
         name: city.name,
         iata: city.iata,
         lat: city.lat,
         lng: city.lng,
       };
+    },
+    [cities]
+  );
+
+  const handleAddCityToTrip = useCallback(
+    (tripId: string, cityId: string) => {
+      const node = cityToNode(cityId);
+      if (!node) return;
       addCityToTrip(tripId, node);
       setShowCityPicker(null);
       setCitySearch("");
     },
-    [cities, addCityToTrip]
+    [cityToNode, addCityToTrip]
   );
 
   const handleDragStart = useCallback((tripId: string, fromIndex: number) => {
@@ -104,12 +118,15 @@ export default function TripsOverlay() {
     .filter(
       (c) =>
         c.name.toLowerCase().includes(citySearch.toLowerCase()) ||
-        (c.iata && c.iata.toLowerCase().includes(citySearch.toLowerCase()))
+        (c.iata && c.iata.toLowerCase().includes(citySearch.toLowerCase())) ||
+        (c.airportName &&
+          c.airportName.toLowerCase().includes(citySearch.toLowerCase()))
     )
+    .sort((a, b) => (b.iata ? 1 : 0) - (a.iata ? 1 : 0) || b.population - a.population)
     .slice(0, 12);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape" && !showCityPicker && !editingTripId) {
+    if (e.key === "Escape" && !showCityPicker && !editingTripId && !replacingIndex) {
       e.preventDefault();
       close();
     }
@@ -131,6 +148,16 @@ export default function TripsOverlay() {
           <div className="h-meta">
             {savedTrips.length} {savedTrips.length === 1 ? "TRIP" : "TRIPS"}
           </div>
+          <button
+            className="tm-action-btn"
+            onClick={() => {
+              close();
+              navigate("/trips");
+            }}
+            title="Open full trips page"
+          >
+            FULL PAGE ↗
+          </button>
           <button className="candidates-close" onClick={close} title="Close (esc)">
             ✕
           </button>
@@ -150,12 +177,11 @@ export default function TripsOverlay() {
             const isConfirmingDelete = trip.id === confirmDeleteId;
 
             return (
-              <div
-                key={trip.id}
-                className={`tm-trip ${isActive ? "active" : ""}`}
-                data-color={trip.color}
-              >
-                <div className="tm-color-bar" />
+              <div key={trip.id} className={`tm-trip ${isActive ? "active" : ""}`}>
+                <div
+                  className="tm-color-bar"
+                  style={{ background: resolveTripColor(trip.color) }}
+                />
 
                 <div className="tm-trip-header" onClick={() => setActiveTrip(trip.id)}>
                   {isEditing ? (
@@ -223,14 +249,29 @@ export default function TripsOverlay() {
                       <div className="tm-color-picker">
                         <span className="tm-key">COLOR</span>
                         <div className="tm-color-swatches">
-                          {COLOR_OPTIONS.map((c) => (
+                          {TRIP_COLORS.map((c) => (
                             <button
                               key={c}
-                              className={`tm-swatch ${c} ${trip.color === c ? "selected" : ""}`}
+                              className={`tm-swatch ${
+                                resolveTripColor(trip.color) === c ? "selected" : ""
+                              }`}
+                              style={{ background: c }}
                               onClick={() => updateTripColor(trip.id, c)}
-                              title={`Color ${c.toUpperCase()}`}
+                              title={c}
                             />
                           ))}
+                          <button
+                            className="tm-swatch tm-swatch-random"
+                            title="Random color"
+                            onClick={() =>
+                              updateTripColor(
+                                trip.id,
+                                randomTripColor(savedTrips.map((t) => t.color))
+                              )
+                            }
+                          >
+                            ⚄
+                          </button>
                         </div>
                       </div>
                       <div className="tm-status-picker">
@@ -259,7 +300,7 @@ export default function TripsOverlay() {
                         <div
                           key={`${node.cityId}-${i}`}
                           className="tm-node-row"
-                          draggable
+                          draggable={replacingIndex === null}
                           onDragStart={() => handleDragStart(trip.id, i)}
                           onDragOver={(e) => handleDragOver(e, trip.id, i)}
                           onDragEnd={handleDragEnd}
@@ -269,10 +310,62 @@ export default function TripsOverlay() {
                           </span>
                           <span className="tm-node-index">{i + 1}</span>
                           <span className="tm-node-iata">{node.iata || "???"}</span>
-                          <span className="tm-node-name">{node.name}</span>
+                          {replacingIndex?.tripId === trip.id &&
+                          replacingIndex.index === i ? (
+                            <span className="tm-replace-wrap">
+                              <input
+                                className="tm-city-search"
+                                placeholder={`Replace ${node.name}…`}
+                                value={citySearch}
+                                onChange={(e) => setCitySearch(e.target.value)}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === "Escape") {
+                                    setReplacingIndex(null);
+                                    setCitySearch("");
+                                  }
+                                }}
+                              />
+                              {citySearch.trim().length >= 2 && (
+                                <span className="tm-replace-results">
+                                  {filteredCities.map((city) => (
+                                    <button
+                                      key={city.id}
+                                      className="tm-city-option"
+                                      onClick={() => {
+                                        replaceNodeAt(trip.id, i, {
+                                          cityId: city.id,
+                                          name: city.name,
+                                          iata: city.iata,
+                                          lat: city.lat,
+                                          lng: city.lng,
+                                        });
+                                        setReplacingIndex(null);
+                                        setCitySearch("");
+                                      }}
+                                    >
+                                      <span className="tm-co-iata">{city.iata || "—"}</span>
+                                      <span className="tm-co-name">{city.name}</span>
+                                    </button>
+                                  ))}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span
+                              className="tm-node-name tm-node-name-clickable"
+                              title="Click to replace this city"
+                              onClick={() => {
+                                setReplacingIndex({ tripId: trip.id, index: i });
+                                setCitySearch("");
+                              }}
+                            >
+                              {node.name}
+                            </span>
+                          )}
                           <button
                             className="tm-node-remove"
-                            onClick={() => removeNodeFromTrip(trip.id, node.cityId)}
+                            onClick={() => removeNodeAt(trip.id, i)}
                             title="Remove from trip"
                           >
                             ✕
@@ -292,22 +385,18 @@ export default function TripsOverlay() {
                             autoFocus
                           />
                           <div className="tm-city-results">
-                            {filteredCities
-                              .filter((c) => !trip.nodes.some((n) => n.cityId === c.id))
-                              .map((city) => (
-                                <div
-                                  key={city.id}
-                                  className="tm-city-option"
-                                  onClick={() => handleAddCityToTrip(trip.id, city.id)}
-                                >
-                                  <span className="tm-co-iata">{city.iata || "—"}</span>
-                                  <span className="tm-co-name">{city.name}</span>
-                                  <span className="tm-co-country">{city.country}</span>
-                                </div>
-                              ))}
-                            {filteredCities.filter(
-                              (c) => !trip.nodes.some((n) => n.cityId === c.id)
-                            ).length === 0 && (
+                            {filteredCities.map((city) => (
+                              <div
+                                key={city.id}
+                                className="tm-city-option"
+                                onClick={() => handleAddCityToTrip(trip.id, city.id)}
+                              >
+                                <span className="tm-co-iata">{city.iata || "—"}</span>
+                                <span className="tm-co-name">{city.name}</span>
+                                <span className="tm-co-country">{city.country}</span>
+                              </div>
+                            ))}
+                            {filteredCities.length === 0 && (
                               <div className="tm-no-results">No matching cities found</div>
                             )}
                           </div>
@@ -335,9 +424,24 @@ export default function TripsOverlay() {
                           </div>
                         </div>
                       ) : (
-                        <button className="tm-add-btn" onClick={() => setShowCityPicker(trip.id)}>
-                          + ADD CITY
-                        </button>
+                        <>
+                          <button
+                            className="tm-add-btn"
+                            onClick={() => setShowCityPicker(trip.id)}
+                          >
+                            + ADD CITY
+                          </button>
+                          {trip.nodes.length >= 2 &&
+                            trip.nodes[trip.nodes.length - 1].cityId !==
+                              trip.nodes[0].cityId && (
+                              <button
+                                className="tm-add-btn"
+                                onClick={() => addCityToTrip(trip.id, trip.nodes[0])}
+                              >
+                                ↩ RETURN TO {trip.nodes[0].iata ?? trip.nodes[0].name}
+                              </button>
+                            )}
+                        </>
                       )}
                     </div>
 
@@ -355,6 +459,16 @@ export default function TripsOverlay() {
                         title="Duplicate trip"
                       >
                         DUPLICATE
+                      </button>
+                      <button
+                        className="tm-action-btn"
+                        onClick={() => {
+                          close();
+                          navigate(`/trips/${trip.id}`);
+                        }}
+                        title="Open in full page"
+                      >
+                        FULL PAGE ↗
                       </button>
                       {isConfirmingDelete ? (
                         <>

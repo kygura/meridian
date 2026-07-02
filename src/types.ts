@@ -89,7 +89,8 @@ export interface TripEstimate {
 export interface Trip {
   id: string;
   name: string;
-  color: "a" | "b" | "c";
+  /** Hex color from TRIP_COLORS (legacy "a"/"b"/"c" resolved via resolveTripColor). */
+  color: string;
   status: "draft" | "scouting" | "confirmed";
   nodes: TripNode[];
   /** "agent" = generated candidate awaiting confirmation; "manual" = user-owned trip. */
@@ -210,12 +211,7 @@ export type LayerKey =
   | "routes"
   | "cities"
   | "weather"
-  | "stability"
-  | "density"
-  | "tourism"
-  | "quality"
   | "cost"
-  | "internet"
   | "conflict"
   | "disaster";
 
