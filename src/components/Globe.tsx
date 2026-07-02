@@ -796,6 +796,7 @@ export default function Globe() {
       for (const trip of trips) {
         const color = colorMap[trip.color] || colorMap.a;
         const isActive = trip.id === activeTripId;
+        const isCandidate = trip.origin === "agent";
 
         for (let i = 0; i < trip.nodes.length - 1; i++) {
           const a = trip.nodes[i];
@@ -809,7 +810,9 @@ export default function Globe() {
             properties: {
               color,
               active: isActive,
-              suggested: false,
+              // Unconfirmed candidates render dashed/dim like suggested arcs;
+              // the focused (active) candidate still glows so paging is visible.
+              suggested: isCandidate,
             },
           });
         }

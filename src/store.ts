@@ -3,6 +3,7 @@ import type {
   City,
   Trip,
   TripNode,
+  TripOption,
   ShortlistEntry,
   TickerItem,
   CityMetrics,
@@ -10,6 +11,18 @@ import type {
   MetricSurface,
   LayerKey,
 } from "./types";
+
+export interface CandidateFilters {
+  maxBudget: number;
+  maxStops: number;
+  maxDays: number;
+}
+
+const DEFAULT_CANDIDATE_FILTERS: CandidateFilters = {
+  maxBudget: 800,
+  maxStops: 3,
+  maxDays: 14,
+};
 
 export interface MeridianState {
   // Theme
@@ -51,6 +64,21 @@ export interface MeridianState {
   reorderTripNodes: (tripId: string, fromIndex: number, toIndex: number) => void;
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
+
+  // Agent-generated trip candidates (origin: "agent" trips awaiting confirmation)
+  candidateFilters: CandidateFilters;
+  setCandidateFilters: (patch: Partial<CandidateFilters>) => void;
+  setAgentCandidates: (options: TripOption[]) => void;
+  confirmCandidate: (tripId: string) => void;
+  discardAgentCandidates: () => void;
+
+  // Overlay modals
+  tripsOverlayOpen: boolean;
+  setTripsOverlayOpen: (open: boolean) => void;
+  toggleTripsOverlay: () => void;
+  candidatesOverlayOpen: boolean;
+  setCandidatesOverlayOpen: (open: boolean) => void;
+  toggleCandidatesOverlay: () => void;
 
   // Layers
   layers: Record<LayerKey, boolean>;
@@ -226,6 +254,53 @@ export const useMeridianStore = create<MeridianState>((set) => ({
       trips: state.trips.filter((t) => t.id !== id),
       activeTripId: state.activeTripId === id ? null : state.activeTripId,
     })),
+
+  // Agent-generated trip candidates
+  candidateFilters: DEFAULT_CANDIDATE_FILTERS,
+  setCandidateFilters: (patch) =>
+    set((state) => ({ candidateFilters: { ...state.candidateFilters, ...patch } })),
+  setAgentCandidates: (options) =>
+    set((state) => {
+      const colors = ["a", "b", "c"] as const;
+      const manualTrips = state.trips.filter((t) => t.origin !== "agent");
+      const candidates: Trip[] = options.map((opt, i) => ({
+        id: opt.id,
+        name: opt.label,
+        color: colors[i % 3],
+        status: "draft",
+        nodes: opt.nodes,
+        origin: "agent",
+        estimate: opt.estimate,
+      }));
+      return {
+        trips: [...manualTrips, ...candidates],
+        activeTripId: candidates[0]?.id ?? state.activeTripId,
+      };
+    }),
+  confirmCandidate: (tripId) =>
+    set((state) => ({
+      trips: state.trips.map((t) =>
+        t.id === tripId ? { ...t, origin: "manual", status: "scouting" } : t
+      ),
+    })),
+  discardAgentCandidates: () =>
+    set((state) => {
+      const remaining = state.trips.filter((t) => t.origin !== "agent");
+      const activeStillValid = remaining.some((t) => t.id === state.activeTripId);
+      return {
+        trips: remaining,
+        activeTripId: activeStillValid ? state.activeTripId : null,
+      };
+    }),
+
+  // Overlay modals
+  tripsOverlayOpen: false,
+  setTripsOverlayOpen: (open) => set({ tripsOverlayOpen: open }),
+  toggleTripsOverlay: () => set((state) => ({ tripsOverlayOpen: !state.tripsOverlayOpen })),
+  candidatesOverlayOpen: false,
+  setCandidatesOverlayOpen: (open) => set({ candidatesOverlayOpen: open }),
+  toggleCandidatesOverlay: () =>
+    set((state) => ({ candidatesOverlayOpen: !state.candidatesOverlayOpen })),
 
   // Layers
   layers: DEFAULT_LAYERS,

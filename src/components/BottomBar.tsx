@@ -19,11 +19,13 @@ export default function BottomBar() {
     toggleLayer,
     trips,
     activeTripId,
-    setActiveTrip,
     setCommandOpen,
+    setTripsOverlayOpen,
+    setCandidatesOverlayOpen,
   } = useMeridianStore();
 
   const activeTrip = trips.find((t) => t.id === activeTripId);
+  const savedTripCount = trips.filter((t) => t.origin !== "agent").length;
 
   return (
     <div
@@ -124,17 +126,21 @@ export default function BottomBar() {
           </span>
         )}
 
-        {/* Trip switcher buttons */}
-        {trips.map((trip) => (
-          <button
-            key={trip.id}
-            className={`bb-trip-btn ${trip.id === activeTripId ? "active" : ""}`}
-            data-color={trip.color}
-            onClick={() => setActiveTrip(trip.id)}
-          >
-            {trip.name.slice(0, 8)}
-          </button>
-        ))}
+        <button
+          className="bb-terminal-btn"
+          onClick={() => setTripsOverlayOpen(true)}
+          title="Open saved trips"
+        >
+          TRIPS <span style={{ opacity: 0.6 }}>{savedTripCount}</span>
+        </button>
+
+        <button
+          className="bb-terminal-btn"
+          onClick={() => setCandidatesOverlayOpen(true)}
+          title="Browse trip candidates"
+        >
+          CANDIDATES <span style={{ opacity: 0.6 }}>✈</span>
+        </button>
 
         <button
           className="bb-terminal-btn"

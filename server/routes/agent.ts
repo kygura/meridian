@@ -5,7 +5,8 @@ import { join } from "path";
 import { getCityById, getCities, searchCities } from "../lib/cities.js";
 import { computeFullScore } from "../lib/scoring.js";
 import { ensureDataDir } from "../lib/paths.js";
-import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode } from "../../src/types.js";
+import { getFlightEstimate } from "../lib/flightSearch.js";
+import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
 
 const agent = new Hono();
 
@@ -82,14 +83,90 @@ function findNearbyDestinations(city: City, maxCount = 6): NearbyDestination[] {
   }));
 }
 
+// ── Deterministic mock pricing (placeholder until a real flight/stay
+// provider is wired in — same shape real data will fill in later) ──
+
+function seededRand(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return (h % 10000) / 10000;
+}
+
+function estimateForOption(id: string, nodes: TripNode[]): TripEstimate {
+  let totalKm = 0;
+  for (let i = 0; i < nodes.length - 1; i++) {
+    totalKm += haversineKm(nodes[i], nodes[i + 1]);
+  }
+
+  const rPrice = seededRand(id + ":price");
+  const rStart = seededRand(id + ":start");
+  const rLen = seededRand(id + ":len");
+
+  const base = 60 + totalKm * 0.045;
+  const priceEstimate = Math.round((base + rPrice * base * 0.5) / 5) * 5;
+
+  const startOffsetDays = 14 + Math.round(rStart * 60); // 14–74 days out
+  const tripLengthDays = 3 + Math.round(rLen * 8); // 3–11 days
+  const start = new Date(Date.now() + startOffsetDays * 86400000);
+  const end = new Date(start.getTime() + tripLengthDays * 86400000);
+
+  return {
+    priceEstimate,
+    currency: "USD",
+    dateRange: {
+      start: start.toISOString().split("T")[0],
+      end: end.toISOString().split("T")[0],
+    },
+    source: "mock",
+  };
+}
+
+// Default home base for real flight pricing — one of the user's three
+// starting airports (LPA / AGP / MAD); overridable per-request.
+const DEFAULT_ORIGIN_IATA = "MAD";
+
+// Prices the home-base -> first-destination leg with a real provider
+// (Duffel, falling back to SerpAPI) and overrides the mock estimate when a
+// quote comes back. Leaves the mock in place (source: "mock") on any
+// failure or when no provider key is configured, so the UI always has a
+// number to show.
+async function enrichEstimateWithRealPricing(
+  estimate: TripEstimate,
+  originIata: string,
+  destinationIata: string | undefined
+): Promise<TripEstimate> {
+  if (!destinationIata || destinationIata === originIata) return estimate;
+
+  const real = await getFlightEstimate({
+    originIata,
+    destinationIata,
+    departureDate: estimate.dateRange.start,
+  });
+  if (!real) return estimate;
+
+  return {
+    ...estimate,
+    priceEstimate: Math.round(real.priceAmount),
+    currency: real.currency,
+    source: real.source,
+    dealRating: real.dealRating,
+  };
+}
+
 // ── Trip option generator ───────────────────────────────────────────
 
-function generateTripOptions(city: City): TripOption[] {
+async function generateTripOptions(city: City, originIata: string): Promise<TripOption[]> {
   const nearby = findNearbyDestinations(city, 12);
   const options: TripOption[] = [];
 
+  const push = async (opt: Omit<TripOption, "estimate">) => {
+    const mock = estimateForOption(opt.id, opt.nodes);
+    const estimate = await enrichEstimateWithRealPricing(mock, originIata, opt.nodes[0]?.iata);
+    options.push({ ...opt, estimate });
+  };
+
   // Single-hop: just the city itself as a solo destination
-  options.push({
+  await push({
     id: `trip-solo-${city.id}`,
     label: `Solo stay in ${city.name}`,
     type: "single",
@@ -105,7 +182,7 @@ function generateTripOptions(city: City): TripOption[] {
 
   // Single-hop: top 3 nearby as standalone destinations
   for (const dest of nearby.slice(0, 3)) {
-    options.push({
+    await push({
       id: `trip-single-${dest.cityId}`,
       label: `${city.name} → ${dest.name}`,
       type: "single",
@@ -122,7 +199,7 @@ function generateTripOptions(city: City): TripOption[] {
   if (nearby.length >= 2) {
     // Route 1: closest high-score pair
     const pair1 = nearby.slice(0, 2);
-    options.push({
+    await push({
       id: `trip-multi-1-${city.id}`,
       label: `${city.name} → ${pair1[0].name} → ${pair1[1].name}`,
       type: "multi-hop",
@@ -137,7 +214,7 @@ function generateTripOptions(city: City): TripOption[] {
     // Route 2: different pair for variety
     if (nearby.length >= 4) {
       const pair2 = nearby.slice(2, 4);
-      options.push({
+      await push({
         id: `trip-multi-2-${city.id}`,
         label: `${city.name} → ${pair2[0].name} → ${pair2[1].name}`,
         type: "multi-hop",
@@ -426,20 +503,20 @@ agent.post("/research", async (c) => {
 /** POST /api/agent/trip-options - Generate trip route suggestions */
 agent.post("/trip-options", async (c) => {
   const body = await c.req.json();
-  const schema = z.object({ cityId: z.string() });
+  const schema = z.object({ cityId: z.string(), originIata: z.string().length(3).optional() });
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
     return c.json({ error: "Invalid request", details: parsed.error.issues }, 400);
   }
 
-  const { cityId } = parsed.data;
+  const { cityId, originIata } = parsed.data;
   const city = getCityById(cityId);
   if (!city) {
     return c.json({ error: `City '${cityId}' not found` }, 404);
   }
 
-  const options = generateTripOptions(city);
+  const options = await generateTripOptions(city, (originIata ?? DEFAULT_ORIGIN_IATA).toUpperCase());
   return c.json({ cityId, options });
 });
 

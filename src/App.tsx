@@ -6,6 +6,8 @@ import RightDrawer from "./components/RightDrawer";
 import BottomBar from "./components/BottomBar";
 import Globe from "./components/Globe";
 import CommandPalette from "./components/CommandPalette";
+import TripCandidates from "./components/TripCandidates";
+import TripsOverlay from "./components/TripsOverlay";
 import ThemeWipe from "./components/ThemeWipe";
 import { apiUrl } from "./lib/api";
 
@@ -86,6 +88,8 @@ export default function App() {
       <LeftDrawer />
       <RightDrawer />
       <CommandPalette />
+      <TripCandidates />
+      <TripsOverlay />
       <ThemeWipe />
     </div>
   );

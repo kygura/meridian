@@ -70,12 +70,25 @@ export interface TripNode {
   lng: number;
 }
 
+export interface TripEstimate {
+  priceEstimate: number;
+  currency: string;
+  dateRange: { start: string; end: string };
+  /** Where priceEstimate came from — "mock" is the deterministic placeholder. */
+  source?: "mock" | "duffel" | "serpapi";
+  /** How priceEstimate compares to real market prices, when a provider supplied it. */
+  dealRating?: "low" | "typical" | "high";
+}
+
 export interface Trip {
   id: string;
   name: string;
   color: "a" | "b" | "c";
   status: "draft" | "scouting" | "confirmed";
   nodes: TripNode[];
+  /** "agent" = generated candidate awaiting confirmation; "manual" = user-owned trip. */
+  origin?: "agent" | "manual";
+  estimate?: TripEstimate;
 }
 
 export interface ShortlistEntry {
@@ -160,6 +173,7 @@ export interface TripOption {
   nodes: TripNode[];
   totalDistance?: string;
   highlight: string;
+  estimate: TripEstimate;
 }
 
 export interface TickerItem {

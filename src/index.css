@@ -2502,3 +2502,120 @@ body::before {
   transform: translateY(0) scale(0.97);
   box-shadow: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TRIP CANDIDATES OVERLAY — filters + rotatable candidate stack
+   ═══════════════════════════════════════════════════════════════════ */
+.candidates-panel { max-height: 78vh; }
+.candidates-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+.candidates-subtitle {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--ink3);
+  text-transform: none;
+}
+.candidates-filters {
+  display: flex;
+  gap: 20px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hairline2);
+  flex-wrap: wrap;
+}
+.filter-slider { flex: 1; min-width: 140px; }
+.filter-slider-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.filter-slider-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--ink3);
+}
+.filter-slider-value {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.filter-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.candidate-row { align-items: stretch; }
+.candidate-color-bar {
+  width: 3px;
+  border-radius: 2px;
+  align-self: stretch;
+}
+.candidate-color-bar[data-color="a"] { background: var(--trip-a); }
+.candidate-color-bar[data-color="b"] { background: var(--trip-b); }
+.candidate-color-bar[data-color="c"] { background: var(--trip-c); }
+.candidate-main { flex: 1; min-width: 0; }
+.candidate-route {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.candidate-route .iata-arrow { color: var(--ink4); margin: 0 4px; font-weight: 400; }
+.candidate-highlight {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.candidate-meta { text-align: right; flex-shrink: 0; }
+.candidate-price {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.candidate-dates {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink4);
+  margin-top: 2px;
+}
+.candidates-footer {
+  padding: 8px 16px;
+  border-top: 1px solid var(--hairline2);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink4);
+}
+.candidates-close {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--hairline2);
+  color: var(--ink3);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.candidates-close:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   TRIPS OVERLAY — saved trip management, modalized
+   ═══════════════════════════════════════════════════════════════════ */
+.trips-overlay-panel { max-height: 78vh; }
+.trips-overlay-head { display: flex; align-items: center; }
+.trips-overlay-list { overflow-y: auto; padding: 0 18px 12px; }

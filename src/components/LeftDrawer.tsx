@@ -1,5 +1,4 @@
 import { useMeridianStore } from "../store";
-import TripManager from "./TripManager";
 
 export default function LeftDrawer() {
   const {
@@ -8,7 +7,12 @@ export default function LeftDrawer() {
     shortlist,
     selectCity,
     setCommandOpen,
+    trips,
+    setTripsOverlayOpen,
+    setCandidatesOverlayOpen,
   } = useMeridianStore();
+
+  const savedTripCount = trips.filter((t) => t.origin !== "agent").length;
 
   return (
     <>
@@ -70,8 +74,36 @@ export default function LeftDrawer() {
 
         <div className="hairline" />
 
-        {/* Trip Manager */}
-        <TripManager />
+        {/* Trip overlays launcher */}
+        <div className="panel-head">
+          <div className="h-title">TRIPS</div>
+          <div className="h-meta">
+            {savedTripCount} {savedTripCount === 1 ? "TRIP" : "TRIPS"}
+          </div>
+        </div>
+        <div className="panel-sub">Manage saved trips or browse agent-suggested candidates.</div>
+        <div style={{ padding: "8px 18px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <button
+            className="console-launch"
+            onClick={() => {
+              setTripsOverlayOpen(true);
+              toggleLeftDrawer();
+            }}
+          >
+            <span>Open trips</span>
+            <span className="console-kbd">{savedTripCount}</span>
+          </button>
+          <button
+            className="console-launch"
+            onClick={() => {
+              setCandidatesOverlayOpen(true);
+              toggleLeftDrawer();
+            }}
+          >
+            <span>Browse trip candidates</span>
+            <span className="console-kbd">✈</span>
+          </button>
+        </div>
 
         <div className="hairline" />
 
