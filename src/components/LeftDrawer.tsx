@@ -1,4 +1,5 @@
 import { useMeridianStore } from "../store";
+import { navigate } from "../lib/router";
 
 export default function LeftDrawer() {
   const {
@@ -8,7 +9,6 @@ export default function LeftDrawer() {
     selectCity,
     setCommandOpen,
     trips,
-    setTripsOverlayOpen,
     setCandidatesOverlayOpen,
   } = useMeridianStore();
 
@@ -86,7 +86,7 @@ export default function LeftDrawer() {
           <button
             className="console-launch"
             onClick={() => {
-              setTripsOverlayOpen(true);
+              navigate("/trips");
               toggleLeftDrawer();
             }}
           >

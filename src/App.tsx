@@ -1,28 +1,25 @@
 import { useEffect } from "react";
 import { useMeridianStore } from "./store";
+import { useRoute } from "./lib/router";
 import TopBar from "./components/TopBar";
 import LeftDrawer from "./components/LeftDrawer";
 import RightDrawer from "./components/RightDrawer";
-import BottomBar from "./components/BottomBar";
 import Globe from "./components/Globe";
 import CommandPalette from "./components/CommandPalette";
 import TripCandidates from "./components/TripCandidates";
 import TripsOverlay from "./components/TripsOverlay";
 import ThemeWipe from "./components/ThemeWipe";
+import TripsPage from "./pages/TripsPage";
 import { apiUrl } from "./lib/api";
 
 export default function App() {
-  const {
-    setCities,
-    setShortlist,
-    toggleLeftDrawer,
-    setRightDrawer,
-    toggleCommand,
-  } = useMeridianStore();
+  const { toggleLeftDrawer, setRightDrawer, toggleCommand, setDrawMode } =
+    useMeridianStore();
+  const route = useRoute();
 
   // Fetch initial data on mount
   useEffect(() => {
-    fetch(apiUrl("/api/cities?limit=5000"))
+    fetch(apiUrl("/api/cities?limit=10000"))
       .then((r) => r.json())
       .then((data) => {
         const cities = data?.cities ?? data;
@@ -56,10 +53,11 @@ export default function App() {
 
       if (e.key === "[") toggleLeftDrawer();
       if (e.key === "]") setRightDrawer(false);
+      if (e.key === "Escape") setDrawMode(false);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [toggleLeftDrawer, setRightDrawer, toggleCommand]);
+  }, [toggleLeftDrawer, setRightDrawer, toggleCommand, setDrawMode]);
 
   return (
     <div
@@ -69,8 +67,8 @@ export default function App() {
         overflow: "hidden",
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr)",
-        gridTemplateRows: "44px minmax(0, 1fr) 56px",
-        gridTemplateAreas: `"top" "center" "bottom"`,
+        gridTemplateRows: "44px minmax(0, 1fr)",
+        gridTemplateAreas: `"top" "center"`,
       }}
     >
       <TopBar />
@@ -82,9 +80,10 @@ export default function App() {
           background: "var(--bg)",
         }}
       >
+        {/* Globe stays mounted across navigation to preserve the map instance */}
         <Globe />
+        {route.view === "trips" && <TripsPage tripId={route.tripId} />}
       </div>
-      <BottomBar />
       <LeftDrawer />
       <RightDrawer />
       <CommandPalette />

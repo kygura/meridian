@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useMeridianStore } from "../store";
+import { useRoute, navigate } from "../lib/router";
 import NewsTicker from "./NewsTicker";
 
 export default function TopBar() {
   const { theme, toggleTheme, toggleLeftDrawer } = useMeridianStore();
+  const route = useRoute();
   const [utc, setUtc] = useState("");
   const [local, setLocal] = useState("");
 
@@ -131,6 +133,22 @@ export default function TopBar() {
           cartographic interface
         </span>
       </div>
+
+      {/* Nav */}
+      <nav className="topbar-nav">
+        <button
+          className={`topnav-link ${route.view === "globe" ? "active" : ""}`}
+          onClick={() => navigate("/")}
+        >
+          GLOBE
+        </button>
+        <button
+          className={`topnav-link ${route.view === "trips" ? "active" : ""}`}
+          onClick={() => navigate("/trips")}
+        >
+          TRIPS
+        </button>
+      </nav>
 
       {/* News Ticker */}
       <NewsTicker />
