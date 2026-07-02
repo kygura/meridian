@@ -6,6 +6,12 @@ export interface City {
   country: string;
   population: number;
   iata?: string;
+  /** True national capital (from mledoze/countries). */
+  capital?: boolean;
+  /** Airport class serving this city, when matched. */
+  hub?: "large" | "medium";
+  /** Full airport name (searchable, e.g. "Penang International Airport"). */
+  airportName?: string;
   region?: string;
   timezone?: string;
   currency?: string;
