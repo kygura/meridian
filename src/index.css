@@ -2725,6 +2725,7 @@ body::before {
 .tp-link:hover { color: var(--ink); border-color: var(--ink); }
 
 .tp-add-row { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; max-width: 640px; }
+.tp-add-row .tm-add-btn { width: auto; flex-shrink: 0; white-space: nowrap; }
 .tp-search { position: relative; flex: 1; }
 .tp-search input {
   width: 100%; padding: 8px 10px; font-size: 12px; font-family: var(--sans);
@@ -2758,6 +2759,8 @@ body::before {
 }
 .globe-tool:hover { color: var(--ink); border-color: var(--ink2); }
 .globe-tool.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.globe-tool:disabled { opacity: 0.4; cursor: not-allowed; }
+.globe-tool:disabled:hover { color: var(--ink2); border-color: var(--hairline2); }
 .layers-ctrl { position: relative; }
 .layers-pop {
   position: absolute; top: 100%; right: 0; margin-top: 4px;

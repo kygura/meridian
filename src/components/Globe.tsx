@@ -349,6 +349,7 @@ export default function Globe() {
     [layers]
   );
   const hasMetric = activeMetrics.length > 0;
+  const hasActiveTrip = trips.some((t) => t.id === activeTripId);
 
   // Fetch every active metric surface that isn't cached yet.
   useEffect(() => {
@@ -838,6 +839,9 @@ export default function Globe() {
   // ── Draw mode: click the globe to append the nearest airport city ─
   const drawMode = useMeridianStore((s) => s.drawMode);
   useEffect(() => {
+    if (drawMode && !hasActiveTrip) useMeridianStore.getState().setDrawMode(false);
+  }, [drawMode, hasActiveTrip]);
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     map.getCanvas().style.cursor = drawMode ? "crosshair" : "";
@@ -1211,8 +1215,8 @@ export default function Globe() {
       <div className="globe-tools">
         <button
           className={`globe-tool ${drawMode ? "on" : ""}`}
-          onClick={() => useMeridianStore.getState().setDrawMode(!drawMode)}
-          title="Draw a route: click cities on the globe (esc to exit)"
+          onClick={() => hasActiveTrip && useMeridianStore.getState().setDrawMode(!drawMode)}
+          disabled={!hasActiveTrip}
         >
           ✎ DRAW ROUTE
         </button>
