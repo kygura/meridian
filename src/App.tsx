@@ -10,6 +10,9 @@ import TripCandidates from "./components/TripCandidates";
 import TripsOverlay from "./components/TripsOverlay";
 import ThemeWipe from "./components/ThemeWipe";
 import TripsPage from "./pages/TripsPage";
+import SeasonalityPage from "./components/seasonality/SeasonalityPage";
+import BookingModal from "./components/booking/BookingModal";
+import BookingsPanel from "./components/booking/BookingsPanel";
 import { apiUrl } from "./lib/api";
 
 export default function App() {
@@ -33,6 +36,9 @@ export default function App() {
         if (Array.isArray(data)) useMeridianStore.getState().setShortlist(data);
       })
       .catch(() => {});
+
+    // Bookings cache — server is source of truth (DESIGN-booking.md §7.3).
+    void useMeridianStore.getState().fetchBookings();
   }, []);
 
   // Keyboard listeners
@@ -83,12 +89,15 @@ export default function App() {
         {/* Globe stays mounted across navigation to preserve the map instance */}
         <Globe />
         {route.view === "trips" && <TripsPage tripId={route.tripId} />}
+        {route.view === "seasons" && <SeasonalityPage />}
       </div>
       <LeftDrawer />
       <RightDrawer />
       <CommandPalette />
       <TripCandidates />
       <TripsOverlay />
+      <BookingModal />
+      <BookingsPanel />
       <ThemeWipe />
     </div>
   );

@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { TRIP_COLORS, randomTripColor } from "./lib/tripColors";
+import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
+import {
+  listBookings as listBookingsApi,
+  type Booking,
+  type BookingTarget,
+} from "./lib/bookingApi";
 import type {
   City,
   Trip,
@@ -112,6 +118,33 @@ export interface MeridianState {
   // Scores cache
   cityScores: Record<string, MeridianScore>;
   setCityScore: (cityId: string, score: MeridianScore) => void;
+
+  // Seasonality cache (shared by SeasonalityPage + SeasonStrip; not persisted —
+  // climate data is served, fine to rebuild per session; null = confirmed uncovered)
+  seasonality: Record<string, SeasonMonth[] | null>;
+  setSeasonality: (cityId: string, months: SeasonMonth[] | null) => void;
+  mergeSeasonality: (record: Record<string, SeasonMonth[] | null>) => void;
+  seasonalityRegions: RegionSeason[] | null;
+  setSeasonalityRegions: (regions: RegionSeason[]) => void;
+  seasonsShowRegions: boolean;
+  setSeasonsShowRegions: (on: boolean) => void;
+
+  // Booking checkout modal (DESIGN-booking.md §7.3 — mirrors the
+  // candidatesOverlayOpen pattern; offers themselves stay component-local)
+  bookingModal: { open: boolean; target: BookingTarget | null };
+  openBookingModal: (target: BookingTarget) => void;
+  closeBookingModal: () => void;
+
+  // Bookings cache (server is source of truth — A1; NOT in the localStorage
+  // partialize allow-list, rehydrates from the API)
+  bookings: Booking[];
+  setBookings: (bookings: Booking[]) => void;
+  fetchBookings: () => Promise<void>;
+  bookingsPanelOpen: boolean;
+  setBookingsPanelOpen: (open: boolean) => void;
+  activeBookingId: string | null;
+  openBookingTicket: (id: string | null) => void;
+  applyBookingCancelled: (id: string) => void;
 }
 
 const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
@@ -362,6 +395,51 @@ export const useMeridianStore = create<MeridianState>()(
       setCityScore: (cityId, score) =>
         set((state) => ({
           cityScores: { ...state.cityScores, [cityId]: score },
+        })),
+
+      // Seasonality cache
+      seasonality: {},
+      setSeasonality: (cityId, months) =>
+        set((state) => ({
+          seasonality: { ...state.seasonality, [cityId]: months },
+        })),
+      mergeSeasonality: (record) =>
+        set((state) => ({
+          seasonality: { ...state.seasonality, ...record },
+        })),
+      seasonalityRegions: null,
+      setSeasonalityRegions: (regions) => set({ seasonalityRegions: regions }),
+      seasonsShowRegions: false,
+      setSeasonsShowRegions: (on) => set({ seasonsShowRegions: on }),
+
+      // Booking checkout modal
+      bookingModal: { open: false, target: null },
+      openBookingModal: (target) => set({ bookingModal: { open: true, target } }),
+      closeBookingModal: () => set({ bookingModal: { open: false, target: null } }),
+
+      // Bookings cache
+      bookings: [],
+      setBookings: (bookings) => set({ bookings }),
+      fetchBookings: async () => {
+        try {
+          set({ bookings: await listBookingsApi() });
+        } catch {
+          // Server unreachable — keep the existing cache.
+        }
+      },
+      bookingsPanelOpen: false,
+      setBookingsPanelOpen: (open) =>
+        set(open ? { bookingsPanelOpen: true } : { bookingsPanelOpen: false, activeBookingId: null }),
+      activeBookingId: null,
+      openBookingTicket: (id) =>
+        set(id ? { activeBookingId: id, bookingsPanelOpen: true } : { activeBookingId: null }),
+      applyBookingCancelled: (id) =>
+        set((state) => ({
+          bookings: state.bookings.map((b) =>
+            b.id === id
+              ? { ...b, status: "cancelled" as const, cancelledAt: new Date().toISOString() }
+              : b
+          ),
         })),
     }),
     {

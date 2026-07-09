@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
-
-const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+import SeasonStrip from "./seasonality/SeasonStrip";
 
 function MicroRow({
   label,
@@ -57,59 +56,10 @@ export default function MetricPanels() {
 
   const metrics = cityMetrics[selectedCityId];
 
-  // Generate synthetic seasonality if no data
-  const nowMonth = new Date().getMonth();
-  const seasonData = Array.from({ length: 12 }, (_, i) => {
-    const v = 0.3 + Math.sin(((i + 3) * Math.PI) / 6) * 0.35 + Math.random() * 0.1;
-    const clamped = Math.max(0, Math.min(1, v));
-    const tier =
-      clamped >= 0.66 ? "peak" : clamped >= 0.33 ? "shoulder" : "low";
-    return { v: clamped, tier };
-  });
-
   return (
     <>
-      {/* Seasonality */}
-      <div className="section">
-        <h3>
-          SEASONALITY <span className="meta">12 MO</span>
-        </h3>
-        <div className="h-sub">
-          Tourism volume across the year. Ridge marks now.
-        </div>
-        <div className="seasonality">
-          {seasonData.map((s, i) => (
-            <div
-              key={i}
-              className={`month-cell ${s.tier}${i === nowMonth ? " now" : ""}`}
-            >
-              <div
-                className="mc-fill"
-                style={{ height: `${s.v * 100}%` }}
-              />
-              <div
-                className={`mc-letter${s.tier === "low" ? " dim" : ""}`}
-              >
-                {MONTHS[i]}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="season-legend">
-          <div className="sl">
-            <div className="sw peak" />
-            PEAK
-          </div>
-          <div className="sl">
-            <div className="sw shoulder" />
-            SHOULDER
-          </div>
-          <div className="sl">
-            <div className="sw low" />
-            LOW
-          </div>
-        </div>
-      </div>
+      {/* Seasonality — real Comfort Index strip (shares the calendar's cache) */}
+      <SeasonStrip cityId={selectedCityId} />
 
       {/* Metrics bars */}
       <div className="section">

@@ -8,6 +8,8 @@ import {
   estimateLegCostUSD,
 } from "../lib/geo";
 import { TRIP_COLORS, resolveTripColor, randomTripColor } from "../lib/tripColors";
+import { findLegBooking, countActiveBookings } from "../lib/bookingApi";
+import BookingBadge from "../components/booking/BookingBadge";
 import type { City, Trip, TripNode } from "../types";
 
 const STATUS_OPTIONS: Trip["status"][] = ["draft", "scouting", "confirmed"];
@@ -49,7 +51,7 @@ function searchLocal(cities: City[], q: string): City[] {
     .slice(0, 8);
 }
 
-function CitySearchInput({
+export function CitySearchInput({
   cities,
   placeholder,
   onPick,
@@ -107,6 +109,9 @@ export default function TripsPage({ tripId }: { tripId?: string }) {
     duplicateTrip,
     removeTrip,
     setActiveTrip,
+    bookings,
+    openBookingModal,
+    setBookingsPanelOpen,
   } = useMeridianStore();
 
   const savedTrips = trips.filter((t) => t.origin !== "agent");
@@ -175,6 +180,12 @@ export default function TripsPage({ tripId }: { tripId?: string }) {
           <div className="h-title">TRIPS</div>
           <div className="h-meta">{savedTrips.length}</div>
         </div>
+        <button
+          className="tp-bookings-link"
+          onClick={() => setBookingsPanelOpen(true)}
+        >
+          BOOKINGS ▸ {countActiveBookings(bookings)}
+        </button>
         <button className="tm-create-btn" onClick={() => selectTrip(createTrip())}>
           <span className="tm-plus">+</span> NEW TRIP
         </button>
@@ -388,6 +399,39 @@ export default function TripsPage({ tripId }: { tripId?: string }) {
                     >
                       FLIGHTS ↗
                     </a>
+                    {(() => {
+                      // §1.1/§6 — book affordance / booked-leg badge.
+                      const legBooking = findLegBooking(bookings, trip.id, i);
+                      const bookable = Boolean(
+                        legs[i].from.iata && legs[i].to.iata
+                      );
+                      const showBook =
+                        !legBooking || legBooking.status === "cancelled";
+                      return (
+                        <>
+                          {legBooking && <BookingBadge booking={legBooking} />}
+                          {showBook && (
+                            <button
+                              className={`tp-book-btn${bookable ? "" : " disabled"}`}
+                              title={bookable ? undefined : "NO AIRPORT ON ROUTE"}
+                              onClick={
+                                bookable
+                                  ? () =>
+                                      openBookingModal({
+                                        tripId: trip.id,
+                                        legIndex: i,
+                                        origin: legs[i].from,
+                                        dest: legs[i].to,
+                                      })
+                                  : undefined
+                              }
+                            >
+                              ✈ BOOK
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

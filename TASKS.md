@@ -42,10 +42,10 @@ Note: session-limit crash killed the first B1/S1/A1 dispatch before any file was
 - [done] A1 — Agent tool core + chat rewrite (Sonnet, survived 2 rate-limit deaths): 4-tool core (searchPlaces/getPlaceImages/getSeasonality/getFlightEstimate, none throw, zod schemas), /chat real path streamText+tools maxSteps 6, mock path via createDataStreamResponse/formatDataStreamPart verified vs ai@4.3.19, legacy endpoints shape-intact curl-confirmed; 134/134 tests; mock stream proof w/ real Wikipedia images + Madrid seasonality. New types in src/types.ts.
 
 ### Phase C — UI (each blocked on its design brief + its server task)
-- [frontier] B2 — Booking flow UI (Sonnet): killed TWICE by rate-limit waves; resumed 22:48. Disk at resume: bookingApi.ts + test survived, but src/components/booking/ EMPTY and booking.css missing — worker rebuilding components from DESIGN-booking.md.
-- [frontier] S1c — Open-Meteo backfill re-run (`bun run build:seasonality`, background, resumable from city 61) + re-prove live on-demand fetch path before gate
+- [done] B2 — Booking flow UI (Sonnet, survived 3 rate-limit deaths): 11 components + booking.css + bookingApi (20 pure-logic tests); TripsPage BOOK affordance + badges + BOOKINGS link; store booking slice (not persisted); App mounts; offer-expired auto re-search recovery + anti-double-booking RETRY + a11y per brief §10; typecheck/tests(134)/build green, runtime smoke proven. 7 documented conservative calls — skim at design-drift check. Exported CitySearchInput from TripsPage (may resolve S2 duplication — check at readability lens).
+- [done] S1c — Backfill re-run: dataset now 120 cities (window 2015-2024), quota 429'd again mid-run, clean partial exit; resumable anytime. On-demand covers misses. Live on-demand success re-proof still pending (quota-bound) — retry at gate.
 - [done] S2 — Seasonality heatmap UI (Sonnet): #/seasons route + SEASONS nav, components/seasonality/*, styles/seasonality.css ramp both themes, MetricPanels fake sparkline replaced with real SeasonStrip, 4s single re-request for on-demand nulls; typecheck/tests(133)/build green. Commit held until B2 lands (shared store.ts/App.tsx). Note: CitySearchInput duplicated from TripsPage (flag for readability review).
-- [blocked: D3+A1] A2 — AgentPanel + Open Places surface + delete ChatPanel.tsx + store slice (Sonnet)
+- [frontier] A2 — AgentPanel + Open Places surface + delete ChatPanel.tsx + store slice (Sonnet, dispatched — gates D3+A1+B2 all open)
 - Sequencing note: B2 ∥ S2 first (mostly disjoint files), A2 after or with careful anchors (shares App.tsx/store.ts).
 
 ### Phase D — verification gate

@@ -1,9 +1,13 @@
 import { useSyncExternalStore } from "react";
 
-export type Route = { view: "globe" } | { view: "trips"; tripId?: string };
+export type Route =
+  | { view: "globe" }
+  | { view: "trips"; tripId?: string }
+  | { view: "seasons" };
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#/, "");
+  if (path === "/seasons") return { view: "seasons" };
   const m = path.match(/^\/trips(?:\/([^/]+))?$/);
   if (m) return { view: "trips", tripId: m[1] };
   return { view: "globe" };

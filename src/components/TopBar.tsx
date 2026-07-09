@@ -148,6 +148,12 @@ export default function TopBar() {
         >
           TRIPS
         </button>
+        <button
+          className={`topnav-link ${route.view === "seasons" ? "active" : ""}`}
+          onClick={() => navigate("/seasons")}
+        >
+          SEASONS
+        </button>
       </nav>
 
       {/* News Ticker */}

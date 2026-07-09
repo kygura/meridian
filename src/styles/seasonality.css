@@ -1,0 +1,544 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SEASONALITY — Comfort Index heat ramp + heatmap calendar surface
+   (DESIGN-heatmap.md). Color encoding lives entirely in CSS custom
+   properties; JS only computes a bin index 0–5.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── §2.1 Light theme ramp (warm sepia on cream) ─────────────────── */
+:root {
+  --heat-b0: #efe6c7;  --heat-b0-ink: #7a6b45;   /* HARSH  — pale straw, near paper   */
+  --heat-b1: #e8ce86;  --heat-b1-ink: #5c4a1f;   /* THIN   — straw gold               */
+  --heat-b2: #ddab4e;  --heat-b2-ink: #43320f;   /* MILD   — amber                    */
+  --heat-b3: #ce7f22;  --heat-b3-ink: #fbf5e6;   /* FAIR   — burnt amber (paper ink)  */
+  --heat-b4: #c2680c;  --heat-b4-ink: #fbf5e6;   /* GOOD   — accent burnt-orange      */
+  --heat-b5: #8f4a0e;  --heat-b5-ink: #fbf5e6;   /* PRIME  — deep sienna, darkest     */
+  --heat-best: #0f766e;                          /* teal = best-window marker (--good)*/
+  --heat-na-ink: #b3a98f;                        /* --ink4 for NO DATA hatch/text     */
+}
+
+/* ── §2.2 Dark theme ramp (phosphor amber on navy) ───────────────── */
+html[data-theme="dark"] {
+  --heat-b0: #3a2a16;  --heat-b0-ink: #9a8460;   /* HARSH  — dim ember                */
+  --heat-b1: #6e4a18;  --heat-b1-ink: #e6cfa4;   /* THIN                              */
+  --heat-b2: #a06a16;  --heat-b2-ink: #0b0f17;   /* MILD                              */
+  --heat-b3: #d08a18;  --heat-b3-ink: #0b0f17;   /* FAIR   — bg-colored ink           */
+  --heat-b4: #f59e0b;  --heat-b4-ink: #0b0f17;   /* GOOD   — accent amber             */
+  --heat-b5: #fbc55a;  --heat-b5-ink: #0b0f17;   /* PRIME  — bright gold, brightest   */
+  --heat-best: #2dd4bf;                          /* teal (--good dark) — the glow motif*/
+  --heat-na-ink: #4a5468;                        /* --ink4 dark                       */
+}
+
+/* ── Bin classes — written once, theme-correct in both themes ────── */
+.heat-b0 { background: var(--heat-b0); color: var(--heat-b0-ink); }
+.heat-b1 { background: var(--heat-b1); color: var(--heat-b1-ink); }
+.heat-b2 { background: var(--heat-b2); color: var(--heat-b2-ink); }
+.heat-b3 { background: var(--heat-b3); color: var(--heat-b3-ink); }
+.heat-b4 { background: var(--heat-b4); color: var(--heat-b4-ink); }
+.heat-b5 { background: var(--heat-b5); color: var(--heat-b5-ink); }
+
+/* Peak-score text tint (BEST summary + tooltip score) */
+.peak-b0 { color: var(--heat-b0); }
+.peak-b1 { color: var(--heat-b1); }
+.peak-b2 { color: var(--heat-b2); }
+.peak-b3 { color: var(--heat-b3); }
+.peak-b4 { color: var(--heat-b4); }
+.peak-b5 { color: var(--heat-b5); }
+
+/* §2.4 Missing-data cell */
+.heat-na {
+  background: repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      var(--hairline) 3px 4px
+    ),
+    var(--bg2);
+  color: var(--heat-na-ink);
+}
+
+/* §2.3 Best-window highlight — teal ring/bracket, never a teal fill */
+.is-best { box-shadow: inset 0 0 0 1.5px var(--heat-best); }
+.is-best.best-start { border-left: 2px solid var(--heat-best); }
+.is-best.best-end { border-right: 2px solid var(--heat-best); }
+.is-best.best-peak::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-top: 4px solid var(--heat-best);
+}
+
+/* ═══ §1 / §3 Page shell ══════════════════════════════════════════ */
+.seasons-page {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── §3.1 Header band ────────────────────────────────────────────── */
+.season-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 16px 18px 12px;
+}
+.season-header .sh-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--ink3);
+}
+.season-header .sh-title {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 34px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.1;
+  margin: 2px 0;
+}
+.season-header .sh-sub {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink3);
+  line-height: 1.3;
+  max-width: 520px;
+}
+.season-header .sh-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.season-header .sh-controls .tp-search { min-width: 220px; }
+.season-header .sh-sort {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink2);
+  background: var(--bg);
+  border: 1px solid var(--hairline2);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.season-header .sh-note {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--ink4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* ── §3.2 Legend strip ───────────────────────────────────────────── */
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 18px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--mono);
+}
+.heat-legend .hl-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--ink3);
+}
+.heat-legend .hl-cap {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--ink4);
+}
+.heat-legend .hl-swatches { display: flex; gap: 4px; }
+.heat-legend .hl-sw { text-align: center; }
+.heat-legend .hl-sw .block { width: 14px; height: 14px; margin: 0 auto; }
+.heat-legend .hl-sw .word {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: var(--ink3);
+  margin-top: 2px;
+}
+.heat-legend .hl-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--hairline2);
+}
+.heat-legend .hl-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--ink3);
+}
+.heat-legend .hl-key .block { width: 14px; height: 14px; position: relative; }
+.heat-legend .hl-now-tri {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--accent);
+}
+
+/* ═══ §3.3 Grid ═══════════════════════════════════════════════════ */
+.hm-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 0 18px 24px;
+}
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 200px repeat(12, minmax(40px, 1fr)) 116px;
+  gap: 2px;
+  min-width: 800px;
+}
+
+/* Sticky month-header row */
+.hm-mh {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 24px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.hm-mh.gutter {
+  justify-content: flex-start;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--ink4);
+  letter-spacing: 0.12em;
+}
+.hm-mh.trail {
+  justify-content: flex-end;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--ink3);
+}
+.hm-mh.now {
+  color: var(--accent);
+  box-shadow: inset 0 2px 0 var(--accent);
+  position: sticky;
+}
+.hm-mh.now::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid var(--accent);
+}
+
+/* Current-month column hairline across all rows */
+.now-col { position: relative; }
+.now-col::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 0;
+  width: 1px;
+  background: var(--accent);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+/* Group rules */
+.hm-group {
+  grid-column: 1 / -1;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--ink3);
+  padding: 12px 0 4px;
+  border-bottom: 1px solid var(--hairline2);
+}
+
+/* ── §3.4 Row gutter ─────────────────────────────────────────────── */
+.hm-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg);
+  border-right: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding-right: 6px;
+  cursor: pointer;
+}
+.hm-row-hover .hm-gutter,
+.hm-gutter:hover { background: var(--bg2); }
+.hm-gutter.active { box-shadow: inset 2px 0 0 var(--accent); }
+.hm-gutter .hg-iata {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 34px;
+}
+.hm-gutter .hg-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hm-gutter .hg-region-name {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hm-gutter .hg-country {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ink3);
+  margin-top: 1px;
+}
+.hm-gutter .hg-main { flex: 1; min-width: 0; }
+.hm-gutter .sr-pill {
+  font-size: 9px;
+  padding: 2px 5px;
+  border: 1px solid var(--hairline2);
+  color: var(--ink2);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.hm-gutter .sr-pill.dim { color: var(--ink3); }
+.hm-gutter .hg-remove {
+  border: none;
+  background: transparent;
+  color: var(--ink3);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.hm-row-hover .hg-remove,
+.hm-gutter .hg-remove:focus-visible { opacity: 1; }
+.hm-gutter .hg-remove:hover { color: var(--warn); }
+
+/* Row fade-out on remove (§5, 150ms) */
+.hm-row-leaving { opacity: 0; transition: opacity 150ms ease; }
+
+/* ── §3.5 Heat cell ──────────────────────────────────────────────── */
+.heat-cell {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.18s ease;
+}
+.heat-cell:hover { filter: brightness(1.06); }
+.heat-cell:focus-visible,
+.heat-cell.focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.heat-cell.heat-na { cursor: default; }
+.heat-cell.heat-na:hover { filter: none; }
+
+/* §3.8 Skeleton cell */
+.heat-cell.skeleton,
+.season-strip .month-cell.skeleton {
+  background: var(--bg2);
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+.heat-cell.skeleton::before,
+.season-strip .month-cell.skeleton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: mrd-shimmer 3s ease-in-out infinite;
+}
+
+/* Trailing BEST summary cell */
+.hm-best {
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  padding-right: 4px;
+}
+.hm-best .hb-span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+.hm-best .hb-peak {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.hm-best .hb-none { font-family: var(--mono); font-size: 11px; color: var(--ink4); }
+
+/* ── §4.1 Tooltip ────────────────────────────────────────────────── */
+.heat-tooltip {
+  position: fixed;
+  z-index: 100;
+  background: var(--paper);
+  border: 1px solid var(--hairline2);
+  box-shadow: var(--shadow);
+  padding: 8px 10px;
+  min-width: 150px;
+  pointer-events: none;
+  font-family: var(--mono);
+}
+.heat-tooltip .ht-head {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+.heat-tooltip .ht-rule {
+  height: 1px;
+  background: var(--hairline);
+  margin: 6px 0;
+}
+.heat-tooltip .ht-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.heat-tooltip .ht-score { font-size: 22px; font-weight: 700; }
+.heat-tooltip .ht-word {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink3);
+}
+.heat-tooltip .ht-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 11px;
+  padding: 2px 0;
+}
+.heat-tooltip .ht-kv .k { color: var(--ink3); letter-spacing: 0.12em; font-size: 10px; }
+.heat-tooltip .ht-kv .v { color: var(--ink); font-weight: 700; }
+.heat-tooltip .ht-hint {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--ink4);
+}
+
+/* ── §3.7 Empty state ────────────────────────────────────────────── */
+.seasons-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 18px 12px;
+}
+.seasons-empty .se-card {
+  background: var(--paper);
+  border: 1px solid var(--hairline2);
+  box-shadow: var(--shadow);
+  max-width: 460px;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.seasons-empty .se-title {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 26px;
+  color: var(--ink);
+}
+.seasons-empty .se-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink3);
+}
+.seasons-empty .se-card .tp-search { width: 100%; }
+
+/* ═══ §6 SeasonStrip (MetricPanels mini-heatmap) ══════════════════ */
+.season-strip .month-cell {
+  height: 40px;
+  justify-content: center;
+  border: none;
+}
+.season-strip .month-cell .mc-letter {
+  margin-top: 0;
+  color: inherit;
+}
+.season-strip .month-cell.heat-na .mc-letter { color: var(--heat-na-ink); }
+.season-strip .month-cell { position: relative; cursor: pointer; }
+.season-strip .month-cell.heat-na { cursor: default; }
+.season-strip .month-cell:hover { filter: brightness(1.06); }
+.season-strip .month-cell.heat-na:hover { filter: none; }
+.strip-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.strip-summary .ss-best { color: var(--ink3); }
+.strip-summary .ss-best .span { font-weight: 700; margin-left: 6px; }
+.strip-summary .ss-nodata { color: var(--ink3); letter-spacing: 0.1em; }
+
+/* ── §3.6 Narrow viewports ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .season-header { flex-direction: column; align-items: stretch; }
+  .season-header .sh-note { order: 10; }
+}
