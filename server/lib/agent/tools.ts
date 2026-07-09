@@ -338,10 +338,13 @@ export async function getSeasonality(params: GetSeasonalityParams): Promise<Seas
       return { available: false };
     }
     const result = await mod.getCitySeasonality(params.cityId);
-    if (!result || !Array.isArray(result.months)) {
+    // getCitySeasonality returns MonthSeasonality[] | undefined directly;
+    // tolerate a {months: [...]} wrapper shape too in case that ever changes.
+    const months = Array.isArray(result) ? result : Array.isArray(result?.months) ? result.months : null;
+    if (!months) {
       return { available: false };
     }
-    return { available: true, months: result.months };
+    return { available: true, months };
   } catch {
     return { available: false };
   }

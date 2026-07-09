@@ -206,6 +206,50 @@ export interface CityMetrics {
   english?: number;
 }
 
+// ── Agent tool core (server/lib/agent/tools.ts) ─────────────────────
+
+export interface PlaceResult {
+  cityId: string;
+  name: string;
+  country: string;
+  iata?: string;
+  lat: number;
+  lng: number;
+  population: number;
+  score: number;
+  summaryLine: string;
+}
+
+export interface PlaceImage {
+  url: string;
+  thumbUrl: string;
+  title: string;
+  /** Always present — Wikipedia or Wikimedia Commons credit text. */
+  attribution: string;
+  sourcePage: string;
+}
+
+export interface SeasonalityMonth {
+  score: number;
+  tempC: number;
+  precipMm: number;
+}
+
+export interface SeasonalityResult {
+  available: boolean;
+  months?: SeasonalityMonth[];
+}
+
+export interface FlightEstimateResult {
+  priceAmount: number;
+  currency: string;
+  airline?: string;
+  departingAt?: string;
+  arrivingAt?: string;
+  source: "duffel" | "serpapi" | "mock";
+  dealRating?: "low" | "typical" | "high";
+}
+
 export type LayerKey =
   | "trips"
   | "routes"

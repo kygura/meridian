@@ -398,6 +398,7 @@ function parseMockIntent(lastUserText: string): {
   regionLabel: string;
   cheap: boolean;
   safe: boolean;
+  mentionedCity?: City;
 } {
   const last = lastUserText.toLowerCase();
   let region: string | undefined;
@@ -411,13 +412,32 @@ function parseMockIntent(lastUserText: string): {
   }
   const cheap = /cheap|afford|budget|cost/.test(last);
   const safe = /safe|secure|stab|risk/.test(last);
-  return { region, regionLabel, cheap, safe };
+
+  // City-name detection: if the user names a city, target it directly for
+  // images/seasonality. Word-boundary match, highest population wins ties.
+  let mentionedCity: City | undefined;
+  for (const c of getCities()) {
+    const name = c.name.toLowerCase();
+    if (name.length < 4) continue;
+    if (!last.includes(name)) continue;
+    const re = new RegExp(`(^|[^a-z])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z]|$)`);
+    if (!re.test(last)) continue;
+    if (
+      !mentionedCity ||
+      name.length > mentionedCity.name.length ||
+      (name.length === mentionedCity.name.length && c.population > mentionedCity.population)
+    ) {
+      mentionedCity = c;
+    }
+  }
+
+  return { region, regionLabel, cheap, safe, mentionedCity };
 }
 
 async function streamMockChatWithTools(messages: Array<{ role: string; content: string }>): Promise<Response> {
   const { createDataStreamResponse, formatDataStreamPart } = await import("ai");
   const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-  const { region, regionLabel, cheap, safe } = parseMockIntent(lastUserText);
+  const { region, regionLabel, cheap, safe, mentionedCity } = parseMockIntent(lastUserText);
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
@@ -426,6 +446,7 @@ async function streamMockChatWithTools(messages: Array<{ role: string; content: 
 
       // 1. search_places — same function the real tool loop calls.
       const searchArgs = searchPlacesParams.parse({
+        query: mentionedCity?.name,
         region,
         budgetTier: cheap ? "budget" : undefined,
         minScore: !cheap && safe ? 60 : undefined,
@@ -438,7 +459,12 @@ async function streamMockChatWithTools(messages: Array<{ role: string; content: 
       const places = await searchPlaces(searchArgs);
       dataStream.write(formatDataStreamPart("tool_result", { toolCallId: searchCallId, result: places }));
 
-      const top = places[0];
+      // Target for enrichment: the explicitly-named city when there is one
+      // (deterministic even if score-ranking buries it), otherwise the
+      // top-ranked search result.
+      const top: { cityId: string; name: string } | undefined = mentionedCity
+        ? { cityId: mentionedCity.id, name: mentionedCity.name }
+        : places[0];
 
       // 2. get_place_images for the top result.
       let topImages: Awaited<ReturnType<typeof getPlaceImages>> = [];

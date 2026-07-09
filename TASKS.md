@@ -17,6 +17,8 @@ Baseline commit before any implementation: `f9f3a25`.
 - ChatPanel.tsx deleted with the new AgentPanel (UI task A2).
 - Images: Wikipedia REST summary + Commons fallback, User-Agent header, disk cache. No Unsplash.
 - Env reality: OPENAI_API_KEY present; DUFFEL_API_KEY + SERPAPI_KEY absent → booking runs mock locally (blocker-note for live-sandbox verification).
+- BLOCKER (final report): OpenAI account 429 insufficient_quota (retested twice ~90min apart) — real-LLM chat path unverifiable until user fixes billing; route degrades gracefully to mock. Not a code issue.
+- GATE FLAG: server/lib/seasonality.ts getCitySeasonality returns MonthSeasonality[] directly, not {months} as A1's spec assumed — A1 adapter accepts both; verify shape contract consistency in review.
 - Each new UI surface gets its own CSS file under src/styles/ (avoid parallel-edit contention on index.css); tokens/vars still come from index.css.
 - B1 contract: POST /api/bookings body requires searchSnapshot (client hands live offer back; offers never persisted). offer_expired → 409. Duffel real path code-complete but not runtime-verified (no key); 3 UNCONFIRMED gaps commented in duffel.ts (orders body fields, expired-error code string, cancellation endpoints). paths.ts DATA_DIR now lazy (test isolation).
 - Phase C order: B2 ∥ S2 first (only App.tsx overlaps, distinct anchors), A2 last (consumes B2's booking-modal store API).
@@ -37,11 +39,12 @@ Note: session-limit crash killed the first B1/S1/A1 dispatch before any file was
 - [done] B1 — Booking server (Opus): booking.ts + duffel orders/cancel + routes/bookings.ts + tests; 7 files/66 tests green; mock curl cycle proven
 - [done] S1 — Seasonality (Sonnet): lib+routes+script+tests green (85/85 repo-wide), curl proven; dataset seeded with 60 real cities (Open-Meteo hourly quota hit; script resumable)
 - [done] S1b — On-demand seasonality (Sonnet): resolve/peek split, runtime cache (seed never written), in-flight dedupe, 15s timeout, quota→503 on :cityId, batch caps 4 misses/req and never 503s; 133/133 tests. Live success path unverified (Open-Meteo 429 at proof time — retry before gate).
-- [frontier] A1 — Agent tool core server/lib/agent/* + rewritten /api/agent/chat (streamText+tools, mock parity) + legacy wrappers + tests (Sonnet)
+- [done] A1 — Agent tool core + chat rewrite (Sonnet, survived 2 rate-limit deaths): 4-tool core (searchPlaces/getPlaceImages/getSeasonality/getFlightEstimate, none throw, zod schemas), /chat real path streamText+tools maxSteps 6, mock path via createDataStreamResponse/formatDataStreamPart verified vs ai@4.3.19, legacy endpoints shape-intact curl-confirmed; 134/134 tests; mock stream proof w/ real Wikipedia images + Madrid seasonality. New types in src/types.ts.
 
 ### Phase C — UI (each blocked on its design brief + its server task)
-- [frontier] B2 — Booking flow UI (Sonnet, dispatched)
-- [frontier] S2 — Seasonality heatmap page + MetricPanels real strip (Sonnet, dispatched)
+- [frontier] B2 — Booking flow UI (Sonnet): killed TWICE by rate-limit waves; resumed 22:48. Disk at resume: bookingApi.ts + test survived, but src/components/booking/ EMPTY and booking.css missing — worker rebuilding components from DESIGN-booking.md.
+- [frontier] S1c — Open-Meteo backfill re-run (`bun run build:seasonality`, background, resumable from city 61) + re-prove live on-demand fetch path before gate
+- [done] S2 — Seasonality heatmap UI (Sonnet): #/seasons route + SEASONS nav, components/seasonality/*, styles/seasonality.css ramp both themes, MetricPanels fake sparkline replaced with real SeasonStrip, 4s single re-request for on-demand nulls; typecheck/tests(133)/build green. Commit held until B2 lands (shared store.ts/App.tsx). Note: CitySearchInput duplicated from TripsPage (flag for readability review).
 - [blocked: D3+A1] A2 — AgentPanel + Open Places surface + delete ChatPanel.tsx + store slice (Sonnet)
 - Sequencing note: B2 ∥ S2 first (mostly disjoint files), A2 after or with careful anchors (shares App.tsx/store.ts).
 
