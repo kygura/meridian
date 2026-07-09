@@ -56,10 +56,12 @@ an architecture-review pass and are recorded here as binding assumptions:
 - **A2 — Offers are ephemeral; orders are durable.** Duffel offers expire in minutes.
   The booking flow re-searches on checkout entry and books from a live offer in one
   session. Offers are never persisted as a resting state; only created orders persist.
-- **A3 — Seasonality is precomputed offline** from Open-Meteo ERA5 monthly historical
-  data averaged over a multi-year window, stored as compact per-city monthly scores
-  (committed JSON, target well under 1 MB), served by the API. No runtime climate
-  fetching. The metric is labeled a "comfort index", not universal truth. (ADR 0002)
+- **A3 — Seasonality is seeded offline, extended on demand** (amended by user directive
+  mid-build): a committed seed dataset of per-city monthly scores (Open-Meteo daily
+  history, multi-year window, aggregated to monthly), plus on-demand fetch-score-persist
+  for any surfaced city missing from the cache. Quota exhaustion degrades to a
+  temporarily-unavailable response — never fabricated scores. The metric is labeled a
+  "comfort index", not universal truth. (ADR 0002, amended)
 - **A4 — Shared tool core.** Agent capabilities (`search_places`, `get_place_images`,
   `get_seasonality`, `get_flight_estimate`) are plain functions. The LLM loop wraps them
   as AI SDK tools; the mock path (no `OPENAI_API_KEY`) calls the same functions

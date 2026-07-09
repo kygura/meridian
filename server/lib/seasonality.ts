@@ -1,6 +1,6 @@
-import { readFileSync } from "fs";
-import { getDataPath } from "./paths.js";
-import { getCities } from "./cities.js";
+import { readFileSync, writeFileSync } from "fs";
+import { getDataPath, ensureDataDir } from "./paths.js";
+import { getCities, getCityById } from "./cities.js";
 
 export interface MonthSeasonality {
   score: number;
@@ -118,7 +118,10 @@ export function aggregateDailyToMonthly(
   }));
 }
 
-// ── Dataset access ───────────────────────────────────────────────────────
+// ── Seed dataset access ───────────────────────────────────────────────────
+//
+// data/seasonality.json is a pristine, committed SEED dataset (built offline
+// by scripts/build-seasonality.mjs). It is never written to at runtime.
 
 let cache: SeasonalityDataset | null = null;
 
@@ -134,23 +137,208 @@ export function loadSeasonality(): SeasonalityDataset {
   return cache;
 }
 
-/** Test-only: force the next loadSeasonality() call to re-read from disk. */
+// ── Runtime cache (on-demand additions) ───────────────────────────────────
+//
+// data/cache/seasonality-runtime.json holds cities fetched on-demand at
+// request time (see resolveCitySeasonality below). Same inner shape as the
+// seed dataset. Loaded lazily, written to disk on every successful fetch.
+
+const RUNTIME_CACHE_FILE = ["cache", "seasonality-runtime.json"];
+
+let runtimeCache: SeasonalityDataset | null = null;
+
+function loadRuntimeCache(): SeasonalityDataset {
+  if (runtimeCache) return runtimeCache;
+  try {
+    const raw = readFileSync(getDataPath(...RUNTIME_CACHE_FILE), "utf-8");
+    runtimeCache = JSON.parse(raw) as SeasonalityDataset;
+  } catch {
+    runtimeCache = { version: 1, generatedAt: new Date(0).toISOString(), window: WINDOW, cities: {} };
+  }
+  return runtimeCache;
+}
+
+function persistToRuntimeCache(cityId: string, months: MonthSeasonality[]): void {
+  const dataset = loadRuntimeCache();
+  dataset.cities[cityId] = { months };
+  dataset.generatedAt = new Date().toISOString();
+  ensureDataDir("cache");
+  writeFileSync(getDataPath(...RUNTIME_CACHE_FILE), JSON.stringify(dataset));
+}
+
+/** Test-only: force the next load*Cache() call to re-read from disk, and clear in-flight fetches. */
 export function resetSeasonalityCache(): void {
   cache = null;
+  runtimeCache = null;
+  inFlight.clear();
 }
 
-export function getCitySeasonality(cityId: string): MonthSeasonality[] | undefined {
-  return loadSeasonality().cities[cityId]?.months;
+/** Runtime cache wins over the seed on duplicate city ids. */
+function mergedCities(): Record<string, CitySeasonality> {
+  return { ...loadSeasonality().cities, ...loadRuntimeCache().cities };
 }
 
-/** Per-country monthly average of covered cities' scores. */
+function getCachedMonths(cityId: string): MonthSeasonality[] | undefined {
+  return loadRuntimeCache().cities[cityId]?.months ?? loadSeasonality().cities[cityId]?.months;
+}
+
+// ── On-demand live fetch (Open-Meteo archive API) ─────────────────────────
+//
+// Same 10-year window, daily variables, and aggregation/scoring formula as
+// scripts/build-seasonality.mjs, but for a single city at request time.
+
+const WINDOW_START_YEAR = 2015;
+const WINDOW_END_YEAR = 2024;
+const START_DATE = `${WINDOW_START_YEAR}-01-01`;
+const END_DATE = `${WINDOW_END_YEAR}-12-31`;
+const WINDOW = `${WINDOW_START_YEAR}-${WINDOW_END_YEAR}`;
+const FETCH_TIMEOUT_MS = 15_000;
+
+export type SeasonalityUnavailableReason = "quota" | "network" | "timeout";
+
+export type SeasonalityLookupResult =
+  | { kind: "hit"; months: MonthSeasonality[] }
+  | { kind: "unavailable"; reason: SeasonalityUnavailableReason }
+  | { kind: "unknown" };
+
+type SeasonalityPeekResult =
+  | { kind: "hit"; months: MonthSeasonality[] }
+  | { kind: "unknown" }
+  | { kind: "miss" };
+
+/** Cache-only lookup: never triggers a fetch. Used to plan on-demand work in batch requests. */
+export function peekCitySeasonality(cityId: string): SeasonalityPeekResult {
+  const months = getCachedMonths(cityId);
+  if (months) return { kind: "hit", months };
+  if (!getCityById(cityId)) return { kind: "unknown" };
+  return { kind: "miss" };
+}
+
+async function fetchWithTimeout(url: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchCityLive(
+  cityId: string,
+  lat: number,
+  lng: number
+): Promise<SeasonalityLookupResult> {
+  const url =
+    `https://archive-api.open-meteo.com/v1/archive?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}` +
+    `&start_date=${START_DATE}&end_date=${END_DATE}` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=UTC`;
+
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(url);
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    const reason: SeasonalityUnavailableReason =
+      name === "AbortError" || name === "TimeoutError" ? "timeout" : "network";
+    return { kind: "unavailable", reason };
+  }
+
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    return { kind: "unavailable", reason: "network" };
+  }
+
+  const parsed = body as { error?: boolean; daily?: Record<string, unknown> } | null;
+
+  // Open-Meteo reports quota/validation errors as a 400-ish response with
+  // {"error":true,"reason":"..."} — never fabricate a score for these.
+  if (!res.ok || parsed?.error === true) {
+    return { kind: "unavailable", reason: "quota" };
+  }
+
+  const daily = parsed?.daily as
+    | { time?: string[]; temperature_2m_max?: (number | null)[]; temperature_2m_min?: (number | null)[]; precipitation_sum?: (number | null)[] }
+    | undefined;
+  if (!daily?.time || !Array.isArray(daily.time)) {
+    return { kind: "unavailable", reason: "network" };
+  }
+
+  const records: DailyRecord[] = [];
+  for (let i = 0; i < daily.time.length; i++) {
+    const max = daily.temperature_2m_max?.[i];
+    const min = daily.temperature_2m_min?.[i];
+    if (max == null || min == null) continue;
+    records.push({
+      date: daily.time[i]!,
+      tempC: (max + min) / 2,
+      precipMm: daily.precipitation_sum?.[i] ?? 0,
+    });
+  }
+
+  if (records.length === 0) {
+    return { kind: "unavailable", reason: "network" };
+  }
+
+  const monthly = aggregateDailyToMonthly(records);
+  const months: MonthSeasonality[] = monthly.map((m) => ({
+    score: comfortScore(m.tempC, m.precipMm),
+    tempC: m.tempC,
+    precipMm: m.precipMm,
+  }));
+
+  persistToRuntimeCache(cityId, months);
+  return { kind: "hit", months };
+}
+
+// In-flight dedupe: concurrent requests for the same city share one fetch.
+const inFlight = new Map<string, Promise<SeasonalityLookupResult>>();
+
+function fetchCityLiveDeduped(cityId: string, lat: number, lng: number): Promise<SeasonalityLookupResult> {
+  const existing = inFlight.get(cityId);
+  if (existing) return existing;
+  const promise = fetchCityLive(cityId, lat, lng).finally(() => {
+    inFlight.delete(cityId);
+  });
+  inFlight.set(cityId, promise);
+  return promise;
+}
+
+/**
+ * Full resolution: cache hit -> return immediately. Miss + known city ->
+ * fetch Open-Meteo live, persist to the runtime cache, and return. Unknown
+ * city -> {kind:"unknown"}. Never fabricates scores; fetch failures return
+ * {kind:"unavailable"} and are never cached.
+ */
+export async function resolveCitySeasonality(cityId: string): Promise<SeasonalityLookupResult> {
+  const peek = peekCitySeasonality(cityId);
+  if (peek.kind === "hit") return peek;
+  if (peek.kind === "unknown") return peek;
+
+  const city = getCityById(cityId);
+  if (!city) return { kind: "unknown" };
+  return fetchCityLiveDeduped(cityId, city.lat, city.lng);
+}
+
+/**
+ * Convenience wrapper kept for existing callers (e.g. the agent tool layer)
+ * that only care about the months, not why a fetch failed.
+ */
+export async function getCitySeasonality(cityId: string): Promise<MonthSeasonality[] | undefined> {
+  const result = await resolveCitySeasonality(cityId);
+  return result.kind === "hit" ? result.months : undefined;
+}
+
+/** Per-country monthly average of covered cities' scores (seed + runtime cache merged). */
 export function getRegionAggregates(): RegionAggregate[] {
-  const dataset = loadSeasonality();
+  const dataset = mergedCities();
   const cities = getCities();
   const byCountry = new Map<string, number[][]>();
 
   for (const city of cities) {
-    const entry = dataset.cities[city.id];
+    const entry = dataset[city.id];
     if (!entry) continue;
     const arr = byCountry.get(city.country) ?? [];
     arr.push(entry.months.map((m) => m.score));
