@@ -2,10 +2,21 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import { getCityById, getCities, searchCities } from "../lib/cities.js";
+import { getCityById, getCities } from "../lib/cities.js";
 import { computeFullScore } from "../lib/scoring.js";
 import { ensureDataDir } from "../lib/paths.js";
 import { getFlightEstimate } from "../lib/flightSearch.js";
+import {
+  searchPlaces,
+  searchPlacesParams,
+  getPlaceImages,
+  getPlaceImagesParams,
+  getSeasonality,
+  getSeasonalityParams,
+  getFlightEstimate as getFlightEstimateTool,
+  getFlightEstimateParams,
+  REGION_COUNTRIES,
+} from "../lib/agent/tools.js";
 import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
 
 const agent = new Hono();
@@ -377,65 +388,99 @@ Be specific to ${city.name}, ${city.country}. Use real price ranges and real inf
   }
 }
 
-// ── Mock chat (unchanged) ───────────────────────────────────────────
+// ── Mock chat (ADR 0003: keyless path calls the SAME tool-core functions
+// the real streamText loop wraps, and emits the same AI SDK v4 data-stream
+// tool-call/tool-result parts so useChat's message.toolInvocations shape is
+// identical whether OPENAI_API_KEY is set or not) ──────────────────────
 
-const REGION_COUNTRIES: Record<string, string[]> = {
-  asia: ["Japan", "Thailand", "Vietnam", "Indonesia", "Malaysia", "India", "Philippines", "Korea, South", "Taiwan", "Singapore", "Georgia"],
-  europe: ["Portugal", "Spain", "Germany", "France", "Netherlands", "Czechia", "Czech Republic", "Poland", "Italy", "Greece", "Estonia", "Croatia"],
-  "latin america": ["Mexico", "Colombia", "Argentina", "Brazil", "Chile", "Peru", "Costa Rica", "Uruguay", "Ecuador"],
-  africa: ["South Africa", "Kenya", "Morocco", "Egypt", "Ghana", "Tanzania", "Rwanda"],
-  equator: ["Indonesia", "Kenya", "Ecuador", "Colombia", "Brazil", "Uganda", "Singapore", "Malaysia"],
-};
-
-function buildMockChat(messages: Array<{ role: string; content: string }>): string {
-  const last = [...messages].reverse().find((m) => m.role === "user")?.content.toLowerCase() ?? "";
-
-  let pool: City[] = getCities();
+function parseMockIntent(lastUserText: string): {
+  region?: string;
+  regionLabel: string;
+  cheap: boolean;
+  safe: boolean;
+} {
+  const last = lastUserText.toLowerCase();
+  let region: string | undefined;
   let regionLabel = "globally";
-  for (const [region, countries] of Object.entries(REGION_COUNTRIES)) {
-    if (last.includes(region)) {
-      const filtered = pool.filter((c) => countries.includes(c.country));
-      if (filtered.length) {
-        pool = filtered;
-        regionLabel = region === "equator" ? "near the equator" : `in ${region}`;
-      }
+  for (const key of Object.keys(REGION_COUNTRIES)) {
+    if (last.includes(key)) {
+      region = key;
+      regionLabel = key === "equator" ? "near the equator" : `in ${key}`;
       break;
     }
   }
-
-  pool = pool.filter((c) => c.population > 500000);
   const cheap = /cheap|afford|budget|cost/.test(last);
   const safe = /safe|secure|stab|risk/.test(last);
-
-  const scored = pool
-    .map((c) => ({ c, s: computeFullScore(c) }))
-    .sort((a, b) => {
-      if (cheap) return b.s.economics - a.s.economics;
-      if (safe) return b.s.stability - a.s.stability;
-      return b.s.overall - a.s.overall;
-    })
-    .slice(0, 4);
-
-  const angle = cheap ? "ranked by affordability" : safe ? "ranked by stability" : "ranked by overall Meridian score";
-
-  const lines = scored.map(({ c, s }) => {
-    const metric = cheap ? s.economics : safe ? s.stability : s.overall;
-    const note = cheap ? "low cost of living" : safe ? "strong safety and governance signals" : "balanced economics, climate, and nomad infrastructure";
-    return `• ${c.name}, ${c.country} — score ${metric}/100, ${note}.`;
-  });
-
-  return (
-    `Here are the strongest matches ${regionLabel} right now, ${angle}:\n\n` +
-    lines.join("\n") +
-    `\n\nTap any city below to open its full intelligence brief. ` +
-    `(Live AI narration is disabled because OPENAI_API_KEY isn't set — these picks come from the local scoring engine.)`
-  );
+  return { region, regionLabel, cheap, safe };
 }
 
-async function streamMockChat(text: string): Promise<Response> {
+async function streamMockChatWithTools(messages: Array<{ role: string; content: string }>): Promise<Response> {
   const { createDataStreamResponse, formatDataStreamPart } = await import("ai");
+  const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  const { region, regionLabel, cheap, safe } = parseMockIntent(lastUserText);
+
   return createDataStreamResponse({
     execute: async (dataStream) => {
+      let callIndex = 0;
+      const nextId = () => `mock-call-${++callIndex}`;
+
+      // 1. search_places — same function the real tool loop calls.
+      const searchArgs = searchPlacesParams.parse({
+        region,
+        budgetTier: cheap ? "budget" : undefined,
+        minScore: !cheap && safe ? 60 : undefined,
+        limit: 4,
+      });
+      const searchCallId = nextId();
+      dataStream.write(
+        formatDataStreamPart("tool_call", { toolCallId: searchCallId, toolName: "search_places", args: searchArgs })
+      );
+      const places = await searchPlaces(searchArgs);
+      dataStream.write(formatDataStreamPart("tool_result", { toolCallId: searchCallId, result: places }));
+
+      const top = places[0];
+
+      // 2. get_place_images for the top result.
+      let topImages: Awaited<ReturnType<typeof getPlaceImages>> = [];
+      if (top) {
+        const imgArgs = getPlaceImagesParams.parse({ cityId: top.cityId, limit: 2 });
+        const imgCallId = nextId();
+        dataStream.write(
+          formatDataStreamPart("tool_call", { toolCallId: imgCallId, toolName: "get_place_images", args: imgArgs })
+        );
+        topImages = await getPlaceImages(imgArgs);
+        dataStream.write(formatDataStreamPart("tool_result", { toolCallId: imgCallId, result: topImages }));
+      }
+
+      // 3. get_seasonality for the top result.
+      let seasonality: Awaited<ReturnType<typeof getSeasonality>> = { available: false };
+      if (top) {
+        const seasonArgs = getSeasonalityParams.parse({ cityId: top.cityId });
+        const seasonCallId = nextId();
+        dataStream.write(
+          formatDataStreamPart("tool_call", { toolCallId: seasonCallId, toolName: "get_seasonality", args: seasonArgs })
+        );
+        seasonality = await getSeasonality(seasonArgs);
+        dataStream.write(formatDataStreamPart("tool_result", { toolCallId: seasonCallId, result: seasonality }));
+      }
+
+      // 4. Streamed text summary, built from the real tool results above.
+      const angle = cheap
+        ? "ranked by affordability"
+        : safe
+          ? "ranked by overall score with a safety-conscious floor"
+          : "ranked by overall Meridian score";
+      const lines = places.map((p) => `• ${p.name}, ${p.country} — score ${p.score}/100. ${p.summaryLine}`);
+      const imageNote = top && topImages.length ? ` Found ${topImages.length} image(s) for ${top.name}.` : "";
+      const seasonNote = top && seasonality.available ? ` Seasonality data is available for ${top.name}.` : "";
+
+      const text =
+        `Here are the strongest matches ${regionLabel} right now, ${angle}:\n\n` +
+        (lines.length ? lines.join("\n") : "No matches found for that query — try a broader region or lower the score threshold.") +
+        `\n\n${(imageNote + seasonNote).trim()}`.trimEnd() +
+        `\n\nTap any city below to open its full intelligence brief. ` +
+        `(Live AI narration is disabled because OPENAI_API_KEY isn't set — these picks come from the local scoring engine and tool core.)`;
+
       const tokens = text.split(/(\s+)/);
       for (const tok of tokens) {
         if (!tok) continue;
@@ -596,19 +641,47 @@ agent.post("/chat", async (c) => {
   }
 
   if (!hasOpenAIKey()) {
-    return streamMockChat(buildMockChat(parsed.data.messages));
+    return streamMockChatWithTools(parsed.data.messages);
   }
 
   try {
-    const { streamText } = await import("ai");
+    const { streamText, tool } = await import("ai");
     const { openai } = await import("@ai-sdk/openai");
 
     const result = streamText({
       model: openai("gpt-4o-mini"),
-      system: `You are Meridian, a nomadic intelligence assistant. Help users discover cities for remote work and travel.
-You have deep knowledge of global cities, visa policies, cost of living, internet infrastructure, safety, and climate.
-Be concise, specific, and actionable. Reference real data when possible.`,
+      system: `You are Meridian, a travel research analyst. Help users discover cities for remote work and travel by
+actively using your tools: search_places to find and rank candidate cities, get_place_images to pull a
+representative photo, get_seasonality to check the best months to visit, and get_flight_estimate to price a route.
+Call the relevant tools before making specific claims about scores, images, timing, or prices — don't guess numbers
+you could look up. Be concise, specific, and actionable.`,
       messages: parsed.data.messages,
+      tools: {
+        search_places: tool({
+          description:
+            "Search and rank cities/places by name, country, region, budget tier, or minimum Meridian score. Returns up to 8 ranked results.",
+          parameters: searchPlacesParams,
+          execute: searchPlaces,
+        }),
+        get_place_images: tool({
+          description:
+            "Get up to 4 representative photos for a city (by cityId) or a free-text place title, sourced from Wikipedia/Wikimedia Commons with attribution.",
+          parameters: getPlaceImagesParams,
+          execute: getPlaceImages,
+        }),
+        get_seasonality: tool({
+          description: "Get monthly climate/comfort seasonality for a city, when available.",
+          parameters: getSeasonalityParams,
+          execute: getSeasonality,
+        }),
+        get_flight_estimate: tool({
+          description:
+            "Estimate flight price between two IATA airport codes, optionally for a given departure date.",
+          parameters: getFlightEstimateParams,
+          execute: getFlightEstimateTool,
+        }),
+      },
+      maxSteps: 6,
     });
 
     return result.toDataStreamResponse();

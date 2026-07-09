@@ -11,7 +11,9 @@ import citiesRoutes from "./routes/cities.js";
 import metricsRoutes from "./routes/metrics.js";
 import agentRoutes from "./routes/agent.js";
 import shortlistRoutes from "./routes/shortlist.js";
+import bookingsRoutes from "./routes/bookings.js";
 import newsRoutes from "./routes/news.js";
+import seasonalityRoutes from "./routes/seasonality.js";
 
 // Load city data on startup
 loadCities();
@@ -33,7 +35,9 @@ app.route("/api/cities", citiesRoutes);
 app.route("/api/metrics", metricsRoutes);
 app.route("/api/agent", agentRoutes);
 app.route("/api/shortlist", shortlistRoutes);
+app.route("/api/bookings", bookingsRoutes);
 app.route("/api/news", newsRoutes);
+app.route("/api/seasonality", seasonalityRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

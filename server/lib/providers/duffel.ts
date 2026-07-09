@@ -120,6 +120,266 @@ export async function searchFlights(params: {
   }
 }
 
+// ── Booking flow (orders) — TEST MODE ONLY ──────────────────────────
+//
+// This project only ever runs against `duffel_test_...` tokens. Payments use
+// `type: "balance"`, which Duffel documents as unlimited in test mode ("In test
+// mode, your balance is unlimited."). No card/real-money path exists here by
+// construction. See docs/research-apis.md §1.
+
+/** Thrown when Duffel refuses an offer that has expired. Callers map this to a
+ *  409 telling the client to re-search rather than retry the same offer. */
+export class DuffelOfferExpiredError extends Error {
+  constructor(message = "Duffel offer has expired") {
+    super(message);
+    this.name = "DuffelOfferExpiredError";
+  }
+}
+
+export interface DuffelPassengerInput {
+  title: string;
+  givenName: string;
+  familyName: string;
+  bornOn: string; // YYYY-MM-DD
+  gender: string;
+  email: string;
+  phoneNumber: string;
+}
+
+export interface DuffelOrderResult {
+  id: string;
+  bookingReference: string;
+  totalAmount: string;
+  totalCurrency: string;
+  liveMode: boolean;
+}
+
+export interface DuffelBookingOfferSegment {
+  originIata?: string;
+  destinationIata?: string;
+  departingAt?: string;
+  arrivingAt?: string;
+  carrier: string;
+  carrierIata?: string;
+}
+
+export interface DuffelBookingOffer {
+  id: string;
+  priceAmount: number;
+  currency: string;
+  carrier: string;
+  carrierIata?: string;
+  segments: DuffelBookingOfferSegment[];
+  durationMinutes?: number;
+  stops: number;
+  expiresAt: string;
+  departingAt?: string;
+  arrivingAt?: string;
+}
+
+// Duffel signals an unusable/expired offer via an `errors[].code`. The exact
+// code string is UNCONFIRMED in research-apis.md (the offers/response-handling
+// pages could not be fetched verbatim), so match defensively on known variants.
+function looksLikeOfferExpired(bodyText: string): boolean {
+  const t = bodyText.toLowerCase();
+  return (
+    t.includes("offer_expired") ||
+    t.includes("offer_no_longer_available") ||
+    t.includes("offer_request_already_processed") ||
+    t.includes("expired")
+  );
+}
+
+/** Richer offer search for the booking pipeline — keeps `expires_at` and
+ *  per-segment detail that the pricing-only `searchFlights` drops. */
+export async function searchBookingOffers(params: {
+  origin: string;
+  destination: string;
+  departureDate: string;
+  returnDate?: string;
+  passengers?: number;
+  cabinClass?: "economy" | "premium_economy" | "business" | "first";
+}): Promise<DuffelBookingOffer[]> {
+  if (!hasDuffelKey()) return [];
+
+  const slices: Array<{ origin: string; destination: string; departure_date: string }> = [
+    { origin: params.origin, destination: params.destination, departure_date: params.departureDate },
+  ];
+  if (params.returnDate) {
+    slices.push({ origin: params.destination, destination: params.origin, departure_date: params.returnDate });
+  }
+
+  const body = {
+    data: {
+      slices,
+      passengers: Array.from({ length: params.passengers ?? 1 }, () => ({ type: "adult" })),
+      cabin_class: params.cabinClass ?? "economy",
+    },
+  };
+
+  try {
+    const res = await fetch(`${DUFFEL_BASE}/air/offer_requests?return_offers=true`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      console.error(`[duffel] searchBookingOffers failed: ${res.status} ${await res.text().catch(() => "")}`);
+      return [];
+    }
+    const json = await res.json();
+    const offers: any[] = json?.data?.offers ?? [];
+
+    return offers
+      .map((o): DuffelBookingOffer => {
+        const slice0 = o.slices?.[0];
+        const rawSegments: any[] = (o.slices ?? []).flatMap((s: any) => s.segments ?? []);
+        const segments: DuffelBookingOfferSegment[] = rawSegments.map((seg) => ({
+          originIata: seg.origin?.iata_code,
+          destinationIata: seg.destination?.iata_code,
+          departingAt: seg.departing_at,
+          arrivingAt: seg.arriving_at,
+          carrier: seg.operating_carrier?.name ?? seg.marketing_carrier?.name ?? o.owner?.name ?? "Unknown",
+          carrierIata: seg.operating_carrier?.iata_code ?? seg.marketing_carrier?.iata_code,
+        }));
+        const first = rawSegments[0];
+        const last = rawSegments[rawSegments.length - 1];
+        return {
+          id: o.id,
+          priceAmount: Number(o.total_amount),
+          currency: o.total_currency,
+          carrier: o.owner?.name ?? "Unknown",
+          carrierIata: o.owner?.iata_code,
+          segments,
+          durationMinutes: parseIsoDurationMinutes(slice0?.duration),
+          stops: Math.max(0, (slice0?.segments?.length ?? 1) - 1),
+          // expires_at drives the offer_expired guard; default to now if Duffel
+          // ever omits it so the offer reads as immediately stale (fail-safe).
+          expiresAt: o.expires_at ?? new Date().toISOString(),
+          departingAt: first?.departing_at,
+          arrivingAt: last?.arriving_at,
+        };
+      })
+      .sort((a, b) => a.priceAmount - b.priceAmount);
+  } catch (err) {
+    console.error("[duffel] searchBookingOffers error:", err);
+    return [];
+  }
+}
+
+/** Re-fetch a single offer right before ordering. Duffel recommends this to get
+ *  authoritative pricing and the passenger IDs the order body must reference. */
+export async function getOffer(offerId: string): Promise<any> {
+  const res = await fetch(`${DUFFEL_BASE}/air/offers/${offerId}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    if (looksLikeOfferExpired(text)) throw new DuffelOfferExpiredError();
+    throw new Error(`[duffel] getOffer failed: ${res.status} ${text}`);
+  }
+  const json = await res.json();
+  return json?.data;
+}
+
+/** Create an instant order paid from the (unlimited, in test mode) balance.
+ *  Throws DuffelOfferExpiredError if the offer is stale. */
+export async function createOrder(params: {
+  offerId: string;
+  passengers: DuffelPassengerInput[];
+  amount: string;
+  currency: string;
+}): Promise<DuffelOrderResult> {
+  // Re-fetch the offer for authoritative price + passenger IDs.
+  const offer = await getOffer(params.offerId);
+
+  // Proactive expiry guard — Duffel's own best practice is to check expires_at
+  // client-side before calling create-order to avoid the offer_expired error.
+  if (offer?.expires_at && new Date(offer.expires_at).getTime() <= Date.now()) {
+    throw new DuffelOfferExpiredError();
+  }
+
+  // Zip our passenger details onto Duffel's offer passenger IDs, in order. The
+  // order body keys each passenger by the `id` returned from the offer request.
+  const offerPassengers: any[] = offer?.passengers ?? [];
+  const passengers = params.passengers.map((p, i) => ({
+    id: offerPassengers[i]?.id, // may be undefined if counts drift — Duffel will reject, which is correct
+    title: p.title,
+    given_name: p.givenName,
+    family_name: p.familyName,
+    born_on: p.bornOn,
+    gender: p.gender,
+    email: p.email,
+    phone_number: p.phoneNumber,
+  }));
+
+  // Payment must match the offer total EXACTLY; prefer the freshly-fetched
+  // amount/currency over whatever the caller passed.
+  const amount = String(offer?.total_amount ?? params.amount);
+  const currency = offer?.total_currency ?? params.currency;
+
+  const body = {
+    data: {
+      type: "instant",
+      selected_offers: [params.offerId],
+      passengers,
+      payments: [{ type: "balance", amount, currency }],
+    },
+  };
+
+  const res = await fetch(`${DUFFEL_BASE}/air/orders`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    if (looksLikeOfferExpired(text)) throw new DuffelOfferExpiredError();
+    throw new Error(`[duffel] createOrder failed: ${res.status} ${text}`);
+  }
+  const json = await res.json();
+  const order = json?.data;
+  return {
+    id: order?.id,
+    bookingReference: order?.booking_reference ?? order?.booking_references?.[0]?.reference ?? "",
+    totalAmount: order?.total_amount ?? amount,
+    totalCurrency: order?.total_currency ?? currency,
+    liveMode: !!order?.live_mode,
+  };
+}
+
+/** Cancel an order in test mode.
+ *
+ *  UNCONFIRMED: research-apis.md only states Duffel Airways "supports
+ *  cancellations" — it does not document the exact endpoints/params. This
+ *  implements the documented public Duffel two-step pattern (create a pending
+ *  cancellation, then confirm it). Re-verify against the live OpenAPI spec
+ *  before relying on it against a real sandbox. Written defensively so a
+ *  shape mismatch degrades to a thrown error rather than a silent success. */
+export async function cancelOrder(orderId: string): Promise<{ id: string; status: string } | null> {
+  // 1) Create a pending cancellation.
+  const createRes = await fetch(`${DUFFEL_BASE}/air/order_cancellations`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ data: { order_id: orderId } }),
+  });
+  if (!createRes.ok) {
+    throw new Error(`[duffel] cancelOrder(create) failed: ${createRes.status} ${await createRes.text().catch(() => "")}`);
+  }
+  const createJson = await createRes.json();
+  const cancellationId = createJson?.data?.id;
+  if (!cancellationId) return null;
+
+  // 2) Confirm the cancellation.
+  const confirmRes = await fetch(
+    `${DUFFEL_BASE}/air/order_cancellations/${cancellationId}/actions/confirm`,
+    { method: "POST", headers: authHeaders() },
+  );
+  if (!confirmRes.ok) {
+    throw new Error(`[duffel] cancelOrder(confirm) failed: ${confirmRes.status} ${await confirmRes.text().catch(() => "")}`);
+  }
+  const confirmJson = await confirmRes.json();
+  return { id: confirmJson?.data?.id ?? cancellationId, status: "cancelled" };
+}
+
 export async function searchStays(params: {
   latitude: number;
   longitude: number;

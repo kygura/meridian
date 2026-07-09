@@ -17,6 +17,8 @@ Baseline commit before any implementation: `f9f3a25`.
 - Images: Wikipedia REST summary + Commons fallback, User-Agent header, disk cache. No Unsplash.
 - Env reality: OPENAI_API_KEY present; DUFFEL_API_KEY + SERPAPI_KEY absent → booking runs mock locally (blocker-note for live-sandbox verification).
 - Each new UI surface gets its own CSS file under src/styles/ (avoid parallel-edit contention on index.css); tokens/vars still come from index.css.
+- B1 contract: POST /api/bookings body requires searchSnapshot (client hands live offer back; offers never persisted). offer_expired → 409. Duffel real path code-complete but not runtime-verified (no key); 3 UNCONFIRMED gaps commented in duffel.ts (orders body fields, expired-error code string, cancellation endpoints). paths.ts DATA_DIR now lazy (test isolation).
+- Phase C order: B2 ∥ S2 first (only App.tsx overlaps, distinct anchors), A2 last (consumes B2's booking-modal store API).
 
 ## Tasks
 
@@ -25,17 +27,18 @@ Baseline commit before any implementation: `f9f3a25`.
 - [done] R2 — API research: Duffel orders/test mode, images, climate (Sonnet → docs/research-apis.md)
 - [done] R3 — Architecture judgment pass (Opus): booking shape, seasonality, agent sequencing
 - [done] SPEC — spec.md, CONTEXT.md, ADRs 0001–0003
-- [frontier] D1 — DESIGN-heatmap.md (Opus, running)
-- [frontier] D2 — DESIGN-booking.md (Opus, running)
-- [frontier] D3 — DESIGN-agent-places.md (Opus, running)
+- [done] D1 — DESIGN-heatmap.md (Opus)
+- [done] D2 — DESIGN-booking.md (Opus)
+- [done] D3 — DESIGN-agent-places.md (Opus)
 
 ### Phase B — server foundations (parallel, no UI)
-- [frontier] B1 — Booking server: server/lib/booking.ts + server/lib/providers/duffel.ts orders + server/routes/bookings.ts + tests (Opus — money path)
+Note: session-limit crash killed the first B1/S1/A1 dispatch before any file was written; re-dispatched fresh.
+- [done] B1 — Booking server (Opus): booking.ts + duffel orders/cancel + routes/bookings.ts + tests; 7 files/66 tests green; mock curl cycle proven
 - [frontier] S1 — Seasonality: scripts/build-seasonality.mjs + data/seasonality.json + server/lib/seasonality.ts + server/routes/seasonality.ts + tests (Sonnet)
 - [frontier] A1 — Agent tool core server/lib/agent/* + rewritten /api/agent/chat (streamText+tools, mock parity) + legacy wrappers + tests (Sonnet)
 
 ### Phase C — UI (each blocked on its design brief + its server task)
-- [blocked: D2+B1] B2 — Booking flow UI (Sonnet)
+- [frontier] B2 — Booking flow UI (Sonnet, dispatched)
 - [blocked: D1+S1] S2 — Seasonality heatmap page + MetricPanels real strip (Sonnet)
 - [blocked: D3+A1] A2 — AgentPanel + Open Places surface + delete ChatPanel.tsx + store slice (Sonnet)
 - Sequencing note: B2 ∥ S2 first (mostly disjoint files), A2 after or with careful anchors (shares App.tsx/store.ts).
