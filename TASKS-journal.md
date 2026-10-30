@@ -38,17 +38,19 @@ reviewer = different family from implementer. No bridges.
 - [done] R — replay + fingerprint routes, fingerprint recompute on save (opus, continue E)
 - [done] U1 — journal client: api, router, nav, timeline, detail, quick log, unlock (sonnet)
 ### Wave 3
-- [running wf] P — .eml/.mbox JSON-LD parser, Timeline JSON parser, upload routes, fixtures (sonnet)
-- [running wf] W — watches/alerts/webhook, events.json, agent journal tools + mock path (sonnet)
-- [running wf] U2 — Replay page (opus? sonnet)
-- [running wf] U3 — Globe journeys layer + scrubber + log from globe (sonnet)
+- [done] P — .eml/.mbox JSON-LD parser, Timeline JSON parser, upload routes, fixtures (sonnet)
+- [done] W — watches/alerts/webhook, events.json, agent journal tools + mock path (sonnet)
+- [done] U2 — Replay page (opus? sonnet)
+- [done] U3 — Globe journeys layer + scrubber + log from globe (sonnet)
 ### Wave 4
-- [blocked P,W,U1] U4 — inbox UI + uploads + photo EXIF + alerts list/ticker + TopBar badge (sonnet)
+- [done] U4 — inbox UI + uploads + photo EXIF + alerts list/ticker + TopBar badge (sonnet)
 ### Gate
-- V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
+- [running wf] V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
 - G done (haiku): docs; import task uses id "<source>:<sourceRef>", Money on wire = {amount,currency} — import schema must accept partial Money.
 - A done (opus, 1st try): 185 tests; Frankfurter host is api.frankfurter.dev/v1.
 - D done (opus): DESIGN-journal.md; 7 gaps ruled in spec §14 R7 (dense grid, normalTempC, cityIds, alerts under /api/watches/alerts, cluster merge, PATCH city resolve, upload routes).
 - E+R done (opus): engine + routes, 347 tests; R8 normals fallback + async fingerprint. Open-Meteo 429 at smoke time.
 - I done (sonnet impl, opus review 9+ findings, sonnet fix): 363 tests; exact-name + airport-radius city resolution, merge lock.
 - U1 done (sonnet impl, haiku drift 13 + opus logic findings, sonnet fix): 366 tests, build green, Playwright smoke ok. dist/ is tracked — agents restore it after builds.
+- P,W done: 499 tests. U2,U3 done: 499 tests + build. U4 done: 529 tests, exifr 7.1.3, CORS PATCH added by planner.
+- Gate running: 5 areas x 2 lenses + spec/done-criteria checker, adversarial verify per finding, per-area fixes, recheck.
