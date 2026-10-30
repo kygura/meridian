@@ -1,0 +1,499 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "eclipse-2026-08-12",
+      "title": "Total solar eclipse (Iceland, northern Spain)",
+      "kind": "eclipse",
+      "cityIds": [
+        "reykjav-k-iceland",
+        "santander-spain",
+        "bilbao-spain",
+        "gij-n-spain",
+        "oviedo-spain",
+        "la-coru-a-spain",
+        "burgos-spain",
+        "logro-o-spain",
+        "vitoria-spain",
+        "valladolid-spain",
+        "zaragoza-spain",
+        "valencia-spain",
+        "palma-spain"
+      ],
+      "month": 8,
+      "date": "2026-08-12",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "total-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "eclipse-2027-08-02",
+      "title": "Total solar eclipse (Gibraltar strait to Egypt and Arabia)",
+      "kind": "eclipse",
+      "cityIds": [
+        "m-laga-spain",
+        "tangier-morocco",
+        "oran-algeria",
+        "sfax-tunisia",
+        "luxor-egypt",
+        "asyut-egypt",
+        "jeddah-saudi-arabia",
+        "at-taif-saudi-arabia",
+        "sanaa-yemen"
+      ],
+      "month": 8,
+      "date": "2027-08-02",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "total-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "eclipse-2028-01-26",
+      "title": "Annular solar eclipse (Andes, Amazon, Iberia)",
+      "kind": "eclipse",
+      "cityIds": [
+        "manaus-brazil",
+        "seville-spain",
+        "m-laga-spain",
+        "granada-spain",
+        "valencia-spain",
+        "barcelona-spain",
+        "palma-spain",
+        "tangier-morocco"
+      ],
+      "month": 1,
+      "date": "2028-01-26",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "annular-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "eclipse-2028-07-22",
+      "title": "Total solar eclipse (Australia, New Zealand)",
+      "kind": "eclipse",
+      "cityIds": [
+        "sydney-australia",
+        "queenstown-new-zealand",
+        "dunedin-new-zealand"
+      ],
+      "month": 7,
+      "date": "2028-07-22",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "total-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "eclipse-2030-06-01",
+      "title": "Annular solar eclipse (North Africa, Greece, Turkey, Hokkaido)",
+      "kind": "eclipse",
+      "cityIds": [
+        "tripoli-libya",
+        "athens-greece",
+        "istanbul-turkey",
+        "sapporo-japan"
+      ],
+      "month": 6,
+      "date": "2030-06-01",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "annular-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "eclipse-2030-11-25",
+      "title": "Total solar eclipse (Namibia, South Africa)",
+      "kind": "eclipse",
+      "cityIds": [
+        "windhoek-namibia",
+        "durban-south-africa"
+      ],
+      "month": 11,
+      "date": "2030-11-25",
+      "recurring": false,
+      "tags": [
+        "eclipse",
+        "total-eclipse",
+        "solar"
+      ]
+    },
+    {
+      "id": "carnival-rio",
+      "title": "Rio Carnival",
+      "kind": "festival",
+      "cityIds": [
+        "rio-de-janeiro-brazil"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "carnival-salvador",
+      "title": "Salvador Carnival",
+      "kind": "festival",
+      "cityIds": [
+        "salvador-brazil"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "carnival-venice",
+      "title": "Carnevale di Venezia",
+      "kind": "festival",
+      "cityIds": [
+        "venice-italy"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival"
+      ]
+    },
+    {
+      "id": "carnival-cologne",
+      "title": "Cologne Carnival",
+      "kind": "festival",
+      "cityIds": [
+        "cologne-germany"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival"
+      ]
+    },
+    {
+      "id": "carnival-nice",
+      "title": "Nice Carnival",
+      "kind": "festival",
+      "cityIds": [
+        "nice-france"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival"
+      ]
+    },
+    {
+      "id": "mardi-gras-new-orleans",
+      "title": "Mardi Gras",
+      "kind": "festival",
+      "cityIds": [
+        "new-orleans-united-states"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "carnival",
+        "festival",
+        "music"
+      ]
+    },
+    {
+      "id": "sapporo-snow-festival",
+      "title": "Sapporo Snow Festival",
+      "kind": "festival",
+      "cityIds": [
+        "sapporo-japan"
+      ],
+      "month": 2,
+      "recurring": true,
+      "tags": [
+        "winter",
+        "festival"
+      ]
+    },
+    {
+      "id": "harbin-ice-festival",
+      "title": "Harbin Ice and Snow Festival",
+      "kind": "festival",
+      "cityIds": [
+        "harbin-china"
+      ],
+      "month": 1,
+      "recurring": true,
+      "tags": [
+        "winter",
+        "festival"
+      ]
+    },
+    {
+      "id": "holi",
+      "title": "Holi",
+      "kind": "festival",
+      "cityIds": [
+        "jaipur-india",
+        "varanasi-india",
+        "delhi-india"
+      ],
+      "month": 3,
+      "recurring": true,
+      "tags": [
+        "holi",
+        "festival",
+        "colour"
+      ]
+    },
+    {
+      "id": "cherry-blossom-tokyo",
+      "title": "Cherry blossom season (Tokyo)",
+      "kind": "culture",
+      "cityIds": [
+        "tokyo-japan"
+      ],
+      "month": 3,
+      "recurring": true,
+      "tags": [
+        "cherry-blossom",
+        "nature",
+        "crowds"
+      ]
+    },
+    {
+      "id": "cherry-blossom-kyoto",
+      "title": "Cherry blossom season (Kyoto)",
+      "kind": "culture",
+      "cityIds": [
+        "kyoto-japan"
+      ],
+      "month": 4,
+      "recurring": true,
+      "tags": [
+        "cherry-blossom",
+        "nature",
+        "crowds"
+      ]
+    },
+    {
+      "id": "cherry-blossom-seoul",
+      "title": "Cherry blossom season (Seoul)",
+      "kind": "culture",
+      "cityIds": [
+        "seoul-korea-south"
+      ],
+      "month": 4,
+      "recurring": true,
+      "tags": [
+        "cherry-blossom",
+        "nature"
+      ]
+    },
+    {
+      "id": "songkran-bangkok",
+      "title": "Songkran water festival (Bangkok)",
+      "kind": "festival",
+      "cityIds": [
+        "bangkok-thailand"
+      ],
+      "month": 4,
+      "recurring": true,
+      "tags": [
+        "songkran",
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "songkran-chiang-mai",
+      "title": "Songkran water festival (Chiang Mai)",
+      "kind": "festival",
+      "cityIds": [
+        "chiang-mai-thailand"
+      ],
+      "month": 4,
+      "recurring": true,
+      "tags": [
+        "songkran",
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "san-fermin",
+      "title": "San Fermin (Running of the Bulls)",
+      "kind": "festival",
+      "cityIds": [
+        "pamplona-spain"
+      ],
+      "month": 7,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "gion-matsuri",
+      "title": "Gion Matsuri",
+      "kind": "festival",
+      "cityIds": [
+        "kyoto-japan"
+      ],
+      "month": 7,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "culture"
+      ]
+    },
+    {
+      "id": "inti-raymi",
+      "title": "Inti Raymi",
+      "kind": "festival",
+      "cityIds": [
+        "cusco-peru"
+      ],
+      "month": 6,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "culture"
+      ]
+    },
+    {
+      "id": "naadam",
+      "title": "Naadam",
+      "kind": "festival",
+      "cityIds": [
+        "ulaanbaatar-mongolia"
+      ],
+      "month": 7,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "sport",
+        "culture"
+      ]
+    },
+    {
+      "id": "edinburgh-fringe",
+      "title": "Edinburgh Festival Fringe",
+      "kind": "culture",
+      "cityIds": [
+        "edinburgh-united-kingdom"
+      ],
+      "month": 8,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "arts",
+        "crowds"
+      ]
+    },
+    {
+      "id": "la-tomatina",
+      "title": "La Tomatina (Buñol, near Valencia)",
+      "kind": "festival",
+      "cityIds": [
+        "valencia-spain"
+      ],
+      "month": 8,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "oktoberfest",
+      "title": "Oktoberfest",
+      "kind": "festival",
+      "cityIds": [
+        "munich-germany"
+      ],
+      "month": 9,
+      "recurring": true,
+      "tags": [
+        "oktoberfest",
+        "festival",
+        "crowds"
+      ]
+    },
+    {
+      "id": "berlin-marathon",
+      "title": "Berlin Marathon",
+      "kind": "sport",
+      "cityIds": [
+        "berlin-germany"
+      ],
+      "month": 9,
+      "recurring": true,
+      "tags": [
+        "marathon",
+        "sport"
+      ]
+    },
+    {
+      "id": "day-of-the-dead-mexico-city",
+      "title": "Day of the Dead (Mexico City)",
+      "kind": "culture",
+      "cityIds": [
+        "mexico-city-mexico"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "day-of-the-dead",
+        "culture",
+        "festival"
+      ]
+    },
+    {
+      "id": "day-of-the-dead-oaxaca",
+      "title": "Day of the Dead (Oaxaca)",
+      "kind": "culture",
+      "cityIds": [
+        "oaxaca-mexico"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "day-of-the-dead",
+        "culture",
+        "festival"
+      ]
+    },
+    {
+      "id": "loy-krathong-chiang-mai",
+      "title": "Loy Krathong and Yi Peng (Chiang Mai)",
+      "kind": "festival",
+      "cityIds": [
+        "chiang-mai-thailand"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "festival",
+        "lanterns"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Bilheteira <tickets@saoluiz.example>
+To: Traveler <traveler@example.com>
+Subject: Seus bilhetes: Noite de Fado no Teatro São Luiz
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <event-fado-tkt70012@tickets.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_eventfadotkt"
+
+------=_Part_eventfadotkt
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Bilhete para Noite de Fado no Teatro S=E3o Luiz, 4 maio 2024.
+
+------=_Part_eventfadotkt
+Content-Type: text/html; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Bilhete Noite de Fado</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "EventReservation",
+  "reservationNumber": "TKT-70012",
+  "totalPrice": 35,
+  "priceCurrency": "EUR",
+  "reservationFor": {
+    "@type": "Event",
+    "name": "Noite de Fado no Teatro S=E3o Luiz",
+    "startDate": "2024-05-04T21:30:00+01:00",
+    "location": {
+      "@type": "Place",
+      "name": "Teatro S=E3o Luiz",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Lisbon",
+        "addressCountry": "PT"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "38.7107",
+        "longitude": "-9.1427"
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Bilhete Noit=
+e de Fado</td></tr>
+<tr><td><p>Teatro S=E3o Lu=EDz, Lisboa</p><p>4 maio 2024, 21:30</p></td></t=
+r>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_eventfadotkt--

@@ -577,3 +577,15 @@ describe("stops derived from segments", () => {
     expect(j.stops[0].lodging?.name).toBe("Hotel h1");
   });
 });
+
+describe("stop provenance", () => {
+  it("stops derived from a segment or, failing that, an experience carry their source's provenance", async () => {
+    await addCandidates([seg("d1", "LHR", "LIS", "2024-05-02T09:00", { arriveAt: "2024-05-02T11:30" })], NOW);
+    const first = await acceptCluster((await getQueue(NOW)).clusters[0].id, NOW);
+    expect(first.stops.map((s) => [s.cityId, s.provenance])).toEqual([[LIS, expect.objectContaining({ source: "gmail", sourceRef: "d1" })]]);
+
+    await addCandidates([experience("d2", "Porto", "2024-08-05")], NOW);
+    const second = await acceptCluster((await getQueue(NOW)).clusters[0].id, NOW);
+    expect(second.stops.map((s) => [s.cityId, s.provenance])).toEqual([[OPO, expect.objectContaining({ source: "calendar", sourceRef: "d2" })]]);
+  });
+});

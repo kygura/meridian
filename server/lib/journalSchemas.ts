@@ -64,6 +64,7 @@ export const stopSchema = z.object({
   arrive: isoDateSchema,
   depart: isoDateSchema,
   lodging: lodgingSchema.optional(),
+  provenance: provenanceSchema.optional(),
   rating: ratingSchema.optional(),
   crowdOverride: z.number().min(0).max(100).optional(),
 });

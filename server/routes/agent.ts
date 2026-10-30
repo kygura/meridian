@@ -17,6 +17,15 @@ import {
   getFlightEstimateParams,
   REGION_COUNTRIES,
 } from "../lib/agent/tools.js";
+import {
+  createJournalTools,
+  searchJournalParams,
+  getFingerprintParams,
+  findSimilarWindowsParams,
+  draftJourneyParams,
+  parseJournalIntent,
+} from "../lib/agent/journal-tools.js";
+import { tokenMatches } from "../middleware/auth.js";
 import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
 
 const agent = new Hono();
@@ -434,10 +443,90 @@ function parseMockIntent(lastUserText: string): {
   return { region, regionLabel, cheap, safe, mentionedCity };
 }
 
-async function streamMockChatWithTools(messages: Array<{ role: string; content: string }>): Promise<Response> {
+/** The agent route is public; journal tools run only when the request carries the valid Bearer token. */
+function journalUnlocked(authHeader: string | undefined): boolean {
+  const expected = process.env.MERIDIAN_TOKEN;
+  const m = /^Bearer\s+(.+)$/i.exec(authHeader ?? "");
+  return !!expected && !!m && tokenMatches(m[1].trim(), expected);
+}
+
+const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** Mock path for "somewhere like <past trip> but …": search_journal → find_similar_windows → Open Places. */
+async function streamMockJournalChat(
+  intent: NonNullable<ReturnType<typeof parseJournalIntent>>,
+  unlocked: boolean
+): Promise<Response> {
+  const { createDataStreamResponse, formatDataStreamPart } = await import("ai");
+  const tools = createJournalTools({ unlocked });
+  return createDataStreamResponse({
+    execute: async (dataStream) => {
+      let callIndex = 0;
+      const call = async <A, R>(toolName: string, args: A, fn: (a: A) => Promise<R>): Promise<R> => {
+        const toolCallId = `mock-call-${++callIndex}`;
+        dataStream.write(formatDataStreamPart("tool_call", { toolCallId, toolName, args }));
+        const result = await fn(args);
+        dataStream.write(formatDataStreamPart("tool_result", { toolCallId, result: result as never }));
+        return result;
+      };
+
+      const searchArgs = searchJournalParams.parse({ text: intent.cityName, month: intent.pastMonth });
+      const found = await call("search_journal", searchArgs, tools.searchJournal);
+
+      let text: string;
+      if ("error" in found) {
+        text = found.error === "journal_locked"
+          ? "Your journal is locked, so I can't look up the trip you mean. Unlock it (paste your Meridian token in the journal view), then ask again."
+          : `I couldn't read your journal (${found.error}).`;
+      } else if (found.journeys.length === 0) {
+        text = `I couldn't find a journey in your journal matching ${intent.cityName ?? "that"}${intent.pastMonth ? ` in ${MONTH_LONG[intent.pastMonth - 1]}` : ""}. ` +
+          "Log it in the journal (or import it) and I can find similar windows.";
+      } else {
+        const template = found.journeys[0]!;
+        const simArgs = findSimilarWindowsParams.parse({
+          journeyId: template.id,
+          bend: intent.bend,
+          ...(intent.months ? { months: intent.months } : {}),
+          limit: 5,
+        });
+        const sim = await call("find_similar_windows", simArgs, tools.findSimilarWindows);
+        if ("error" in sim) {
+          text = sim.error === "template_not_fingerprinted"
+            ? `"${template.title}" doesn't have a fingerprint yet (its weather may still be loading). Try again in a moment.`
+            : `I couldn't run the similarity search (${sim.error}).`;
+        } else {
+          const bends = [
+            intent.bend.tempC ? `${intent.bend.tempC > 0 ? "warmer" : "cooler"} (${intent.bend.tempC > 0 ? "+" : ""}${intent.bend.tempC}°C)` : "",
+            intent.bend.spendPct ? `${intent.bend.spendPct < 0 ? "cheaper" : "pricier"} (${intent.bend.spendPct}% spend)` : "",
+            intent.bend.crowd ? `${intent.bend.crowd < 0 ? "quieter" : "busier"}` : "",
+          ].filter(Boolean);
+          const lines = sim.places.map((p) => {
+            const top = [...(p.replayMatch?.dims ?? [])].sort((a, b) => b.contribution - a.contribution)[0];
+            return `• ${p.name}, ${p.country} — ${p.summaryLine}${top ? ` (strongest on ${top.name})` : ""}`;
+          });
+          text =
+            `Based on "${template.title}" (${template.startDate}), here are the closest windows${bends.length ? `, bent ${bends.join(" and ")}` : ""}` +
+            `${intent.months ? ` in ${intent.months.map((m) => MONTH_LONG[m - 1]).join("/")}` : ""}:\n\n` +
+            (lines.length ? lines.join("\n") : "No windows matched — try loosening the months or bends.") +
+            `\n\nScored on ${sim.universeSize} cities with seasonality data. Flight prices marked mock are estimates and aren't scored.`;
+        }
+      }
+      for (const tok of text.split(/(\s+)/)) {
+        if (!tok) continue;
+        dataStream.write(formatDataStreamPart("text", tok));
+        await new Promise((r) => setTimeout(r, 14));
+      }
+    },
+  });
+}
+
+async function streamMockChatWithTools(messages: Array<{ role: string; content: string }>, unlocked = false): Promise<Response> {
   const { createDataStreamResponse, formatDataStreamPart } = await import("ai");
   const lastUserText = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
   const { region, regionLabel, cheap, safe, mentionedCity } = parseMockIntent(lastUserText);
+
+  const journalIntent = parseJournalIntent(lastUserText, mentionedCity?.name);
+  if (journalIntent) return streamMockJournalChat(journalIntent, unlocked);
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
@@ -666,9 +755,11 @@ agent.post("/chat", async (c) => {
     return c.json({ error: "Invalid request", details: parsed.error.issues }, 400);
   }
 
+  const unlocked = journalUnlocked(c.req.header("Authorization"));
   if (!hasOpenAIKey()) {
-    return streamMockChatWithTools(parsed.data.messages);
+    return streamMockChatWithTools(parsed.data.messages, unlocked);
   }
+  const journal = createJournalTools({ unlocked });
 
   try {
     const { streamText, tool } = await import("ai");
@@ -680,7 +771,11 @@ agent.post("/chat", async (c) => {
 actively using your tools: search_places to find and rank candidate cities, get_place_images to pull a
 representative photo, get_seasonality to check the best months to visit, and get_flight_estimate to price a route.
 Call the relevant tools before making specific claims about scores, images, timing, or prices — don't guess numbers
-you could look up. Be concise, specific, and actionable.`,
+you could look up. Be concise, specific, and actionable.
+For the user's own travel history use the journal tools: search_journal to find a past journey, get_fingerprint for the
+conditions it had, find_similar_windows to rank other destination/month windows like it (bend with tempC/spendPct/crowd),
+and draft_journey to propose a journey for the user to review in the inbox (you cannot confirm it). If a journal tool
+returns journal_locked, tell the user to unlock the journal.`,
       messages: parsed.data.messages,
       tools: {
         search_places: tool({
@@ -705,6 +800,27 @@ you could look up. Be concise, specific, and actionable.`,
             "Estimate flight price between two IATA airport codes, optionally for a given departure date.",
           parameters: getFlightEstimateParams,
           execute: getFlightEstimateTool,
+        }),
+        search_journal: tool({
+          description: "Search the user's past journeys by text, cityId, country, year, month, tags or minimum rating. Returns summaries with a fingerprint brief.",
+          parameters: searchJournalParams,
+          execute: journal.searchJournal,
+        }),
+        get_fingerprint: tool({
+          description: "Get the conditions (weather, spend, crowd proxy) a past journey, or one of its stops, actually had.",
+          parameters: getFingerprintParams,
+          execute: journal.getFingerprint,
+        }),
+        find_similar_windows: tool({
+          description:
+            "Rank destination x month windows similar to a past journey (journeyId). bend: tempC -10..10, spendPct -50..50, crowd -50..50, monthShift. months restricts target months (1-12). Results also come as Open Places with a match breakdown.",
+          parameters: findSimilarWindowsParams,
+          execute: journal.findSimilarWindows,
+        }),
+        draft_journey: tool({
+          description: "Draft a journey (stops with cityId or cityHint, dates, optional segments) into the user's review inbox. Cannot confirm it.",
+          parameters: draftJourneyParams,
+          execute: journal.draftJourney,
         }),
       },
       maxSteps: 6,

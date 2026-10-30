@@ -1,0 +1,121 @@
+{
+  "timelineObjects": [
+    {
+      "placeVisit": {
+        "location": {
+          "latitudeE7": 515074000,
+          "longitudeE7": -1278000,
+          "placeId": "ChIJHome",
+          "address": "Home\nFrance",
+          "name": "Home"
+        },
+        "duration": {
+          "startTimestamp": "2023-08-01T00:00:00.000Z",
+          "endTimestamp": "2023-09-14T07:00:00.000Z"
+        },
+        "placeConfidence": "HIGH_CONFIDENCE",
+        "visitConfidence": 90,
+        "locationConfidence": 90,
+        "placeVisitType": "SINGLE_PLACE",
+        "placeVisitImportance": "MAIN"
+      }
+    },
+    {
+      "activitySegment": {
+        "startLocation": {
+          "latitudeE7": 515074000,
+          "longitudeE7": -1278000
+        },
+        "endLocation": {
+          "latitudeE7": 488566000,
+          "longitudeE7": 23522000
+        },
+        "duration": {
+          "startTimestamp": "2023-09-14T07:00:00.000Z",
+          "endTimestamp": "2023-09-14T10:30:00.000Z"
+        },
+        "activityType": "IN_TRAIN"
+      }
+    },
+    {
+      "placeVisit": {
+        "location": {
+          "latitudeE7": 488566000,
+          "longitudeE7": 23522000,
+          "placeId": "ChIJHotelLeMarais",
+          "address": "Hotel Le Marais\nFrance",
+          "name": "Hotel Le Marais"
+        },
+        "duration": {
+          "startTimestamp": "2023-09-14T12:00:00.000Z",
+          "endTimestamp": "2023-09-17T08:00:00.000Z"
+        },
+        "placeConfidence": "HIGH_CONFIDENCE",
+        "visitConfidence": 90,
+        "locationConfidence": 90,
+        "placeVisitType": "SINGLE_PLACE",
+        "placeVisitImportance": "MAIN"
+      }
+    },
+    {
+      "placeVisit": {
+        "location": {
+          "latitudeE7": 488606000,
+          "longitudeE7": 23376000,
+          "placeId": "ChIJLouvreMuseum",
+          "address": "Louvre Museum\nFrance",
+          "name": "Louvre Museum"
+        },
+        "duration": {
+          "startTimestamp": "2023-09-15T09:00:00.000Z",
+          "endTimestamp": "2023-09-15T12:30:00.000Z"
+        },
+        "placeConfidence": "HIGH_CONFIDENCE",
+        "visitConfidence": 90,
+        "locationConfidence": 90,
+        "placeVisitType": "SINGLE_PLACE",
+        "placeVisitImportance": "MAIN"
+      }
+    },
+    {
+      "placeVisit": {
+        "location": {
+          "latitudeE7": 488530000,
+          "longitudeE7": 23499000,
+          "placeId": "ChIJNotreDame",
+          "address": "Notre-Dame\nFrance",
+          "name": "Notre-Dame"
+        },
+        "duration": {
+          "startTimestamp": "2023-09-16T10:00:00.000Z",
+          "endTimestamp": "2023-09-16T11:00:00.000Z"
+        },
+        "placeConfidence": "HIGH_CONFIDENCE",
+        "visitConfidence": 90,
+        "locationConfidence": 90,
+        "placeVisitType": "SINGLE_PLACE",
+        "placeVisitImportance": "MAIN"
+      }
+    },
+    {
+      "placeVisit": {
+        "location": {
+          "latitudeE7": 515074000,
+          "longitudeE7": -1278000,
+          "placeId": "ChIJHome",
+          "address": "Home\nFrance",
+          "name": "Home"
+        },
+        "duration": {
+          "startTimestamp": "2023-09-17T12:00:00.000Z",
+          "endTimestamp": "2023-12-31T23:00:00.000Z"
+        },
+        "placeConfidence": "HIGH_CONFIDENCE",
+        "visitConfidence": 90,
+        "locationConfidence": 90,
+        "placeVisitType": "SINGLE_PLACE",
+        "placeVisitImportance": "MAIN"
+      }
+    }
+  ]
+}

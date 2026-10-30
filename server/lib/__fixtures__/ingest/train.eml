@@ -1,0 +1,84 @@
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: CP <noreply@cp.example>
+To: Traveler <traveler@example.com>
+Subject: CP: o seu bilhete Lisboa - Porto
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <train-cp-qw19@cp.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_traincpqw19c"
+
+------=_Part_traincpqw19c
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Alfa Pendular 122, Lisboa Santa Apolónia - Porto Campanhã, 6 May 2024 12:30.
+
+------=_Part_traincpqw19c
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Bilhete CP</title>
+<script type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "CP"
+    },
+    {
+      "@context": "http://schema.org",
+      "@type": "TrainReservation",
+      "reservationNumber": "CP-QW19",
+      "totalPrice": "31.50",
+      "priceCurrency": "EUR",
+      "reservationFor": {
+        "@type": "TrainTrip",
+        "trainName": "Alfa Pendular",
+        "trainNumber": "122",
+        "provider": {
+          "@type": "Organization",
+          "name": "CP - Comboios de Portugal"
+        },
+        "departureStation": {
+          "@type": "TrainStation",
+          "name": "Lisboa Santa Apolónia",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Lisbon",
+            "addressCountry": "PT"
+          }
+        },
+        "departureTime": "2024-05-06T12:30:00+01:00",
+        "arrivalStation": {
+          "@type": "TrainStation",
+          "name": "Porto Campanhã",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Porto",
+            "addressCountry": "PT"
+          }
+        },
+        "arrivalTime": "2024-05-06T15:15:00+01:00"
+      }
+    }
+  ]
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6px 12px}</style>
+</head>
+<body style="margin:0;background:#f4f4f4">
+<table width="600" align="center" cellpadding="0" cellspacing="0" style="background:#ffffff;margin-top:24px">
+<tr><td style="background:#0b3d6b;color:#fff;font-size:20px">Bilhete CP</td></tr>
+<tr><td><p>Lisboa Santa Apolónia &rarr; Porto Campanhã</p></td></tr>
+<tr><td style="font-size:11px;color:#888">This is an automated confirmation. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_traincpqw19c--

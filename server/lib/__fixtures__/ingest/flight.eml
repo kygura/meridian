@@ -1,0 +1,78 @@
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: TAP Air Portugal <noreply@booking.tap.example>
+To: Traveler <traveler@example.com>
+Subject: Your TAP booking XK7P2Q is confirmed
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <flight-out-xk7p2q@mail.tap.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_flightoutxk7"
+
+------=_Part_flightoutxk7
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Your flight LHR-LIS on 2 May 2024 is confirmed.
+Booking reference: XK7P2Q
+
+------=_Part_flightoutxk7
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Flight confirmation XK7P2Q</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "FlightReservation",
+  "reservationNumber": "XK7P2Q",
+  "reservationStatus": "http://schema.org/Confirmed",
+  "underName": {
+    "@type": "Person",
+    "name": "Alex Traveler"
+  },
+  "totalPrice": "189.50",
+  "priceCurrency": "EUR",
+  "reservationFor": {
+    "@type": "Flight",
+    "flightNumber": "1355",
+    "airline": {
+      "@type": "Airline",
+      "name": "TAP Air Portugal",
+      "iataCode": "TP"
+    },
+    "departureAirport": {
+      "@type": "Airport",
+      "name": "London Heathrow",
+      "iataCode": "LHR"
+    },
+    "departureTime": "2024-05-02T09:05:00+01:00",
+    "arrivalAirport": {
+      "@type": "Airport",
+      "name": "Humberto Delgado Airport",
+      "iataCode": "LIS"
+    },
+    "arrivalTime": "2024-05-02T11:35:00+01:00"
+  }
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Flight confi=
+rmation XK7P2Q</td></tr>
+<tr><td><p>London Heathrow (LHR) &rarr; Lisbon (LIS)</p><p>Thu 2 May 2024, =
+09:05 &ndash; 11:35</p><p>Total paid: EUR 189.50</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_flightoutxk7--

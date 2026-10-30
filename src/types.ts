@@ -218,6 +218,8 @@ export interface PlaceResult {
   population: number;
   score: number;
   summaryLine: string;
+  /** Set when the place came from a journal replay (find_similar_windows): the matched month + breakdown. */
+  replayMatch?: { match: number; month: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] };
 }
 
 export interface PlaceImage {
@@ -316,6 +318,8 @@ export interface Stop {
   arrive: string; // YYYY-MM-DD
   depart: string; // YYYY-MM-DD
   lodging?: Lodging;
+  /** Where this stop came from; set on imported stops (accepted candidates). */
+  provenance?: Provenance;
   rating?: Rating;
   /** User override of the crowd proxy, 0-100 ("it was packed"). Wins over the proxy. */
   crowdOverride?: number;
@@ -495,10 +499,25 @@ export interface ReplayResponse {
 export type ImportKind = "segment" | "lodging" | "experience" | "stop";
 export type ImportState = "pending" | "accepted" | "merged" | "discarded";
 
+/** Money as imports carry it: the server fills eur/rateDate when the journey is built (R5). */
+export type MoneyInput = Omit<Money, "eur" | "rateDate"> & Partial<Pick<Money, "eur" | "rateDate">>;
+
+/** Candidate payloads are partial journey pieces; cost/lodging have no provenance or EUR yet. */
+export type ImportPayload = Partial<Omit<Segment & Stop & Experience & Lodging, "cost" | "lodging" | "provenance" | "kind">> & {
+  /** Experience kind or lodging kind, depending on the candidate's `kind`. */
+  kind?: ExperienceKind | NonNullable<Lodging["kind"]>;
+  cost?: MoneyInput;
+  lodging?: { name: string; kind?: Lodging["kind"]; cost?: MoneyInput };
+  cityHint?: string;
+  iataHint?: string;
+  toCityHint?: string;
+  toIataHint?: string;
+};
+
 export interface ImportCandidate {
   id: string;
   kind: ImportKind;
-  payload: Partial<Segment & Stop & Experience & Lodging> & { cityHint?: string; iataHint?: string; toCityHint?: string; toIataHint?: string };
+  payload: ImportPayload;
   provenance: Provenance;
   suggestedJourneyId?: string;
   /** Suggested-journey cluster this candidate belongs to (recomputed on each queue change). */

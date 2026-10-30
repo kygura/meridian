@@ -18,12 +18,14 @@ import type {
   City,
   Confidence,
   Experience,
+  ExperienceKind,
   ImportCandidate,
   ImportCluster,
   ImportQueue,
   ImportReport,
   ImportState,
   Journey,
+  Lodging,
   Provenance,
   ProvenanceSource,
   Segment,
@@ -50,9 +52,13 @@ const CLUSTER_GAP_DAYS = 2;
 /** A trip that left home stays one cluster across quiet stretches up to this long, until it returns. */
 const AWAY_GAP_DAYS = 60;
 
+/** Stored candidate: `baseConfidence` remembers the pre-"unresolved-city" confidence so PATCH can restore it. */
+type Stored = ImportCandidate & { baseConfidence?: Confidence };
+const pub = ({ baseConfidence: _b, ...c }: Stored): ImportCandidate => c;
+
 interface ImportsFile {
   version: 1;
-  candidates: ImportCandidate[];
+  candidates: Stored[];
 }
 
 const store = createJsonStore<ImportsFile>("imports.json", () => ({ version: 1, candidates: [] }));
@@ -226,7 +232,7 @@ function makeCandidate(
   provenance: Provenance,
   now: Date,
   extraFlags: string[] = [],
-): ImportCandidate {
+): Stored {
   const resolved = resolveCities(kind, payload);
   const flags = [...(resolved ? [] : ["unresolved-city"]), ...extraFlags];
   return {
@@ -234,6 +240,7 @@ function makeCandidate(
     kind,
     payload,
     provenance: flags.length ? { ...provenance, confidence: "low" } : provenance,
+    ...(!resolved && provenance.confidence !== "low" ? { baseConfidence: provenance.confidence } : {}),
     ...(flags.length ? { flags } : {}),
     state: "pending",
     createdAt: now.toISOString(),
@@ -252,12 +259,18 @@ function flightDigits(number: string): string {
 }
 
 /**
- * Same flight, however it was reported: (flight number, route, departure day), and
+ * Same thing, however it was reported. Segments: (flight number, route, departure day) and
  * (booking reference, route, departure day) — the latter links an e-mail confirmation to the
- * Meridian booking it confirms, which carries no flight number.
+ * Meridian booking it confirms, which carries no flight number. Lodging and experiences (per
+ * source — another source is a separate record the reviewer sees): a reminder or "modified
+ * booking" e-mail has a new Message-ID but the same name, city and date.
  */
-function segmentKeys(c: Pick<ImportCandidate, "kind" | "payload">): string[] {
+function contentKeys(c: Pick<ImportCandidate, "kind" | "payload" | "provenance">): string[] {
   const p = c.payload;
+  const norm = (s: string | undefined) => (s ? fold1(s).replace(/\s+/g, " ") : "");
+  const where = (p.cityId ?? p.iataHint ?? p.cityHint ?? "").toUpperCase();
+  if (c.kind === "lodging" && p.name && p.arrive) return [`lodging:${c.provenance.source}|${norm(p.name)}|${where}|${p.arrive}`];
+  if (c.kind === "experience" && p.title && p.date) return [`experience:${c.provenance.source}|${norm(p.title)}|${where}|${p.date}`];
   if (c.kind !== "segment" || !p.departAt) return [];
   const route = `${p.fromCityId ?? p.iataHint ?? p.cityHint}>${p.toCityId ?? p.toIataHint ?? p.toCityHint}@${p.departAt.slice(0, 10)}`.toUpperCase();
   return [
@@ -277,7 +290,7 @@ export async function addCandidates(raw: unknown[], now: Date = new Date()): Pro
   await store.update((file) => {
     const ids = new Set(file.candidates.map((c) => c.id));
     const refs = new Set(file.candidates.map(refKey));
-    const segs = new Set(file.candidates.flatMap(segmentKeys));
+    const segs = new Set(file.candidates.flatMap(contentKeys));
 
     raw.forEach((item, i) => {
       const parsed = importCandidateInputSchema.safeParse(item);
@@ -288,8 +301,8 @@ export async function addCandidates(raw: unknown[], now: Date = new Date()): Pro
       }
       const { kind, payload, provenance, id: given } = parsed.data;
       const id = given ?? `${provenance.source}:${provenance.sourceRef}`;
-      const cand = makeCandidate(id, kind, payload as Payload, provenance, now);
-      const keys = segmentKeys(cand);
+      const cand = makeCandidate(id, kind, payload, provenance, now);
+      const keys = contentKeys(cand);
       if (ids.has(id) || refs.has(refKey(cand)) || keys.some((k) => segs.has(k))) {
         duplicates++;
         return;
@@ -303,6 +316,21 @@ export async function addCandidates(raw: unknown[], now: Date = new Date()): Pro
   });
 
   return { received: raw.length, added, duplicates, ...(errors.length ? { errors } : {}) };
+}
+
+/** addCandidates over any number of items (file uploads can exceed MAX_BATCH), as one summed report. */
+export async function addAll(raw: unknown[], now: Date = new Date()): Promise<ImportReport> {
+  const total: ImportReport = { received: 0, added: 0, duplicates: 0 };
+  const errors: string[] = [];
+  for (let i = 0; i < raw.length; i += MAX_BATCH) {
+    const r = await addCandidates(raw.slice(i, i + MAX_BATCH), now);
+    total.received += r.received;
+    total.added += r.added;
+    total.duplicates += r.duplicates;
+    errors.push(...(r.errors ?? []).map((e) => e.replace(/^#(\d+)/, (_, n) => `#${Number(n) + i}`)));
+  }
+  if (errors.length) total.errors = errors.length > 50 ? [...errors.slice(0, 50), `…and ${errors.length - 50} more`] : errors;
+  return total;
 }
 
 // ── Booking promotion (R4) ──────────────────────────────────────────
@@ -343,7 +371,7 @@ function promoteBookings(file: ImportsFile, now: Date): void {
   const today = now.toISOString().slice(0, 10);
   const seen = new Set(file.candidates.filter((c) => c.provenance.source === "booking").map((c) => c.provenance.sourceRef));
   const ids = new Set(file.candidates.map((c) => c.id));
-  const keys = new Set(file.candidates.flatMap(segmentKeys));
+  const keys = new Set(file.candidates.flatMap(contentKeys));
   for (const b of listBookings()) {
     if (b.status !== "booked" || seen.has(b.id)) continue;
     const legs = bookingLegs(b).sort((x, y) => x.departAt.localeCompare(y.departAt));
@@ -365,9 +393,10 @@ function promoteBookings(file: ImportsFile, now: Date): void {
     if (payloads.some((r) => !r.success)) continue;
     const prov: Provenance = { source: "booking", sourceRef: b.id, confidence: "high", importedAt: now.toISOString() };
     payloads.forEach((r, k) => {
+      if (!r.success) return;
       const id = k === 0 ? `booking:${b.id}` : `booking:${b.id}:${k}`;
-      const cand = makeCandidate(id, "segment", r.data as Payload, prov, now, b.source === "mock" ? ["mock-booking"] : []);
-      const legKeys = segmentKeys(cand);
+      const cand = makeCandidate(id, "segment", r.data, prov, now, b.source === "mock" ? ["mock-booking"] : []);
+      const legKeys = contentKeys(cand);
       if (ids.has(id) || legKeys.some((x) => keys.has(x))) return;
       ids.add(id);
       for (const x of legKeys) keys.add(x);
@@ -414,8 +443,10 @@ function toItems(cands: ImportCandidate[], home?: string): Item[] {
 }
 
 /** Explicit home, else the origin of the first segment when the last segment returns there. */
-function effectiveHome(segs: { fromCityId?: string; toCityId?: string }[], home?: string): string | undefined {
+function effectiveHome(all: { fromCityId?: string; toCityId?: string }[], home?: string): string | undefined {
   if (home) return home;
+  // A same-city segment (rental car out and back) says nothing about where home is.
+  const segs = all.filter((s) => s.fromCityId !== s.toCityId);
   const first = segs[0]?.fromCityId;
   return first && segs.at(-1)?.toCityId === first ? first : undefined;
 }
@@ -493,7 +524,7 @@ export async function getQueue(now: Date = new Date()): Promise<ImportQueue> {
   const order = new Map(clusters.flatMap((cl) => cl.candidateIds).map((id, i) => [id, i] as const));
   return {
     candidates: pending
-      .map((c) => ({ ...c, clusterId: clusterOf.get(c.id) }))
+      .map((c) => ({ ...pub(c), clusterId: clusterOf.get(c.id) }))
       .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)),
     clusters,
   };
@@ -502,11 +533,11 @@ export async function getQueue(now: Date = new Date()): Promise<ImportQueue> {
 // ── State changes ───────────────────────────────────────────────────
 
 /** Atomically moves candidates out of `pending`. 404 unknown, 409 already reviewed or (optionally) unresolved. */
-async function claim(ids: string[], to: ImportState, requireResolved: boolean): Promise<ImportCandidate[]> {
+async function claim(ids: string[], to: ImportState, requireResolved: boolean): Promise<Stored[]> {
   return store.update((file) => {
     const found = ids.map((id) => file.candidates.find((c) => c.id === id));
     if (found.some((c) => !c)) throw new ImportError(404, { error: "not_found", message: "Import candidate not found" });
-    const cands = found as ImportCandidate[];
+    const cands = found as Stored[];
     const reviewed = cands.filter((c) => c.state !== "pending");
     if (reviewed.length) throw new ImportError(409, { error: "not_pending", candidateIds: reviewed.map((c) => c.id) });
     const unresolved = cands.filter((c) => !hasResolvedCities(c));
@@ -534,7 +565,7 @@ async function reviewed<T>(ids: string[], to: ImportState, act: (members: Import
 }
 
 export async function discard(id: string): Promise<ImportCandidate> {
-  return (await claim([id], "discarded", false))[0];
+  return pub((await claim([id], "discarded", false))[0]);
 }
 
 // ── Journey assembly ────────────────────────────────────────────────
@@ -569,26 +600,51 @@ function toSegment(c: ImportCandidate): RawSegment {
   });
 }
 
-/** Adds members to `parts`: stops from stop candidates, lodging onto the stop that covers it, else a new stop. */
+/**
+ * Adds a stop; a stop in the same city whose dates overlap (the same stay reported by two
+ * sources, or a hotel inside a photo-derived stay) is combined instead: union of the dates,
+ * strongest provenance. Two different lodgings are never collapsed into one: if they only touch
+ * (check-out day = check-in day) they stay separate stops, and if they truly overlap the journey
+ * validation refuses the write so the reviewer decides, rather than a booking vanishing silently.
+ */
+function addStop(stops: RawStop[], n: RawStop): void {
+  const i = stops.findIndex((e) => {
+    if (e.cityId !== n.cityId || e.arrive > n.depart || n.arrive > e.depart) return false;
+    if (!e.lodging || !n.lodging) return true;
+    return fold1(e.lodging.name) === fold1(n.lodging.name);
+  });
+  if (i < 0) return void stops.push(n);
+  const e = stops[i];
+  const stronger = n.provenance && (!e.provenance || RANK[n.provenance.confidence] > RANK[e.provenance.confidence]) ? n.provenance : e.provenance;
+  stops[i] = compact({
+    ...e,
+    arrive: n.arrive < e.arrive ? n.arrive : e.arrive,
+    depart: n.depart > e.depart ? n.depart : e.depart,
+    lodging: e.lodging ?? n.lodging,
+    rating: e.rating ?? n.rating,
+    crowdOverride: e.crowdOverride ?? n.crowdOverride,
+    provenance: stronger,
+  });
+}
+
+/** Adds members to `parts`: stops from stop candidates, lodging onto the stop that overlaps it, else a new stop. */
 function fold(parts: Parts, members: ImportCandidate[]): void {
   for (const c of members) {
     const p = c.payload;
     if (c.kind === "segment") parts.segments.push(toSegment(c));
     else if (c.kind === "experience") {
       parts.experiences.push(
-        compact({ cityId: p.cityId!, date: p.date!, title: p.title!, kind: p.kind, cost: p.cost, rating: p.rating, lat: p.lat, lng: p.lng, provenance: provOf(c) }),
+        compact({ cityId: p.cityId!, date: p.date!, title: p.title!, kind: p.kind as ExperienceKind | undefined, cost: p.cost, rating: p.rating, lat: p.lat, lng: p.lng, provenance: provOf(c) }),
       );
     } else if (c.kind === "stop") {
       const lodging = p.lodging && compact({ ...p.lodging, provenance: provOf(c) });
-      parts.stops.push(compact({ cityId: p.cityId!, arrive: p.arrive!, depart: p.depart ?? p.arrive!, lodging, rating: p.rating, crowdOverride: p.crowdOverride }));
+      addStop(parts.stops, compact({ cityId: p.cityId!, arrive: p.arrive!, depart: p.depart ?? p.arrive!, lodging, provenance: provOf(c), rating: p.rating, crowdOverride: p.crowdOverride }));
     }
   }
   for (const c of members.filter((m) => m.kind === "lodging")) {
     const p = c.payload;
-    const lodging = compact({ name: p.name!, kind: p.kind, cost: p.cost, provenance: provOf(c) });
-    const host = parts.stops.find((s) => s.cityId === p.cityId && s.arrive <= p.arrive! && p.arrive! <= s.depart && !s.lodging);
-    if (host) host.lodging = lodging;
-    else parts.stops.push({ cityId: p.cityId!, arrive: p.arrive!, depart: p.depart ?? p.arrive!, lodging });
+    const lodging = compact({ name: p.name!, kind: p.kind as Lodging["kind"], cost: p.cost, provenance: provOf(c) });
+    addStop(parts.stops, { cityId: p.cityId!, arrive: p.arrive!, depart: p.depart ?? p.arrive!, lodging, provenance: provOf(c) });
   }
 }
 
@@ -602,23 +658,26 @@ function deriveStops(parts: Parts, home?: string): RawStop[] {
   const stops: RawStop[] = [];
   segs.forEach((s, i) => {
     if (s.toCityId === h) return;
-    const arrive = (s.arriveAt ?? s.departAt).slice(0, 10);
+    // Same-city segment (rental car): the stay runs pickup → drop-off.
+    const stay = s.fromCityId === s.toCityId;
+    const end = (s.arriveAt ?? s.departAt).slice(0, 10);
+    const arrive = stay ? s.departAt.slice(0, 10) : end;
     const next = segs[i + 1];
-    const nextDay = next && next.fromCityId === s.toCityId ? next.departAt.slice(0, 10) : arrive;
-    stops.push({ cityId: s.toCityId, arrive, depart: nextDay < arrive ? arrive : nextDay });
+    const nextDay = next && next.fromCityId === s.toCityId ? next.departAt.slice(0, 10) : end;
+    stops.push({ cityId: s.toCityId, arrive, depart: nextDay < end ? end : nextDay, provenance: s.provenance });
   });
   if (stops.length || parts.stops.length) return stops;
   if (parts.experiences.length) {
     for (const e of [...parts.experiences].sort((a, b) => a.date.localeCompare(b.date))) {
       const last = stops.at(-1);
       if (last && last.cityId === e.cityId) last.depart = e.date;
-      else stops.push({ cityId: e.cityId, arrive: e.date, depart: e.date });
+      else stops.push({ cityId: e.cityId, arrive: e.date, depart: e.date, provenance: e.provenance });
     }
   }
   if (!stops.length) {
     for (const s of segs) {
       const from = s.fromCityId;
-      if (from !== h) stops.push({ cityId: from, arrive: s.departAt.slice(0, 10), depart: s.departAt.slice(0, 10) });
+      if (from !== h) stops.push({ cityId: from, arrive: s.departAt.slice(0, 10), depart: s.departAt.slice(0, 10), provenance: s.provenance });
     }
   }
   return stops;
@@ -649,8 +708,7 @@ async function createFrom(members: ImportCandidate[], now: Date): Promise<Journe
   fold(parts, members);
   // Cities reached only by a segment still get a stop, unless an explicit stop/lodging already covers them.
   for (const d of deriveStops(parts, home)) {
-    const covered = parts.stops.some((s) => (s.arrive < d.depart && d.arrive < s.depart) || (s.cityId === d.cityId && s.arrive <= d.depart && d.arrive <= s.depart));
-    if (!covered) parts.stops.push(d);
+    if (!parts.stops.some((s) => s.cityId !== d.cityId && s.arrive < d.depart && d.arrive < s.depart)) addStop(parts.stops, d);
   }
   if (!parts.stops.length) throw new ImportError(409, { error: "no_stops", message: "Could not derive a stop from these candidates", candidateIds: members.map((m) => m.id) });
   parts.stops.sort((a, b) => a.arrive.localeCompare(b.arrive) || a.depart.localeCompare(b.depart));
@@ -725,8 +783,7 @@ export async function accept(id: string, journeyId?: string, now: Date = new Dat
   return reviewed([id], "accepted", (members) => createFrom(members, now));
 }
 
-/** One confirmed journey from every member of a suggested cluster (409 `unresolved` if any city is unresolved). */
-export async function acceptCluster(clusterId: string, now: Date = new Date()): Promise<Journey> {
+async function findCluster(clusterId: string): Promise<ImportCluster> {
   const { candidates } = await store.read();
   const home = (await getSettings()).homeCityId;
   const cluster = clusterCandidates(
@@ -734,5 +791,81 @@ export async function acceptCluster(clusterId: string, now: Date = new Date()): 
     home,
   ).find((cl) => cl.id === clusterId);
   if (!cluster) throw new ImportError(404, { error: "cluster_not_found", message: "Cluster not found (the queue may have changed)" });
+  return cluster;
+}
+
+/** One confirmed journey from every member of a suggested cluster (409 `unresolved` if any city is unresolved). */
+export async function acceptCluster(clusterId: string, now: Date = new Date()): Promise<Journey> {
+  const cluster = await findCluster(clusterId);
   return reviewed(cluster.candidateIds, "accepted", (members) => createFrom(members, now));
+}
+
+/** A cluster merge that failed part-way: `merged` are already in the journey, `remaining` are still pending. */
+export class PartialMergeError extends Error {
+  constructor(
+    public readonly cause: unknown,
+    public readonly merged: string[],
+    public readonly remaining: string[],
+  ) {
+    super("cluster merge stopped early");
+    this.name = "PartialMergeError";
+  }
+}
+
+/**
+ * Merges every pending member of a cluster into an existing journey, one `merge` at a time in
+ * cluster order. Stops at the first failure (PartialMergeError). Unresolved members are refused
+ * up front (409 `unresolved`) so a predictable failure leaves the journey untouched.
+ */
+export async function mergeCluster(clusterId: string, journeyId: string): Promise<{ journey: Journey; merged: string[] }> {
+  const cluster = await findCluster(clusterId);
+  if (!(await getJourney(journeyId))) throw journeyNotFound();
+  const { candidates } = await store.read();
+  const unresolved = cluster.candidateIds.filter((id) => !hasResolvedCities(candidates.find((c) => c.id === id)!));
+  if (unresolved.length) throw new ImportError(409, { error: "unresolved", candidateIds: unresolved });
+  const merged: string[] = [];
+  let journey: Journey | undefined;
+  for (const id of cluster.candidateIds) {
+    try {
+      journey = await merge(id, journeyId);
+      merged.push(id);
+    } catch (err) {
+      throw new PartialMergeError(err, merged, cluster.candidateIds.slice(merged.length));
+    }
+  }
+  return { journey: journey!, merged };
+}
+
+export type CityPatch = Partial<Record<"cityId" | "fromCityId" | "toCityId", string>>;
+
+/**
+ * Reviewer-chosen city ids for a pending candidate (segments: from/to; others: cityId). Clears
+ * "unresolved-city" once every required city is set and gives back the confidence the source
+ * declared, unless another flag (e.g. mock-booking) still holds it down.
+ */
+export async function resolveCandidate(id: string, patch: CityPatch): Promise<ImportCandidate> {
+  const entries = Object.entries(patch).filter((e): e is [keyof CityPatch, string] => e[1] !== undefined);
+  if (!entries.length) throw new ImportError(400, { error: "nothing_to_resolve", message: "Send cityId, or fromCityId/toCityId for a segment" });
+  for (const [field, cityId] of entries) {
+    if (!getCityById(cityId)) throw new ImportError(400, { error: "unknown_city", field, cityId });
+  }
+  return store.update((file) => {
+    const c = file.candidates.find((x) => x.id === id);
+    if (!c) throw new ImportError(404, { error: "not_found", message: "Import candidate not found" });
+    if (c.state !== "pending") throw new ImportError(409, { error: "not_pending", candidateIds: [c.id] });
+    const allowed = c.kind === "segment" ? ["fromCityId", "toCityId"] : ["cityId"];
+    const wrong = entries.find(([f]) => !allowed.includes(f));
+    if (wrong) throw new ImportError(400, { error: "wrong_field", field: wrong[0], allowed });
+    for (const [f, v] of entries) c.payload[f] = v;
+    if (hasResolvedCities(c)) {
+      const flags = (c.flags ?? []).filter((f) => f !== "unresolved-city");
+      if (flags.length) c.flags = flags;
+      else {
+        delete c.flags;
+        if (c.baseConfidence) c.provenance = { ...c.provenance, confidence: c.baseConfidence };
+      }
+      delete c.baseConfidence;
+    }
+    return pub(c);
+  });
 }
