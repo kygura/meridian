@@ -212,6 +212,32 @@ describe("runReplay", () => {
     expect(r.results).toHaveLength(30);
   });
 
+  it("R8: pending weather → template climate from normals, so bend tempC still reorders", async () => {
+    const pending = (await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps({ weather: "quota" }).deps)).journey;
+    expect(pending.fingerprint!.tempC).toBeUndefined();
+    const d = deps({ journeys: [pending] });
+    const before = await runReplay(q(), d);
+    expect(before.templateClimate).toBe("normal");
+    expect(before.template.tempC).toBe(18.5); // Lisbon May normal
+    expect(before.results[0]!.scoredOn).toContain("tempC");
+    const after = await runReplay(q({ bend: { tempC: 3 } }), d);
+    expect(after.template.tempC).toBe(21.5);
+    expect(pos(after.results, "seville-spain", 5)).toBeLessThan(pos(before.results, "seville-spain", 5)); // warmer city moves up
+    expect(pos(after.results, "porto-portugal", 5)).toBeGreaterThan(pos(before.results, "porto-portugal", 5));
+    expect(pending.fingerprint!.tempC).toBeUndefined(); // stored fingerprint untouched
+    expect(pending.fingerprint!.status.tempC).toBe("pending");
+  });
+
+  it("R8: nights-weighted normals for a multi-stop template; observed/none labels", async () => {
+    const j = lisbonJourney({ endDate: "2024-05-20" });
+    j.stops.push({ cityId: "seville-spain", arrive: "2024-05-17", depart: "2024-05-20" });
+    const pending = (await computeFingerprint(j, fixtureFingerprintDeps({ weather: "quota" }).deps)).journey;
+    const r = await runReplay(q({ template: { journeyId: pending.id } }), deps({ journeys: [pending] }));
+    expect(r.template.tempC).toBe(Math.round(((18.5 * 7 + 22.5 * 3) / 10) * 10) / 10);
+    expect((await runReplay(q(), deps())).templateClimate).toBe("observed");
+    expect((await runReplay(q({ template: { fingerprint: { month: 5 } } }), deps())).templateClimate).toBe("none");
+  });
+
   it("throws typed errors for a missing template", async () => {
     await expect(runReplay(q({ template: { journeyId: "nope" } }), deps())).rejects.toBeInstanceOf(ReplayError);
     await expect(runReplay(q({ template: { journeyId: "j-lisbon-2024", stopIndex: 4 } }), deps())).rejects.toMatchObject({ code: "template_not_found" });

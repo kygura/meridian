@@ -1,7 +1,8 @@
 // Wires the fingerprint engine into the journal store (spec-journal §5/§6.3):
-//  - every create/update computes the fingerprint before persisting
-//    (onJourneySaved), within a time budget so a slow/blocked Open-Meteo never
-//    holds a save for long — weather that misses the budget stays "pending";
+//  - every create/update schedules a full fingerprint AFTER the save (R8): the
+//    save never waits on network. The background job persists via
+//    mutateJourney only if the stored inputsHash still matches (no lost edits);
+//    whenFingerprintsSettled() lets tests/callers await it;
 //  - ensureFingerprint() recomputes a stored journey when its inputs changed or
 //    a dim is still pending, and persists the result.
 // Side-effect free: server/index.ts calls registerJournalFingerprint() at startup.
@@ -62,17 +63,35 @@ export async function ensureFingerprint(journey: Journey): Promise<Journey> {
   return saved && saved.fingerprint?.inputsHash === next.fingerprint!.inputsHash ? saved : next;
 }
 
+const inFlight = new Set<Promise<void>>();
+
+/** Resolves once every scheduled background fingerprint has finished. */
+export async function whenFingerprintsSettled(): Promise<void> {
+  while (inFlight.size) await Promise.allSettled([...inFlight]);
+}
+
+/** Full fingerprint after the save lands; no time budget (no request is waiting). */
+function scheduleFingerprint(journey: Journey): void {
+  const snapshot: Journey = structuredClone(journey);
+  const job = (async () => {
+    // setTimeout(0) runs after the store write was enqueued (same FIFO chain), so
+    // our mutateJourney is applied after the save.
+    await new Promise((r) => setTimeout(r, 0));
+    const next = (await computeFingerprint(snapshot, depsFactory())).journey;
+    await mutateJourney(snapshot.id, (current) =>
+      computeInputsHash(current) === next.fingerprint!.inputsHash ? { ...current, stops: next.stops, fingerprint: next.fingerprint } : undefined
+    );
+  })()
+    .catch((err) => console.error("[journal] background fingerprint failed:", err))
+    .finally(() => inFlight.delete(job));
+  inFlight.add(job);
+}
+
 let unregister: (() => void) | null = null;
 
 /** Idempotent: registers the onJourneySaved listener once. */
 export function registerJournalFingerprint(): () => void {
-  if (!unregister) {
-    unregister = onJourneySaved(async (journey) => {
-      const next = await fingerprintJourney(journey);
-      journey.stops = next.stops;
-      journey.fingerprint = next.fingerprint;
-    });
-  }
+  if (!unregister) unregister = onJourneySaved((journey) => scheduleFingerprint(journey));
   return () => {
     unregister?.();
     unregister = null;

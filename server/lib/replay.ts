@@ -19,7 +19,9 @@ import type {
   ReplayQuery,
   ReplayResponse,
   ReplayResult,
+  Stop,
 } from "../../src/types.js";
+import { dominantMonth, stayNights } from "./stayDates.js";
 
 export interface ReplayDeps {
   journeys: Journey[];
@@ -67,6 +69,52 @@ export function resolveTemplate(query: ReplayQuery, journeys: Journey[]): Partia
   }
   if (!j.fingerprint) throw new ReplayError("template_not_fingerprinted", "journey has no fingerprint");
   return { ...j.fingerprint };
+}
+
+/** The stops behind a journey/stop template (empty for a partial-fingerprint template). */
+export function templateStops(query: ReplayQuery, journeys: Journey[]): Stop[] {
+  const t = query.template;
+  if ("fingerprint" in t) return [];
+  const j = journeys.find((x) => x.id === t.journeyId);
+  if (!j) return [];
+  if (t.stopIndex !== undefined) return j.stops[t.stopIndex] ? [j.stops[t.stopIndex]!] : [];
+  return j.stops;
+}
+
+const WEATHER_DIMS = ["comfort", "tempC", "precipMm"] as const;
+
+/**
+ * R8: when observed weather is pending/absent, fill the template's missing
+ * comfort/tempC/precipMm from the stops' seasonality normals (nights-weighted,
+ * each stop at its own dominant month) so the tempC bend still bends. Returns a
+ * copy; the stored fingerprint is never touched.
+ */
+export function fillTemplateClimate(
+  template: Partial<Fingerprint>,
+  stops: Stop[],
+  seasonality: Record<string, MonthSeasonality[]>
+): { template: Partial<Fingerprint>; templateClimate: "observed" | "normal" | "none" } {
+  const missing = WEATHER_DIMS.filter((d) => typeof template[d] !== "number");
+  if (missing.length === 0) return { template, templateClimate: "observed" };
+  const acc = { comfort: 0, tempC: 0, precipMm: 0 };
+  let w = 0;
+  for (const s of stops) {
+    const months = seasonality[s.cityId];
+    const month = s.fingerprint?.month ?? dominantMonth(s.arrive, s.depart);
+    const m = months?.[month - 1];
+    if (!m) continue;
+    const n = Math.max(1, stayNights(s.arrive, s.depart));
+    acc.comfort += m.score * n;
+    acc.tempC += m.tempC * n;
+    acc.precipMm += m.precipMm * n;
+    w += n;
+  }
+  if (w === 0) return { template, templateClimate: missing.length === WEATHER_DIMS.length ? "none" : "observed" };
+  const out: Partial<Fingerprint> = { ...template };
+  if (missing.includes("tempC")) out.tempC = Math.round((acc.tempC / w) * 10) / 10;
+  if (missing.includes("precipMm")) out.precipMm = Math.round(acc.precipMm / w);
+  if (missing.includes("comfort")) out.comfort = Math.round(acc.comfort / w);
+  return { template: out, templateClimate: "normal" };
 }
 
 /** Applies the bend sliders. Only defined template dims are bent; nothing is invented. */
@@ -200,7 +248,8 @@ interface Cell {
 }
 
 export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<ReplayResponse> {
-  const template = applyBend(resolveTemplate(query, deps.journeys), query.bend ?? {});
+  const filled = fillTemplateClimate(resolveTemplate(query, deps.journeys), templateStops(query, deps.journeys), deps.seasonality);
+  const template = applyBend(filled.template, query.bend ?? {});
   const c = query.constraints ?? {};
   const limit = query.limit ?? DEFAULT_LIMIT;
   const w = query.weights;
@@ -334,7 +383,7 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
   results.sort((a, b) => b.match - a.match || a.cityId.localeCompare(b.cityId) || a.month - b.month);
   const top = results.slice(0, limit);
   const grid = [...new Set(top.map((r) => r.cityId))].map((cityId) => ({ cityId, months: gridRows.get(cityId)! }));
-  return { results: top, universeSize: universe.length, template, fromCityId, grid };
+  return { results: top, universeSize: universe.length, template, fromCityId, grid, templateClimate: filled.templateClimate };
 }
 
 function eventsFor(events: MeridianEvent[] | undefined, cityId: string, month: number): MeridianEvent[] {

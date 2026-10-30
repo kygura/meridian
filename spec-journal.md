@@ -316,3 +316,15 @@ Duffel payments, hotel price search, mobile app, migrating client Trips to the s
   uploads at `POST /api/import/upload/email` (raw .eml/.mbox body or multipart) and
   `POST /api/import/upload/timeline` (JSON body), and `POST /api/import/photos`
   (array of `{timestamp, lat, lng, hash}`).
+- **R8 (replay template climate + save latency, 2026-10-30):**
+  (1) When a template journey/stop has weather dims pending or absent, replay fills the
+  template's missing `comfort`/`tempC`/`precipMm` from the stops' seasonality normals
+  (each stop at its own dominant month, nights-weighted across stops), so the tempC bend
+  still bends. This is a per-request template only; the stored fingerprint stays
+  `pending`. `ReplayResponse.templateClimate` reports `"observed"` (real stay weather, or
+  values given in a partial fingerprint), `"normal"` (filled from normals) or `"none"`.
+  (2) Saves never wait on network: the `onJourneySaved` listener only schedules a
+  background fingerprint that runs after the write and persists via `mutateJourney`
+  guarded by `inputsHash` (an edit made meanwhile is never overwritten).
+  `whenFingerprintsSettled()` awaits outstanding jobs. `GET /api/journal/:id/fingerprint`
+  still computes on demand (8s budget; weather past it stays `pending`).

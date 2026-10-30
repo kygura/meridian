@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { loadCities, getCityById } from "../lib/cities";
 import { setFxFetch } from "../lib/fx";
 import { gateRoutes } from "../middleware/auth";
-import { registerJournalFingerprint, setFingerprintDepsFactory } from "../lib/journalFingerprint";
+import { registerJournalFingerprint, setFingerprintDepsFactory, whenFingerprintsSettled } from "../lib/journalFingerprint";
 import { fixtureFingerprintDeps } from "../lib/__fixtures__/journal";
 import type { FingerprintDeps } from "../lib/fingerprint";
 import journal from "./journal";
@@ -64,10 +64,13 @@ function useFixtureFingerprints(opts: Parameters<typeof fixtureFingerprintDeps>[
   });
 }
 
+/** Creates the journey and waits for the background fingerprint (R8); returns the stored record. */
 async function createLisbon(): Promise<Journey> {
   const res = await req("POST", "/api/journal", LISBON);
   expect(res.status).toBe(201);
-  return ((await res.json()) as { journey: Journey }).journey;
+  const { journey } = (await res.json()) as { journey: Journey };
+  await whenFingerprintsSettled();
+  return ((await (await req("GET", `/api/journal/${journey.id}`)).json()) as { journey: Journey }).journey;
 }
 
 const QUERY = (journeyId: string, over: Record<string, unknown> = {}) => ({
@@ -118,14 +121,49 @@ describe("fingerprint on save", () => {
     expect(j.stops[0]!.fingerprint?.dailySpendEur).toBe(50); // 700 / 7 / 2
   });
 
-  it("a slow weather fetch never blocks the save past the budget (weather pending)", async () => {
+  it("the save does not wait on network; the background job persists later (R8)", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
     setFingerprintDepsFactory(() => {
       const f = fixtureFingerprintDeps();
-      return { ...f.deps, getCity: getCityById, observedWeather: () => new Promise(() => {}) };
-    }, 50);
+      return { ...f.deps, getCity: getCityById, observedWeather: async (...a) => (await gate, f.deps.observedWeather(...a)) };
+    });
+    const res = await req("POST", "/api/journal", LISBON);
+    expect(res.status).toBe(201);
+    const { journey } = (await res.json()) as { journey: Journey };
+    expect(journey.fingerprint).toBeUndefined(); // returned before any network
+    release();
+    await whenFingerprintsSettled();
+    const stored = ((await (await req("GET", `/api/journal/${journey.id}`)).json()) as { journey: Journey }).journey;
+    expect(stored.fingerprint?.tempC).toBe(19.2);
+  });
+
+  it("an edit during a background job is never overwritten by the stale result", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    setFingerprintDepsFactory(() => {
+      const f = fixtureFingerprintDeps();
+      return { ...f.deps, getCity: getCityById, observedWeather: async (...a) => (await gate, f.deps.observedWeather(...a)) };
+    });
+    const { journey } = (await (await req("POST", "/api/journal", LISBON)).json()) as { journey: Journey };
+    useFixtureFingerprints();
+    await req("PUT", `/api/journal/${journey.id}`, { ...LISBON, companions: 1 });
+    release();
+    await whenFingerprintsSettled();
+    const stored = ((await (await req("GET", `/api/journal/${journey.id}`)).json()) as { journey: Journey }).journey;
+    expect(stored.fingerprint?.dailySpendEur).toBe(100); // 700 / 7 / 1, not the stale 50
+  });
+
+  it("GET fingerprint stays within its budget when weather is slow (pending)", async () => {
+    useFixtureFingerprints({ weather: "quota" });
     const j = await createLisbon();
-    expect(j.fingerprint?.status.tempC).toBe("pending");
-    expect(j.fingerprint?.status.dailySpendEur).toBe("ok");
+    setFingerprintDepsFactory(() => {
+      const f = fixtureFingerprintDeps();
+      return { ...f.deps, getCity: getCityById, observedWeather: async (...a) => (await new Promise((r) => setTimeout(r, 200)), f.deps.observedWeather(...a)) };
+    }, 50);
+    const r = (await (await req("GET", `/api/journal/${j.id}/fingerprint`)).json()) as { fingerprint: Fingerprint };
+    expect(r.fingerprint.status.tempC).toBe("pending");
+    expect(r.fingerprint.status.dailySpendEur).toBe("ok");
   });
 });
 
@@ -208,5 +246,21 @@ describe("POST /api/replay", () => {
     useFixtureFingerprints();
     const r = (await (await req("POST", "/api/replay", QUERY(j.id))).json()) as ReplayResponse;
     expect(r.template.tempC).toBe(19.2);
+    expect(r.templateClimate).toBe("observed");
+  });
+
+  it("R8: weather still pending → template from normals, bend +3 reorders, stored stays pending", async () => {
+    useFixtureFingerprints({ weather: "quota" });
+    const j = await createLisbon();
+    const order = async (bend: object) => (await (await req("POST", "/api/replay", QUERY(j.id, { bend }))).json()) as ReplayResponse;
+    const a = await order({});
+    const b = await order({ tempC: 3 });
+    expect(a.templateClimate).toBe("normal");
+    expect(typeof a.template.tempC).toBe("number");
+    expect(b.template.tempC).toBeCloseTo(a.template.tempC! + 3, 5);
+    expect(a.results.map((x) => `${x.cityId}:${x.month}`)).not.toEqual(b.results.map((x) => `${x.cityId}:${x.month}`));
+    const stored = (await (await req("GET", `/api/journal/${j.id}`)).json()) as { journey: Journey };
+    expect(stored.journey.fingerprint?.status.tempC).toBe("pending");
+    expect(stored.journey.fingerprint?.tempC).toBeUndefined();
   });
 });

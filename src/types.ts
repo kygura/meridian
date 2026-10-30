@@ -481,6 +481,13 @@ export interface ReplayResponse {
   fromCityId?: string;
   /** Stage-1 match (0-100) for all 12 months of every result city, index 0 = Jan; null = not scorable. */
   grid?: Array<{ cityId: string; months: Array<number | null> }>;
+  /**
+   * Where the template's comfort/tempC/precipMm came from: "observed" = the stay's
+   * real weather (or values given in a partial fingerprint), "normal" = the city's
+   * seasonality normal because observed weather is pending/absent (never stored),
+   * "none" = no climate dims.
+   */
+  templateClimate?: "observed" | "normal" | "none";
 }
 
 // ── Ingestion ───────────────────────────────────────────────────────
