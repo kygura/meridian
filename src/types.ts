@@ -300,6 +300,8 @@ export interface ObservedConditions {
   comfort: number;
   /** The city's seasonality normal for that month ("was it a lucky week"). */
   normalComfort: number;
+  /** The city's normal mean temperature for that month, when known. */
+  normalTempC?: number;
 }
 
 export interface Lodging {
@@ -443,6 +445,8 @@ export interface ReplayQuery {
     maxFlightHours?: number;
     fromCityId?: string; // defaults to home
     tags?: string[]; // event tags, e.g. ["eclipse"]
+    /** Restrict to these cities (row-level watches). */
+    cityIds?: string[];
   };
   limit?: number; // default 30
 }
@@ -473,6 +477,8 @@ export interface ReplayResponse {
   /** The bent template actually matched against. */
   template: Partial<Fingerprint>;
   fromCityId?: string;
+  /** Stage-1 match (0-100) for all 12 months of every result city, index 0 = Jan; null = not scorable. */
+  grid?: Array<{ cityId: string; months: Array<number | null> }>;
 }
 
 // ── Ingestion ───────────────────────────────────────────────────────

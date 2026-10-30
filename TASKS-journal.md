@@ -32,7 +32,7 @@ reviewer = different family from implementer. No bridges.
 - [frontier] A — server journal core: auth, atomic store, journal CRUD, settings, FX (opus)
 - [frontier] E — fingerprint + crowd + replay engine, pure/DI (opus)
 - [frontier] D — DESIGN-journal.md (opus designer)
-- [frontier] G — ADR 0004/0005, CONTEXT.md, tensions, gmail task prompt (haiku)
+- [done] G — ADR 0004/0005, CONTEXT.md, tensions, gmail task prompt (haiku)
 ### Wave 2
 - [blocked A] I — import queue: store, dedupe, city resolution, clustering, accept/merge/discard, booking promotion, routes (sonnet)
 - [blocked A,E] R — replay + fingerprint routes, fingerprint recompute on save (opus, continue E)
@@ -46,3 +46,4 @@ reviewer = different family from implementer. No bridges.
 - [blocked P,W,U1] U4 — inbox UI + uploads + photo EXIF + alerts list/ticker + TopBar badge (sonnet)
 ### Gate
 - V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
+- G done (haiku): docs; import task uses id "<source>:<sourceRef>", Money on wire = {amount,currency} — import schema must accept partial Money.

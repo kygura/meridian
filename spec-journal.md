@@ -307,3 +307,12 @@ Duffel payments, hotel price search, mobile app, migrating client Trips to the s
 - **R6 Observed weather** uses the Open-Meteo archive daily endpoint for the exact stay,
   cached on disk per (cityId, arrive, depart). Quota/network miss → weather dims
   `pending`; recompute retries on next fingerprint request.
+- **R7 (design gaps, 2026-10-30):** `ReplayResponse.grid` carries stage-1 scores for all 12
+  months of each result city (dense replay rows). `ObservedConditions.normalTempC` added.
+  `constraints.cityIds` added (row-level watches). Alerts API lives under the gated
+  watches prefix: `GET /api/watches/alerts`, `POST /api/watches/alerts/:id/seen`.
+  Import additions (task P): `POST /api/import/cluster/:id/merge {journeyId}`,
+  `PATCH /api/import/:id {cityId?|fromCityId?|toCityId?}` to resolve cities in review,
+  uploads at `POST /api/import/upload/email` (raw .eml/.mbox body or multipart) and
+  `POST /api/import/upload/timeline` (JSON body), and `POST /api/import/photos`
+  (array of `{timestamp, lat, lng, hash}`).
