@@ -45,7 +45,7 @@ reviewer = different family from implementer. No bridges.
 ### Wave 4
 - [done] U4 — inbox UI + uploads + photo EXIF + alerts list/ticker + TopBar badge (sonnet)
 ### Gate
-- [running wf] V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
+- [done] V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
 - G done (haiku): docs; import task uses id "<source>:<sourceRef>", Money on wire = {amount,currency} — import schema must accept partial Money.
 - A done (opus, 1st try): 185 tests; Frankfurter host is api.frankfurter.dev/v1.
 - D done (opus): DESIGN-journal.md; 7 gaps ruled in spec §14 R7 (dense grid, normalTempC, cityIds, alerts under /api/watches/alerts, cluster merge, PATCH city resolve, upload routes).
@@ -54,3 +54,4 @@ reviewer = different family from implementer. No bridges.
 - U1 done (sonnet impl, haiku drift 13 + opus logic findings, sonnet fix): 366 tests, build green, Playwright smoke ok. dist/ is tracked — agents restore it after builds.
 - P,W done: 499 tests. U2,U3 done: 499 tests + build. U4 done: 529 tests, exifr 7.1.3, CORS PATCH added by planner.
 - Gate running: 5 areas x 2 lenses + spec/done-criteria checker, adversarial verify per finding, per-area fixes, recheck.
+- V done: 101 candidate findings, 64 confirmed (adversarial verify), fixed by per-area agents; 573 tests; P1-P4 done-criteria PASS live. Planner reverted a paid Render cron block (opened T6 instead).
