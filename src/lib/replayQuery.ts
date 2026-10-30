@@ -62,6 +62,26 @@ export function buildQuery(c: ReplayControls, t: ReplayTemplateRef): ReplayQuery
   };
 }
 
+/** The controls a stored query was built from (inverse of buildQuery); `month` pins the months constraint to one window. */
+export function controlsFromQuery(q: ReplayQuery, month?: number): ReplayControls {
+  const c = q.constraints ?? {};
+  return {
+    ...DEFAULT_CONTROLS,
+    tempC: q.bend.tempC ?? 0,
+    spendPct: q.bend.spendPct ?? 0,
+    crowd: q.bend.crowd ?? 0,
+    monthShift: q.bend.monthShift ?? 0,
+    anyMonth: q.bend.monthShift === null,
+    weights: q.weights ?? DEFAULT_WEIGHTS,
+    months: month ? [month] : [...(c.months ?? [])],
+    regions: [...(c.regions ?? [])],
+    excludeVisited: !!c.excludeVisited,
+    maxFlightHours: c.maxFlightHours ?? null,
+    fromCityId: c.fromCityId ?? null,
+    tags: [...(c.tags ?? [])],
+  };
+}
+
 /** Row-level watch: the same query narrowed to one city and month (spec R7 cityIds). */
 export function narrowQuery(q: ReplayQuery, cityId: string, month: number): ReplayQuery {
   return { ...q, constraints: { ...q.constraints, cityIds: [cityId], months: [month] } };

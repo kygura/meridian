@@ -7,6 +7,7 @@ import { MATCH_LABELS, resultKey } from "../../lib/replayGrid";
 import {
   DEFAULT_CONTROLS,
   buildQuery,
+  controlsFromQuery,
   narrowQuery,
   querySummary,
   shiftMonth,
@@ -131,6 +132,16 @@ export default function ReplayPage({
   }, [tplId, !!resp]);
 
   const [controls, setControls] = useState<Controls>(DEFAULT_CONTROLS);
+  // "OPEN IN REPLAY" on an alert: apply the watch's query for that month once, then highlight the city.
+  const prefill = useMeridianStore((s) => s.replayPrefill);
+  const setReplayPrefill = useMeridianStore((s) => s.setReplayPrefill);
+  const focusRef = useRef<{ cityId: string; month: number } | null>(null);
+  useEffect(() => {
+    if (!prefill) return;
+    setControls(controlsFromQuery(prefill.query, prefill.month));
+    focusRef.current = { cityId: prefill.cityId, month: prefill.month };
+    setReplayPrefill(null);
+  }, [prefill, setReplayPrefill]);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [loading, setLoading] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -190,6 +201,12 @@ export default function ReplayPage({
   useEffect(() => {
     if (!resp) return;
     setSelectedKey((k) => (k && resp.results.some((r) => resultKey(r) === k) ? k : null));
+    const focus = focusRef.current;
+    const hit = focus && resp.results.find((r) => r.cityId === focus.cityId && r.month === focus.month);
+    if (hit) {
+      setSelectedKey(resultKey(hit));
+      focusRef.current = null;
+    }
     const top = resp.results[0];
     const topKey = top ? resultKey(top) : null;
     if (top && topKey !== lastTop.current && lastTop.current !== null) {

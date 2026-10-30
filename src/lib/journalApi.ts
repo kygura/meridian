@@ -5,10 +5,13 @@
 
 import { apiUrl } from "./api";
 import { useMeridianStore } from "../store";
+import { MAX_UPLOAD_BYTES, emailContentType, photoBatches, mergeReports, type PhotoPoint, type UploadReport } from "./importUpload";
 import type {
   Alert,
   Fingerprint,
+  ImportCandidate,
   ImportQueue,
+  ImportReport,
   Journey,
   JourneyInput,
   ReplayQuery,
@@ -215,15 +218,16 @@ export async function listAlerts(): Promise<Alert[]> {
   return Array.isArray(data) ? data : data.alerts ?? [];
 }
 
-/** Refresh importPending + alerts in the store. No token -> no request. Never throws. */
+/** Refresh importPending + alerts in the store. No token, or locked -> no request. Never throws. */
 export async function refreshBadges(): Promise<void> {
-  if (!hasToken()) return;
-  const [queue, alerts] = await Promise.allSettled([getQueue(), listAlerts()]);
+  if (!hasToken() || useMeridianStore.getState().journalLocked) return;
+  const [queue, alerts, watches] = await Promise.allSettled([getQueue(), listAlerts(), listWatches()]);
   const s = useMeridianStore.getState();
   if (queue.status === "fulfilled" && queue.value) {
     s.setImportPending(queue.value.candidates.filter((c) => c.state === "pending").length);
   }
   if (alerts.status === "fulfilled") s.setAlerts(alerts.value);
+  if (watches.status === "fulfilled") s.setWatches(watches.value);
 }
 
 // ── Replay & watches (task b) ────────────────────────────────────────
@@ -248,4 +252,85 @@ export async function createWatch(input: {
 export async function listWatches(): Promise<Watch[]> {
   const data = await tolerate404(jfetch<{ watches?: Watch[] }>("/api/watches"), { watches: [] });
   return data.watches ?? [];
+}
+
+export async function deleteWatch(id: string): Promise<void> {
+  await jfetch(`/api/watches/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** POST /api/watches/alerts/:id/seen */
+export async function markAlertSeen(id: string): Promise<Alert> {
+  const data = await jfetch<{ alert: Alert }>(`/api/watches/alerts/${encodeURIComponent(id)}/seen`, { method: "POST" });
+  return data.alert;
+}
+
+// ── Inbox (task d) ───────────────────────────────────────────────────
+
+const enc = encodeURIComponent;
+const post = (path: string, body?: unknown) => jfetch(path, { method: "POST", ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+
+/** Accepts one candidate as a new journey, or into `journeyId` when given. */
+export const acceptCandidate = (id: string, journeyId?: string) => post(`/api/import/${enc(id)}/accept`, journeyId ? { journeyId } : undefined);
+export const mergeCandidate = (id: string, journeyId: string) => post(`/api/import/${enc(id)}/merge`, { journeyId });
+export const discardCandidate = (id: string) => post(`/api/import/${enc(id)}/discard`);
+export const acceptCluster = (clusterId: string) => post(`/api/import/cluster/${enc(clusterId)}/accept`);
+export const mergeCluster = (clusterId: string, journeyId: string) => post(`/api/import/cluster/${enc(clusterId)}/merge`, { journeyId });
+
+/** Resolve the city of a candidate flagged "unresolved-city" (PATCH /api/import/:id). */
+export async function resolveCandidate(id: string, fix: { cityId?: string; fromCityId?: string; toCityId?: string }): Promise<ImportCandidate> {
+  const data = await jfetch<{ candidate: ImportCandidate }>(`/api/import/${enc(id)}`, { method: "PATCH", body: JSON.stringify(fix) });
+  return data.candidate;
+}
+
+/** Re-read the queue into the store (importPending + alerts counts follow). Errors propagate. */
+export async function refreshQueue(): Promise<ImportQueue | null> {
+  const q = await getQueue();
+  if (q) useMeridianStore.getState().setImportPending(q.candidates.filter((c) => c.state === "pending").length);
+  return q;
+}
+
+// Uploads. Files are read in the browser and sent as the server expects; photos send metadata only.
+
+/** Refuse over-limit files before reading them into memory (the server would answer 413 anyway). */
+function tooLargeCheck(file: File): void {
+  if (file.size > MAX_UPLOAD_BYTES) throw new JournalApiError(413, { error: "too_large", message: "That file is too large" });
+}
+
+/** .eml / .mbox as a raw body (content type from the extension). */
+export function uploadEmail(file: File): Promise<ImportReport> {
+  tooLargeCheck(file);
+  return jfetch<ImportReport>("/api/import/upload/email", { method: "POST", headers: { "Content-Type": emailContentType(file.name) }, body: file });
+}
+
+/** Timeline export: parsed here, sent as the JSON body (the raw file is not kept by the server). */
+export async function uploadTimeline(file: File): Promise<ImportReport> {
+  tooLargeCheck(file);
+  let json: unknown;
+  try {
+    json = JSON.parse(await file.text());
+  } catch {
+    throw new JournalApiError(400, { error: "invalid_json", message: "That file isn't valid JSON" });
+  }
+  return jfetch<ImportReport>("/api/import/upload/timeline", { method: "POST", body: JSON.stringify(json) });
+}
+
+/**
+ * POST /api/import/photos in time-sorted batches; the points carry exactly {timestamp, lat, lng, hash}.
+ * A failure rethrows with `partial` (the reports of the batches already saved); a cancel adds a CANCELLED note.
+ */
+export async function uploadPhotos(points: PhotoPoint[], opts: { note?: string; shouldCancel?: () => boolean } = {}): Promise<UploadReport> {
+  const reports: ImportReport[] = [];
+  let cancelled = false;
+  try {
+    for (const batch of photoBatches(points)) {
+      if (opts.shouldCancel?.()) {
+        cancelled = true;
+        break;
+      }
+      reports.push(await jfetch<ImportReport>("/api/import/photos", { method: "POST", body: JSON.stringify(batch) }));
+    }
+  } catch (e) {
+    throw Object.assign(e as object, { partial: reports });
+  }
+  return mergeReports(reports, [opts.note, cancelled ? "CANCELLED" : ""].filter(Boolean).join(" · ") || undefined);
 }

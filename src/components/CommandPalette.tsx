@@ -1,6 +1,9 @@
 import { useChat } from "ai/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiUrl } from "../lib/api";
+import { getToken } from "../lib/journalApi";
+import { bearerHeaders, replayPlaces } from "../lib/replayMatch";
+import ReplayPlaceCard from "./journal/ReplayPlaceCard";
 import { useMeridianStore } from "../store";
 import type { City, LayerKey } from "../types";
 
@@ -39,8 +42,10 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
+  // Journal tools only run when the request carries the Meridian token (re-read every render).
   const { messages, append, isLoading } = useChat({
     api: apiUrl("/api/agent/chat"),
+    headers: bearerHeaders(getToken()),
   });
 
   // City-name index for turning agent prose into clickable chips.
@@ -274,7 +279,14 @@ export default function CommandPalette() {
                 <div key={m.id} className={`cmd-msg ${m.role}`}>
                   <div className="cmd-msg-text">{m.content}</div>
                   {m.role === "assistant" && (
-                    <CityChips text={m.content} index={cityIndex} onPick={inspect} />
+                    <>
+                      <div className="jr-pm-list">
+                        {replayPlaces(m.toolInvocations).map((p) => (
+                          <ReplayPlaceCard key={`${p.cityId}:${p.replayMatch?.month}`} place={p} onPick={(id) => inspect({ id })} />
+                        ))}
+                      </div>
+                      <CityChips text={m.content} index={cityIndex} onPick={inspect} />
+                    </>
                   )}
                 </div>
               ))}

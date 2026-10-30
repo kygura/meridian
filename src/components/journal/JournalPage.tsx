@@ -6,6 +6,7 @@ import UnlockPrompt from "./UnlockPrompt";
 import Timeline from "./Timeline";
 import JourneyDetail from "./JourneyDetail";
 import ReplayPage from "./ReplayPage";
+import InboxPage from "./InboxPage";
 import "../../styles/journal.css";
 
 type JournalRoute = Extract<Route, { view: "journal" }>;
@@ -86,10 +87,7 @@ export default function JournalPage({ route }: { route: JournalRoute }) {
         ) : route.sub === "replay" ? (
           <ReplayPage journeyId={route.journeyId} stopIndex={route.stopIndex} error={error} onRetry={() => void load()} />
         ) : (
-          // Inbox (task d) mounts here.
-          <div className="jr-empty">
-            <div className="cmd-empty-title">{route.sub.toUpperCase()} · NOT BUILT YET</div>
-          </div>
+          <InboxPage />
         )}
       </div>
     </div>

@@ -1,13 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../store";
 import { apiUrl } from "../lib/api";
+import { hasToken } from "../lib/journalApi";
+import { mergeTicker } from "../lib/inbox";
+import { cityIndex } from "../lib/journal";
 import type { TickerItem } from "../types";
 
 const SCROLL_SPEED_PX_PER_SEC = 50;
 const REFRESH_INTERVAL = 15 * 60 * 1000;
 
 export default function NewsTicker() {
-  const { ticker, setTicker } = useMeridianStore();
+  const { ticker: news, setTicker } = useMeridianStore();
+  const alerts = useMeridianStore((s) => s.alerts);
+  const watches = useMeridianStore((s) => s.watches);
+  const cities = useMeridianStore((s) => s.cities);
+  const locked = useMeridianStore((s) => s.journalLocked);
+  const setAlertsPanelOpen = useMeridianStore((s) => s.setAlertsPanelOpen);
+  // Unseen alerts lead the set, only while the journal is unlocked (no token, no alert items).
+  const ticker = useMemo(
+    () => mergeTicker(news, alerts, watches, cityIndex(cities), hasToken() && !locked),
+    [news, alerts, watches, cities, locked]
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const pausedRef = useRef(false);
@@ -70,7 +83,11 @@ export default function NewsTicker() {
     pausedRef.current = hovered;
   }, [hovered]);
 
-  const handleClick = (item: TickerItem, index: number) => {
+  const handleClick = (item: TickerItem & { alertId?: string }, index: number) => {
+    if (item.alertId) {
+      setAlertsPanelOpen(true);
+      return;
+    }
     if (!item.url) return;
     setClickedIndex(index);
     setTimeout(() => setClickedIndex(null), 600);
@@ -103,7 +120,8 @@ export default function NewsTicker() {
             {items.map((item, i) => {
               const realIndex = i % ticker.length;
               const isClicked = clickedIndex === realIndex;
-              const hasLink = !!item.url;
+              const isAlert = !!item.alertId;
+              const hasLink = !!item.url || isAlert;
 
               return (
                 <span
@@ -122,14 +140,14 @@ export default function NewsTicker() {
                         }
                       : undefined
                   }
-                  title={hasLink ? `${item.text} — ${item.source ?? "Source"} (click to open)` : item.text}
+                  title={isAlert ? `${item.text} (click to open alerts)` : hasLink ? `${item.text} — ${item.source ?? "Source"} (click to open)` : item.text}
                 >
                   <span className={`nt-glyph ${item.glyph}`} />
                   <span className="nt-loc">{item.location}</span>
                   <span className="nt-text">{item.text}</span>
                   {item.source && <span className="nt-source">{item.source}</span>}
                   <span className="nt-time">{item.time}</span>
-                  {hasLink && <span className="nt-link-icon">↗</span>}
+                  {hasLink && !isAlert && <span className="nt-link-icon">↗</span>}
                   <span className="nt-sep" />
                 </span>
               );

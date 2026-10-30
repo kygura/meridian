@@ -15,6 +15,7 @@ import BookingModal from "./components/booking/BookingModal";
 import BookingsPanel from "./components/booking/BookingsPanel";
 import JournalPage from "./components/journal/JournalPage";
 import QuickLogSheet from "./components/journal/QuickLogSheet";
+import AlertsPanel from "./components/journal/AlertsPanel";
 import { apiUrl } from "./lib/api";
 
 export default function App() {
@@ -105,6 +106,7 @@ export default function App() {
       <BookingModal />
       <BookingsPanel />
       <QuickLogSheet />
+      <AlertsPanel />
       <ThemeWipe />
     </div>
   );

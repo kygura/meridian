@@ -21,6 +21,7 @@ import type {
   Journey,
   Alert,
   Watch,
+  ReplayQuery,
 } from "./types";
 
 export interface CandidateFilters {
@@ -46,6 +47,13 @@ export interface JourneyScrub {
   mode: "chrono" | "season";
   year?: number;
   month?: number;
+}
+
+/** The replay window an alert points at: the watch's query plus the alert's city and month. */
+export interface ReplayPrefill {
+  query: ReplayQuery;
+  cityId: string;
+  month: number;
 }
 
 export interface MeridianState {
@@ -188,6 +196,9 @@ export interface MeridianState {
   setJournalDraw: (draw: { active: boolean; cityIds: string[] }) => void;
   journeyScrub: JourneyScrub;
   setJourneyScrub: (patch: Partial<JourneyScrub>) => void;
+  /** Set by "OPEN IN REPLAY" on an alert; ReplayPage applies it once and clears it. */
+  replayPrefill: ReplayPrefill | null;
+  setReplayPrefill: (p: ReplayPrefill | null) => void;
 }
 
 const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
@@ -521,6 +532,8 @@ export const useMeridianStore = create<MeridianState>()(
       journeyScrub: { mode: "chrono" },
       setJourneyScrub: (patch) =>
         set((state) => ({ journeyScrub: { ...state.journeyScrub, ...patch } })),
+      replayPrefill: null,
+      setReplayPrefill: (p) => set({ replayPrefill: p }),
     }),
     {
       name: "meridian-trips",

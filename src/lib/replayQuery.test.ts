@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   DEFAULT_CONTROLS,
   buildQuery,
+  controlsFromQuery,
   crowdReadout,
   monthReadout,
   narrowQuery,
@@ -105,5 +106,15 @@ describe("templateCard / querySummary", () => {
   it("summarizes the bend and constraints", () => {
     const q = narrowQuery(buildQuery({ ...DEFAULT_CONTROLS, tempC: 3, spendPct: -25 }, { journeyId: "j", stopIndex: null }), "opo", 6);
     expect(querySummary(q, "Lisbon May")).toBe("TEMPLATE LISBON MAY · +3°C · −25 % SPEND · CITY OPO · MONTHS JUN");
+  });
+});
+
+describe("controlsFromQuery", () => {
+  it("round-trips buildQuery and pins the month for an alert window", () => {
+    const c = { ...DEFAULT_CONTROLS, tempC: 3, spendPct: -25, months: [5, 6], regions: ["europe"], maxFlightHours: 4, fromCityId: "lisbon", tags: ["eclipse"], excludeVisited: true };
+    const q = buildQuery(c, { journeyId: "j1", stopIndex: null });
+    expect(controlsFromQuery(q)).toEqual(c);
+    expect(controlsFromQuery(q, 6).months).toEqual([6]);
+    expect(controlsFromQuery(buildQuery({ ...DEFAULT_CONTROLS, anyMonth: true }, { journeyId: "j1", stopIndex: null })).anyMonth).toBe(true);
   });
 });
