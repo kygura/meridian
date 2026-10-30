@@ -172,6 +172,7 @@ export async function computeStopFingerprint(
     if (crowd) {
       fp.crowdProxy = crowd.value;
       status.crowdProxy = "ok";
+      if (crowd.flags.length) fp.crowdFlags = [...crowd.flags];
     }
   }
 
@@ -238,6 +239,8 @@ export async function computeFingerprint(
   if (crowd.value !== undefined) {
     fp.crowdProxy = Math.round(crowd.value);
     if (journey.stops.some((s) => typeof s.crowdOverride === "number")) fp.crowdIsOverride = true;
+    const flags = [...new Set(stopFps.flatMap((s) => s.crowdFlags ?? []))].sort();
+    if (flags.length) fp.crowdFlags = flags;
   }
 
   let spend = 0;

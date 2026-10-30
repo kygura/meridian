@@ -376,6 +376,8 @@ export interface Fingerprint {
   /** 0-100, always a labeled proxy (or the user's override). */
   crowdProxy?: number;
   crowdIsOverride?: boolean;
+  /** Why the crowd proxy is degraded (holiday data missing/partial); absent when complete or overridden. */
+  crowdFlags?: ("holidays_unavailable" | "holidays_partial")[];
   durationNights: number;
   rating?: Rating;
   tags: string[];

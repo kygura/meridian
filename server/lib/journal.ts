@@ -213,6 +213,21 @@ export async function updateJourney(id: string, input: JourneyInputRaw): Promise
   });
 }
 
+/**
+ * Serialized read-modify-write of one stored journey for server-derived fields
+ * (e.g. a recomputed fingerprint). No re-validation, no listeners, updatedAt
+ * untouched. `fn` returns the replacement, or undefined to leave it as is.
+ */
+export async function mutateJourney(id: string, fn: (current: Journey) => Journey | undefined): Promise<Journey | undefined> {
+  return journalStore.update((file) => {
+    const i = file.journeys.findIndex((j) => j.id === id);
+    if (i < 0) return undefined;
+    const next = fn(file.journeys[i]!);
+    if (next) file.journeys[i] = next;
+    return file.journeys[i];
+  });
+}
+
 /** Returns true if a journey was removed. */
 export async function deleteJourney(id: string): Promise<boolean> {
   return journalStore.update((file) => {

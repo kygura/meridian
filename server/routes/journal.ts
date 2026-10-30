@@ -15,6 +15,7 @@ import {
   saveSettings,
   JournalValidationError,
 } from "../lib/journal.js";
+import { ensureFingerprint } from "../lib/journalFingerprint.js";
 
 const journal = new Hono();
 
@@ -69,6 +70,23 @@ journal.get("/:id", async (c) => {
   const journey = await getJourney(c.req.param("id"));
   if (!journey) return c.json({ error: "not_found", message: "Journey not found" }, 404);
   return c.json({ journey });
+});
+
+// Recomputes (and persists) when inputs changed or a dim is still pending (R6 retry).
+journal.get("/:id/fingerprint", async (c) => {
+  const stored = await getJourney(c.req.param("id"));
+  if (!stored) return c.json({ error: "not_found", message: "Journey not found" }, 404);
+  try {
+    const journey = await ensureFingerprint(stored);
+    return c.json({
+      fingerprint: journey.fingerprint,
+      status: journey.fingerprint?.status,
+      stops: journey.stops.map((s, index) => ({ index, fingerprint: s.fingerprint })),
+    });
+  } catch (err) {
+    console.error("[journal] fingerprint error:", err);
+    return c.json({ error: "fingerprint_failed", message: "Could not compute the fingerprint." }, 500);
+  }
 });
 
 journal.post("/", async (c) => {

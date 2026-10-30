@@ -83,6 +83,14 @@ describe("computeFingerprint — Lisbon May 2024 fixture", () => {
     expect(fp.status.flightCostEurPer1000km).toBe("absent");
   });
 
+  it("persists crowd flags when holiday data is unavailable", async () => {
+    const { fingerprint: fp, journey } = await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps({ nager: "fail" }).deps);
+    expect(fp.crowdFlags).toEqual(["holidays_unavailable"]);
+    expect(journey.stops[0]!.fingerprint!.crowdFlags).toEqual(["holidays_unavailable"]);
+    const ok = await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps().deps);
+    expect(ok.fingerprint.crowdFlags).toBeUndefined();
+  });
+
   it("uses the stop's crowdOverride over the proxy", async () => {
     const j = lisbonJourney();
     j.stops[0]!.crowdOverride = 95;

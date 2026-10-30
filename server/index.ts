@@ -15,10 +15,15 @@ import bookingsRoutes from "./routes/bookings.js";
 import newsRoutes from "./routes/news.js";
 import seasonalityRoutes from "./routes/seasonality.js";
 import journalRoutes from "./routes/journal.js";
+import replayRoutes from "./routes/replay.js";
+import { registerJournalFingerprint } from "./lib/journalFingerprint.js";
+import importRoutes from "./routes/import.js";
 import { gateRoutes } from "./middleware/auth.js";
 
 // Load city data on startup
 loadCities();
+// Fingerprint every journey on save (spec-journal §5).
+registerJournalFingerprint();
 
 const app = new Hono();
 
@@ -46,6 +51,8 @@ app.route("/api/bookings", bookingsRoutes);
 app.route("/api/news", newsRoutes);
 app.route("/api/seasonality", seasonalityRoutes);
 app.route("/api/journal", journalRoutes);
+app.route("/api/replay", replayRoutes);
+app.route("/api/import", importRoutes);
 
 // Health check
 app.get("/api/health", (c) => {
