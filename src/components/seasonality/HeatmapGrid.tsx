@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import HeatRow, { rowWindow, type RenderRow } from "./HeatRow";
 import HeatTooltip, { type HeatTooltipData } from "./HeatTooltip";
 import { MONTH_INITIALS, MONTH_ABBR } from "../../lib/seasonality";
@@ -10,9 +10,20 @@ export interface HeatmapGridProps {
   regionsLabel: string;
   /** City pinned first (SELECTED) — its peak cell receives initial focus (flow F). */
   autoFocusCityId: string | null;
-  onSelect: (row: RenderRow) => void;
+  /** `col` is passed for cell clicks only. */
+  onSelect: (row: RenderRow, col?: number) => void;
   onGoto: (row: RenderRow) => void;
   onRemove: (row: RenderRow) => void;
+  // Optional extras (replay). Defaults keep SEASONS unchanged.
+  ariaLabel?: string;
+  gutterHeader?: string;
+  trailHeader?: string;
+  /** Header marks: the template's month (underlined) and its bent target (▸). */
+  markedCols?: { col: number; kind: "template" | "target" }[];
+  /** Replaces the default tooltip; return null for none. */
+  renderTooltip?: (row: RenderRow, col: number, anchor: DOMRect) => ReactNode | null;
+  /** Live-region text for the focused cell. */
+  describeCell?: (row: RenderRow, col: number) => string;
 }
 
 /**
@@ -28,6 +39,12 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
     onSelect,
     onGoto,
     onRemove,
+    ariaLabel = "Seasonality heatmap calendar",
+    gutterHeader = "CITY",
+    trailHeader = "BEST",
+    markedCols,
+    renderTooltip,
+    describeCell,
   } = props;
   const nowMonth = new Date().getMonth();
   const gridId = useRef(`hmgrid-${Math.random().toString(36).slice(2, 8)}`);
@@ -44,7 +61,8 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
   const [liveMessage, setLiveMessage] = useState("");
   const [tooltip, setTooltip] = useState<{
     anchor: DOMRect;
-    data: HeatTooltipData;
+    row: RenderRow;
+    col: number;
   } | null>(null);
 
   const cellId = (rowIndex: number, col: number) =>
@@ -120,7 +138,7 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
       case "Enter":
       case " ":
         e.preventDefault();
-        if (current && current.kind === "city") onSelect(current);
+        if (current && current.kind === "city") onSelect(current, col);
         break;
       case "g":
       case "G":
@@ -136,7 +154,9 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
   const handleFocusCell = (rowIndex: number, col: number) => {
     setFocused({ row: rowIndex, col });
     const row = allRows[rowIndex];
-    if (row && Array.isArray(row.months)) {
+    if (row && describeCell) {
+      setLiveMessage(describeCell(row, col));
+    } else if (row && Array.isArray(row.months)) {
       const m = row.months[col];
       if (m) {
         const temp =
@@ -157,22 +177,25 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
       setTooltip(null);
       return;
     }
-    const m = row.months[month];
-    if (!m) return;
+    if (!row.months[month]) return;
+    setTooltip({ anchor, row, col: month });
+  };
+
+  const defaultTooltip = (row: RenderRow, month: number, anchor: DOMRect) => {
+    const m = Array.isArray(row.months) ? row.months[month] : null;
+    if (!m) return null;
     const title =
       row.kind === "region"
         ? `REGION · ${row.label.toUpperCase()}`
         : `${row.label.toUpperCase()} · ${MONTH_ABBR[month]}`;
-    setTooltip({
-      anchor,
-      data: {
-        title,
-        score: m.score,
-        tempC: m.tempC,
-        precipMm: m.precipMm,
-        showHint: row.kind === "city",
-      },
-    });
+    const data: HeatTooltipData = {
+      title,
+      score: m.score,
+      tempC: m.tempC,
+      precipMm: m.precipMm,
+      showHint: row.kind === "city",
+    };
+    return <HeatTooltip anchor={anchor} data={data} />;
   };
 
   const renderRow = (row: RenderRow, rowIndex: number) => (
@@ -196,27 +219,31 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
       <div
         className="heatmap-grid"
         role="grid"
-        aria-label="Seasonality heatmap calendar"
+        aria-label={ariaLabel}
         onKeyDown={handleKeyDown}
         onMouseLeave={() => setTooltip(null)}
       >
         {/* Sticky month-header row */}
         <div role="row" style={{ display: "contents" }}>
           <div className="hm-mh gutter" role="columnheader">
-            CITY
+            {gutterHeader}
           </div>
-          {MONTH_INITIALS.map((initial, i) => (
-            <div
-              key={i}
-              className={`hm-mh${i === nowMonth ? " now" : ""}`}
-              role="columnheader"
-              aria-label={MONTH_ABBR[i]}
-            >
-              {initial}
-            </div>
-          ))}
+          {MONTH_INITIALS.map((initial, i) => {
+            const mark = markedCols?.find((c) => c.col === i)?.kind;
+            return (
+              <div
+                key={i}
+                className={`hm-mh${i === nowMonth ? " now" : ""}${mark ? ` jr-mh-${mark}` : ""}`}
+                role="columnheader"
+                aria-label={mark ? `${MONTH_ABBR[i]} (${mark} month)` : MONTH_ABBR[i]}
+              >
+                {mark === "target" && <span className="jr-mh-arrow" aria-hidden="true">▸</span>}
+                {initial}
+              </div>
+            );
+          })}
           <div className="hm-mh trail" role="columnheader">
-            BEST
+            {trailHeader}
           </div>
         </div>
 
@@ -249,7 +276,8 @@ export default function HeatmapGrid(props: HeatmapGridProps) {
         {liveMessage}
       </div>
 
-      {tooltip && <HeatTooltip anchor={tooltip.anchor} data={tooltip.data} />}
+      {tooltip &&
+        (renderTooltip ?? defaultTooltip)(tooltip.row, tooltip.col, tooltip.anchor)}
     </div>
   );
 }

@@ -29,21 +29,26 @@ reviewer = different family from implementer. No bridges.
 
 ## Tasks
 ### Wave 1
-- [frontier] A — server journal core: auth, atomic store, journal CRUD, settings, FX (opus)
-- [frontier] E — fingerprint + crowd + replay engine, pure/DI (opus)
-- [frontier] D — DESIGN-journal.md (opus designer)
+- [done] A — server journal core: auth, atomic store, journal CRUD, settings, FX (opus)
+- [done] E — fingerprint + crowd + replay engine, pure/DI (opus)
+- [done] D — DESIGN-journal.md (opus designer)
 - [done] G — ADR 0004/0005, CONTEXT.md, tensions, gmail task prompt (haiku)
 ### Wave 2
-- [blocked A] I — import queue: store, dedupe, city resolution, clustering, accept/merge/discard, booking promotion, routes (sonnet)
-- [blocked A,E] R — replay + fingerprint routes, fingerprint recompute on save (opus, continue E)
-- [blocked A,D] U1 — journal client: api, router, nav, timeline, detail, quick log, unlock (sonnet)
+- [done] I — import queue: store, dedupe, city resolution, clustering, accept/merge/discard, booking promotion, routes (sonnet)
+- [done] R — replay + fingerprint routes, fingerprint recompute on save (opus, continue E)
+- [done] U1 — journal client: api, router, nav, timeline, detail, quick log, unlock (sonnet)
 ### Wave 3
-- [blocked I] P — .eml/.mbox JSON-LD parser, Timeline JSON parser, upload routes, fixtures (sonnet)
-- [blocked R,I] W — watches/alerts/webhook, events.json, agent journal tools + mock path (sonnet)
-- [blocked R,U1] U2 — Replay page (opus? sonnet)
-- [blocked U1] U3 — Globe journeys layer + scrubber + log from globe (sonnet)
+- [running wf] P — .eml/.mbox JSON-LD parser, Timeline JSON parser, upload routes, fixtures (sonnet)
+- [running wf] W — watches/alerts/webhook, events.json, agent journal tools + mock path (sonnet)
+- [running wf] U2 — Replay page (opus? sonnet)
+- [running wf] U3 — Globe journeys layer + scrubber + log from globe (sonnet)
 ### Wave 4
 - [blocked P,W,U1] U4 — inbox UI + uploads + photo EXIF + alerts list/ticker + TopBar badge (sonnet)
 ### Gate
 - V — typecheck/test/build, review-risk/reliability, finalizer, ponytail, spec review, drift
 - G done (haiku): docs; import task uses id "<source>:<sourceRef>", Money on wire = {amount,currency} — import schema must accept partial Money.
+- A done (opus, 1st try): 185 tests; Frankfurter host is api.frankfurter.dev/v1.
+- D done (opus): DESIGN-journal.md; 7 gaps ruled in spec §14 R7 (dense grid, normalTempC, cityIds, alerts under /api/watches/alerts, cluster merge, PATCH city resolve, upload routes).
+- E+R done (opus): engine + routes, 347 tests; R8 normals fallback + async fingerprint. Open-Meteo 429 at smoke time.
+- I done (sonnet impl, opus review 9+ findings, sonnet fix): 363 tests; exact-name + airport-radius city resolution, merge lock.
+- U1 done (sonnet impl, haiku drift 13 + opus logic findings, sonnet fix): 366 tests, build green, Playwright smoke ok. dist/ is tracked — agents restore it after builds.

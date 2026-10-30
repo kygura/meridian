@@ -19,6 +19,7 @@ import TimelineFilters from "./TimelineFilters";
 import JourneyRow from "./JourneyRow";
 
 export function startLogFromGlobe() {
+  useMeridianStore.getState().setDrawMode(false);
   useMeridianStore.getState().setJournalDraw({ active: true, cityIds: [] });
   navigate("/");
 }

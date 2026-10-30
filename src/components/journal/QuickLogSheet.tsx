@@ -189,8 +189,9 @@ function Sheet({ journeyId, prefillStops }: { journeyId?: string; prefillStops?:
       const saved = await saveJourney(input, journeyId);
       upsertJourney(saved);
       closeQuickLog();
-      // From the globe the user stays on the globe (task c forces the layer on).
+      // From the globe the user stays on the globe, with the journeys layer forced on.
       if (!prefillStops?.length) navigate(`/journal/${encodeURIComponent(saved.id)}`);
+      else useMeridianStore.setState((s) => ({ layers: { ...s.layers, journeys: true } }));
     } catch (err) {
       setSaving(false);
       if (err instanceof JournalApiError && err.fxUnavailable) {

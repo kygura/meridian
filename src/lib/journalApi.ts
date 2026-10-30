@@ -5,7 +5,17 @@
 
 import { apiUrl } from "./api";
 import { useMeridianStore } from "../store";
-import type { Alert, Fingerprint, ImportQueue, Journey, JourneyInput } from "../types";
+import type {
+  Alert,
+  Fingerprint,
+  ImportQueue,
+  Journey,
+  JourneyInput,
+  ReplayQuery,
+  ReplayResponse,
+  Watch,
+  WatchPriceRule,
+} from "../types";
 
 // ── Token ────────────────────────────────────────────────────────────
 
@@ -214,4 +224,28 @@ export async function refreshBadges(): Promise<void> {
     s.setImportPending(queue.value.candidates.filter((c) => c.state === "pending").length);
   }
   if (alerts.status === "fulfilled") s.setAlerts(alerts.value);
+}
+
+// ── Replay & watches (task b) ────────────────────────────────────────
+
+/** POST /api/replay. Errors: 404 template_not_found, 409 template_not_fingerprinted, 400. Abortable. */
+export function runReplay(query: ReplayQuery, signal?: AbortSignal): Promise<ReplayResponse> {
+  return jfetch<ReplayResponse>("/api/replay", { method: "POST", body: JSON.stringify(query), signal });
+}
+
+/** POST /api/watches. A 404 without a code means the watches route is not mounted on this server. */
+export async function createWatch(input: {
+  label: string;
+  query: ReplayQuery;
+  leadWeeks: [number, number];
+  priceRule: WatchPriceRule;
+}): Promise<Watch> {
+  const data = await jfetch<{ watch: Watch }>("/api/watches", { method: "POST", body: JSON.stringify(input) });
+  return data.watch;
+}
+
+/** GET /api/watches; [] while the route is not mounted (404). */
+export async function listWatches(): Promise<Watch[]> {
+  const data = await tolerate404(jfetch<{ watches?: Watch[] }>("/api/watches"), { watches: [] });
+  return data.watches ?? [];
 }

@@ -25,18 +25,30 @@ export interface RenderRow {
   label: string;
   country?: string;
   iata?: string;
-  badge: "SELECTED" | "SHORTLIST" | "TRIP" | "REGION";
+  badge: "SELECTED" | "SHORTLIST" | "TRIP" | "REGION" | "VISITED" | "NEW";
   /** True for SHORTLIST rows only — shows the remove ✕. */
   removable: boolean;
   /** Badge tooltip for TRIP-only rows: "From a trip". */
   badgeTitle?: string;
   /** Array = covered, null = uncovered, or a transient state. */
-  months: RowMonth[] | null | "loading" | "unavailable";
+  months: (RowMonth | null)[] | null | "loading" | "unavailable";
+  /** Replay extras, all optional. false skips the best-window rings and BEST summary window (default true). */
+  bestWindow?: boolean;
+  /** Length 12: per-cell template outline, event titles, na tooltip. */
+  cellMeta?: ({ template?: boolean; eventTitles?: string[]; naTitle?: string; muted?: boolean } | undefined)[];
+  /** Replaces the BEST summary. */
+  trail?: { label: string; score: number };
+  /** Replaces the comfort-worded aria label. */
+  cellLabel?: (col: number, m: RowMonth | undefined) => string;
+  /** Gutter styled as the selected row (as badge SELECTED does). */
+  active?: boolean;
+  /** Gutter highlighted from outside (as hovering the row does). */
+  highlight?: boolean;
 }
 
 export function rowWindow(row: RenderRow): BestWindow | null {
-  if (!Array.isArray(row.months)) return null;
-  return bestWindow(row.months.map((m) => ({ score: m.score, tempC: 0, precipMm: 0 })));
+  if (!Array.isArray(row.months) || row.bestWindow === false) return null;
+  return bestWindow(row.months.map((m) => ({ score: m?.score ?? 0, tempC: 0, precipMm: 0 })));
 }
 
 export interface HeatRowProps {
@@ -46,7 +58,8 @@ export interface HeatRowProps {
   focusedCol: number | null;
   cellId: (rowIndex: number, col: number) => string;
   onHoverCell: (row: RenderRow, month: number, anchor: DOMRect | null) => void;
-  onSelect: (row: RenderRow) => void;
+  /** `col` is passed for cell clicks only. */
+  onSelect: (row: RenderRow, col?: number) => void;
   onGoto: (row: RenderRow) => void;
   onRemove: (row: RenderRow) => void;
   onFocusCell: (rowIndex: number, col: number) => void;
@@ -84,9 +97,10 @@ export default function HeatRow(props: HeatRowProps) {
     covered && window
       ? (row.months as RowMonth[])[window.peakMonth]!.score
       : undefined;
+  const monthAt = (col: number) => (covered ? (row.months as (RowMonth | null)[])[col] ?? undefined : undefined);
 
   const leavingClass = leaving ? " hm-row-leaving" : "";
-  const hoverClass = hovered ? " hm-row-hover" : "";
+  const hoverClass = hovered || row.highlight ? " hm-row-hover" : "";
 
   const handleRemove = () => {
     if (leaving) return;
@@ -104,7 +118,7 @@ export default function HeatRow(props: HeatRowProps) {
       {/* Left gutter */}
       <div
         role="rowheader"
-        className={`hm-gutter${row.badge === "SELECTED" ? " active" : ""}${leavingClass}${hoverClass}`}
+        className={`hm-gutter${row.badge === "SELECTED" || row.active ? " active" : ""}${leavingClass}${hoverClass}`}
         onClick={row.kind === "city" ? () => onSelect(row) : undefined}
       >
         {row.kind === "region" ? (
@@ -156,15 +170,20 @@ export default function HeatRow(props: HeatRowProps) {
 
       {/* 12 month cells */}
       {Array.from({ length: 12 }, (_, month) => {
-        const m = covered ? (row.months as RowMonth[])[month] : undefined;
+        const m = monthAt(month);
+        const meta = row.cellMeta?.[month];
         const inWindow = covered && isMonthInWindow(window, month);
         return (
           <HeatCell
             key={month}
             cellId={cellId(rowIndex, month)}
-            state={cellState}
+            state={covered && !m ? "na" : cellState}
             score={m?.score}
-            ariaLabel={cellAriaLabel(row, month, m)}
+            ariaLabel={cellAriaLabel(row, month, m, meta?.eventTitles)}
+            isTemplate={meta?.template}
+            eventCount={meta?.eventTitles?.length}
+            naTitle={meta?.naTitle}
+            muted={meta?.muted}
             isBest={inWindow}
             isBestStart={inWindow && window?.startMonth === month}
             isBestEnd={inWindow && window?.endMonth === month}
@@ -173,7 +192,7 @@ export default function HeatRow(props: HeatRowProps) {
             focused={focusedCol === month}
             leaving={leaving}
             onHover={(anchor) => onHoverCell(row, month, anchor)}
-            onSelect={() => onSelect(row)}
+            onSelect={() => onSelect(row, month)}
             onGoto={() => onGoto(row)}
             onFocusCell={() => onFocusCell(rowIndex, month)}
           />
@@ -182,7 +201,12 @@ export default function HeatRow(props: HeatRowProps) {
 
       {/* Trailing BEST summary */}
       <div className={`hm-best${leavingClass}`}>
-        {covered && window && peak !== undefined ? (
+        {row.trail ? (
+          <>
+            <span className="hb-span">{row.trail.label}</span>
+            <span className={`hb-peak peak-b${comfortBin(row.trail.score)}`}>{row.trail.score}</span>
+          </>
+        ) : covered && window && peak !== undefined ? (
           <>
             <span className="hb-span">{formatBestSpan(window)}</span>
             <span className={`hb-peak peak-b${comfortBin(peak)}`}>{peak}</span>
@@ -195,7 +219,12 @@ export default function HeatRow(props: HeatRowProps) {
   );
 }
 
-function cellAriaLabel(row: RenderRow, month: number, m?: RowMonth): string {
+function cellAriaLabel(row: RenderRow, month: number, m?: RowMonth, eventTitles?: string[]): string {
+  const base = row.cellLabel ? row.cellLabel(month, m) : comfortLabel(row, month, m);
+  return eventTitles?.length ? `${base}, event: ${eventTitles.join(", ")}` : base;
+}
+
+function comfortLabel(row: RenderRow, month: number, m?: RowMonth): string {
   const monthName = MONTH_ABBR[month];
   if (!m) return `${row.label}, ${monthName}: no data`;
   const word = COMFORT_LABELS[comfortBin(m.score)].toLowerCase();

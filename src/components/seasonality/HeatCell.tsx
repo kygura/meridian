@@ -18,6 +18,14 @@ export interface HeatCellProps {
   onSelect: () => void;
   onGoto: () => void;
   onFocusCell: () => void;
+  /** Replay: the template's original month (outlined). */
+  isTemplate?: boolean;
+  /** Replay: renders the event marker when > 0. */
+  eventCount?: number;
+  /** Replay: overrides the "NOT IN DATASET" title of an na cell. */
+  naTitle?: string;
+  /** Replay: a climate-stage score only (not ranked); drawn hatched over the ramp. */
+  muted?: boolean;
 }
 
 /** One month cell (DESIGN-heatmap.md §3.5). Paints itself via .heat-bN CSS vars. */
@@ -38,6 +46,10 @@ export default function HeatCell(props: HeatCellProps) {
     onSelect,
     onGoto,
     onFocusCell,
+    isTemplate,
+    eventCount,
+    naTitle,
+    muted,
   } = props;
 
   const interactive = state === "score";
@@ -55,10 +67,12 @@ export default function HeatCell(props: HeatCellProps) {
   }
   if (isNowCol) classes.push("now-col");
   if (leaving) classes.push("hm-row-leaving");
+  if (isTemplate) classes.push("jr-tpl");
+  if (muted) classes.push("jr-unranked");
 
   const title =
     state === "na"
-      ? "NOT IN DATASET"
+      ? naTitle ?? "NOT IN DATASET"
       : state === "unavailable"
         ? "SEASONALITY UNAVAILABLE"
         : undefined;
@@ -81,6 +95,7 @@ export default function HeatCell(props: HeatCellProps) {
       onClick={interactive ? onSelect : undefined}
       onDoubleClick={interactive ? onGoto : undefined}
     >
+      {eventCount ? <span className="jr-ev" aria-hidden="true" /> : null}
       {state === "score" ? score : state === "skeleton" ? "" : "—"}
     </div>
   );

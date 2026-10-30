@@ -61,7 +61,10 @@ export default function App() {
 
       if (e.key === "[") toggleLeftDrawer();
       if (e.key === "]") setRightDrawer(false);
-      if (e.key === "Escape") setDrawMode(false);
+      if (e.key === "Escape") {
+        setDrawMode(false);
+        useMeridianStore.getState().setJournalDraw({ active: false, cityIds: [] });
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);

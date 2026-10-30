@@ -198,7 +198,7 @@ const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
   cost: false,
   conflict: false,
   disaster: false,
-  journeys: true,
+  journeys: false,
 };
 
 export const useMeridianStore = create<MeridianState>()(

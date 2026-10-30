@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Fragment, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import { apiUrl } from "../lib/api";
 import { useMeridianStore } from "../store";
 import { conflictFeatures, disasterFeatures } from "../lib/phenomena";
 import { flightPath, haversineKm } from "../lib/geo";
+import { navigate, useRoute } from "../lib/router";
+import { hasToken } from "../lib/journalApi";
+import { useJourneyLayer } from "./journal/useJourneyLayer";
+import JourneysScrubber from "./journal/JourneysScrubber";
+import JourneyDrawTray from "./journal/JourneyDrawTray";
 import { resolveTripColor } from "../lib/tripColors";
 import type { LayerKey, MetricSurface } from "../types";
 
@@ -730,7 +735,8 @@ export default function Globe() {
     });
 
     map.on("click", "city-circles", (e) => {
-      if (useMeridianStore.getState().drawMode) return;
+      const st = useMeridianStore.getState();
+      if (st.drawMode || st.journalDraw.active) return;
       const f = e.features?.[0];
       if (f?.properties?.id)
         useMeridianStore.getState().selectCity(f.properties.id as string);
@@ -838,14 +844,18 @@ export default function Globe() {
 
   // ── Draw mode: click the globe to append the nearest airport city ─
   const drawMode = useMeridianStore((s) => s.drawMode);
+  // Log from globe (journal draw) shares this flow; it wins over trip draw and needs no active trip.
+  const journalDraw = useMeridianStore((s) => s.journalDraw.active);
+  const onGlobe = useRoute().view === "globe";
   useEffect(() => {
     if (drawMode && !hasActiveTrip) useMeridianStore.getState().setDrawMode(false);
   }, [drawMode, hasActiveTrip]);
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.getCanvas().style.cursor = drawMode ? "crosshair" : "";
-    if (!drawMode) {
+    const drawing = journalDraw || drawMode;
+    map.getCanvas().style.cursor = drawing ? "crosshair" : "";
+    if (!drawing) {
       const src = map.getSource("draw-preview") as maplibregl.GeoJSONSource | null;
       if (src) src.setData({ type: "FeatureCollection", features: [] });
       return;
@@ -865,6 +875,12 @@ export default function Globe() {
     const onClick = (e: maplibregl.MapMouseEvent) => {
       const c = nearestAirportCity(e.lngLat.lng, e.lngLat.lat);
       if (!c) return;
+      if (journalDraw) {
+        const { cityIds } = useMeridianStore.getState().journalDraw;
+        if (cityIds[cityIds.length - 1] !== c.id)
+          useMeridianStore.getState().setJournalDraw({ active: true, cityIds: [...cityIds, c.id] });
+        return;
+      }
       useMeridianStore.getState().addCityToActiveTrip({
         cityId: c.id,
         name: c.name,
@@ -881,9 +897,11 @@ export default function Globe() {
         raf = 0;
         const state = useMeridianStore.getState();
         const trip = state.trips.find((t) => t.id === state.activeTripId);
-        const last = trip?.nodes[trip.nodes.length - 1];
+        const lastId = state.journalDraw.cityIds[state.journalDraw.cityIds.length - 1];
+        const last = journalDraw ? state.cities.find((c) => c.id === lastId) : trip?.nodes[trip.nodes.length - 1];
         const src = map.getSource("draw-preview") as maplibregl.GeoJSONSource | null;
-        if (!src || !last) return;
+        if (!src) return;
+        if (!last) return src.setData({ type: "FeatureCollection", features: [] });
         src.setData({
           type: "FeatureCollection",
           features: [
@@ -910,7 +928,10 @@ export default function Globe() {
       map.off("mousemove", onMove);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [drawMode]);
+  }, [drawMode, journalDraw]);
+
+  // Journeys arcs + stops under the trip routes; also draws the log-from-globe chain.
+  useJourneyLayer(mapRef, loadedRef);
 
   // ── Unified routes: trip arcs + suggested shortlist arcs ────────
   useEffect(() => {
@@ -1216,16 +1237,25 @@ export default function Globe() {
         <button
           className={`globe-tool ${drawMode ? "on" : ""}`}
           onClick={() => hasActiveTrip && useMeridianStore.getState().setDrawMode(!drawMode)}
-          disabled={!hasActiveTrip}
+          disabled={!hasActiveTrip || journalDraw}
         >
           ✎ DRAW ROUTE
         </button>
         <LayersControl />
       </div>
-      {drawMode && (
-        <div className="draw-banner">
-          DRAW MODE — click the globe to add the nearest airport · esc to exit
-        </div>
+      {journalDraw && onGlobe ? (
+        <>
+          <div className="draw-banner">
+            LOG MODE — click cities in the order you visited · ⌫ undo · esc to cancel
+          </div>
+          <JourneyDrawTray />
+        </>
+      ) : (
+        drawMode && (
+          <div className="draw-banner">
+            DRAW MODE — click the globe to add the nearest airport · esc to exit
+          </div>
+        )
       )}
 
       <div className="zoom-ctrl">
@@ -1246,6 +1276,7 @@ export default function Globe() {
 
 const GLOBE_LAYERS: { key: LayerKey; label: string }[] = [
   { key: "routes", label: "ROUTES" },
+  { key: "journeys", label: "JOURNEYS" },
   { key: "cities", label: "CITIES" },
   { key: "weather", label: "WEATHER" },
   { key: "cost", label: "COST" },
@@ -1255,23 +1286,36 @@ const GLOBE_LAYERS: { key: LayerKey; label: string }[] = [
 
 function LayersControl() {
   const { layers, toggleLayer } = useMeridianStore();
+  const journalLocked = useMeridianStore((s) => s.journalLocked);
   const [open, setOpen] = useState(false);
+  const jLocked = journalLocked || !hasToken();
+  const jOn = layers.journeys && !jLocked;
   return (
     <div className="layers-ctrl">
       <button className={`globe-tool ${open ? "on" : ""}`} onClick={() => setOpen(!open)}>
         ◍ LAYERS
       </button>
       {open && (
-        <div className="layers-pop">
-          {GLOBE_LAYERS.map(({ key, label }) => (
-            <button
-              key={key}
-              className={`layers-item ${layers[key] ? "on" : ""}`}
-              onClick={() => toggleLayer(key)}
-            >
-              <span className="layers-dot" /> {label}
-            </button>
-          ))}
+        <div className={`layers-pop${jOn ? " jr-layers-wide" : ""}`}>
+          {GLOBE_LAYERS.map(({ key, label }) => {
+            const locked = key === "journeys" && jLocked;
+            return (
+              <Fragment key={key}>
+                <button
+                  className={`layers-item ${layers[key] && !locked ? "on" : ""}${locked ? " jr-locked" : ""}`}
+                  onClick={() => {
+                    if (!locked) return toggleLayer(key);
+                    setOpen(false);
+                    navigate("/journal");
+                  }}
+                >
+                  <span className="layers-dot" /> {label}
+                  {locked && " · LOCKED"}
+                </button>
+                {key === "journeys" && jOn && <JourneysScrubber />}
+              </Fragment>
+            );
+          })}
         </div>
       )}
     </div>
