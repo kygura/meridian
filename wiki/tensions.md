@@ -39,3 +39,10 @@
 **Options:** (a) weekly normals now; (b) keep monthly and treat weekly as a later extension.
 **Default taken in this build:** (b) monthly.
 <!-- /tension -->
+
+<!-- tension:T6 open -->
+**Tension:** Watches only fire when something POSTs `/api/watches/run` daily with the token (§10: no in-process timer). Neither a Render Cron Job nor a Claude scheduled task exists yet. Which trigger do we provision? Which wins, and why?
+
+**Options:** (a) Render Cron Job (paid starter plan, lives with the service); (b) scheduled Claude task that curls the endpoint (no Render cost).
+**Default taken in this build:** neither provisioned; `render.yaml` documents the need. Watches run only when triggered by hand.
+<!-- /tension -->
