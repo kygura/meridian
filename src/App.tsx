@@ -13,6 +13,8 @@ import TripsPage from "./pages/TripsPage";
 import SeasonalityPage from "./components/seasonality/SeasonalityPage";
 import BookingModal from "./components/booking/BookingModal";
 import BookingsPanel from "./components/booking/BookingsPanel";
+import JournalPage from "./components/journal/JournalPage";
+import QuickLogSheet from "./components/journal/QuickLogSheet";
 import { apiUrl } from "./lib/api";
 
 export default function App() {
@@ -90,6 +92,7 @@ export default function App() {
         <Globe />
         {route.view === "trips" && <TripsPage tripId={route.tripId} />}
         {route.view === "seasons" && <SeasonalityPage />}
+        {route.view === "journal" && <JournalPage route={route} />}
       </div>
       <LeftDrawer />
       <RightDrawer />
@@ -98,6 +101,7 @@ export default function App() {
       <TripsOverlay />
       <BookingModal />
       <BookingsPanel />
+      <QuickLogSheet />
       <ThemeWipe />
     </div>
   );

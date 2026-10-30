@@ -2,9 +2,15 @@ import { useEffect, useState } from "react";
 import { useMeridianStore } from "../store";
 import { useRoute, navigate } from "../lib/router";
 import NewsTicker from "./NewsTicker";
+import { refreshBadges } from "../lib/journalApi";
+
+const BADGE_REFRESH_MS = 15 * 60 * 1000; // same cadence as the ticker
 
 export default function TopBar() {
   const { theme, toggleTheme, toggleLeftDrawer } = useMeridianStore();
+  const journalLocked = useMeridianStore((s) => s.journalLocked);
+  const importPending = useMeridianStore((s) => s.importPending);
+  const alertsUnseen = useMeridianStore((s) => s.alertsUnseen);
   const route = useRoute();
   const [utc, setUtc] = useState("");
   const [local, setLocal] = useState("");
@@ -30,6 +36,22 @@ export default function TopBar() {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Inbox / alert counts: only with a token (no token, no request), then every 15 min.
+  useEffect(() => {
+    void refreshBadges();
+    const id = setInterval(() => void refreshBadges(), BADGE_REFRESH_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const showCounts = !journalLocked;
+  const journalLabel = [
+    "Journal",
+    showCounts && importPending > 0 ? `${importPending} ${importPending === 1 ? "item" : "items"} to review` : "",
+    showCounts && alertsUnseen > 0 ? `${alertsUnseen} new ${alertsUnseen === 1 ? "alert" : "alerts"}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div
@@ -154,6 +176,31 @@ export default function TopBar() {
         >
           SEASONS
         </button>
+        <div
+          className={`topnav-link jr-nav ${route.view === "journal" ? "active" : ""}`}
+          title={journalLocked ? "JOURNAL · LOCKED" : undefined}
+        >
+          <button
+            type="button"
+            className="jr-nav-label"
+            aria-label={journalLabel}
+            aria-current={route.view === "journal" ? "page" : undefined}
+            onClick={() => navigate("/journal")}
+          >
+            JOURNAL
+            {showCounts && alertsUnseen > 0 && <span className="jr-nav-alert" aria-hidden="true" />}
+          </button>
+          {showCounts && importPending > 0 && (
+            <button
+              type="button"
+              className="jr-nav-count"
+              aria-label={`${importPending} items to review in the inbox`}
+              onClick={() => navigate("/journal/inbox")}
+            >
+              {importPending > 99 ? "99+" : importPending}
+            </button>
+          )}
+        </div>
       </nav>
 
       {/* News Ticker */}

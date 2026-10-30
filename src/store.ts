@@ -18,6 +18,9 @@ import type {
   MeridianScore,
   MetricSurface,
   LayerKey,
+  Journey,
+  Alert,
+  Watch,
 } from "./types";
 
 export interface CandidateFilters {
@@ -31,6 +34,19 @@ const DEFAULT_CANDIDATE_FILTERS: CandidateFilters = {
   maxStops: 3,
   maxDays: 14,
 };
+
+/** Quick-log sheet state. `prefillStops` = city ids picked on the globe (task c). */
+export interface QuickLogState {
+  open: boolean;
+  journeyId?: string;
+  prefillStops?: string[];
+}
+
+export interface JourneyScrub {
+  mode: "chrono" | "season";
+  year?: number;
+  month?: number;
+}
 
 export interface MeridianState {
   // Theme
@@ -145,6 +161,33 @@ export interface MeridianState {
   activeBookingId: string | null;
   openBookingTicket: (id: string | null) => void;
   applyBookingCancelled: (id: string) => void;
+
+  // Journal & Replay (DESIGN-journal.md §1.3). Not persisted: the server is the
+  // source of truth and the token lives in journalApi (localStorage).
+  journalLocked: boolean;
+  /** Set with journalLocked: "token_not_configured" = server has no MERIDIAN_TOKEN. */
+  journalLockReason: "token_not_configured" | null;
+  setJournalLocked: (locked: boolean, reason?: "token_not_configured" | null) => void;
+  journeys: Journey[] | null;
+  setJourneys: (journeys: Journey[] | null) => void;
+  upsertJourney: (journey: Journey) => void;
+  removeJourney: (id: string) => void;
+  importPending: number;
+  setImportPending: (n: number) => void;
+  alertsUnseen: number;
+  alerts: Alert[];
+  setAlerts: (alerts: Alert[]) => void;
+  watches: Watch[];
+  setWatches: (watches: Watch[]) => void;
+  quickLog: QuickLogState;
+  openQuickLog: (opts?: { journeyId?: string; prefillStops?: string[] }) => void;
+  closeQuickLog: () => void;
+  alertsPanelOpen: boolean;
+  setAlertsPanelOpen: (open: boolean) => void;
+  journalDraw: { active: boolean; cityIds: string[] };
+  setJournalDraw: (draw: { active: boolean; cityIds: string[] }) => void;
+  journeyScrub: JourneyScrub;
+  setJourneyScrub: (patch: Partial<JourneyScrub>) => void;
 }
 
 const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
@@ -442,6 +485,42 @@ export const useMeridianStore = create<MeridianState>()(
               : b
           ),
         })),
+
+      // Journal & Replay
+      journalLocked: false,
+      journalLockReason: null,
+      setJournalLocked: (locked, reason = null) =>
+        set({ journalLocked: locked, journalLockReason: locked ? reason : null }),
+      journeys: null,
+      setJourneys: (journeys) => set({ journeys }),
+      upsertJourney: (journey) =>
+        set((state) => {
+          const list = state.journeys ?? [];
+          return {
+            journeys: list.some((j) => j.id === journey.id)
+              ? list.map((j) => (j.id === journey.id ? journey : j))
+              : [...list, journey],
+          };
+        }),
+      removeJourney: (id) =>
+        set((state) => ({ journeys: state.journeys?.filter((j) => j.id !== id) ?? null })),
+      importPending: 0,
+      setImportPending: (n) => set({ importPending: n }),
+      alertsUnseen: 0,
+      alerts: [],
+      setAlerts: (alerts) => set({ alerts, alertsUnseen: alerts.filter((a) => !a.seen).length }),
+      watches: [],
+      setWatches: (watches) => set({ watches }),
+      quickLog: { open: false },
+      openQuickLog: (opts) => set({ quickLog: { open: true, ...opts } }),
+      closeQuickLog: () => set({ quickLog: { open: false } }),
+      alertsPanelOpen: false,
+      setAlertsPanelOpen: (open) => set({ alertsPanelOpen: open }),
+      journalDraw: { active: false, cityIds: [] },
+      setJournalDraw: (draw) => set({ journalDraw: draw }),
+      journeyScrub: { mode: "chrono" },
+      setJourneyScrub: (patch) =>
+        set((state) => ({ journeyScrub: { ...state.journeyScrub, ...patch } })),
     }),
     {
       name: "meridian-trips",
