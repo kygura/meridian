@@ -192,8 +192,20 @@ export async function createJourney(input: JourneyInputRaw): Promise<Journey> {
   return journey;
 }
 
-/** Full replacement of the user-owned fields. Returns undefined for an unknown id. */
-export async function updateJourney(id: string, input: JourneyInputRaw): Promise<Journey | undefined> {
+/** Thrown by updateJourney when `ifUpdatedAt` no longer matches the stored journey. */
+export class JournalConflictError extends Error {
+  constructor() {
+    super("journey was modified concurrently");
+    this.name = "JournalConflictError";
+  }
+}
+
+/**
+ * Full replacement of the user-owned fields. Returns undefined for an unknown id.
+ * With `ifUpdatedAt`, the write is refused (JournalConflictError) unless the stored journey
+ * still has that updatedAt — optimistic concurrency for read-modify-write callers.
+ */
+export async function updateJourney(id: string, input: JourneyInputRaw, opts: { ifUpdatedAt?: string } = {}): Promise<Journey | undefined> {
   const previous = await getJourney(id);
   if (!previous) return undefined;
   const built = await build(input);
@@ -208,6 +220,7 @@ export async function updateJourney(id: string, input: JourneyInputRaw): Promise
   return journalStore.update((file) => {
     const i = file.journeys.findIndex((j) => j.id === id);
     if (i < 0) return undefined; // deleted while we were building
+    if (opts.ifUpdatedAt !== undefined && file.journeys[i]!.updatedAt !== opts.ifUpdatedAt) throw new JournalConflictError();
     file.journeys[i] = journey;
     return journey;
   });
