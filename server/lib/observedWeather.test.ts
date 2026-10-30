@@ -99,4 +99,18 @@ describe("diskObservedCache", () => {
     expect(JSON.parse(readFileSync(file, "utf-8"))[key].tempC).toBe(19.2);
     expect(diskObservedCache().get(key)?.comfort).toBe(100);
   });
+
+  it("concurrent instances never drop each other's entries (re-read + merge on set)", () => {
+    const dir = mkdtempSync(join(tmpdir(), "meridian-observed-"));
+    process.env.DATA_DIR = dir;
+    const a = diskObservedCache();
+    const b = diskObservedCache();
+    const obs = { tempC: 19.2, precipMm: 10, comfort: 100, normalComfort: 98 };
+    expect(a.get("k1")).toBeUndefined();
+    expect(b.get("k2")).toBeUndefined();
+    a.set("k1", obs);
+    b.set("k2", obs);
+    const disk = JSON.parse(readFileSync(join(dir, "cache", "observed.json"), "utf-8"));
+    expect(Object.keys(disk).sort()).toEqual(["k1", "k2"]);
+  });
 });

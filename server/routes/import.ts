@@ -14,6 +14,7 @@ import {
   addAll,
   addCandidates,
   discard,
+  flagCancelled,
   getQueue,
   merge,
   mergeCluster,
@@ -78,8 +79,9 @@ imports.post("/upload/email", uploadLimit, async (c) => {
     if (!bytes.byteLength) return badRequest(c, [{ message: "empty upload" }]);
     const parsed = parseEmailUpload(bytes);
     const report = await addAll(parsed.candidates);
+    const cancelled = await flagCancelled(parsed.cancelled);
     const errors = [...parsed.errors, ...(report.errors ?? [])];
-    return c.json({ ...report, unstructured: parsed.unstructured, ...(errors.length ? { errors } : {}) });
+    return c.json({ ...report, unstructured: parsed.unstructured, ...(cancelled ? { cancelled } : {}), ...(errors.length ? { errors } : {}) });
   } catch (err) {
     return handleError(c, err);
   }
@@ -106,7 +108,7 @@ imports.post("/photos", limitBody, async (c) => {
     const parsed = parsePhotos(items, (await getSettings()).homeCityId);
     const report = await addAll(parsed.candidates);
     const errors = [...parsed.errors, ...(report.errors ?? [])];
-    return c.json({ ...report, ...(errors.length ? { errors } : {}), photos: parsed.photos, excludedHome: parsed.excludedHome });
+    return c.json({ ...report, ...(errors.length ? { errors } : {}), photos: parsed.photos, excludedHome: parsed.excludedHome, homeCityId: parsed.homeCityId, homeInferred: parsed.homeInferred });
   } catch (err) {
     return handleError(c, err);
   }

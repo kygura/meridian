@@ -15,6 +15,7 @@ import {
   WatchLimitError,
   type WatchRunDeps,
 } from "./watches";
+import { loadEvents } from "./replayService";
 import type { ReplayQuery, ReplayResponse, ReplayResult, Watch } from "../../src/types";
 
 let TMP: string;
@@ -84,6 +85,14 @@ describe("watch CRUD + validation", () => {
   it("caps the number of watches", async () => {
     for (let i = 0; i < MAX_WATCHES; i++) await createWatch({ label: `w${i}`, query: QUERY });
     await expect(createWatch({ label: "one too many", query: QUERY })).rejects.toBeInstanceOf(WatchLimitError);
+  });
+});
+
+describe("events seed data", () => {
+  it("loadEvents reads the committed data/events.json when DATA_DIR has no copy (prod DATA_DIR is a runtime disk)", async () => {
+    const list = await loadEvents(NOW1); // DATA_DIR = empty temp dir here
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.some((e) => e.recurring)).toBe(true);
   });
 });
 
@@ -166,6 +175,24 @@ describe("runWatches", () => {
     const r = await runWatches(deps([res("a", 12, { priceEur: 100, source: "mock" }), res("b", 12, { priceEur: 100.5 })]));
     expect(r.alerts).toHaveLength(1);
     expect(r.alerts[0]).toMatchObject({ cityId: "a", source: "mock", baselineEur: 100 });
+  });
+
+  it("a watch with no queried month inside the lead window is not an error and still records lastRunAt", async () => {
+    const w = await createWatch({ label: "july", query: { ...QUERY, constraints: { months: [7] } } }); // NOW1 window: Dec/Jan
+    const d = deps([res("a", 7, cheap)]);
+    const r = await runWatches(d);
+    expect(r).toMatchObject({ watches: 1, errors: [], alerts: [] });
+    expect(d.queries).toHaveLength(0); // replay not spent on discarded months
+    expect((await listWatches()).find((x) => x.id === w.id)!.lastRunAt).toBe(NOW1.toISOString());
+  });
+
+  it("deleting a watch drops its alerts (their baselineEur can't be worded without the watch)", async () => {
+    const capped = await createWatch({ label: "cap", query: QUERY, priceRule: { maxEur: 300 } });
+    const other = await createWatch({ label: "other", query: QUERY, priceRule: { maxEur: 300 } });
+    await runWatches(deps([res("a", 12, { priceEur: 250 })]));
+    expect(await listAlerts()).toHaveLength(2);
+    await deleteWatch(capped.id);
+    expect((await listAlerts()).map((a) => a.watchId)).toEqual([other.id]);
   });
 
   it("a failing replay is reported and does not stop other watches or touch lastRunAt", async () => {

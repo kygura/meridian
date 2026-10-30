@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMeridianStore } from "../../store";
 import { journeyYears } from "../../lib/journeyArcs";
+import { radioKeys } from "./radioKeys";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const INITIALS = "JFMAMJJASOND";
@@ -12,7 +13,6 @@ export default function JourneysScrubber() {
   const setScrub = useMeridianStore((s) => s.setJourneyScrub);
   const years = useMemo(() => journeyYears(journeys ?? []), [journeys]);
   const [playing, setPlaying] = useState(false);
-  const monthRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Play: one year per 900ms, stops at the last year.
   useEffect(() => {
@@ -38,15 +38,6 @@ export default function JourneysScrubber() {
 
   const sliderValue = scrub.year === undefined ? years.length : Math.max(0, years.indexOf(scrub.year));
   const shownYear = scrub.year ?? years[years.length - 1];
-
-  const onMonthKey = (e: React.KeyboardEvent, i: number) => {
-    const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
-    if (!step) return;
-    e.preventDefault();
-    const next = (i + step + 13) % 13; // 0 = ALL, 1-12 = months
-    setScrub({ month: next === 0 ? undefined : next });
-    monthRefs.current[next]?.focus();
-  };
 
   return (
     <div className="jr-scrub">
@@ -88,31 +79,25 @@ export default function JourneysScrubber() {
               return (
                 <button
                   key={m}
-                  ref={(el) => {
-                    monthRefs.current[m] = el;
-                  }}
                   type="button"
                   role="radio"
                   aria-checked={on}
                   aria-label={MONTH_NAMES[k]}
                   tabIndex={on ? 0 : -1}
                   onClick={() => setScrub({ month: m })}
-                  onKeyDown={(e) => onMonthKey(e, m)}
+                  onKeyDown={radioKeys}
                 >
                   {ch}
                 </button>
               );
             })}
             <button
-              ref={(el) => {
-                monthRefs.current[0] = el;
-              }}
               type="button"
               role="radio"
               aria-checked={scrub.month === undefined}
               tabIndex={scrub.month === undefined ? 0 : -1}
               onClick={() => setScrub({ month: undefined })}
-              onKeyDown={(e) => onMonthKey(e, 0)}
+              onKeyDown={radioKeys}
             >
               ALL
             </button>

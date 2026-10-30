@@ -17,6 +17,7 @@ import {
   type ReplayTemplateRef,
   type WeightKey,
 } from "../../lib/replayQuery";
+import { saveSettings } from "../../lib/journalApi";
 import type { City, Journey, ReplayResponse } from "../../types";
 import CitySearchInput from "../seasonality/CitySearchInput";
 import BendSlider from "./BendSlider";
@@ -58,6 +59,18 @@ export default function ReplayControls({
 }) {
   const [open, setOpen] = useState(false);
   const [limits, setLimits] = useState(false);
+  const [homeError, setHomeError] = useState(false);
+
+  // Persist the picked origin as the home city, then fall back to "home" so the query runs from it.
+  const setHome = async (cityId: string) => {
+    setHomeError(false);
+    try {
+      await saveSettings({ homeCityId: cityId });
+      onChange({ ...controls, fromCityId: null });
+    } catch {
+      setHomeError(true);
+    }
+  };
   const cityIdx = useMemo(() => cityIndex(cities), [cities]);
   const fp = templateFingerprint(journey, template.stopIndex);
   const baseMonth = templateMonth(journey, template.stopIndex);
@@ -208,9 +221,14 @@ export default function ReplayControls({
                 <div className="jr-label">
                   FROM {from?.iata ?? from?.name.toUpperCase() ?? "—"}
                   {controls.fromCityId ? (
-                    <button type="button" className="tp-link jr-rc-home" onClick={() => set({ fromCityId: null })}>
-                      × HOME
-                    </button>
+                    <>
+                      <button type="button" className="tp-link jr-rc-home" onClick={() => set({ fromCityId: null })}>
+                        × HOME
+                      </button>{" "}
+                      <button type="button" className="tp-link jr-rc-home" onClick={() => void setHome(controls.fromCityId!)}>
+                        SET AS HOME
+                      </button>
+                    </>
                   ) : from ? (
                     " · HOME"
                   ) : (
@@ -218,6 +236,7 @@ export default function ReplayControls({
                   )}
                 </div>
                 <CitySearchInput cities={cities} placeholder="Change origin…" onPick={(c) => set({ fromCityId: c.id })} />
+                {homeError && <div className="jr-err">⚠ COULDN'T SAVE YOUR HOME CITY — TRY AGAIN</div>}
               </div>
               <div>
                 <div className="jr-label">MONTHS</div>

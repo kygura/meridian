@@ -73,6 +73,28 @@ describe("validateLog", () => {
     f.stops[0].lodging.cost.amount = "420,50";
     expect(validateLog(f)).toEqual({});
   });
+  it("rejects grouped amounts instead of reading 1,234 as 1.234", () => {
+    const f = ok();
+    f.stops[0].lodging = { name: "Casa", kind: "", cost: { amount: "1,234", currency: "JPY" } };
+    expect(validateLog(f)[`money-${f.stops[0].key}-stay`]).toBeTruthy();
+    for (const a of ["1,234,567", "1.234,50", "12,345.6"]) {
+      f.stops[0].lodging.cost.amount = a;
+      expect(validateLog(f)[`money-${f.stops[0].key}-stay`]).toBeTruthy();
+    }
+    for (const a of ["1234", "1234.5", "12,5", ".5"]) {
+      f.stops[0].lodging.cost.amount = a;
+      expect(validateLog(f)).toEqual({});
+    }
+  });
+  it("requires a stay name once the stay has a cost or kind, but ignores an untouched stay", () => {
+    const f = ok();
+    f.stops[0].lodging = { name: " ", kind: "", cost: { amount: "300", currency: "EUR" } };
+    expect(validateLog(f)[`stop-${f.stops[0].key}-stay`]).toBe("STAY NAME REQUIRED");
+    f.stops[0].lodging = { name: "", kind: "hotel", cost: { amount: "", currency: "EUR" } };
+    expect(validateLog(f)[`stop-${f.stops[0].key}-stay`]).toBe("STAY NAME REQUIRED");
+    f.stops[0].lodging = { name: "", kind: "", cost: { amount: "", currency: "EUR" } };
+    expect(validateLog(f)).toEqual({});
+  });
   it("experience rows and other segments need their fields", () => {
     const f = ok();
     f.experiences = [newExperience()];
@@ -131,7 +153,7 @@ describe("fromJourney round trip", () => {
     startDate: "2024-05-12",
     endDate: "2024-05-18",
     stops: [
-      { cityId: "lisbon", arrive: "2024-05-12", depart: "2024-05-15", rating: 4, observed: { tempC: 20, precipMm: 1, comfort: 80, normalComfort: 70 } },
+      { cityId: "lisbon", arrive: "2024-05-12", depart: "2024-05-15", rating: 4, provenance: prov, observed: { tempC: 20, precipMm: 1, comfort: 80, normalComfort: 70 } },
       { cityId: "porto", arrive: "2024-05-15", depart: "2024-05-18" },
     ],
     segments: [
@@ -159,6 +181,8 @@ describe("fromJourney round trip", () => {
     expect(out.segments[0]).toMatchObject({ bookingRef: "ABC", arriveAt: "2024-05-15T10:30", departAt: "2024-05-15T09:40", provenance: prov });
     expect(out.segments).toHaveLength(2);
     expect(out.stops[0]).not.toHaveProperty("observed");
+    expect(out.stops[0].provenance).toEqual(prov);
+    expect(out.stops[1]).not.toHaveProperty("provenance");
     expect(out.companions).toBe(2);
   });
 

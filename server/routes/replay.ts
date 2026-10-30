@@ -10,9 +10,6 @@ import { ReplayError } from "../lib/replay.js";
 import { replayQuerySchema } from "../lib/replaySchema.js";
 import { executeReplay } from "../lib/replayService.js";
 
-export { replayQuerySchema } from "../lib/replaySchema.js";
-export { setReplayDepsFactory, eurOf, loadEvents } from "../lib/replayService.js";
-
 const replay = new Hono();
 replay.use("*", requireToken);
 
@@ -26,7 +23,8 @@ replay.post("/", async (c) => {
     return c.json(result);
   } catch (err) {
     if (err instanceof ReplayError) {
-      return c.json({ error: err.code, message: err.message }, err.code === "template_not_found" ? 404 : 409);
+      const status = err.code === "template_not_found" ? 404 : err.code === "template_not_fingerprinted" ? 409 : 400;
+      return c.json({ error: err.code, message: err.message }, status);
     }
     console.error("[replay] error:", err);
     return c.json({ error: "replay_failed", message: "Could not run replay." }, 500);

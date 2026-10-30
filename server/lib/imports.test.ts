@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import type { Confidence, ImportCandidate } from "../../src/types";
@@ -13,6 +13,7 @@ import {
   addCandidates,
   clusterCandidates,
   discard,
+  flagCancelled,
   getQueue,
   merge,
 } from "./imports";
@@ -587,5 +588,111 @@ describe("stop provenance", () => {
     await addCandidates([experience("d2", "Porto", "2024-08-05")], NOW);
     const second = await acceptCluster((await getQueue(NOW)).clusters[0].id, NOW);
     expect(second.stops.map((s) => [s.cityId, s.provenance])).toEqual([[OPO, expect.objectContaining({ source: "calendar", sourceRef: "d2" })]]);
+  });
+});
+
+describe("two lodgings in one city", () => {
+  const hotels = () => [
+    seg("f1", "LHR", "LIS", "2024-05-02T09:00", { arriveAt: "2024-05-02T11:30" }),
+    lodging("ha", "Lisbon", "2024-05-02", "2024-05-04", "Hotel A"),
+    lodging("hb", "Lisbon", "2024-05-04", "2024-05-06", "Hotel B"),
+    seg("f2", "LIS", "LHR", "2024-05-06T18:00"),
+  ];
+  const stops = (j: { stops: { cityId: string; arrive: string; depart: string; lodging?: { name: string } }[] }) => j.stops.map((s) => [s.cityId, s.arrive, s.depart, s.lodging?.name]);
+
+  for (const home of [LON, undefined]) {
+    it(`a hotel change accepts as two consecutive stops (home ${home ?? "unset"})`, async () => {
+      if (home) await saveSettings({ homeCityId: home });
+      await addCandidates(hotels(), NOW);
+      const { clusters } = await getQueue(NOW);
+      expect(clusters).toHaveLength(1);
+      const j = await acceptCluster(clusters[0].id, NOW);
+      expect(stops(j)).toEqual([[LIS, "2024-05-02", "2024-05-04", "Hotel A"], [LIS, "2024-05-04", "2024-05-06", "Hotel B"]]);
+    });
+  }
+
+  it("a photo stop spanning both hotels does not swallow the second one", async () => {
+    await saveSettings({ homeCityId: LON });
+    await addCandidates([{ kind: "stop", provenance: prov("photo", "p1", "medium"), payload: { cityId: LIS, arrive: "2024-05-02", depart: "2024-05-06" } }, ...hotels()], NOW);
+    const j = await acceptCluster((await getQueue(NOW)).clusters[0].id, NOW);
+    expect(stops(j)).toEqual([[LIS, "2024-05-02", "2024-05-04", "Hotel A"], [LIS, "2024-05-04", "2024-05-06", "Hotel B"]]);
+  });
+
+  it("merging both hotels, or a stay spanning them, into a journey keeps them apart", async () => {
+    const j = await createJourney({ title: "Lisbon", startDate: "2024-05-02", endDate: "2024-05-06", stops: [{ cityId: LIS, arrive: "2024-05-02", depart: "2024-05-06" }] });
+    await addCandidates([...hotels().slice(1, 3), { kind: "stop", provenance: prov("timeline", "t1", "medium"), payload: { cityId: LIS, arrive: "2024-05-01", depart: "2024-05-07" } }], NOW);
+    await merge("gmail:ha", j.id);
+    const two = await merge("gmail:hb", j.id);
+    expect(stops(two)).toEqual([[LIS, "2024-05-02", "2024-05-04", "Hotel A"], [LIS, "2024-05-04", "2024-05-06", "Hotel B"]]);
+    const wider = await merge("timeline:t1", j.id);
+    expect(stops(wider)).toEqual([[LIS, "2024-05-01", "2024-05-04", "Hotel A"], [LIS, "2024-05-04", "2024-05-07", "Hotel B"]]);
+  });
+});
+
+describe("merge ordering", () => {
+  it("a same-day stop in another city sorts before the longer stop that starts that day", async () => {
+    const j = await createJourney({ title: "Porto", startDate: "2024-05-10", endDate: "2024-05-12", stops: [{ cityId: OPO, arrive: "2024-05-10", depart: "2024-05-12" }] });
+    await addCandidates([{ kind: "stop", provenance: prov("photo", "day", "low"), payload: { cityId: LIS, arrive: "2024-05-10", depart: "2024-05-10" } }], NOW);
+    const merged = await merge("photo:day", j.id);
+    expect(merged.stops.map((s) => s.cityId)).toEqual([LIS, OPO]);
+  });
+});
+
+describe("content dedupe of stays", () => {
+  const stop = (source: string, ref: string, arrive: string, depart: string) => ({ kind: "stop", provenance: prov(source, ref, "medium"), payload: { cityId: LIS, arrive, depart } });
+
+  it("a stop whose span grew is the same stay for that source, even after it was accepted", async () => {
+    await addCandidates([stop("photo", "a", "2024-05-03", "2024-05-04")], NOW);
+    expect(await addCandidates([stop("photo", "b", "2024-05-02", "2024-05-04")], NOW)).toMatchObject({ added: 0, duplicates: 1 });
+    await accept("photo:a", undefined, NOW);
+    expect(await addCandidates([stop("photo", "c", "2024-05-03", "2024-05-05")], NOW)).toMatchObject({ added: 0, duplicates: 1 });
+    // touching stays, another source, another city are not duplicates
+    expect(await addCandidates([stop("photo", "d", "2024-05-04", "2024-05-06"), stop("timeline", "e", "2024-05-03", "2024-05-04")], NOW)).toMatchObject({ added: 2, duplicates: 0 });
+  });
+
+  it("a modified booking with a new check-out is a new candidate; an identical reminder is not", async () => {
+    await addCandidates([lodging("m1", "Lisbon", "2024-05-02", "2024-05-04", "Hotel A")], NOW);
+    expect(await addCandidates([lodging("m2", "Lisbon", "2024-05-02", "2024-05-04", "Hotel A")], NOW)).toMatchObject({ added: 0, duplicates: 1 });
+    expect(await addCandidates([lodging("m3", "Lisbon", "2024-05-02", "2024-05-07", "Hotel A")], NOW)).toMatchObject({ added: 1, duplicates: 0 });
+  });
+});
+
+describe("interrupted review", () => {
+  it("a claim left without a journey (process died mid-write) returns to pending after the timeout", async () => {
+    await addCandidates([experience("c1", "Lisbon", "2024-05-03"), experience("c2", "Porto", "2024-05-20")], NOW);
+    const file = join(TMP, "imports.json");
+    const data = JSON.parse(readFileSync(file, "utf-8"));
+    const claimedAt = new Date(Date.now() - 60_000).toISOString();
+    Object.assign(data.candidates[0], { state: "accepted", claimedAt });
+    writeFileSync(file, JSON.stringify(data));
+    expect((await getQueue()).candidates.map((c) => c.id)).toEqual(["calendar:c2"]);
+    expect((await getQueue(new Date(Date.now() + 11 * 60_000))).candidates.map((c) => c.id).sort()).toEqual(["calendar:c1", "calendar:c2"]);
+    // a completed review records its journey and is never reclaimed
+    const j = await accept("calendar:c2", undefined, NOW);
+    const stored = JSON.parse(readFileSync(file, "utf-8")).candidates.find((c: { id: string }) => c.id === "calendar:c2");
+    expect(stored).toMatchObject({ state: "accepted", journeyId: j.id });
+    expect(stored.claimedAt).toBeUndefined();
+    expect((await getQueue(new Date(Date.now() + 11 * 60_000))).candidates.map((c) => c.id)).toEqual(["calendar:c1"]);
+  });
+});
+
+describe("cancellations", () => {
+  it("flagCancelled marks the matching pending confirmation cancelled and low", async () => {
+    const conf = { kind: "experience", provenance: prov("jsonld", "m1#0", "medium"), payload: { title: "Gig", cityHint: "Lisbon", date: "2024-05-04" } };
+    await addCandidates([conf, experience("other", "Lisbon", "2024-05-04", "Gig")], NOW);
+    expect(await flagCancelled([{ ...conf, provenance: prov("jsonld", "m2#0", "medium") }], NOW)).toBe(1);
+    const q = await getQueue(NOW);
+    expect(q.candidates.find((c) => c.id === "jsonld:m1#0")).toMatchObject({ flags: ["cancelled"], provenance: { confidence: "low" } });
+    expect(q.candidates.find((c) => c.id === "calendar:other")?.flags).toBeUndefined();
+  });
+});
+
+describe("suggested journey", () => {
+  it("queue members carry the confirmed journey overlapping or next to their cluster", async () => {
+    const j = await createJourney({ title: "Lisbon", status: "confirmed", startDate: "2024-05-01", endDate: "2024-05-03", stops: [{ cityId: LIS, arrive: "2024-05-01", depart: "2024-05-03" }] });
+    await addCandidates([experience("near", "Lisbon", "2024-05-05"), experience("far", "Porto", "2024-08-01")], NOW);
+    const q = await getQueue(NOW);
+    expect(q.candidates.find((c) => c.id === "calendar:near")?.suggestedJourneyId).toBe(j.id);
+    expect(q.candidates.find((c) => c.id === "calendar:far")?.suggestedJourneyId).toBeUndefined();
   });
 });

@@ -39,7 +39,7 @@ export interface ReplayDeps {
 }
 
 export class ReplayError extends Error {
-  constructor(public code: "template_not_found" | "template_not_fingerprinted", message: string) {
+  constructor(public code: "template_not_found" | "template_not_fingerprinted" | "origin_not_found" | "origin_required", message: string) {
     super(message);
   }
 }
@@ -164,12 +164,17 @@ interface DimInput {
   templateValue: number;
   similarity: number;
   weight: number;
+  basis?: ReplayDimScore["basis"];
 }
 
-/** Weighted match over present dims (weights renormalized), with contribution shares. */
-export function scoreDims(dims: DimInput[]): { match: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] } {
+/**
+ * Weighted match over present dims (weights renormalized), with contribution shares.
+ * `equalIfAllZero`: no positive-weight dim → equal weights (stage-1 pre-ranking only);
+ * otherwise such a cell scores 0 on nothing, never on dims the user turned off.
+ */
+export function scoreDims(dims: DimInput[], equalIfAllZero = true): { match: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] } {
   let use = dims.filter((d) => d.weight > 0);
-  if (use.length === 0) use = dims.map((d) => ({ ...d, weight: 1 })); // all weights 0 → equal
+  if (use.length === 0 && equalIfAllZero) use = dims.map((d) => ({ ...d, weight: 1 })); // all weights 0 → equal
   const wSum = use.reduce((a, d) => a + d.weight, 0);
   const wsSum = use.reduce((a, d) => a + d.weight * d.similarity, 0);
   const match = wSum > 0 ? Math.round((wsSum / wSum) * 1000) / 10 : 0;
@@ -180,6 +185,7 @@ export function scoreDims(dims: DimInput[]): { match: number; dims: ReplayDimSco
       name: d.name,
       value: d.value,
       templateValue: d.templateValue,
+      ...(d.basis ? { basis: d.basis } : {}),
       contribution: wsSum > 0 ? (d.weight * d.similarity) / wsSum : d.weight / wSum,
     })),
   };
@@ -252,10 +258,16 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
   const template = applyBend(filled.template, query.bend ?? {});
   const c = query.constraints ?? {};
   const limit = query.limit ?? DEFAULT_LIMIT;
-  const w = query.weights;
+  const qw = query.weights;
+  // All weights 0 → equal weights, decided once per query (not per cell).
+  const w = qw.climate || qw.spend || qw.crowd || qw.flight ? qw : { climate: 1, spend: 1, crowd: 1, flight: 1 };
   const hist = history(deps.journeys, deps.getCity);
   const fromCityId = c.fromCityId ?? deps.settings.homeCityId;
   const fromCity = fromCityId ? deps.getCity(fromCityId) : undefined;
+  if (c.fromCityId && !fromCity) throw new ReplayError("origin_not_found", `origin city ${c.fromCityId} not found`);
+  if (c.maxFlightHours !== undefined && !fromCity) {
+    throw new ReplayError("origin_required", "maxFlightHours needs an origin: pass constraints.fromCityId or set a home city");
+  }
   const tagFilter = c.tags?.map((t) => t.toLowerCase()) ?? [];
 
   const climateDims = CLIMATE_DIMS.filter((d) => typeof template[d] === "number");
@@ -321,7 +333,7 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
   const survivors = cells.slice(0, STAGE1_KEEP);
 
   const today = deps.now().toISOString().slice(0, 10);
-  const results: ReplayResult[] = await Promise.all(
+  const ranked: Array<{ result: ReplayResult; priceBand: boolean }> = await Promise.all(
     survivors.map(async (cell, rank) => {
       const dims = [...cell.base];
 
@@ -358,13 +370,14 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
             if (baselineEur !== undefined) {
               dims.push({ name: "flightCostEurPer1000km", value: per1000, templateValue: hist.baselinePer1000!, similarity: priceSimilarity(priceEur, baselineEur), weight: w.flight });
             } else if (est.dealRating) {
-              dims.push({ name: "flightCostEurPer1000km", value: per1000, templateValue: per1000, similarity: DEAL_SIMILARITY[est.dealRating], weight: w.flight });
+              // No baseline to compare against: templateValue is a placeholder, the tooltip shows the basis.
+              dims.push({ name: "flightCostEurPer1000km", value: per1000, templateValue: per1000, similarity: DEAL_SIMILARITY[est.dealRating], weight: w.flight, basis: "dealRating" });
             }
           }
         }
       }
 
-      const scored = scoreDims(dims);
+      const scored = scoreDims(dims, false);
       const events = eventsFor(deps.events, cell.city.id, cell.month);
       const result: ReplayResult = {
         cityId: cell.city.id,
@@ -376,11 +389,17 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
       };
       if (price) result.price = price;
       if (events.length) result.events = events;
-      return result;
+      return { result, priceBand: rank < STAGE2_PRICED };
     })
   );
 
-  results.sort((a, b) => b.match - a.match || a.cityId.localeCompare(b.cityId) || a.month - b.month);
+  // Once any cell is scored on price, only the priced band is compared on the full score:
+  // cells 21-60 were never priced, so they rank after it instead of overtaking it on
+  // climate alone (an absent-by-cutoff dim is not the same basis as a poor price).
+  const tiered = ranked.some((r) => r.result.scoredOn.includes("flightCostEurPer1000km"));
+  const tier = (r: (typeof ranked)[number]) => (tiered && !r.priceBand ? 1 : 0);
+  ranked.sort((x, y) => tier(x) - tier(y) || y.result.match - x.result.match || x.result.cityId.localeCompare(y.result.cityId) || x.result.month - y.result.month);
+  const results = ranked.map((r) => r.result);
   const top = results.slice(0, limit);
   const grid = [...new Set(top.map((r) => r.cityId))].map((cityId) => ({ cityId, months: gridRows.get(cityId)! }));
   return { results: top, universeSize: universe.length, template, fromCityId, grid, templateClimate: filled.templateClimate };
@@ -403,7 +422,42 @@ export function seasonalityUniverse(): Record<string, MonthSeasonality[]> {
   return out;
 }
 
-/** Real modules for the route: seasonality cache, city DB, agent flight estimate, cached holidays. */
+export const FLIGHT_CACHE_TTL_MS = 6 * 3600_000;
+/** A mock (provider failed / keyless) is kept briefly so a recovered provider is retried soon. */
+export const FLIGHT_CACHE_MOCK_TTL_MS = 10 * 60_000;
+const FLIGHT_CACHE_MAX = 2_000;
+
+/**
+ * Per-(origin, destination, departureDate) price memo with a TTL and in-flight
+ * dedupe. Replay re-runs on every slider move and watch/agent run, so without it
+ * each request re-spends up to STAGE2_PRICED live provider searches. Failures are not cached.
+ */
+export function cachedFlightEstimate(fetcher: ReplayDeps["flightEstimate"], now: () => number = Date.now): ReplayDeps["flightEstimate"] {
+  const cache = new Map<string, { at: number; ttl: number; value: Promise<FlightEstimateResult> }>();
+  return (p) => {
+    const key = `${p.originIata}|${p.destinationIata}|${p.departureDate}`;
+    const hit = cache.get(key);
+    if (hit && now() - hit.at < hit.ttl) return hit.value;
+    cache.delete(key);
+    const entry = { at: now(), ttl: FLIGHT_CACHE_TTL_MS, value: fetcher(p) };
+    entry.value.then(
+      (r) => {
+        if (r.source === "mock") entry.ttl = FLIGHT_CACHE_MOCK_TTL_MS;
+      },
+      () => {
+        if (cache.get(key) === entry) cache.delete(key);
+      }
+    );
+    cache.set(key, entry);
+    if (cache.size > FLIGHT_CACHE_MAX) cache.delete(cache.keys().next().value!);
+    return entry.value;
+  };
+}
+
+/** One process-wide memo shared by POST /api/replay, watch runs and the agent tool. */
+const sharedFlightEstimate = cachedFlightEstimate((q) => getFlightEstimate(q));
+
+/** Real modules for the route: seasonality cache, city DB, agent flight estimate (memoized), cached holidays. */
 export function defaultReplayDeps(p: {
   journeys: Journey[];
   settings: JournalSettings;
@@ -418,7 +472,7 @@ export function defaultReplayDeps(p: {
     events: p.events,
     seasonality: seasonalityUniverse(),
     getCity: getCityById,
-    flightEstimate: (q) => getFlightEstimate(q),
+    flightEstimate: sharedFlightEstimate,
     now: p.now ?? (() => new Date()),
     holidayIndex: loadHolidayIndexFromCache(),
   };

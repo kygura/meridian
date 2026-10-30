@@ -1,12 +1,13 @@
 // Journal client (DESIGN-journal.md §1.3 "shared contracts owned by (a)").
 // Every call goes through jfetch: Bearer token from localStorage["meridian.token"],
-// 401 -> JournalLockedError + store.journalLocked. Other journal tasks add their typed
-// calls (replay, watches, import actions, uploads) below, on top of jfetch.
+// 401 -> JournalLockedError + store.journalLocked. Typed calls (journeys, replay, watches,
+// import actions, uploads) sit below, on top of jfetch.
 
 import { apiUrl } from "./api";
 import { useMeridianStore } from "../store";
 import { MAX_UPLOAD_BYTES, emailContentType, photoBatches, mergeReports, type PhotoPoint, type UploadReport } from "./importUpload";
 import type {
+  JournalSettings,
   Alert,
   Fingerprint,
   ImportCandidate,
@@ -141,16 +142,6 @@ export async function jfetch<T = any>(
   return data as T;
 }
 
-/** Like jfetch, but a 404 (route not built yet on this server) resolves to `fallback`. */
-async function tolerate404<T>(p: Promise<T>, fallback: T): Promise<T> {
-  try {
-    return await p;
-  } catch (err) {
-    if (err instanceof JournalApiError && err.status === 404) return fallback;
-    throw err;
-  }
-}
-
 // ── Journeys ─────────────────────────────────────────────────────────
 
 export async function listJourneys(): Promise<Journey[]> {
@@ -168,10 +159,12 @@ export async function getJourney(id: string): Promise<Journey | null> {
   }
 }
 
-/** POST when `id` is absent, PUT otherwise. Money may omit eur/rateDate (server fills them, R5). */
-export async function saveJourney(input: JourneyInput, id?: string): Promise<Journey> {
+/** POST when `id` is absent, PUT otherwise. Money may omit eur/rateDate (server fills them, R5).
+ *  `baseUpdatedAt` (the version the edit started from) goes as If-Match: a stale PUT gets 409 instead of reverting a merge. */
+export async function saveJourney(input: JourneyInput, id?: string, baseUpdatedAt?: string): Promise<Journey> {
   const data = await jfetch<{ journey: Journey }>(id ? `/api/journal/${encodeURIComponent(id)}` : "/api/journal", {
     method: id ? "PUT" : "POST",
+    ...(id && baseUpdatedAt ? { headers: { "If-Match": baseUpdatedAt } } : {}),
     body: JSON.stringify(input),
   });
   return data.journey;
@@ -181,14 +174,17 @@ export async function deleteJourney(id: string): Promise<void> {
   await jfetch(`/api/journal/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-/** GET /api/journal/:id/fingerprint (task R); null while that route does not exist. */
+/** GET /api/journal/:id/fingerprint. The server recomputes and persists journey and stop fingerprints;
+ *  callers re-read the journey afterwards for the stops (observed weather, per-stop fingerprints). */
 export async function getFingerprint(id: string): Promise<Fingerprint | null> {
-  const data = await tolerate404(
-    jfetch<{ fingerprint?: Fingerprint } & Partial<Fingerprint>>(`/api/journal/${encodeURIComponent(id)}/fingerprint`),
-    null
-  );
-  if (!data) return null;
-  return (data.fingerprint ?? (data.status ? (data as Fingerprint) : null)) as Fingerprint | null;
+  const data = await jfetch<{ fingerprint?: Fingerprint }>(`/api/journal/${encodeURIComponent(id)}/fingerprint`);
+  return data.fingerprint ?? null;
+}
+
+/** PUT /api/journal/settings: the home city drives replay origin, import clustering and "nights away". */
+export async function saveSettings(settings: JournalSettings): Promise<JournalSettings> {
+  const data = await jfetch<{ settings: JournalSettings }>("/api/journal/settings", { method: "PUT", body: JSON.stringify(settings) });
+  return data.settings;
 }
 
 /** Fetch the list into the store. Errors propagate (JournalPage renders lock / retry). */
@@ -207,14 +203,14 @@ export async function verifyToken(token: string): Promise<void> {
 
 // ── Nav badges (TopBar §3) ───────────────────────────────────────────
 
-/** GET /api/import/queue; null while the import route is not mounted (404). */
-export async function getQueue(): Promise<ImportQueue | null> {
-  return tolerate404(jfetch<ImportQueue>("/api/import/queue"), null);
+/** GET /api/import/queue. */
+export function getQueue(): Promise<ImportQueue> {
+  return jfetch<ImportQueue>("/api/import/queue");
 }
 
-/** GET /api/watches/alerts; [] while the watches route is not mounted (404). */
+/** GET /api/watches/alerts. */
 export async function listAlerts(): Promise<Alert[]> {
-  const data = await tolerate404(jfetch<{ alerts?: Alert[] } | Alert[]>("/api/watches/alerts"), []);
+  const data = await jfetch<{ alerts?: Alert[] } | Alert[]>("/api/watches/alerts");
   return Array.isArray(data) ? data : data.alerts ?? [];
 }
 
@@ -223,7 +219,7 @@ export async function refreshBadges(): Promise<void> {
   if (!hasToken() || useMeridianStore.getState().journalLocked) return;
   const [queue, alerts, watches] = await Promise.allSettled([getQueue(), listAlerts(), listWatches()]);
   const s = useMeridianStore.getState();
-  if (queue.status === "fulfilled" && queue.value) {
+  if (queue.status === "fulfilled") {
     s.setImportPending(queue.value.candidates.filter((c) => c.state === "pending").length);
   }
   if (alerts.status === "fulfilled") s.setAlerts(alerts.value);
@@ -237,7 +233,7 @@ export function runReplay(query: ReplayQuery, signal?: AbortSignal): Promise<Rep
   return jfetch<ReplayResponse>("/api/replay", { method: "POST", body: JSON.stringify(query), signal });
 }
 
-/** POST /api/watches. A 404 without a code means the watches route is not mounted on this server. */
+/** POST /api/watches. */
 export async function createWatch(input: {
   label: string;
   query: ReplayQuery;
@@ -248,9 +244,9 @@ export async function createWatch(input: {
   return data.watch;
 }
 
-/** GET /api/watches; [] while the route is not mounted (404). */
+/** GET /api/watches. */
 export async function listWatches(): Promise<Watch[]> {
-  const data = await tolerate404(jfetch<{ watches?: Watch[] }>("/api/watches"), { watches: [] });
+  const data = await jfetch<{ watches?: Watch[] }>("/api/watches");
   return data.watches ?? [];
 }
 
@@ -283,9 +279,9 @@ export async function resolveCandidate(id: string, fix: { cityId?: string; fromC
 }
 
 /** Re-read the queue into the store (importPending + alerts counts follow). Errors propagate. */
-export async function refreshQueue(): Promise<ImportQueue | null> {
+export async function refreshQueue(): Promise<ImportQueue> {
   const q = await getQueue();
-  if (q) useMeridianStore.getState().setImportPending(q.candidates.filter((c) => c.state === "pending").length);
+  useMeridianStore.getState().setImportPending(q.candidates.filter((c) => c.state === "pending").length);
   return q;
 }
 

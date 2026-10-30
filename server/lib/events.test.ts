@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "fs";
+import { tmpdir } from "os";
 import { join } from "path";
 import { loadCities, getCityById } from "./cities";
 import { runReplay } from "./replay";
@@ -41,6 +42,21 @@ describe("data/events.json", () => {
     expect(later.find((e) => e.id === "eclipse-2026-08-12")).toBeUndefined();
     expect(later.find((e) => e.id === "eclipse-2027-08-02")).toBeDefined();
     expect(later.find((e) => e.id === "oktoberfest")).toBeDefined(); // recurring stays
+  });
+
+  it("loadEvents drops malformed entries instead of letting them throw inside replay", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "meridian-events-"));
+    const prev = process.env.DATA_DIR;
+    process.env.DATA_DIR = dir;
+    try {
+      const good = { id: "ok", title: "Ok", kind: "festival", cityIds: ["porto-portugal"], month: 6, recurring: true, tags: ["x"] };
+      writeFileSync(join(dir, "events.json"), JSON.stringify({ events: [good, { id: "no-cities", month: 6, recurring: true, tags: [] }, { id: "no-tags", cityIds: [], month: 6, recurring: true }, null] }));
+      expect((await loadEvents(NOW)).map((e) => e.id)).toEqual(["ok"]);
+    } finally {
+      if (prev === undefined) delete process.env.DATA_DIR;
+      else process.env.DATA_DIR = prev;
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

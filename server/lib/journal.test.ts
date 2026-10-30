@@ -152,6 +152,17 @@ describe("validation", () => {
     }
   });
 
+  it("arriveAt compares instants when both sides carry an offset (eastbound date-line flight)", async () => {
+    const seg = (departAt: string, arriveAt: string): JourneyInputRaw => ({ ...LISBON_TRIP, segments: [{ ...LISBON_TRIP.segments![0]!, departAt, arriveAt }] });
+    // Auckland 09:45 +12 → Rarotonga 15:30 −10 the previous local day: ~6h later in real time.
+    const ok = await createJourney(seg("2024-05-03T09:45+12:00", "2024-05-02T15:30-10:00"));
+    expect(ok.segments[0]!.arriveAt).toBe("2024-05-02T15:30-10:00");
+    await expect(createJourney(seg("2024-05-02T10:00+0000", "2024-05-02T09:00Z"))).rejects.toBeInstanceOf(JournalValidationError);
+    // Without offsets only the local dates are comparable.
+    await expect(createJourney(seg("2024-05-03T09:45", "2024-05-02T15:30"))).rejects.toBeInstanceOf(JournalValidationError);
+    expect((await createJourney(seg("2024-05-02T10:00", "2024-05-02T09:00"))).segments[0]!.arriveAt).toBe("2024-05-02T09:00");
+  });
+
   it("FX unavailable → FxUnavailableError and nothing stored", async () => {
     setFxFetch(async () => { throw new Error("offline"); });
     await expect(createJourney(LISBON_TRIP)).rejects.toBeInstanceOf(FxUnavailableError);

@@ -12,7 +12,7 @@ import type { FingerprintDim, Fingerprint, Journey, PlaceResult, ReplayQuery, Re
 import { getCityById } from "../cities.js";
 import { getJourney, listJourneys } from "../journal.js";
 import { ensureFingerprint } from "../journalFingerprint.js";
-import { addCandidates } from "../imports.js";
+import { addCandidates, getQueue } from "../imports.js";
 import { ReplayError } from "../replay.js";
 import { replayQuerySchema } from "../replaySchema.js";
 import { executeReplay } from "../replayService.js";
@@ -177,8 +177,10 @@ export interface FindSimilarWindowsResult {
 const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "expected YYYY-MM-DD");
 const place = { cityId: z.string().min(1).max(200).optional(), cityHint: z.string().trim().min(1).max(200).optional() };
 
+// Candidates carry no title/notes field (the inbox titles clusters itself), so the schema does not ask for notes
+// and title is optional: it is only echoed back to the agent.
 export const draftJourneyParams = z.object({
-  title: z.string().trim().min(1).max(300),
+  title: z.string().trim().min(1).max(300).optional(),
   stops: z
     .array(z.object({ ...place, arrive: isoDay, depart: isoDay }).refine((s) => s.cityId || s.cityHint, "cityId or cityHint required"))
     .min(1)
@@ -196,7 +198,6 @@ export const draftJourneyParams = z.object({
     )
     .max(60)
     .optional(),
-  notes: z.string().max(2000).optional(),
 });
 export type DraftJourneyParams = z.infer<typeof draftJourneyParams>;
 
@@ -294,8 +295,21 @@ export function createJournalTools(ctx: { unlocked: boolean }) {
       ];
       const report = await addCandidates(candidates);
       if (report.added + report.duplicates === 0) return { error: "draft_rejected", report };
-      // Candidates carry no title/notes field; they are echoed so the user can set them when accepting.
-      return { drafted: report.added, duplicates: report.duplicates, report, title: p.data.title, notes: p.data.notes, next: "Review and accept in the journal inbox (#/journal/inbox); the agent cannot confirm journeys." };
+      if (report.added === 0) {
+        // Nothing new: say whether the same draft still waits in the inbox or was already accepted/discarded.
+        const ids = new Set(candidates.map((c) => `${c.provenance.source}:${c.provenance.sourceRef}`));
+        const pending = (await getQueue()).candidates.some((c) => ids.has(c.id));
+        return {
+          drafted: 0,
+          duplicates: report.duplicates,
+          report,
+          notice: pending ? "already_pending" : "already_reviewed",
+          next: pending
+            ? "This draft is already waiting in the journal inbox (#/journal/inbox); nothing new was added."
+            : "Nothing was drafted: these stops were already imported or reviewed (accepted or discarded) in the journal inbox.",
+        };
+      }
+      return { drafted: report.added, duplicates: report.duplicates, report, title: p.data.title, next: "Review and accept in the journal inbox (#/journal/inbox); the agent cannot confirm journeys." };
     } catch (err) {
       return fail("draft_journey", err);
     }
@@ -323,6 +337,18 @@ export interface JournalIntent {
 }
 
 const MONTH_ALT = MONTH_RE.map(([re]) => re.source.replace(/\\b/g, "")).join("|");
+const SEASON_ALT = "spring|summer|autumn|fall|winter";
+const monthOfWord = (w: string) => MONTH_RE.find(([re]) => re.test(w))?.[1];
+/** "would like", "I'd like" etc. are wishes, not comparisons. */
+const WISH_LIKE_RE = /\b(?:would|i'd|i’d|we'd|we’d|i|we|you|they|do|don't|should|might)\s+(?:really\s+|also\s+)?like\b/g;
+/** The earliest target month/season in `t` (by position): a season word, or a month after in/during/for/around. */
+function targetMonths(t: string): number[] | undefined {
+  const m = new RegExp(`\\b(${SEASON_ALT})\\b|\\b(?:in|during|for|around)\\s+(${MONTH_ALT})\\b`).exec(t);
+  if (!m) return undefined;
+  if (m[1]) return SEASONS.find(([re]) => re.test(m[1]!))![1];
+  const month = monthOfWord(m[2]!);
+  return month ? [month] : undefined;
+}
 /** Wording that points at the user's own past ("last May", "my trip", "when I went"); bare "like" does not. */
 const PAST_TRIP_RE = new RegExp(
   `\\b(last|past|previous) (${MONTH_ALT}|month|year|week|summer|winter|spring|autumn|fall|trip|holiday)\\b|` +
@@ -335,16 +361,31 @@ const PAST_TRIP_RE = new RegExp(
  */
 export function parseJournalIntent(text: string, mentionedCityName?: string): JournalIntent | undefined {
   const t = text.toLowerCase();
-  const compares = /\b(like|similar to|same as|reminds me of)\b/.test(t);
+  const compares = /\b(like|similar to|same as|reminds me of)\b/.test(t.replace(WISH_LIKE_RE, " "));
   const mentionsJournal = /\bjournal\b|\bmy (past |last |previous )?(trips?|journeys?)\b/.test(t);
   if (!compares || !PAST_TRIP_RE.test(t) || (!mentionedCityName && !mentionsJournal)) return undefined;
-  // A month names the past trip only after "last/in/from/of/during" ("last May"), never as the verb "may".
-  const pastMonth = MONTH_RE.find(([re]) => new RegExp(`\\b(?:last|in|from|of|during)\\s+(?:${re.source})`).test(t))?.[1];
+  // The past trip's month/season comes from "last/past/previous <X>"; everything else is the target.
+  // Without one, a month after in/from/of/during before any "but" names the trip ("my trip in May but …").
+  // A month never matches as the verb "may" (it needs one of those prepositions).
+  let pastMonth: number | undefined;
+  let rest = t;
+  const past = new RegExp(`\\b(?:last|past|previous)\\s+(${MONTH_ALT}|${SEASON_ALT})\\b`).exec(t);
+  if (past) {
+    pastMonth = monthOfWord(past[1]!);
+    rest = t.slice(0, past.index) + " " + t.slice(past.index + past[0].length);
+  } else {
+    const cut = t.search(/\b(?:but|except|only)\b/);
+    const m = new RegExp(`\\b(?:in|from|of|during)\\s+(${MONTH_ALT})\\b`).exec(cut < 0 ? t : t.slice(0, cut));
+    if (m) {
+      pastMonth = monthOfWord(m[1]!);
+      rest = t.slice(0, m.index) + " " + t.slice(m.index + m[0].length);
+    }
+  }
   const bend: JournalIntent["bend"] = {};
   if (/\b(warmer|hotter|sunnier)\b/.test(t)) bend.tempC = 3;
   else if (/\b(cooler|colder|milder)\b/.test(t)) bend.tempC = -3;
   if (/\b(cheaper|more affordable|less expensive|budget)\b/.test(t)) bend.spendPct = -25;
   if (/\b(fewer crowds|quieter|less crowded|less touristy)\b/.test(t)) bend.crowd = -20;
-  const months = SEASONS.find(([re]) => re.test(t))?.[1];
+  const months = targetMonths(rest);
   return { cityName: mentionedCityName, pastMonth, bend, months };
 }

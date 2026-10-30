@@ -100,6 +100,24 @@ describe("CRUD", () => {
     expect((await req("GET", `/api/journal/${journey.id}`)).status).toBe(404);
   });
 
+  it("PUT with a stale If-Match is refused with 409 and changes nothing", async () => {
+    const { journey } = await (await req("POST", "/api/journal", TRIP)).json();
+    const put = (title: string, ifMatch?: string) =>
+      app.request(`/api/journal/${journey.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}`, ...(ifMatch ? { "If-Match": ifMatch } : {}) },
+        body: JSON.stringify({ ...TRIP, title }),
+      });
+    await new Promise((r) => setTimeout(r, 5)); // distinct updatedAt
+    const fresh = await put("Merged elsewhere", `"${journey.updatedAt}"`);
+    expect(fresh.status).toBe(200);
+    const stale = await put("Stale form", journey.updatedAt);
+    expect(stale.status).toBe(409);
+    expect((await stale.json()).error).toBe("conflict");
+    expect((await (await req("GET", `/api/journal/${journey.id}`)).json()).journey.title).toBe("Merged elsewhere");
+    expect((await put("No header")).status).toBe(200); // header is optional
+  });
+
   it("404 for unknown ids on GET/PUT/DELETE", async () => {
     expect((await req("GET", "/api/journal/nope")).status).toBe(404);
     expect((await req("PUT", "/api/journal/nope", TRIP)).status).toBe(404);

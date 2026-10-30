@@ -29,6 +29,7 @@ function dimValues(d: ReplayDimScore): string {
     case "dailySpendEur":
       return `${formatEur(d.value)} vs ${formatEur(d.templateValue)}`;
     case "flightCostEurPer1000km":
+      if (d.basis === "dealRating") return `${formatEur(d.value)} /1000 KM (DEAL RATING)`;
       return `${formatEur(d.value)} vs ${formatEur(d.templateValue)} /1000 KM`;
     default:
       return `${r0(d.value)} vs ${r0(d.templateValue)}`;

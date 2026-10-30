@@ -215,6 +215,16 @@ describe("POST /api/replay", () => {
     expect(((await res.json()) as { error: string }).error).toBe("template_not_found");
   });
 
+  it("400 origin_not_found / origin_required instead of silently ignoring maxFlightHours", async () => {
+    const j = await createLisbon();
+    const unknown = await req("POST", "/api/replay", QUERY(j.id, { constraints: { fromCityId: "lisbon" } }));
+    expect(unknown.status).toBe(400);
+    expect(((await unknown.json()) as { error: string }).error).toBe("origin_not_found");
+    const noHome = await req("POST", "/api/replay", QUERY(j.id, { constraints: { maxFlightHours: 3 } }));
+    expect(noHome.status).toBe(400);
+    expect(((await noHome.json()) as { error: string }).error).toBe("origin_required");
+  });
+
   it("ranks with scoredOn + universeSize; bend is optional; keyless → mock prices", async () => {
     const j = await createLisbon();
     await req("PUT", "/api/journal/settings", { homeCityId: "berlin-germany" });

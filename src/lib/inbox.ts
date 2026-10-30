@@ -63,22 +63,24 @@ export interface CityFix {
   hint: string;
 }
 
-export function cityFixes(c: ImportCandidate): CityFix[] {
+/** With `cities`, an id the index does not know counts as unresolved too (its id becomes the last-resort hint). */
+export function cityFixes(c: ImportCandidate, cities?: CityIndex): CityFix[] {
   const p = c.payload;
+  const bad = (id: unknown) => !id || (!!cities && !cities.has(id as string));
   if (c.kind === "segment") {
     const out: CityFix[] = [];
-    if (!p.fromCityId) out.push({ field: "fromCityId", hint: p.cityHint ?? p.iataHint ?? "origin" });
-    if (!p.toCityId) out.push({ field: "toCityId", hint: p.toCityHint ?? p.toIataHint ?? "destination" });
+    if (bad(p.fromCityId)) out.push({ field: "fromCityId", hint: p.cityHint ?? p.iataHint ?? p.fromCityId ?? "origin" });
+    if (bad(p.toCityId)) out.push({ field: "toCityId", hint: p.toCityHint ?? p.toIataHint ?? p.toCityId ?? "destination" });
     return out;
   }
-  return p.cityId ? [] : [{ field: "cityId", hint: p.cityHint ?? p.iataHint ?? "city" }];
+  return bad(p.cityId) ? [{ field: "cityId", hint: p.cityHint ?? p.iataHint ?? p.cityId ?? "city" }] : [];
 }
 
 /** `UNRESOLVED CITY "Oporto Cty"` and any other flag as plain words. */
-export function flagTexts(c: ImportCandidate): string[] {
+export function flagTexts(c: ImportCandidate, cities?: CityIndex): string[] {
   return (c.flags ?? []).map((f) => {
     if (f === "unresolved-city") {
-      const hints = cityFixes(c).map((x) => `"${x.hint}"`);
+      const hints = cityFixes(c, cities).map((x) => `"${x.hint}"`);
       return hints.length ? `UNRESOLVED CITY ${hints.join(", ")}` : "UNRESOLVED CITY";
     }
     return f.replace(/[-_]/g, " ").toUpperCase();
@@ -270,7 +272,7 @@ export function mergeTicker(news: TickerItem[], alerts: Alert[], watches: Watch[
   return [...items, ...news];
 }
 
-/** Watch rule in words: `BELOW MY MEDIAN`, `PROVIDER SAYS LOW`, `UNDER €100,000`. */
+/** Watch rule in words: `BELOW WHAT I USUALLY PAY`, `PROVIDER SAYS LOW`, `UNDER €100,000`. */
 export function ruleText(rule: Watch["priceRule"]): string {
   if (rule === "below_my_median") return "BELOW WHAT I USUALLY PAY";
   if (rule === "deal_low") return "PROVIDER SAYS LOW";

@@ -14,6 +14,7 @@ import {
   getSettings,
   saveSettings,
   JournalValidationError,
+  JournalConflictError,
 } from "../lib/journal.js";
 import { ensureFingerprint } from "../lib/journalFingerprint.js";
 
@@ -39,6 +40,9 @@ async function body(c: Context): Promise<unknown> {
 function handleError(c: Context, err: unknown) {
   if (err instanceof ZodError) return badRequest(c, err.issues);
   if (err instanceof JournalValidationError) return badRequest(c, err.issues);
+  if (err instanceof JournalConflictError) {
+    return c.json({ error: "conflict", message: "The journey changed since it was loaded; reload and retry." }, 409);
+  }
   if (err instanceof FxUnavailableError) {
     return c.json({ error: "fx_unavailable", message: err.message, currency: err.currency, date: err.date }, 422);
   }
@@ -99,7 +103,9 @@ journal.post("/", async (c) => {
 
 journal.put("/:id", async (c) => {
   try {
-    const journey = await updateJourney(c.req.param("id"), (await body(c)) as JourneyInputRaw);
+    // Optional optimistic concurrency: `If-Match: <updatedAt the client loaded>` → 409 when stale.
+    const ifMatch = c.req.header("If-Match")?.trim().replace(/^W\//, "").replace(/^"(.*)"$/, "$1");
+    const journey = await updateJourney(c.req.param("id"), (await body(c)) as JourneyInputRaw, ifMatch ? { ifUpdatedAt: ifMatch } : {});
     if (!journey) return c.json({ error: "not_found", message: "Journey not found" }, 404);
     return c.json({ journey });
   } catch (err) {

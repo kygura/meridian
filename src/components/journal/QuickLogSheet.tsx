@@ -186,7 +186,7 @@ function Sheet({ journeyId, prefillStops }: { journeyId?: string; prefillStops?:
     setSaving(true);
     try {
       const input = toJourneyInput(form, (id) => cityIdx.get(id)?.name ?? id);
-      const saved = await saveJourney(input, journeyId);
+      const saved = await saveJourney(input, journeyId, form.base?.updatedAt);
       upsertJourney(saved);
       closeQuickLog();
       // From the globe the user stays on the globe, with the journeys layer forced on.
@@ -205,6 +205,9 @@ function Sheet({ journeyId, prefillStops }: { journeyId?: string; prefillStops?:
       } else if (err instanceof JournalApiError && err.status === 400) {
         const first = Array.isArray(err.issues) ? (err.issues[0] as { message?: string; path?: unknown[] } | undefined) : undefined;
         setGeneral(`⚠ COULDN'T SAVE — ${first?.message ?? "CHECK THE FIELDS"}${first?.path?.length ? ` (${first.path.join(".")})` : ""}`.toUpperCase());
+      } else if (err instanceof JournalApiError && err.status === 409) {
+        setGeneral("⚠ THAT JOURNEY CHANGED MEANWHILE — CLOSE THIS SHEET AND REOPEN IT");
+        if (journeyId) getJourney(journeyId).then((j) => j && upsertJourney(j)).catch(() => {});
       } else if (err instanceof JournalLockedError) {
         setGeneral("⚠ JOURNAL LOCKED — CLOSE THIS SHEET AND UNLOCK FIRST");
       } else {

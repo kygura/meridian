@@ -34,7 +34,7 @@ export default function CandidateRow({
   const [merging, setMerging] = useState(false);
   const summary = candidateSummary(c, cities);
   const unresolved = isUnresolved(c);
-  const fixes = unresolved ? cityFixes(c) : [];
+  const fixes = unresolved ? cityFixes(c, cities) : [];
   const low = c.provenance.confidence === "low";
   const why = unresolved ? "Pick the city first" : undefined;
 
@@ -84,7 +84,7 @@ export default function CandidateRow({
       </div>
       {(c.flags?.length || low) && (
         <div className="jr-cand-flags">
-          {flagTexts(c).map((t) => (
+          {flagTexts(c, cities).map((t) => (
             <span key={t} className="jr-flag">
               ⚠ {t}
             </span>

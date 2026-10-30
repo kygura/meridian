@@ -6,7 +6,7 @@
 // The raw file is parsed in memory and never stored.
 
 import { getCityById } from "../cities.js";
-import { daysBetween, nearestCityId, shortHash } from "./geo.js";
+import { daysBetween, localDayAt, nearHome, nearestCityId, shortHash, topKey } from "./geo.js";
 
 /** Visits to the same place closer together than this belong to one stay. */
 const MERGE_GAP_MS = 2 * 86_400_000;
@@ -23,7 +23,10 @@ export interface TimelineParse {
 interface Visit {
   startMs: number;
   endMs: number;
-  /** Local calendar day as written in the export (offset-aware strings keep their local date). */
+  /**
+   * Local calendar day: as written for offset-aware or naive strings; UTC ("…Z", legacy Takeout)
+   * and epoch times are shifted by a longitude estimate of the local offset.
+   */
   startDay: string;
   endDay: string;
   lat: number;
@@ -53,7 +56,8 @@ function toVisit(lat: number | undefined, lng: number | undefined, start: unknow
   const startMs = Date.parse(s), endMs = Date.parse(e);
   if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) return undefined;
   if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) return undefined;
-  return { startMs, endMs, startDay: s.slice(0, 10), endDay: e.slice(0, 10), lat, lng, ...(typeof name === "string" && name.trim() ? { name: name.trim().slice(0, 80) } : {}) };
+  const dayOf = (v: string, ms: number) => (/z$/i.test(v) ? localDayAt(ms, lng) : v.slice(0, 10));
+  return { startMs, endMs, startDay: dayOf(s, startMs), endDay: dayOf(e, endMs), lat, lng, ...(typeof name === "string" && name.trim() ? { name: name.trim().slice(0, 80) } : {}) };
 }
 
 function visitOf(entry: unknown): Visit | undefined {
@@ -109,18 +113,19 @@ export function parseTimeline(json: unknown, homeCityId?: string): TimelineParse
   }
 
   // Home is a stay key (city id, or ~10 km cell for places no city covers), so a home far from any
-  // listed city is excluded too instead of turning every night at home into a trip.
+  // listed city is excluded too instead of turning every night at home into a trip. A stay within
+  // HOME_KM of the home city is home as well (a suburb whose nearest listed city is another one).
   let homeKey = homeCityId && getCityById(homeCityId) ? homeCityId : undefined;
   if (!homeKey) {
     const nights = new Map<string, number>();
     for (const s of stays) nights.set(s.key, (nights.get(s.key) ?? 0) + daysBetween(s.arrive, s.depart));
-    homeKey = [...nights.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+    homeKey = topKey(nights);
     result.homeInferred = !!homeKey && getCityById(homeKey) !== undefined;
   }
   result.homeCityId = homeKey && getCityById(homeKey) ? homeKey : undefined;
 
   for (const s of stays) {
-    if (s.key === homeKey || daysBetween(s.arrive, s.depart) < 1) continue;
+    if (s.key === homeKey || nearHome(homeKey, s.lat, s.lng) || daysBetween(s.arrive, s.depart) < 1) continue;
     const common = { kind: "stop", provenance: { source: "timeline", sourceRef: shortHash([s.key, s.arrive, s.depart]), confidence: "medium" } };
     result.candidates.push(
       s.cityId

@@ -461,6 +461,8 @@ export interface ReplayDimScore {
   name: FingerprintDim;
   value: number;
   templateValue: number;
+  /** "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder). */
+  basis?: "dealRating";
   /** Share of the final match this dimension contributed (0-1, sums to 1 over scoredOn). */
   contribution: number;
 }

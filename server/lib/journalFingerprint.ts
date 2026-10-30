@@ -53,13 +53,28 @@ export async function fingerprintJourney(journey: Journey): Promise<Journey> {
   return (await computeFingerprint(journey, withBudget(depsFactory(), budgetMs))).journey;
 }
 
+/**
+ * Persist only the derived fields (journey + per-stop fingerprint/observed) onto the
+ * CURRENT stored journey, and only if its inputs still match. User-owned stop fields
+ * that the inputsHash does not cover (lodging name/kind/provenance, stop provenance…)
+ * are never replaced by the computation's older snapshot (R8: no lost edits).
+ */
+function persistDerived(next: Journey): Promise<Journey | undefined> {
+  return mutateJourney(next.id, (current) => {
+    if (computeInputsHash(current) !== next.fingerprint!.inputsHash || current.stops.length !== next.stops.length) return undefined;
+    const stops = current.stops.map(({ observed: _o, fingerprint: _f, ...s }, i) => {
+      const { observed, fingerprint } = next.stops[i]!;
+      return { ...s, ...(observed ? { observed } : {}), ...(fingerprint ? { fingerprint } : {}) };
+    });
+    return { ...current, stops, fingerprint: next.fingerprint };
+  });
+}
+
 /** Recompute + persist when needed. Only persists if the stored inputs still match (no lost edits). */
 export async function ensureFingerprint(journey: Journey): Promise<Journey> {
   if (!needsRecompute(journey)) return journey;
   const next = await fingerprintJourney(journey);
-  const saved = await mutateJourney(journey.id, (current) =>
-    computeInputsHash(current) === next.fingerprint!.inputsHash ? { ...current, stops: next.stops, fingerprint: next.fingerprint } : undefined
-  );
+  const saved = await persistDerived(next);
   return saved && saved.fingerprint?.inputsHash === next.fingerprint!.inputsHash ? saved : next;
 }
 
@@ -77,10 +92,7 @@ function scheduleFingerprint(journey: Journey): void {
     // setTimeout(0) runs after the store write was enqueued (same FIFO chain), so
     // our mutateJourney is applied after the save.
     await new Promise((r) => setTimeout(r, 0));
-    const next = (await computeFingerprint(snapshot, depsFactory())).journey;
-    await mutateJourney(snapshot.id, (current) =>
-      computeInputsHash(current) === next.fingerprint!.inputsHash ? { ...current, stops: next.stops, fingerprint: next.fingerprint } : undefined
-    );
+    await persistDerived((await computeFingerprint(snapshot, depsFactory())).journey);
   })()
     .catch((err) => console.error("[journal] background fingerprint failed:", err))
     .finally(() => inFlight.delete(job));

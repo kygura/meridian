@@ -31,6 +31,7 @@ export interface StopDraft {
   depart: string;
   rating?: Rating;
   crowd?: number;
+  provenance?: Provenance;
   lodging?: { name: string; kind: Lodging["kind"] | ""; cost: MoneyDraft; provenance?: Provenance };
 }
 
@@ -161,9 +162,17 @@ export function newExperience(cityId = "", date = ""): ExperienceDraft {
  *  `money-<k>-<part>`, `exp-<k>-city|date|title`, `seg-<k>-from|to`. Insertion order = focus order. */
 export type LogErrors = Record<string, string>;
 
+/** "12.5", ".5" or "12,50" (comma only as a 1-2 digit decimal). Grouped input ("1,234") is NaN, never 1.234. */
+function parseAmount(raw: string): number {
+  const t = raw.trim();
+  if (/^(\d+|\d*\.\d+)$/.test(t)) return Number(t);
+  if (/^\d+,\d{1,2}$/.test(t)) return Number(t.replace(",", "."));
+  return NaN;
+}
+
 function badMoney(m: MoneyDraft): boolean {
   if (m.amount.trim() === "") return false;
-  const n = Number(m.amount.replace(",", "."));
+  const n = parseAmount(m.amount);
   return !Number.isFinite(n) || n <= 0;
 }
 
@@ -179,6 +188,8 @@ export function validateLog(form: LogForm): LogErrors {
       if (prev.depart && s.arrive < prev.depart) e[`stop-${s.key}-dates`] = "OVERLAPS PREVIOUS STOP";
     }
     if (s.lodging && badMoney(s.lodging.cost)) e[`money-${s.key}-stay`] = "AMOUNT MUST BE MORE THAN 0";
+    if (s.lodging && !s.lodging.name.trim() && (s.lodging.cost.amount.trim() !== "" || s.lodging.kind))
+      e[`stop-${s.key}-stay`] = "STAY NAME REQUIRED";
   });
   for (const g of form.segments) {
     if (g.extra) {
@@ -211,7 +222,7 @@ export function autoTitle(names: string[]): string {
 // An unchanged amount, currency and date keeps its stored eur/rateDate (the server re-prices otherwise).
 const toMoney = (m: MoneyDraft, date: string): Money | undefined => {
   if (m.amount.trim() === "") return undefined;
-  const amount = Number(m.amount.replace(",", "."));
+  const amount = parseAmount(m.amount);
   const b = m.base;
   if (b && b.money.amount === amount && b.money.currency === m.currency && b.date === date.slice(0, 10)) return b.money;
   return { amount, currency: m.currency } as Money;
@@ -228,6 +239,7 @@ export function toJourneyInput(form: LogForm, nameOf: (cityId: string) => string
       depart: s.depart,
       ...(s.rating ? { rating: s.rating } : {}),
       ...(s.crowd !== undefined ? { crowdOverride: s.crowd } : {}),
+      ...(s.provenance ? { provenance: s.provenance } : {}),
       ...(s.lodging && s.lodging.name.trim()
         ? {
             lodging: {
@@ -301,6 +313,7 @@ export function fromJourney(j: Journey): LogForm {
     depart: s.depart,
     rating: s.rating,
     crowd: s.crowdOverride,
+    provenance: s.provenance,
     lodging: s.lodging
       ? { name: s.lodging.name, kind: s.lodging.kind ?? "", cost: moneyDraft(s.lodging.cost, s.arrive), provenance: s.lodging.provenance }
       : undefined,

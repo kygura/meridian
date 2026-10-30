@@ -49,6 +49,8 @@ function canonical(value: unknown): unknown {
 export function computeInputsHash(journey: Journey): string {
   const money = (m?: { eur: number }) => (m ? m.eur : undefined);
   const inputs = {
+    startDate: journey.startDate,
+    endDate: journey.endDate,
     companions: journey.companions,
     rating: journey.rating,
     tags: journey.tags,
@@ -66,12 +68,21 @@ export function computeInputsHash(journey: Journey): string {
   return createHash("sha1").update(JSON.stringify(canonical(inputs))).digest("hex");
 }
 
-/** True when inputs changed since the stored fingerprint, or any dim is still pending. */
-export function needsRecompute(journey: Journey): boolean {
+/** A crowd proxy computed without (complete) holiday data is retried at most this often. */
+export const CROWD_RETRY_MS = 6 * 3600_000;
+
+/**
+ * True when inputs changed since the stored fingerprint, any dim is still
+ * pending, or the crowd proxy was degraded (Nager failure/timeout) and is older
+ * than CROWD_RETRY_MS (backoff: a year Nager never publishes is not re-fetched on every read).
+ */
+export function needsRecompute(journey: Journey, now: Date = new Date()): boolean {
   const fp = journey.fingerprint;
   if (!fp || fp.inputsHash !== computeInputsHash(journey)) return true;
   const pending = (f?: Fingerprint) => !f || Object.values(f.status).includes("pending");
-  return pending(fp) || journey.stops.some((s) => pending(s.fingerprint));
+  if (pending(fp) || journey.stops.some((s) => pending(s.fingerprint))) return true;
+  const degraded = (f?: Fingerprint) => !!f?.crowdFlags?.length && now.getTime() - Date.parse(f.computedAt) >= CROWD_RETRY_MS;
+  return degraded(fp) || journey.stops.some((s) => degraded(s.fingerprint));
 }
 
 // ── helpers ────────────────────────────────────────────────────────────

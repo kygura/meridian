@@ -9,7 +9,7 @@ import { setReplayDepsFactory } from "../lib/replayService";
 import { buildHolidayIndex } from "../lib/crowd";
 import { fixtureFingerprintDeps, SEASONALITY, HOLIDAYS_2024, NOW } from "../lib/__fixtures__/journal";
 import { createJournalTools, draftJourneyParams, findSimilarWindowsParams, parseJournalIntent, searchJournalParams } from "../lib/agent/journal-tools";
-import { getQueue } from "../lib/imports";
+import { discard, getQueue } from "../lib/imports";
 import type { PlaceResult } from "../../src/types";
 import agent from "./agent";
 
@@ -138,7 +138,7 @@ describe("mock path: the §9 example", () => {
     expect(text).not.toContain("Lisbon, May 2024");
   });
 
-  it.each(["I would like to see images of Tokyo", "Find somewhere like Barcelona but cheaper"])("ordinary chat %j keeps the original mock tool flow", async (msg) => {
+  it.each(["I would like to see images of Tokyo", "Find somewhere like Barcelona but cheaper", "I visited Tokyo last year and would like somewhere cheap in Asia"])("ordinary chat %j keeps the original mock tool flow", async (msg) => {
     const spy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline")); // original flow fetches images
     const parts = parse(await (await chat(msg, undefined)).text());
     spy.mockRestore();
@@ -168,6 +168,22 @@ describe("parseJournalIntent", () => {
     expect(parseJournalIntent("somewhere like Lisbon when I went, you may suggest cheaper", "Lisbon")?.pastMonth).toBeUndefined();
     expect(parseJournalIntent("somewhere like Lisbon last May", "Lisbon")?.pastMonth).toBe(5);
     expect(parseJournalIntent("Where is cheap in Asia?", undefined)).toBeUndefined();
+  });
+
+  it("a wish ('would like', 'I'd like') next to a past-trip phrase is not a comparison", () => {
+    expect(parseJournalIntent("I visited Tokyo last year and would like somewhere cheap in Asia", "Tokyo")).toBeUndefined();
+    expect(parseJournalIntent("I'd like to find somewhere new; my last trip to Lisbon was great", "Lisbon")).toBeUndefined();
+    expect(parseJournalIntent("I'd like somewhere like Lisbon last May", "Lisbon")?.pastMonth).toBe(5);
+  });
+
+  it("takes the past month/season from 'last <X>' and the target from the rest, by position", () => {
+    expect(parseJournalIntent("Somewhere like Lisbon last May but warmer in March", "Lisbon")).toMatchObject({ pastMonth: 5, months: [3] });
+    expect(parseJournalIntent("like Lisbon last June but in May", "Lisbon")).toMatchObject({ pastMonth: 6, months: [5] });
+    const summer = parseJournalIntent("somewhere like Lisbon last summer but cheaper", "Lisbon");
+    expect(summer?.months).toBeUndefined();
+    expect(summer?.pastMonth).toBeUndefined();
+    expect(parseJournalIntent("like Lisbon last spring but in autumn", "Lisbon")?.months).toEqual([9, 10, 11]);
+    expect(parseJournalIntent("something like my trip to Lisbon in May but in winter", "Lisbon")).toMatchObject({ pastMonth: 5, months: [12, 1, 2] });
   });
 });
 
@@ -227,7 +243,13 @@ describe("journal tools", () => {
       expect(c.provenance.source).toBe("manual");
       expect(c.provenance.sourceRef).toMatch(/^agent:[0-9a-f]{16}$/);
     }
-    expect(await t.draftJourney(args)).toMatchObject({ drafted: 0, duplicates: 3 });
+    expect(await t.draftJourney(args)).toMatchObject({ drafted: 0, duplicates: 3, notice: "already_pending" });
+    // Once reviewed (here discarded), a redraft is not reported as waiting in the inbox.
+    for (const c of q.candidates) await discard(c.id);
+    const again = await t.draftJourney(args);
+    expect(again).toMatchObject({ drafted: 0, duplicates: 3, notice: "already_reviewed" });
+    expect((again as { next: string }).next).not.toMatch(/Review and accept/);
+    expect(draftJourneyParams.safeParse({ stops: args.stops }).success).toBe(true); // title is optional (never stored)
     expect(await t.draftJourney({ title: "x", stops: [{ cityId: "atlantis", arrive: "2027-05-01", depart: "2027-05-02" }] })).toEqual({ error: "unknown_city", cityId: "atlantis" });
     expect(await t.draftJourney({ title: "x", stops: [] } as never)).toMatchObject({ error: "invalid_params" });
   });

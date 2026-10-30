@@ -23,9 +23,12 @@ export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
  *  stable enough as a dedupe fingerprint (it is not a content proof). */
 export const HASH_HEAD_BYTES = 1024 * 1024;
 
+const dayNo = (ts: string): number => Date.parse(ts.slice(0, 10) + "T00:00:00Z") / 86_400_000;
+
 /**
- * Time-sorted batches of at most `size`. The server builds stops per request, so one trip's photos must not
- * straddle two requests: sorting keeps a trip contiguous, and a full batch is cut where the date changes.
+ * Time-sorted batches of at most `size`. The server builds stops per request and groups consecutive days, so one
+ * stay must not straddle two requests: a full batch is cut at the latest gap of more than one day; only when it
+ * has none (one run longer than `size`) at a date change, and then hard.
  */
 export function photoBatches(points: PhotoPoint[], size = PHOTO_BATCH): PhotoPoint[][] {
   const sorted = [...points].sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
@@ -34,9 +37,14 @@ export function photoBatches(points: PhotoPoint[], size = PHOTO_BATCH): PhotoPoi
   while (i < sorted.length) {
     let end = Math.min(i + size, sorted.length);
     if (end < sorted.length) {
-      let cut = end;
-      while (cut > i && sorted[cut - 1].timestamp.slice(0, 10) === sorted[cut].timestamp.slice(0, 10)) cut--;
-      if (cut > i) end = cut;
+      const back = (apart: (prev: string, next: string) => boolean): number => {
+        let cut = end;
+        while (cut > i && !apart(sorted[cut - 1].timestamp, sorted[cut].timestamp)) cut--;
+        return cut;
+      };
+      const cut = back((p, n) => dayNo(n) - dayNo(p) > 1);
+      const dateCut = cut > i ? cut : back((p, n) => p.slice(0, 10) !== n.slice(0, 10));
+      if (dateCut > i) end = dateCut;
     }
     out.push(sorted.slice(i, end));
     i = end;

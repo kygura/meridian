@@ -152,3 +152,62 @@ describe("timeline: unmatched places", () => {
     expect(cands(r).map((c) => c.payload)).toEqual([{ cityId: LIS, arrive: "2024-05-02", depart: "2024-05-06" }]);
   });
 });
+
+describe("home is a place, not only the nearest city id", () => {
+  const SF = "san-francisco-united-states";
+  const OAK = [37.8044, -122.2712] as const; // nearest listed city: Alameda
+  const visit = (lat: number, lng: number, from: string, to: string) => ({ startTime: from, endTime: to, visit: { topCandidate: { placeLocation: { latLng: `${lat}°, ${lng}°` } } } });
+
+  it("timeline: stays in a suburb of the configured home city are home", () => {
+    expect(nearestCityId(...OAK)).not.toBe(SF);
+    const r = parseTimeline(
+      {
+        semanticSegments: [
+          visit(...OAK, "2026-01-01T08:00:00-08:00", "2026-01-02T20:00:00-08:00"),
+          visit(38.72, -9.14, "2026-01-03T10:00:00+00:00", "2026-01-05T10:00:00+00:00"),
+          visit(...OAK, "2026-01-05T20:00:00-08:00", "2026-01-07T08:00:00-08:00"),
+        ],
+      },
+      SF,
+    );
+    expect(cands(r).map((c) => c.payload)).toEqual([{ cityId: LIS, arrive: "2026-01-03", depart: "2026-01-05" }]);
+  });
+
+  it("photos: a suburb of the configured home city counts as home", () => {
+    const r = parsePhotos([{ timestamp: "2026-01-01T12:00:00", lat: OAK[0], lng: OAK[1], hash: "o" }, { timestamp: "2026-01-03T12:00:00", lat: 38.72, lng: -9.14, hash: "l" }], SF);
+    expect(r.excludedHome).toBe(1);
+    expect(cands(r).map((c) => c.payload.cityId)).toEqual([LIS]);
+  });
+});
+
+describe("photos: home inference", () => {
+  const at = (day: string, lat: number, lng: number, hash: string) => ({ timestamp: `${day}T12:00:00`, lat, lng, hash });
+  const lisbonYear = ["2024-01-05", "2024-02-10", "2024-03-15", "2024-04-20", "2024-06-01"].map((d, i) => at(d, 38.72, -9.14, `l${i}`));
+
+  it("with no home set, the city photographed most days over a long stretch is home", () => {
+    const r = parsePhotos([...lisbonYear, at("2024-05-02", 41.15, -8.61, "p1"), at("2024-05-03", 41.15, -8.61, "p2")]);
+    expect(r).toMatchObject({ homeCityId: LIS, homeInferred: true, excludedHome: 5 });
+    expect(cands(r).map((c) => c.payload)).toEqual([{ cityId: OPO, arrive: "2024-05-02", depart: "2024-05-03" }]);
+  });
+
+  it("a batch from one trip has no home in it", () => {
+    const r = parsePhotos([at("2024-05-02", 41.15, -8.61, "p1"), at("2024-05-03", 41.15, -8.61, "p2"), at("2024-05-04", 38.72, -9.14, "l1")]);
+    expect(r).toMatchObject({ homeInferred: false, excludedHome: 0 });
+    expect(r.homeCityId).toBeUndefined();
+    expect(cands(r)).toHaveLength(2);
+  });
+});
+
+describe("timeline: UTC timestamps", () => {
+  it("legacy Takeout 'Z' and epoch times use an estimated local day, not the UTC day", () => {
+    const tokyo = (from: string, to: string) => ({ placeVisit: { location: { latitudeE7: 356850000, longitudeE7: 1397514000 }, duration: { startTimestamp: from, endTimestamp: to } } });
+    // 08:00 JST on 05-03 is 23:00Z on 05-02; 20:00 JST on 05-05 is 11:00Z.
+    const r = parseTimeline({ timelineObjects: [tokyo("2024-05-02T23:00:00Z", "2024-05-05T11:00:00Z")] }, LON);
+    expect(cands(r).map((c) => c.payload)).toEqual([{ cityId: "tokyo-japan", arrive: "2024-05-03", depart: "2024-05-05" }]);
+    const ms = parseTimeline({ timelineObjects: [{ placeVisit: { location: { latitudeE7: 356850000, longitudeE7: 1397514000 }, duration: { startTimestampMs: String(Date.parse("2024-05-02T23:00:00Z")), endTimestampMs: String(Date.parse("2024-05-05T11:00:00Z")) } } }] }, LON);
+    expect(cands(ms).map((c) => c.payload)).toEqual(cands(r).map((c) => c.payload));
+    // an explicit offset keeps the date as written
+    const off = parseTimeline({ timelineObjects: [tokyo("2024-05-03T08:00:00+09:00", "2024-05-05T20:00:00+09:00")] }, LON);
+    expect(cands(off).map((c) => c.payload)).toEqual(cands(r).map((c) => c.payload));
+  });
+});

@@ -6,8 +6,9 @@
 // Weekend/holiday dates resolve to the prior business day; that returned date is
 // stored as `rateDate`.
 //
-// Cache: data/cache/fx.json keyed "<requested date>|<CUR>". Network failure falls
-// back to the most recent cached rate for that currency; with none we throw
+// Cache: data/cache/fx.json keyed "<requested date>|<CUR>". Network failure (and
+// 5xx/429) falls back to the most recent cached rate for that currency; with none,
+// or on a definitive answer (other 4xx, no rate in the body), we throw
 // FxUnavailableError instead of storing a guessed number. EUR is identity, no I/O.
 
 import type { Money } from "../../src/types.js";
@@ -55,12 +56,18 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** A definitive answer from Frankfurter (4xx other than 429, or no rate): no cached fallback (R5). */
+class FxDefinitiveError extends Error {}
+
 async function fetchRate(currency: string, date: string): Promise<CachedRate> {
   const res = await fxFetch(`${FRANKFURTER_BASE}/${date}?from=${currency}&to=EUR`);
-  if (!res.ok) throw new Error(`frankfurter ${res.status}`);
+  if (!res.ok) {
+    const msg = `frankfurter ${res.status}`;
+    throw res.status >= 400 && res.status < 500 && res.status !== 429 ? new FxDefinitiveError(msg) : new Error(msg);
+  }
   const body = (await res.json()) as { date?: unknown; rates?: { EUR?: unknown } };
   const rate = body.rates?.EUR;
-  if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) throw new Error("frankfurter: no EUR rate");
+  if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) throw new FxDefinitiveError("frankfurter: no EUR rate");
   const rateDate = typeof body.date === "string" ? body.date : date;
   return { rate, rateDate, fetchedAt: new Date().toISOString() };
 }
@@ -81,7 +88,8 @@ async function resolveRate(currency: string, date: string): Promise<CachedRate> 
       });
       return fresh;
     } catch (err) {
-      // Fallback: latest cached rate for this currency (by rateDate).
+      if (err instanceof FxDefinitiveError) throw new FxUnavailableError(currency, date, err.message);
+      // Network failure / 5xx / 429 fallback: latest cached rate for this currency (by rateDate).
       const latest = Object.entries((await cache.read()).rates)
         .filter(([k]) => k.endsWith(`|${currency}`))
         .map(([, v]) => v)

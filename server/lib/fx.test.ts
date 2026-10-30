@@ -74,6 +74,19 @@ describe("toMoney", () => {
     expect(await toMoney(100, "USD", "2025-01-01")).toEqual({ amount: 100, currency: "USD", eur: 90, rateDate: "2024-05-10" });
   });
 
+  it("a definitive 4xx (or no rate) never falls back to a cached rate; 5xx/429 do", async () => {
+    setFxFetch(okFetch(0.92, "2024-05-02"));
+    await toMoney(1, "USD", "2024-05-02");
+    setFxFetch(vi.fn<FxFetch>(async () => ({ ok: false, status: 404, json: async () => ({}) })));
+    await expect(toMoney(100, "USD", "1998-06-01")).rejects.toBeInstanceOf(FxUnavailableError);
+    setFxFetch(vi.fn<FxFetch>(async () => ({ ok: true, status: 200, json: async () => ({ rates: {} }) })));
+    await expect(toMoney(100, "USD", "1998-06-02")).rejects.toBeInstanceOf(FxUnavailableError);
+    for (const status of [429, 503]) {
+      setFxFetch(vi.fn<FxFetch>(async () => ({ ok: false, status, json: async () => ({}) })));
+      expect(await toMoney(100, "USD", "2025-01-01")).toMatchObject({ eur: 92, rateDate: "2024-05-02" });
+    }
+  });
+
   it("throws FxUnavailableError with no network and no cached rate", async () => {
     setFxFetch(failingFetch());
     await expect(toMoney(100, "USD", "2024-05-11")).rejects.toBeInstanceOf(FxUnavailableError);

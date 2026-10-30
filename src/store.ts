@@ -506,7 +506,9 @@ export const useMeridianStore = create<MeridianState>()(
       setJourneys: (journeys) => set({ journeys }),
       upsertJourney: (journey) =>
         set((state) => {
-          const list = state.journeys ?? [];
+          const list = state.journeys;
+          // An unloaded list stays unloaded: a partial list must never stand in for the full one.
+          if (!list) return {};
           return {
             journeys: list.some((j) => j.id === journey.id)
               ? list.map((j) => (j.id === journey.id ? journey : j))

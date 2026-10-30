@@ -7,6 +7,10 @@ import {
   scoreDims,
   priceSimilarity,
   ReplayError,
+  cachedFlightEstimate,
+  FLIGHT_CACHE_TTL_MS,
+  FLIGHT_CACHE_MOCK_TTL_MS,
+  STAGE2_PRICED,
   type ReplayDeps,
 } from "./replay";
 import { computeFingerprint } from "./fingerprint";
@@ -81,6 +85,42 @@ describe("primitives", () => {
     expect(s.match).toBe(50);
     expect(s.scoredOn).toEqual(["tempC", "crowdProxy"]);
     expect(s.dims.reduce((a, d) => a + d.contribution, 0)).toBeCloseTo(1);
+  });
+});
+
+describe("cachedFlightEstimate", () => {
+  it("memoizes per (origin, destination, date) with TTL + in-flight dedupe; failures are not cached", async () => {
+    let t = 0;
+    let n = 0;
+    let fail = false;
+    let source: FlightEstimateResult["source"] = "serpapi";
+    const f = cachedFlightEstimate(async () => {
+      n++;
+      if (fail) throw new Error("boom");
+      return { priceAmount: 100, currency: "EUR", source };
+    }, () => t);
+    const p = { originIata: "BER", destinationIata: "LIS", departureDate: "2027-05-15" };
+    await Promise.all([f(p), f(p)]);
+    expect(n).toBe(1);
+    await f(p);
+    expect(n).toBe(1);
+    await f({ ...p, departureDate: "2027-06-15" });
+    expect(n).toBe(2);
+    t = FLIGHT_CACHE_TTL_MS;
+    await f(p);
+    expect(n).toBe(3);
+    fail = true;
+    const q2 = { ...p, destinationIata: "OPO" };
+    await expect(f(q2)).rejects.toThrow();
+    await expect(f(q2)).rejects.toThrow();
+    expect(n).toBe(5);
+    fail = false;
+    source = "mock";
+    const q3 = { ...p, destinationIata: "MAD" };
+    await f(q3);
+    t += FLIGHT_CACHE_MOCK_TTL_MS;
+    await f(q3);
+    expect(n).toBe(7); // a mock fallback expires sooner
   });
 });
 
@@ -165,6 +205,30 @@ describe("runReplay", () => {
     expect(p.price!.baselineEur).toBeUndefined();
     const flight = p.dims.find((x) => x.name === "flightCostEurPer1000km");
     expect(flight).toBeDefined();
+    expect(flight!.basis).toBe("dealRating"); // tooltip shows the rating, not "€X vs €X"
+  });
+
+  it("unpriced stage-1 cells (rank >= 20) never overtake the priced band on climate alone", async () => {
+    const d = deps({ flightEstimate: async () => ({ priceAmount: 2000, currency: "EUR", source: "serpapi", dealRating: "high" }) });
+    const r = await runReplay(q({ weights: { climate: 1, spend: 0, crowd: 0, flight: 1 } }), d);
+    expect(r.results.slice(0, STAGE2_PRICED).every((x) => x.price)).toBe(true);
+    expect(r.results.slice(STAGE2_PRICED).every((x) => !x.price)).toBe(true);
+    expect(pos(r.results, "lisbon-portugal", 5)).toBeLessThan(STAGE2_PRICED); // the template's own cell
+  });
+
+  it("never scores a cell on dims the user weighted 0; all-zero weights → equal for every cell", async () => {
+    const d = deps({ flightEstimate: async () => ({ priceAmount: 2000, currency: "EUR", source: "serpapi" }) });
+    const r = await runReplay(q({ weights: { climate: 0, spend: 0, crowd: 0, flight: 1 } }), d);
+    for (const x of r.results) expect(x.scoredOn.every((n) => n === "flightCostEurPer1000km")).toBe(true);
+    expect(r.results.filter((x) => x.scoredOn.length === 0).every((x) => x.match === 0)).toBe(true);
+    const eq = await runReplay(q({ weights: { climate: 0, spend: 0, crowd: 0, flight: 0 } }), deps());
+    expect(eq.results.every((x) => x.scoredOn.includes("tempC"))).toBe(true);
+  });
+
+  it("rejects an unknown fromCityId and maxFlightHours without a resolvable origin", async () => {
+    await expect(runReplay(q({ constraints: { fromCityId: "lisbon" } }), deps())).rejects.toMatchObject({ code: "origin_not_found" });
+    await expect(runReplay(q({ constraints: { maxFlightHours: 3 } }), deps({ settings: {} }))).rejects.toMatchObject({ code: "origin_required" });
+    await expect(runReplay(q({ constraints: { maxFlightHours: 3 } }), deps({ settings: { homeCityId: "nowhere-land-x" } }))).rejects.toMatchObject({ code: "origin_required" });
   });
 
   it("skips pricing without IATA on both ends", async () => {

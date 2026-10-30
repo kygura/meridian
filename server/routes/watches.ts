@@ -5,7 +5,6 @@ import { Hono } from "hono";
 import { ZodError } from "zod";
 import { requireToken } from "../middleware/auth.js";
 import { executeReplay } from "../lib/replayService.js";
-import { ReplayError } from "../lib/replay.js";
 import {
   WatchLimitError,
   createWatch,
@@ -45,7 +44,6 @@ watches.post("/run", async (c) => {
   try {
     return c.json(await runWatches(depsFactory()));
   } catch (err) {
-    if (err instanceof ReplayError) return c.json({ error: err.code, message: err.message }, 409);
     console.error("[watches] run failed:", err);
     return c.json({ error: "run_failed", message: "Could not run watches." }, 500);
   }

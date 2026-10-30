@@ -3,9 +3,25 @@
 import { createHash } from "crypto";
 import type { City } from "../../../src/types.js";
 import { haversineKm } from "../../../src/lib/geo.js";
-import { getCities } from "../cities.js";
+import { getCities, getCityById } from "../cities.js";
 
 export const NEAREST_CITY_KM = 50;
+/** A place this close to the home city's centre is home, even when another listed city is nearer (a suburb). */
+export const HOME_KM = 30;
+
+export function nearHome(homeCityId: string | undefined, lat: number, lng: number): boolean {
+  const h = homeCityId ? getCityById(homeCityId) : undefined;
+  return !!h && haversineKm([lng, lat], [h.lng, h.lat]) <= HOME_KM;
+}
+
+/** Key with the largest count (home inference: most nights, most photo days). */
+export const topKey = (counts: Map<string, number>) => [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+
+/**
+ * Calendar day of a UTC instant at longitude `lng`: a coarse local offset of whole hours per 15°,
+ * rounded toward UTC (time zones and DST sit mostly ahead of solar time in the west). No zone database.
+ */
+export const localDayAt = (ms: number, lng: number) => new Date(ms + Math.trunc(lng / 15) * 3_600_000).toISOString().slice(0, 10);
 
 let cache: { src: City[]; hits: Map<string, string | null> } | undefined;
 

@@ -24,7 +24,7 @@ import {
   type CityIndex,
 } from "../../lib/journal";
 import { fromJourney, toJourneyInput } from "../../lib/journalForm";
-import type { Experience, Fingerprint, Journey, Segment, Stop } from "../../types";
+import type { Experience, Journey, Segment, Stop } from "../../types";
 import RatingPips from "./RatingPips";
 import ProvenanceChip from "./ProvenanceChip";
 import FingerprintPanel from "./FingerprintPanel";
@@ -50,7 +50,6 @@ export default function JourneyDetail({ journeyId }: { journeyId: string }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [polled, setPolled] = useState<{ fp: Fingerprint; at: string } | null>(null);
   const [tick, setTick] = useState(0);
 
   // Always fetch the single journey once: it carries the freshest fingerprint.
@@ -65,7 +64,7 @@ export default function JourneyDetail({ journeyId }: { journeyId: string }) {
         }
         setFetched(j);
         setLoad("ready");
-        if (useMeridianStore.getState().journeys) upsertJourney(j);
+        upsertJourney(j);
       })
       .catch((e) => {
         if (live && !(e instanceof JournalLockedError)) setLoad((l) => (l === "ready" ? l : "error"));
@@ -76,9 +75,7 @@ export default function JourneyDetail({ journeyId }: { journeyId: string }) {
   }, [journeyId, tick, upsertJourney, removeJourney]);
 
   const journey = stored ?? (fetched?.id === journeyId ? fetched : null);
-  // A polled fingerprint only counts for the version of the journey it was fetched for.
-  const at = journey?.updatedAt;
-  const fp = polled && polled.at === at ? polled.fp : journey?.fingerprint;
+  const fp = journey?.fingerprint;
   const pending = !!fp && Object.values(fp.status).includes("pending");
 
   // A pending fingerprint is re-read at 20s, up to 3 times, while the page is mounted.
@@ -88,12 +85,12 @@ export default function JourneyDetail({ journeyId }: { journeyId: string }) {
     const id = setInterval(() => {
       tries++;
       getFingerprint(journeyId)
-        .then((f) => f && at && setPolled({ fp: f, at }))
+        .then(() => setTick((t) => t + 1)) // the poll persisted stops and fingerprint: re-read the journey
         .catch(() => {});
       if (tries >= MAX_POLLS) clearInterval(id);
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [pending, journeyId, at]);
+  }, [pending, journeyId]);
 
   if (!journey) {
     return (
@@ -150,7 +147,7 @@ export default function JourneyDetail({ journeyId }: { journeyId: string }) {
     setActionError(null);
     try {
       const input = { ...toJourneyInput(fromJourney(j), (id) => cityIdx.get(id)?.name ?? id), status: "confirmed" as const };
-      upsertJourney(await saveJourney(input, j.id));
+      upsertJourney(await saveJourney(input, j.id, j.updatedAt));
     } catch {
       setActionError("⚠ COULDN'T CONFIRM — TRY AGAIN");
     }

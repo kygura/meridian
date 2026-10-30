@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { computeFingerprint, computeInputsHash, needsRecompute } from "./fingerprint";
+import { computeFingerprint, computeInputsHash, needsRecompute, CROWD_RETRY_MS } from "./fingerprint";
 import { dominantMonth, isoWeek, stayNights } from "./stayDates";
 import { haversineKm } from "../../src/lib/geo";
-import { fixtureFingerprintDeps, lisbonJourney, getCity } from "./__fixtures__/journal";
+import { fixtureFingerprintDeps, lisbonJourney, getCity, NOW } from "./__fixtures__/journal";
 import type { Fingerprint, Journey } from "../../src/types";
 
 const strip = (j: Journey) =>
@@ -125,6 +125,22 @@ describe("needsRecompute / inputsHash", () => {
     const moved = { ...journey, stops: [{ ...journey.stops[0]!, depart: "2024-05-18" }] };
     expect(needsRecompute(moved)).toBe(true);
     expect(needsRecompute({ ...journey, fingerprint: undefined })).toBe(true);
+  });
+
+  it("a journey date-only edit changes the hash (durationNights/dailySpendEur read them)", async () => {
+    const { journey } = await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps().deps);
+    expect(computeInputsHash({ ...journey, endDate: "2024-05-27" })).not.toBe(computeInputsHash(journey));
+    expect(computeInputsHash({ ...journey, startDate: "2024-05-01" })).not.toBe(computeInputsHash(journey));
+    expect(needsRecompute({ ...journey, endDate: "2024-05-27" })).toBe(true);
+  });
+
+  it("retries a degraded (Nager failure) crowd proxy, with backoff", async () => {
+    const { journey } = await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps({ nager: "fail", now: NOW }).deps);
+    expect(journey.fingerprint!.status.crowdProxy).toBe("ok");
+    expect(needsRecompute(journey, new Date(NOW.getTime() + 60_000))).toBe(false);
+    expect(needsRecompute(journey, new Date(NOW.getTime() + CROWD_RETRY_MS))).toBe(true);
+    const ok = (await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps({ now: NOW }).deps)).journey;
+    expect(needsRecompute(ok, new Date(NOW.getTime() + CROWD_RETRY_MS))).toBe(false);
   });
 
   it("ignores computed fields and key order", () => {

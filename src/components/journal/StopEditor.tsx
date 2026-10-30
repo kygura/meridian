@@ -65,6 +65,7 @@ export default function StopEditor({
   const eCity = errors[`stop-${k}-city`];
   const eDates = errors[`stop-${k}-dates`];
   const eStay = errors[`money-${k}-stay`];
+  const eStayName = errors[`stop-${k}-stay`];
   return (
     <div className="jr-stop" role="group" aria-label={`Stop ${index + 1}`}>
       <div className="jr-stop-head">
@@ -133,10 +134,13 @@ export default function StopEditor({
             <input
               className="jr-input jr-input-sans"
               placeholder="Name"
+              id={`jr-f-stop-${k}-stay`}
               aria-label="Stay name"
+              aria-invalid={eStayName ? true : undefined}
               value={stop.lodging.name}
               onChange={(e) => onChange({ lodging: { ...stop.lodging!, name: e.target.value } })}
             />
+            {eStayName && <div className="jr-err">{eStayName}</div>}
             <select
               className="jr-input"
               aria-label="Stay kind"

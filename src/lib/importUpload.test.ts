@@ -117,6 +117,9 @@ describe("batching and reports", () => {
     // size 3 would split day 03-02 from day 03-01 mid-day only if the date matched; it cuts at the day boundary instead
     const split = photoBatches(pts, 3).map((b) => b.map((x) => x.timestamp.slice(0, 10)));
     expect(split).toEqual([["2024-03-01", "2024-03-01", "2024-03-02"], ["2024-03-03"]]);
+    // a multi-day stay is not split: the cut moves back to the last gap of more than one day
+    const stay = [p("2024-05-01T10:00:00"), p("2024-05-12T10:00:00"), p("2024-05-13T10:00:00"), p("2024-05-14T10:00:00"), p("2024-05-15T10:00:00")];
+    expect(photoBatches(stay, 4).map((b) => b.map((x) => x.timestamp.slice(5, 10)))).toEqual([["05-01"], ["05-12", "05-13", "05-14", "05-15"]]);
     // one day bigger than the size is cut hard
     const day = Array.from({ length: 5 }, (_, i) => p(`2024-03-01T0${i}:00:00`));
     expect(photoBatches(day, 2).map((b) => b.length)).toEqual([2, 2, 1]);

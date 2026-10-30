@@ -42,7 +42,7 @@ export default function InboxPage() {
     try {
       const q = await refreshQueue();
       if (!alive.current) return;
-      setQueue(q ?? { candidates: [], clusters: [] });
+      setQueue(q);
       setLoadError(false);
     } catch (e) {
       if (alive.current && !(e instanceof JournalLockedError)) setLoadError(true);

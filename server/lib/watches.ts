@@ -84,12 +84,19 @@ export async function listWatches(): Promise<Watch[]> {
   return (await watchStore.read()).watches;
 }
 
+/** Also drops the watch's alerts: without the watch their baselineEur (e.g. a maxEur cap) can't be worded correctly. */
 export async function deleteWatch(id: string): Promise<boolean> {
-  return watchStore.update((f) => {
+  const removed = await watchStore.update((f) => {
     const n = f.watches.length;
     f.watches = f.watches.filter((w) => w.id !== id);
     return f.watches.length < n;
   });
+  if (removed) {
+    await alertStore.update((f) => {
+      f.alerts = f.alerts.filter((a) => a.watchId !== id);
+    });
+  }
+  return removed;
 }
 
 export async function listAlerts(opts: { unseen?: boolean; sinceDays?: number; now?: Date } = {}): Promise<Alert[]> {
@@ -194,9 +201,18 @@ export async function runWatches(deps: WatchRunDeps): Promise<WatchRunReport> {
     const window = monthsInLeadWindow(now, watch.leadWeeks);
     // Only ask replay about in-window months so its top-N pricing isn't spent on months we'd discard.
     const wanted = watch.query.constraints?.months?.length ? window.filter((m) => watch.query.constraints!.months!.includes(m)) : window;
+    const markRun = () =>
+      watchStore.update((f) => {
+        const w = f.watches.find((x) => x.id === watch.id);
+        if (w) w.lastRunAt = now.toISOString();
+      });
+    // No queried month inside today's lead window: a normal outcome (seasonal watch), not a failure.
+    if (wanted.length === 0) {
+      await markRun();
+      continue;
+    }
     let response: ReplayResponse;
     try {
-      if (wanted.length === 0) throw new Error("no month of the query falls inside the lead window");
       response = await deps.replay({ ...watch.query, constraints: { ...watch.query.constraints, months: wanted } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -241,10 +257,7 @@ export async function runWatches(deps: WatchRunDeps): Promise<WatchRunReport> {
       return added;
     });
     report.alerts.push(...created);
-    await watchStore.update((f) => {
-      const w = f.watches.find((x) => x.id === watch.id);
-      if (w) w.lastRunAt = now.toISOString();
-    });
+    await markRun();
     for (const a of created) toNotify.push([a, watch]);
   }
 

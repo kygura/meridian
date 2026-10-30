@@ -17,8 +17,11 @@ into the report, or into a commit.
 - `HOME_CITY_HINT`: the user's home city name. Needed to judge what is "away from home".
 - `BACKFILL_FROM_YEAR` (backfill only): first year to scan. Default 2010.
 
-Server contract (not built yet): `POST /api/import`, token-gated, at most 500 candidates per
-call; dedupes on `(source, sourceRef)` and on `(carrier+number, departDate)` for segments.
+Server contract: `POST /api/import` (server/routes/import.ts), token-gated, at most 500
+candidates per call. It dedupes on `(source, sourceRef)` and on content: segments on (flight
+number digits, route, departure day) or (booking reference, route, departure day), where the
+route is the resolved cities (or the IATA/city hints); lodging on (source, name, city, check-in,
+check-out); experiences on (source, title, city, date); stops on (source, city, each night).
 
 ## Prompt
 
@@ -102,10 +105,25 @@ the record if no rate is available.
 export type ImportKind = "segment" | "lodging" | "experience" | "stop";
 export type ImportState = "pending" | "accepted" | "merged" | "discarded";
 
+/** Money as imports carry it: the server fills eur/rateDate when the journey is built (R5). */
+export type MoneyInput = Omit<Money, "eur" | "rateDate"> & Partial<Pick<Money, "eur" | "rateDate">>;
+
+/** Candidate payloads are partial journey pieces; cost/lodging have no provenance or EUR yet. */
+export type ImportPayload = Partial<Omit<Segment & Stop & Experience & Lodging, "cost" | "lodging" | "provenance" | "kind">> & {
+  /** Experience kind or lodging kind, depending on the candidate's `kind`. */
+  kind?: ExperienceKind | NonNullable<Lodging["kind"]>;
+  cost?: MoneyInput;
+  lodging?: { name: string; kind?: Lodging["kind"]; cost?: MoneyInput };
+  cityHint?: string;
+  iataHint?: string;
+  toCityHint?: string;
+  toIataHint?: string;
+};
+
 export interface ImportCandidate {
   id: string;
   kind: ImportKind;
-  payload: Partial<Segment & Stop & Experience & Lodging> & { cityHint?: string; iataHint?: string; toCityHint?: string; toIataHint?: string };
+  payload: ImportPayload;
   provenance: Provenance;
   suggestedJourneyId?: string;
   /** Suggested-journey cluster this candidate belongs to (recomputed on each queue change). */
@@ -129,9 +147,8 @@ export interface Provenance {
 ```
 
 Fields you send: `kind`, `payload`, `provenance`, plus `id` set to `"<source>:<sourceRef>"`
-(for example `gmail:18f2a9c0` or `calendar:abc123`), and `state: "pending"` and `createdAt`
-set to the current ISO time. Leave `suggestedJourneyId`, `clusterId` and `flags` out; the
-server computes them. The server may replace `id`, `state` and `createdAt`.
+(for example `gmail:18f2a9c0` or `calendar:abc123`). Leave `state`, `createdAt`,
+`suggestedJourneyId`, `clusterId` and `flags` out; the server sets them and ignores any you send.
 
 Do not add `provenance` inside `payload`. Provenance lives on the candidate.
 

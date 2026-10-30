@@ -48,6 +48,12 @@ describe("candidates", () => {
     expect(flagTexts(bad)).toEqual(['UNRESOLVED CITY "Oporto Cty"']);
     expect(cityFixes(cand({ kind: "stop", payload: { cityHint: "Faro", arrive: "2024-05-01" } }))).toEqual([{ field: "cityId", hint: "Faro" }]);
     expect(cityFixes(stay)).toEqual([]);
+    // an id the city index does not know is unresolved too, and gets a picker
+    const typo = cand({ flags: ["unresolved-city"], payload: { mode: "train", fromCityId: "lisbon", toCityId: "oporto-typo", departAt: "2024-05-15" } });
+    expect(cityFixes(typo)).toEqual([]);
+    expect(cityFixes(typo, cities)).toEqual([{ field: "toCityId", hint: "oporto-typo" }]);
+    expect(flagTexts(typo, cities)).toEqual(['UNRESOLVED CITY "oporto-typo"']);
+    expect(cityFixes(f, cities)).toEqual([]);
   });
   it("dates a candidate", () => {
     expect(candidateDay(cand({ payload: { departAt: "2024-05-14T08:00" } }))).toBe("2024-05-14");

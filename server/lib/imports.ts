@@ -34,7 +34,7 @@ import type {
 import { listBookings, type Booking } from "./booking.js";
 import { haversineKm } from "../../src/lib/geo.js";
 import { getCities, getCityById } from "./cities.js";
-import { JournalConflictError, createJourney, getJourney, getSettings, updateJourney } from "./journal.js";
+import { JournalConflictError, createJourney, getJourney, getSettings, listJourneys, updateJourney } from "./journal.js";
 import {
   experienceSchema,
   isoDateOrDateTimeSchema,
@@ -52,9 +52,15 @@ const CLUSTER_GAP_DAYS = 2;
 /** A trip that left home stays one cluster across quiet stretches up to this long, until it returns. */
 const AWAY_GAP_DAYS = 60;
 
-/** Stored candidate: `baseConfidence` remembers the pre-"unresolved-city" confidence so PATCH can restore it. */
-type Stored = ImportCandidate & { baseConfidence?: Confidence };
-const pub = ({ baseConfidence: _b, ...c }: Stored): ImportCandidate => c;
+/**
+ * Stored candidate: `baseConfidence` remembers the pre-"unresolved-city" confidence so PATCH can
+ * restore it. An accept/merge claim stamps `claimedAt` and, once the journey is written, records
+ * `journeyId`; a claim left without one (the process died mid-write) goes back to pending.
+ */
+type Stored = ImportCandidate & { baseConfidence?: Confidence; claimedAt?: string; journeyId?: string };
+const pub = ({ baseConfidence: _b, claimedAt: _c, journeyId: _j, ...c }: Stored): ImportCandidate => c;
+/** Longer than any journey write (FX lookups time out after seconds). */
+const CLAIM_TIMEOUT_MS = 10 * 60_000;
 
 interface ImportsFile {
   version: 1;
@@ -249,6 +255,8 @@ function makeCandidate(
 
 // ── Dedupe keys ─────────────────────────────────────────────────────
 
+/** Stop dedupe keys per candidate (one per night); a longer stay is keyed on its first year. */
+const MAX_STOP_KEYS = 366;
 const refKey = (c: Pick<ImportCandidate, "provenance">) => `${c.provenance.source}\u0000${c.provenance.sourceRef}`;
 
 /** Flight number without airline designator or leading zeros: "TP1023", "TP 01023" and "1023" agree. */
@@ -262,14 +270,21 @@ function flightDigits(number: string): string {
  * Same thing, however it was reported. Segments: (flight number, route, departure day) and
  * (booking reference, route, departure day) — the latter links an e-mail confirmation to the
  * Meridian booking it confirms, which carries no flight number. Lodging and experiences (per
- * source — another source is a separate record the reviewer sees): a reminder or "modified
- * booking" e-mail has a new Message-ID but the same name, city and date.
+ * source — another source is a separate record the reviewer sees): a reminder e-mail has a new
+ * Message-ID but the same name, city and dates (a changed check-out is a new record to review).
+ * Stops (per source): one key per night, so a re-upload whose span grew or shrank (more photos,
+ * a re-exported timeline) is the same stay, whatever state the earlier one is in.
  */
 function contentKeys(c: Pick<ImportCandidate, "kind" | "payload" | "provenance">): string[] {
   const p = c.payload;
   const norm = (s: string | undefined) => (s ? fold1(s).replace(/\s+/g, " ") : "");
   const where = (p.cityId ?? p.iataHint ?? p.cityHint ?? "").toUpperCase();
-  if (c.kind === "lodging" && p.name && p.arrive) return [`lodging:${c.provenance.source}|${norm(p.name)}|${where}|${p.arrive}`];
+  if (c.kind === "lodging" && p.name && p.arrive) return [`lodging:${c.provenance.source}|${norm(p.name)}|${where}|${p.arrive}|${p.depart ?? ""}`];
+  if (c.kind === "stop" && p.arrive) {
+    const stay = `stop:${c.provenance.source}|${where}|${norm(p.lodging?.name)}|`;
+    const nights = Math.min(Math.max(dayDiff(p.arrive, p.depart ?? p.arrive), 1), MAX_STOP_KEYS);
+    return Array.from({ length: nights }, (_, k) => stay + new Date(Date.parse(p.arrive!) + k * 86_400_000).toISOString().slice(0, 10));
+  }
   if (c.kind === "experience" && p.title && p.date) return [`experience:${c.provenance.source}|${norm(p.title)}|${where}|${p.date}`];
   if (c.kind !== "segment" || !p.departAt) return [];
   const route = `${p.fromCityId ?? p.iataHint ?? p.cityHint}>${p.toCityId ?? p.toIataHint ?? p.toCityHint}@${p.departAt.slice(0, 10)}`.toUpperCase();
@@ -316,6 +331,32 @@ export async function addCandidates(raw: unknown[], now: Date = new Date()): Pro
   });
 
   return { received: raw.length, added, duplicates, ...(errors.length ? { errors } : {}) };
+}
+
+/**
+ * Flags pending candidates that a cancellation (same content key: flight + route + day, or
+ * booking reference + route + day, or the same stay or event) refers to: "cancelled", confidence
+ * low. Returns how many were flagged.
+ */
+export async function flagCancelled(raw: unknown[], now: Date = new Date()): Promise<number> {
+  const keys = new Set<string>();
+  for (const item of raw) {
+    const parsed = importCandidateInputSchema.safeParse(item);
+    if (!parsed.success) continue;
+    const { kind, payload, provenance } = parsed.data;
+    for (const k of contentKeys(makeCandidate("", kind, payload, provenance, now))) keys.add(k);
+  }
+  if (!keys.size) return 0;
+  return store.update((file) => {
+    let n = 0;
+    for (const c of file.candidates) {
+      if (c.state !== "pending" || c.flags?.includes("cancelled") || !contentKeys(c).some((k) => keys.has(k))) continue;
+      c.flags = [...(c.flags ?? []), "cancelled"];
+      c.provenance = { ...c.provenance, confidence: "low" };
+      n++;
+    }
+    return n;
+  });
 }
 
 /** addCandidates over any number of items (file uploads can exceed MAX_BATCH), as one summed report. */
@@ -514,17 +555,42 @@ export function clusterCandidates(pending: ImportCandidate[], homeCityId?: strin
 
 // ── Queue ───────────────────────────────────────────────────────────
 
-/** Promotes past bookings (R4), then returns pending candidates (with clusterId) and clusters. */
+/**
+ * Promotes past bookings (R4), then returns pending candidates (with clusterId, and
+ * suggestedJourneyId: the confirmed journey overlapping the cluster or within its 2-day gap) and clusters.
+ */
 export async function getQueue(now: Date = new Date()): Promise<ImportQueue> {
-  await store.update((file) => promoteBookings(file, now));
+  await store.update((file) => {
+    for (const c of file.candidates) {
+      if (c.claimedAt && !c.journeyId && now.getTime() - Date.parse(c.claimedAt) > CLAIM_TIMEOUT_MS) {
+        c.state = "pending";
+        delete c.claimedAt;
+      }
+    }
+    promoteBookings(file, now);
+  });
   const { candidates } = await store.read();
   const pending = candidates.filter((c) => c.state === "pending");
   const clusters = clusterCandidates(pending, (await getSettings()).homeCityId);
   const clusterOf = new Map(clusters.flatMap((cl) => cl.candidateIds.map((id) => [id, cl.id] as const)));
   const order = new Map(clusters.flatMap((cl) => cl.candidateIds).map((id, i) => [id, i] as const));
+  const journeys = (await listJourneys()).filter((j) => j.status === "confirmed");
+  const suggested = new Map<string, string>();
+  for (const cl of clusters) {
+    let best: { id: string; gap: number } | undefined;
+    for (const j of journeys) {
+      const gap = Math.max(dayDiff(j.endDate, cl.startDate), dayDiff(cl.endDate, j.startDate), 0);
+      if (gap <= CLUSTER_GAP_DAYS && (!best || gap < best.gap)) best = { id: j.id, gap };
+    }
+    if (best) suggested.set(cl.id, best.id);
+  }
   return {
     candidates: pending
-      .map((c) => ({ ...pub(c), clusterId: clusterOf.get(c.id) }))
+      .map((c) => {
+        const clusterId = clusterOf.get(c.id);
+        const suggestedJourneyId = clusterId && suggested.get(clusterId);
+        return { ...pub(c), clusterId, ...(suggestedJourneyId ? { suggestedJourneyId } : {}) };
+      })
       .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)),
     clusters,
   };
@@ -542,26 +608,44 @@ async function claim(ids: string[], to: ImportState, requireResolved: boolean): 
     if (reviewed.length) throw new ImportError(409, { error: "not_pending", candidateIds: reviewed.map((c) => c.id) });
     const unresolved = cands.filter((c) => !hasResolvedCities(c));
     if (requireResolved && unresolved.length) throw new ImportError(409, { error: "unresolved", candidateIds: unresolved.map((c) => c.id) });
-    for (const c of cands) c.state = to;
+    for (const c of cands) {
+      c.state = to;
+      if (to !== "discarded") c.claimedAt = new Date().toISOString();
+    }
     return cands.map((c) => ({ ...c }));
   });
 }
 
 async function release(ids: string[], from: ImportState): Promise<void> {
   await store.update((file) => {
-    for (const c of file.candidates) if (ids.includes(c.id) && c.state === from) c.state = "pending";
+    for (const c of file.candidates) {
+      if (ids.includes(c.id) && c.state === from) {
+        c.state = "pending";
+        delete c.claimedAt;
+      }
+    }
   });
 }
 
-/** claim → write → release on failure. */
-async function reviewed<T>(ids: string[], to: ImportState, act: (members: ImportCandidate[]) => Promise<T>): Promise<T> {
+/** claim → write → record the journey on the claim; release on failure. */
+async function reviewed(ids: string[], to: ImportState, act: (members: ImportCandidate[]) => Promise<Journey>): Promise<Journey> {
   const members = await claim(ids, to, true);
+  let journey: Journey;
   try {
-    return await act(members);
+    journey = await act(members);
   } catch (err) {
     await release(ids, to);
     throw err;
   }
+  await store.update((file) => {
+    for (const c of file.candidates) {
+      if (ids.includes(c.id) && c.state === to) {
+        c.journeyId = journey.id;
+        delete c.claimedAt;
+      }
+    }
+  });
+  return journey;
 }
 
 export async function discard(id: string): Promise<ImportCandidate> {
@@ -606,25 +690,42 @@ function toSegment(c: ImportCandidate): RawSegment {
  * strongest provenance. Two different lodgings are never collapsed into one: if they only touch
  * (check-out day = check-in day) they stay separate stops, and if they truly overlap the journey
  * validation refuses the write so the reviewer decides, rather than a booking vanishing silently.
+ * A lodging that joins a lodging-less stay takes its own dates (the rest of that stay stays a
+ * lodging-less stop), and a lodging-less stay spanning several stops in the city (a hotel change)
+ * only widens the first and last of them, so a second hotel in one city can sit next to the first.
  */
 function addStop(stops: RawStop[], n: RawStop): void {
-  const i = stops.findIndex((e) => {
-    if (e.cityId !== n.cityId || e.arrive > n.depart || n.arrive > e.depart) return false;
-    if (!e.lodging || !n.lodging) return true;
-    return fold1(e.lodging.name) === fold1(n.lodging.name);
-  });
+  const near = (e: RawStop) => e.cityId === n.cityId && e.arrive <= n.depart && n.arrive <= e.depart;
+  const i = stops.findIndex((e) => near(e) && (!e.lodging || !n.lodging || fold1(e.lodging.name) === fold1(n.lodging.name)));
   if (i < 0) return void stops.push(n);
   const e = stops[i];
+  if (!n.lodging) {
+    const hits = stops.flatMap((s, k) => (near(s) ? [k] : [])).sort((a, b) => stops[a].arrive.localeCompare(stops[b].arrive));
+    if (hits.length > 1) {
+      const [f, l] = [hits[0], hits.at(-1)!];
+      if (n.arrive < stops[f].arrive) stops[f] = { ...stops[f], arrive: n.arrive };
+      if (n.depart > stops[l].depart) stops[l] = { ...stops[l], depart: n.depart };
+      return;
+    }
+  }
   const stronger = n.provenance && (!e.provenance || RANK[n.provenance.confidence] > RANK[e.provenance.confidence]) ? n.provenance : e.provenance;
-  stops[i] = compact({
-    ...e,
-    arrive: n.arrive < e.arrive ? n.arrive : e.arrive,
-    depart: n.depart > e.depart ? n.depart : e.depart,
-    lodging: e.lodging ?? n.lodging,
-    rating: e.rating ?? n.rating,
-    crowdOverride: e.crowdOverride ?? n.crowdOverride,
-    provenance: stronger,
-  });
+  // (A lodging with no check-out date says nothing about where the stay ends: it just joins it.)
+  const split = !!n.lodging && !e.lodging && n.depart > n.arrive;
+  const rest = split ? [e.arrive < n.arrive && { ...e, depart: n.arrive }, n.depart < e.depart && { ...e, arrive: n.depart }].filter((s): s is RawStop => !!s) : [];
+  stops.splice(
+    i,
+    1,
+    compact({
+      ...e,
+      arrive: split || n.arrive < e.arrive ? n.arrive : e.arrive,
+      depart: split || n.depart > e.depart ? n.depart : e.depart,
+      lodging: e.lodging ?? n.lodging,
+      rating: e.rating ?? n.rating,
+      crowdOverride: e.crowdOverride ?? n.crowdOverride,
+      provenance: stronger,
+    }),
+    ...rest,
+  );
 }
 
 /** Adds members to `parts`: stops from stop candidates, lodging onto the stop that overlaps it, else a new stop. */
@@ -693,6 +794,7 @@ function dateRange(parts: Parts): [string, string] {
 }
 
 const RANK: Record<Confidence, number> = { low: 0, medium: 1, high: 2 };
+const byDates = (a: RawStop, b: RawStop) => a.arrive.localeCompare(b.arrive) || a.depart.localeCompare(b.depart);
 
 function journeyProvenance(members: ImportCandidate[], now: Date): Provenance {
   const counts = new Map<ProvenanceSource, number>();
@@ -711,7 +813,7 @@ async function createFrom(members: ImportCandidate[], now: Date): Promise<Journe
     if (!parts.stops.some((s) => s.cityId !== d.cityId && s.arrive < d.depart && d.arrive < s.depart)) addStop(parts.stops, d);
   }
   if (!parts.stops.length) throw new ImportError(409, { error: "no_stops", message: "Could not derive a stop from these candidates", candidateIds: members.map((m) => m.id) });
-  parts.stops.sort((a, b) => a.arrive.localeCompare(b.arrive) || a.depart.localeCompare(b.depart));
+  parts.stops.sort(byDates);
   const [startDate, endDate] = dateRange(parts);
   const cityIds = awayCities(toItems(members, home), home);
   return createJourney({
@@ -752,7 +854,7 @@ export async function merge(id: string, journeyId: string): Promise<Journey> {
       if (!journey) throw journeyNotFound();
       const parts: Parts = { stops: [...journey.stops], segments: [...journey.segments], experiences: [...journey.experiences] };
       fold(parts, members);
-      parts.stops.sort((a, b) => a.arrive.localeCompare(b.arrive));
+      parts.stops.sort(byDates);
       const [lo, hi] = dateRange(parts);
       const { id: _id, createdAt: _c, updatedAt: _u, fingerprint: _f, ...rest } = journey;
       try {

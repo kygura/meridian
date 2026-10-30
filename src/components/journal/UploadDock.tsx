@@ -43,6 +43,7 @@ export default function UploadDock({
   const [active, setActive] = useState<UploadKind | null>(null);
   const [over, setOver] = useState<UploadKind | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [privacy, setPrivacy] = useState(false);
   const cancelled = useRef(false);
@@ -66,6 +67,7 @@ export default function UploadDock({
           shouldCancel: () => cancelled.current,
         });
         setProgress(null);
+        setSending(!scan.cancelled && scan.points.length > 0);
         note = scan.skipped ? `${scan.skipped.toLocaleString("en-US")} ${scan.skipped === 1 ? "PHOTO" : "PHOTOS"} WITHOUT TIME OR GPS SKIPPED` : undefined;
         report = scan.cancelled
           ? { received: 0, added: 0, duplicates: 0, note: "CANCELLED · NOTHING SENT" }
@@ -87,6 +89,7 @@ export default function UploadDock({
     } finally {
       setActive(null);
       setProgress(null);
+      setSending(false);
       onUploaded();
     }
   };
@@ -152,6 +155,13 @@ export default function UploadDock({
                   <div className="jr-bar" aria-hidden="true">
                     <span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
                   </div>
+                  <button type="button" className="tm-action-btn" onClick={() => (cancelled.current = true)}>
+                    CANCEL
+                  </button>
+                </div>
+              ) : busy && sending && t.kind === "photo" ? (
+                <div className="jr-progress">
+                  <div className="jr-hint label" role="status">UPLOADING…</div>
                   <button type="button" className="tm-action-btn" onClick={() => (cancelled.current = true)}>
                     CANCEL
                   </button>

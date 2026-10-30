@@ -94,13 +94,28 @@ function validateSemantics(input: ReturnType<typeof journeyInputSchema.parse>): 
   input.segments.forEach((s, i) => {
     city(s.fromCityId, ["segments", i, "fromCityId"]);
     city(s.toCityId, ["segments", i, "toCityId"]);
-    if (s.arriveAt && s.arriveAt.slice(0, 10) < s.departAt.slice(0, 10)) {
+    if (s.arriveAt && arrivesBeforeDeparture(s.departAt, s.arriveAt)) {
       issues.push({ path: ["segments", i, "arriveAt"], message: "arriveAt is before departAt" });
     }
   });
   input.experiences.forEach((e, i) => city(e.cityId, ["experiences", i, "cityId"]));
 
   if (issues.length) throw new JournalValidationError(issues);
+}
+
+/** Epoch ms for a datetime carrying a UTC offset (Z, ±HH:MM, ±HHMM); undefined otherwise. */
+function instant(v: string): number | undefined {
+  return /T.*(Z|[+-]\d{2}:?\d{2})$/.test(v) ? Date.parse(v.replace(/([+-]\d{2})(\d{2})$/, "$1:$2")) : undefined;
+}
+
+/**
+ * With offsets on both sides compare instants (an eastbound date-line flight lands on an
+ * earlier local date); otherwise only local calendar dates are comparable.
+ */
+function arrivesBeforeDeparture(departAt: string, arriveAt: string): boolean {
+  const a = instant(arriveAt);
+  const d = instant(departAt);
+  return a !== undefined && d !== undefined ? a < d : arriveAt.slice(0, 10) < departAt.slice(0, 10);
 }
 
 async function money(m: MoneyInputBody | undefined, date: string) {

@@ -1,15 +1,18 @@
 // Photo-metadata ingestion (spec-journal §7 source 5). The browser sends only
 // {timestamp, lat, lng, hash}; photos are grouped by nearest city (<= 50 km) and day, and each
-// run of consecutive days in one city becomes a `stop` candidate. Photos at the home city are
-// ignored (they are not trips); photos with no city nearby are skipped and reported.
+// run of consecutive days in one city becomes a `stop` candidate. Photos at home (the home city,
+// or within HOME_KM of it) are ignored (they are not trips); with no home configured, the city
+// with the most photo days is assumed to be home when its photos span HOME_SPAN_DAYS or more (a
+// batch from one trip has no home in it). Photos with no city nearby are skipped and reported.
 
 import { z } from "zod";
 import { getCityById } from "../cities.js";
-import { daysBetween, nearestCityId, shortHash } from "./geo.js";
+import { daysBetween, nearHome, nearestCityId, shortHash, topKey } from "./geo.js";
 
 export const MAX_PHOTOS = 5000;
 const MIN_MS = Date.UTC(1990, 0, 1);
 const MAX_MS = Date.UTC(2100, 0, 1);
+const HOME_SPAN_DAYS = 60;
 
 /** ISO string, or epoch milliseconds (seconds when below 1e11). */
 const timestampSchema = z.union([z.string().min(1).max(40), z.number().finite()]);
@@ -34,18 +37,19 @@ export interface PhotosParse {
   candidates: unknown[];
   photos: number;
   excludedHome: number;
+  homeCityId?: string;
+  /** True when no home was configured and the city with the most photo days was assumed to be it. */
+  homeInferred: boolean;
   errors: string[];
 }
 
 export function parsePhotos(raw: unknown, homeCityId?: string): PhotosParse {
   const photos = photosSchema.parse(raw);
-  const home = homeCityId && getCityById(homeCityId) ? homeCityId : undefined;
-  const result: PhotosParse = { candidates: [], photos: photos.length, excludedHome: 0, errors: [] };
+  const result: PhotosParse = { candidates: [], photos: photos.length, excludedHome: 0, homeInferred: false, errors: [] };
   let unlocated = 0;
   let badTime = 0;
 
-  // city → day → earliest photo of that day + count
-  const byCity = new Map<string, Map<string, { ms: number; hash: string; n: number }>>();
+  const located: { t: { ms: number; day: string }; cityId: string; lat: number; lng: number; hash: string }[] = [];
   for (const p of photos) {
     const t = when(p.timestamp);
     if (!t) {
@@ -57,17 +61,36 @@ export function parsePhotos(raw: unknown, homeCityId?: string): PhotosParse {
       unlocated++;
       continue;
     }
-    if (cityId === home) {
+    located.push({ t, cityId, lat: p.lat, lng: p.lng, hash: p.hash });
+  }
+
+  let home = homeCityId && getCityById(homeCityId) ? homeCityId : undefined;
+  if (!home) {
+    const daysIn = new Map<string, Set<string>>();
+    for (const { cityId, t } of located) daysIn.set(cityId, (daysIn.get(cityId) ?? new Set()).add(t.day));
+    const top = topKey(new Map([...daysIn].map(([id, ds]) => [id, ds.size])));
+    const ds = top ? [...daysIn.get(top)!].sort() : [];
+    if (top && daysBetween(ds[0], ds.at(-1)!) >= HOME_SPAN_DAYS) {
+      home = top;
+      result.homeInferred = true;
+    }
+  }
+  result.homeCityId = home;
+
+  // city → day → earliest photo of that day + count
+  const byCity = new Map<string, Map<string, { ms: number; hash: string; n: number }>>();
+  for (const { t, cityId, lat, lng, hash } of located) {
+    if (cityId === home || nearHome(home, lat, lng)) {
       result.excludedHome++;
       continue;
     }
     const days = byCity.get(cityId) ?? new Map();
     byCity.set(cityId, days);
     const d = days.get(t.day);
-    if (!d) days.set(t.day, { ms: t.ms, hash: p.hash, n: 1 });
+    if (!d) days.set(t.day, { ms: t.ms, hash, n: 1 });
     else {
       d.n++;
-      if (t.ms < d.ms) Object.assign(d, { ms: t.ms, hash: p.hash });
+      if (t.ms < d.ms) Object.assign(d, { ms: t.ms, hash });
     }
   }
 

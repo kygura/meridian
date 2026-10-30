@@ -78,6 +78,10 @@ function Panel() {
     const s = useMeridianStore.getState();
     const node = (x: City) => ({ cityId: x.id, name: x.name, iata: x.iata, lat: x.lat, lng: x.lng });
     const id = s.createTrip(`${c.name} · ${MONTHS[a.month - 1]}`);
+    // The alert was priced from the watch's origin: start the trip there, as the replay list does.
+    const fromId = byId.get(a.watchId)?.query.constraints?.fromCityId;
+    const from = fromId ? idx.get(fromId) : undefined;
+    if (from) s.addCityToTrip(id, node(from));
     s.addCityToTrip(id, node(c));
     close();
     navigate(`/trips/${id}`);

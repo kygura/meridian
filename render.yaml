@@ -13,7 +13,14 @@ services:
         sync: false
       - key: DATA_DIR
         value: /var/data
+      - key: MERIDIAN_TOKEN
+        sync: false
+      - key: ALERT_WEBHOOK_URL
+        sync: false
     disk:
       name: meridian-data
       mountPath: /var/data
       sizeGB: 1
+  # Watches (spec-journal §10): no in-process timer. Something must POST
+  # /api/watches/run daily with the Bearer token: a Render Cron Job (paid) or a
+  # scheduled Claude task. Not provisioned here; see wiki/tensions.md.

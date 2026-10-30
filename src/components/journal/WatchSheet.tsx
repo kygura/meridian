@@ -11,8 +11,6 @@ type Rule = "below_my_median" | "deal_low" | "max";
 function saveError(e: unknown): string {
   if (e instanceof JournalNetworkError) return "⚠ COULDN'T REACH THE SERVER — TRY AGAIN";
   if (e instanceof JournalApiError) {
-    // A bare 404 (no error code) means the watches route is not mounted on this server.
-    if (e.status === 404 && !e.code) return "⚠ WATCHES AREN'T AVAILABLE ON THIS SERVER YET";
     if (e.code === "too_many_watches") return `⚠ ${e.message.toUpperCase()}`;
     if (e.status === 400) return "⚠ THE SERVER REJECTED THESE SETTINGS — CHECK THEM AND TRY AGAIN";
   }

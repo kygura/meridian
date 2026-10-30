@@ -40,24 +40,27 @@ export function observedCacheKey(cityId: string, arrive: string, depart: string)
   return `${cityId}|${arrive}|${depart}`;
 }
 
-/** Disk cache at data/cache/observed.json, keyed per (cityId, arrive, depart). */
+/**
+ * Disk cache at data/cache/observed.json, keyed per (cityId, arrive, depart).
+ * set() re-reads the file and merges before the atomic rename (one sync section),
+ * so concurrent instances (one per fingerprint job) never drop each other's entries.
+ */
 export function diskObservedCache(): ObservedCache {
   let mem: Record<string, ObservedConditions> | null = null;
   const file = () => getDataPath("cache", "observed.json");
-  const load = () => {
-    if (mem) return mem;
+  const read = (): Record<string, ObservedConditions> => {
     try {
-      mem = JSON.parse(readFileSync(file(), "utf-8")) as Record<string, ObservedConditions>;
+      const v = JSON.parse(readFileSync(file(), "utf-8")) as unknown;
+      return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, ObservedConditions>) : {};
     } catch {
-      mem = {};
+      return {};
     }
-    return mem;
   };
+  const load = () => (mem ??= read());
   return {
     get: (key) => load()[key],
     set: (key, value) => {
-      const data = load();
-      data[key] = value;
+      const data = (mem = { ...load(), ...read(), [key]: value });
       ensureDataDir("cache");
       const tmp = `${file()}.tmp`;
       writeFileSync(tmp, JSON.stringify(data));

@@ -25,6 +25,8 @@ export interface EmailParse {
   messages: number;
   /** Messages with no recognised reservation markup. */
   unstructured: number;
+  /** Cancelled reservations, mapped like candidates: they flag the confirmation they cancel (imports.flagCancelled). */
+  cancelled: unknown[];
   errors: string[];
 }
 
@@ -358,13 +360,13 @@ const MAPPERS: Record<string, Mapper> = {
 };
 
 /** Reservation nodes of a JSON-LD document: top level, arrays and @graph (bounded depth). */
-function reservations(node: unknown, depth = 0, out: [string, Obj][] = []): [string, Obj][] {
+function reservations(node: unknown, depth = 0, out: [string, Obj, boolean][] = []): [string, Obj, boolean][] {
   if (depth > 4) return out;
   if (Array.isArray(node)) node.forEach((n) => reservations(n, depth + 1, out));
   else if (isObj(node)) {
     if (node["@graph"]) reservations(node["@graph"], depth + 1, out);
     const type = typeNames(node["@type"]).find((t) => t in MAPPERS);
-    if (type && !/cancel/i.test(str(node.reservationStatus) ?? "")) out.push([type, node]);
+    if (type) out.push([type, node, /cancel/i.test(str(node.reservationStatus) ?? "")]);
   }
   return out;
 }
@@ -377,7 +379,7 @@ export function parseEmailUpload(file: Uint8Array): EmailParse {
   const messages = splitMbox(Buffer.from(file.buffer, file.byteOffset, file.byteLength).toString("latin1").replace(/^\xEF\xBB\xBF/, ""));
   if (messages.length > MAX_MESSAGES) throw new ImportError(413, { error: "too_many_messages", max: MAX_MESSAGES });
 
-  const result: EmailParse = { candidates: [], messages: 0, unstructured: 0, errors: [] };
+  const result: EmailParse = { candidates: [], messages: 0, unstructured: 0, cancelled: [], errors: [] };
   const note = (msg: string) => result.errors.length < MAX_ERRORS && result.errors.push(msg);
 
   messages.forEach((raw, i) => {
@@ -392,14 +394,14 @@ export function parseEmailUpload(file: Uint8Array): EmailParse {
     const found = htmlParts(raw).flatMap((html) => extractJsonLd(html, note, label)).flatMap((doc) => reservations(doc));
     if (!found.length) return void result.unstructured++;
     let n = 0;
-    for (const [type, r] of found) {
+    for (const [type, r, cancelled] of found) {
       const mapped = MAPPERS[type](r);
       if (typeof mapped === "string") {
         note(`${label}: ${mapped}`);
         continue;
       }
       for (const m of mapped) {
-        result.candidates.push({
+        (cancelled ? result.cancelled : result.candidates).push({
           kind: m.kind,
           payload: m.payload,
           provenance: { source: "jsonld", sourceRef: `${id.slice(0, 400)}#${n++}`, confidence: m.confidence },

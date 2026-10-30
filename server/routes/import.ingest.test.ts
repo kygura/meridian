@@ -331,3 +331,18 @@ describe("POST /cluster/:clusterId/merge", () => {
     expect(q.candidates.map((c: { id: string }) => c.id).sort()).toEqual(["calendar:b", "calendar:c"]);
   });
 });
+
+describe("cancelled reservations", () => {
+  const ld = (status?: string) =>
+    JSON.stringify({ "@type": "EventReservation", ...(status ? { reservationStatus: status } : {}), reservationFor: { "@type": "Event", name: "Gig", startDate: "2024-05-04", location: { "@type": "Place", name: "Coliseu", address: { addressLocality: "Lisbon", addressCountry: "PT" } } } });
+  const email = (id: string, status?: string) => Buffer.from(`Message-ID: <${id}@x>\nContent-Type: text/html; charset=utf-8\n\n<script type="application/ld+json">${ld(status)}</script>\n`);
+
+  it("a later cancellation flags the pending confirmation cancelled and low", async () => {
+    await upload("/api/import/upload/email", email("conf"), "message/rfc822");
+    const res = await (await upload("/api/import/upload/email", email("cxl", "http://schema.org/ReservationCancelled"), "message/rfc822")).json();
+    expect(res).toMatchObject({ added: 0, cancelled: 1 });
+    const q = await queue();
+    expect(q.candidates).toHaveLength(1);
+    expect(q.candidates[0]).toMatchObject({ flags: ["cancelled"], provenance: { confidence: "low" } });
+  });
+});
