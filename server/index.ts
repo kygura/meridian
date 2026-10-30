@@ -14,6 +14,8 @@ import shortlistRoutes from "./routes/shortlist.js";
 import bookingsRoutes from "./routes/bookings.js";
 import newsRoutes from "./routes/news.js";
 import seasonalityRoutes from "./routes/seasonality.js";
+import journalRoutes from "./routes/journal.js";
+import { gateRoutes } from "./middleware/auth.js";
 
 // Load city data on startup
 loadCities();
@@ -30,6 +32,11 @@ app.use(
   })
 );
 
+// Token-gate personal-data prefixes (spec-journal D1/R1) — each prefix itself and
+// everything under it, including routes later tasks mount. /api/bookings stays
+// ungated (ruling R2).
+gateRoutes(app);
+
 // Mount API routes
 app.route("/api/cities", citiesRoutes);
 app.route("/api/metrics", metricsRoutes);
@@ -38,6 +45,7 @@ app.route("/api/shortlist", shortlistRoutes);
 app.route("/api/bookings", bookingsRoutes);
 app.route("/api/news", newsRoutes);
 app.route("/api/seasonality", seasonalityRoutes);
+app.route("/api/journal", journalRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

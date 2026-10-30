@@ -3,3 +3,10 @@ dist/
 data/cache
 tsconfig.tsbuildinfo
 *.log
+# Personal journal data (spec-journal §4) — never commit
+data/journal.json
+data/imports.json
+data/settings.json
+data/watches.json
+data/alerts.json
+data/bookings.json
