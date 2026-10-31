@@ -1,9 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MERIDIAN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Meridian</title>
+    <script>
+      // Apply the saved theme before first paint (see src/shell/theme.ts).
+      try {
+        var saved = JSON.parse(localStorage.getItem("meridian.theme") || "null");
+        var pref = saved && saved.state && saved.state.pref;
+        if (pref === "light" || pref === "dark" || pref === "system") {
+          document.documentElement.setAttribute("data-theme", pref);
+        }
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -14,39 +14,18 @@ import type {
   TripOption,
   ShortlistEntry,
   TickerItem,
-  CityMetrics,
-  MeridianScore,
   MetricSurface,
-  LayerKey,
   Journey,
   Alert,
   Watch,
   ReplayQuery,
 } from "./types";
 
-export interface CandidateFilters {
-  maxBudget: number;
-  maxStops: number;
-  maxDays: number;
-}
-
-const DEFAULT_CANDIDATE_FILTERS: CandidateFilters = {
-  maxBudget: 800,
-  maxStops: 3,
-  maxDays: 14,
-};
-
-/** Quick-log sheet state. `prefillStops` = city ids picked on the globe (task c). */
+/** Quick-log sheet state. `prefillStops` = city ids to start with (e.g. "Log a visit" in the city panel). */
 export interface QuickLogState {
   open: boolean;
   journeyId?: string;
   prefillStops?: string[];
-}
-
-export interface JourneyScrub {
-  mode: "chrono" | "season";
-  year?: number;
-  month?: number;
 }
 
 /** The replay window an alert points at: the watch's query plus the alert's city and month. */
@@ -57,30 +36,12 @@ export interface ReplayPrefill {
 }
 
 export interface MeridianState {
-  // Theme
+  /** Resolved theme, mirrored here by src/shell/theme.ts. Read-only for screens. */
   theme: "light" | "dark";
-  themeWipe: { active: boolean; x: number; y: number; next: "light" | "dark" } | null;
-  toggleTheme: (originX?: number, originY?: number) => void;
-  clearThemeWipe: () => void;
 
   // Cities
   cities: City[];
   setCities: (cities: City[]) => void;
-
-  // Selection
-  selectedCityId: string | null;
-  selectCity: (id: string | null) => void;
-
-  // Drawers
-  leftDrawerOpen: boolean;
-  rightDrawerOpen: boolean;
-  toggleLeftDrawer: () => void;
-  setRightDrawer: (open: boolean) => void;
-
-  // Command palette overlay
-  commandOpen: boolean;
-  setCommandOpen: (open: boolean) => void;
-  toggleCommand: () => void;
 
   // Trips
   trips: Trip[];
@@ -98,28 +59,12 @@ export interface MeridianState {
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
 
-  // On-globe route drawing
-  drawMode: boolean;
-  setDrawMode: (on: boolean) => void;
-
   // Agent-generated trip candidates (origin: "agent" trips awaiting confirmation)
-  candidateFilters: CandidateFilters;
-  setCandidateFilters: (patch: Partial<CandidateFilters>) => void;
   setAgentCandidates: (options: TripOption[]) => void;
   confirmCandidate: (tripId: string) => void;
+  /** Dismiss one agent candidate. */
+  discardCandidate: (tripId: string) => void;
   discardAgentCandidates: () => void;
-
-  // Overlay modals
-  tripsOverlayOpen: boolean;
-  setTripsOverlayOpen: (open: boolean) => void;
-  toggleTripsOverlay: () => void;
-  candidatesOverlayOpen: boolean;
-  setCandidatesOverlayOpen: (open: boolean) => void;
-  toggleCandidatesOverlay: () => void;
-
-  // Layers
-  layers: Record<LayerKey, boolean>;
-  toggleLayer: (key: LayerKey) => void;
 
   // Metric surfaces cache
   surfaces: Record<string, MetricSurface>;
@@ -131,19 +76,11 @@ export interface MeridianState {
   addToShortlist: (entry: ShortlistEntry) => void;
   removeFromShortlist: (cityId: string) => void;
 
-  // Ticker
+  // News headlines (World screen, city panel)
   ticker: TickerItem[];
   setTicker: (items: TickerItem[]) => void;
 
-  // City metrics cache
-  cityMetrics: Record<string, CityMetrics>;
-  setCityMetrics: (cityId: string, metrics: CityMetrics) => void;
-
-  // Scores cache
-  cityScores: Record<string, MeridianScore>;
-  setCityScore: (cityId: string, score: MeridianScore) => void;
-
-  // Seasonality cache (shared by SeasonalityPage + SeasonStrip; not persisted —
+  // Seasonality cache (shared by When to go, the map and the city panel; not persisted —
   // climate data is served, fine to rebuild per session; null = confirmed uncovered)
   seasonality: Record<string, SeasonMonth[] | null>;
   setSeasonality: (cityId: string, months: SeasonMonth[] | null) => void;
@@ -153,8 +90,7 @@ export interface MeridianState {
   seasonsShowRegions: boolean;
   setSeasonsShowRegions: (on: boolean) => void;
 
-  // Booking checkout modal (DESIGN-booking.md §7.3 — mirrors the
-  // candidatesOverlayOpen pattern; offers themselves stay component-local)
+  // Booking sheet (offers themselves stay component-local)
   bookingModal: { open: boolean; target: BookingTarget | null };
   openBookingModal: (target: BookingTarget) => void;
   closeBookingModal: () => void;
@@ -164,10 +100,6 @@ export interface MeridianState {
   bookings: Booking[];
   setBookings: (bookings: Booking[]) => void;
   fetchBookings: () => Promise<void>;
-  bookingsPanelOpen: boolean;
-  setBookingsPanelOpen: (open: boolean) => void;
-  activeBookingId: string | null;
-  openBookingTicket: (id: string | null) => void;
   applyBookingCancelled: (id: string) => void;
 
   // Journal & Replay (DESIGN-journal.md §1.3). Not persisted: the server is the
@@ -190,62 +122,42 @@ export interface MeridianState {
   quickLog: QuickLogState;
   openQuickLog: (opts?: { journeyId?: string; prefillStops?: string[] }) => void;
   closeQuickLog: () => void;
-  alertsPanelOpen: boolean;
-  setAlertsPanelOpen: (open: boolean) => void;
-  journalDraw: { active: boolean; cityIds: string[] };
-  setJournalDraw: (draw: { active: boolean; cityIds: string[] }) => void;
-  journeyScrub: JourneyScrub;
-  setJourneyScrub: (patch: Partial<JourneyScrub>) => void;
-  /** Set by "OPEN IN REPLAY" on an alert; ReplayPage applies it once and clears it. */
+  /** Set by "View" on an alert; Plan › Repeat a trip applies it once and clears it. */
   replayPrefill: ReplayPrefill | null;
   setReplayPrefill: (p: ReplayPrefill | null) => void;
 }
 
-const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
-  trips: true,
-  routes: true,
-  cities: true,
-  weather: false,
-  cost: false,
-  conflict: false,
-  disaster: false,
-  journeys: false,
-};
+/** Persisted keys (localStorage "meridian-trips"). Anything else found there is dropped on load. */
+const PERSIST_VERSION = 1;
+
+/** Old default names ("TRIP 3", "Lisbon COPY") in the new sentence-case wording. */
+export function modernTripName(name: string): string {
+  const numbered = /^TRIP (\d+)$/.exec(name);
+  if (numbered) return `Trip ${numbered[1]}`;
+  if (name === "TRIP") return "Trip";
+  if (name.endsWith(" COPY")) return `${modernTripName(name.slice(0, -5))} (copy)`;
+  return name;
+}
+
+export function migratePersisted(persisted: unknown, _version: number): Pick<MeridianState, "trips" | "activeTripId"> {
+  const p = (persisted && typeof persisted === "object" ? persisted : {}) as Record<string, unknown>;
+  const trips = Array.isArray(p.trips)
+    ? (p.trips as Trip[])
+        .filter((t) => t && typeof t === "object" && typeof t.id === "string" && Array.isArray(t.nodes))
+        .map((t) => ({ ...t, name: typeof t.name === "string" ? modernTripName(t.name) : "Trip" }))
+    : [];
+  const activeTripId = typeof p.activeTripId === "string" && trips.some((t) => t.id === p.activeTripId) ? p.activeTripId : null;
+  return { trips, activeTripId };
+}
 
 export const useMeridianStore = create<MeridianState>()(
   persist(
     (set, get) => ({
-      // Theme
       theme: "light",
-      themeWipe: null,
-      toggleTheme: (originX, originY) =>
-        set((state) => {
-          const next = state.theme === "light" ? "dark" : "light";
-          const x = originX ?? window.innerWidth / 2;
-          const y = originY ?? window.innerHeight / 2;
-          return { themeWipe: { active: true, x, y, next } };
-        }),
-      clearThemeWipe: () => set({ themeWipe: null }),
 
       // Cities
       cities: [],
       setCities: (cities) => set({ cities }),
-
-      // Selection
-      selectedCityId: null,
-      selectCity: (id) => set({ selectedCityId: id, rightDrawerOpen: id !== null }),
-
-      // Drawers
-      leftDrawerOpen: false,
-      rightDrawerOpen: false,
-      toggleLeftDrawer: () =>
-        set((state) => ({ leftDrawerOpen: !state.leftDrawerOpen })),
-      setRightDrawer: (open) => set({ rightDrawerOpen: open }),
-
-      // Command palette overlay
-      commandOpen: false,
-      setCommandOpen: (open) => set({ commandOpen: open }),
-      toggleCommand: () => set((state) => ({ commandOpen: !state.commandOpen })),
 
       // Trips
       trips: [],
@@ -256,7 +168,7 @@ export const useMeridianStore = create<MeridianState>()(
         const state = get();
         const trip: Trip = {
           id,
-          name: name ?? `TRIP ${state.trips.length + 1}`,
+          name: name ?? `Trip ${state.trips.length + 1}`,
           color: randomTripColor(state.trips.map((t) => t.color)),
           status: "draft",
           nodes: [],
@@ -296,7 +208,7 @@ export const useMeridianStore = create<MeridianState>()(
           const id = `trip-${Date.now()}`;
           const trip: Trip = {
             id,
-            name: `TRIP ${state.trips.length + 1}`,
+            name: `Trip ${state.trips.length + 1}`,
             color: randomTripColor(state.trips.map((t) => t.color)),
             status: "draft",
             nodes: [node],
@@ -336,14 +248,14 @@ export const useMeridianStore = create<MeridianState>()(
         const dupe: Trip = source
           ? {
               id,
-              name: `${source.name} COPY`,
+              name: `${source.name} (copy)`,
               color: randomTripColor(state.trips.map((t) => t.color)),
               status: "draft",
               nodes: [...source.nodes],
             }
           : {
               id,
-              name: "TRIP",
+              name: "Trip",
               color: randomTripColor([]),
               status: "draft",
               nodes: [],
@@ -357,16 +269,7 @@ export const useMeridianStore = create<MeridianState>()(
           activeTripId: state.activeTripId === id ? null : state.activeTripId,
         })),
 
-      // On-globe route drawing
-      drawMode: false,
-      setDrawMode: (on) => set({ drawMode: on }),
-
       // Agent-generated trip candidates
-      candidateFilters: DEFAULT_CANDIDATE_FILTERS,
-      setCandidateFilters: (patch) =>
-        set((state) => ({
-          candidateFilters: { ...state.candidateFilters, ...patch },
-        })),
       setAgentCandidates: (options) =>
         set((state) => {
           const manualTrips = state.trips.filter((t) => t.origin !== "agent");
@@ -390,6 +293,14 @@ export const useMeridianStore = create<MeridianState>()(
             t.id === tripId ? { ...t, origin: "manual", status: "scouting" } : t
           ),
         })),
+      discardCandidate: (tripId) =>
+        set((state) => {
+          const trips = state.trips.filter((t) => !(t.id === tripId && t.origin === "agent"));
+          return {
+            trips,
+            activeTripId: state.activeTripId === tripId ? null : state.activeTripId,
+          };
+        }),
       discardAgentCandidates: () =>
         set((state) => {
           const remaining = state.trips.filter((t) => t.origin !== "agent");
@@ -399,23 +310,6 @@ export const useMeridianStore = create<MeridianState>()(
             activeTripId: activeStillValid ? state.activeTripId : null,
           };
         }),
-
-      // Overlay modals
-      tripsOverlayOpen: false,
-      setTripsOverlayOpen: (open) => set({ tripsOverlayOpen: open }),
-      toggleTripsOverlay: () =>
-        set((state) => ({ tripsOverlayOpen: !state.tripsOverlayOpen })),
-      candidatesOverlayOpen: false,
-      setCandidatesOverlayOpen: (open) => set({ candidatesOverlayOpen: open }),
-      toggleCandidatesOverlay: () =>
-        set((state) => ({ candidatesOverlayOpen: !state.candidatesOverlayOpen })),
-
-      // Layers
-      layers: DEFAULT_LAYERS,
-      toggleLayer: (key) =>
-        set((state) => ({
-          layers: { ...state.layers, [key]: !state.layers[key] },
-        })),
 
       // Metric surfaces cache
       surfaces: {},
@@ -434,23 +328,9 @@ export const useMeridianStore = create<MeridianState>()(
           shortlist: state.shortlist.filter((s) => s.cityId !== cityId),
         })),
 
-      // Ticker
+      // News headlines
       ticker: [],
       setTicker: (items) => set({ ticker: items }),
-
-      // City metrics cache
-      cityMetrics: {},
-      setCityMetrics: (cityId, metrics) =>
-        set((state) => ({
-          cityMetrics: { ...state.cityMetrics, [cityId]: metrics },
-        })),
-
-      // Scores cache
-      cityScores: {},
-      setCityScore: (cityId, score) =>
-        set((state) => ({
-          cityScores: { ...state.cityScores, [cityId]: score },
-        })),
 
       // Seasonality cache
       seasonality: {},
@@ -467,7 +347,7 @@ export const useMeridianStore = create<MeridianState>()(
       seasonsShowRegions: false,
       setSeasonsShowRegions: (on) => set({ seasonsShowRegions: on }),
 
-      // Booking checkout modal
+      // Booking sheet
       bookingModal: { open: false, target: null },
       openBookingModal: (target) => set({ bookingModal: { open: true, target } }),
       closeBookingModal: () => set({ bookingModal: { open: false, target: null } }),
@@ -482,12 +362,6 @@ export const useMeridianStore = create<MeridianState>()(
           // Server unreachable — keep the existing cache.
         }
       },
-      bookingsPanelOpen: false,
-      setBookingsPanelOpen: (open) =>
-        set(open ? { bookingsPanelOpen: true } : { bookingsPanelOpen: false, activeBookingId: null }),
-      activeBookingId: null,
-      openBookingTicket: (id) =>
-        set(id ? { activeBookingId: id, bookingsPanelOpen: true } : { activeBookingId: null }),
       applyBookingCancelled: (id) =>
         set((state) => ({
           bookings: state.bookings.map((b) =>
@@ -527,18 +401,16 @@ export const useMeridianStore = create<MeridianState>()(
       quickLog: { open: false },
       openQuickLog: (opts) => set({ quickLog: { open: true, ...opts } }),
       closeQuickLog: () => set({ quickLog: { open: false } }),
-      alertsPanelOpen: false,
-      setAlertsPanelOpen: (open) => set({ alertsPanelOpen: open }),
-      journalDraw: { active: false, cityIds: [] },
-      setJournalDraw: (draw) => set({ journalDraw: draw }),
-      journeyScrub: { mode: "chrono" },
-      setJourneyScrub: (patch) =>
-        set((state) => ({ journeyScrub: { ...state.journeyScrub, ...patch } })),
       replayPrefill: null,
       setReplayPrefill: (p) => set({ replayPrefill: p }),
     }),
     {
       name: "meridian-trips",
+      version: PERSIST_VERSION,
+      // v0 → v1: keep only trips + activeTripId, and reword the old upper-case default names.
+      migrate: (persisted, version) => migratePersisted(persisted, version) as unknown as MeridianState,
+      // Same-version loads also drop unknown keys, so stale fields never reach the store.
+      merge: (persisted, current) => ({ ...current, ...migratePersisted(persisted, PERSIST_VERSION) }),
       partialize: (state) => ({
         trips: state.trips.filter((t) => t.origin !== "agent"),
         activeTripId: state.activeTripId,

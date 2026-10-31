@@ -1,29 +1,25 @@
 import { useEffect } from "react";
 import { useMeridianStore } from "./store";
 import { useRoute } from "./lib/router";
-import TopBar from "./components/TopBar";
-import LeftDrawer from "./components/LeftDrawer";
-import RightDrawer from "./components/RightDrawer";
-import Globe from "./components/Globe";
-import CommandPalette from "./components/CommandPalette";
-import TripCandidates from "./components/TripCandidates";
-import TripsOverlay from "./components/TripsOverlay";
-import ThemeWipe from "./components/ThemeWipe";
-import TripsPage from "./pages/TripsPage";
-import SeasonalityPage from "./components/seasonality/SeasonalityPage";
-import BookingModal from "./components/booking/BookingModal";
-import BookingsPanel from "./components/booking/BookingsPanel";
-import JournalPage from "./components/journal/JournalPage";
-import QuickLogSheet from "./components/journal/QuickLogSheet";
-import AlertsPanel from "./components/journal/AlertsPanel";
 import { apiUrl } from "./lib/api";
+import { AppShell } from "./shell/AppShell";
+import { useUIStore } from "./shell/uiStore";
+import { Toaster } from "./ui";
+import MapScreen from "./screens/map/MapScreen";
+import CityPanel from "./screens/map/CityPanel";
+import TripsScreen from "./screens/trips/TripsScreen";
+import QuickLogSheet from "./screens/trips/past/QuickLogSheet";
+import PlanScreen from "./screens/plan/PlanScreen";
+import BookingSheet from "./screens/plan/flights/BookingSheet";
+import InboxScreen from "./screens/inbox/InboxScreen";
+import WorldScreen from "./screens/world/WorldScreen";
 
 export default function App() {
-  const { toggleLeftDrawer, setRightDrawer, toggleCommand, setDrawMode } =
-    useMeridianStore();
   const route = useRoute();
+  const cityPanel = useUIStore((s) => s.cityPanel);
+  const closeCity = useUIStore((s) => s.closeCity);
 
-  // Fetch initial data on mount
+  // Initial data: cities, shortlist, bookings (server is the source of truth for bookings).
   useEffect(() => {
     fetch(apiUrl("/api/cities?limit=10000"))
       .then((r) => r.json())
@@ -40,74 +36,45 @@ export default function App() {
       })
       .catch(() => {});
 
-    // Bookings cache — server is source of truth (DESIGN-booking.md §7.3).
     void useMeridianStore.getState().fetchBookings();
   }, []);
 
-  // Keyboard listeners
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Command palette: ⌘K / Ctrl+K works everywhere.
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        toggleCommand();
-        return;
-      }
-
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
-
-      if (e.key === "[") toggleLeftDrawer();
-      if (e.key === "]") setRightDrawer(false);
-      if (e.key === "Escape") {
-        setDrawMode(false);
-        useMeridianStore.getState().setJournalDraw({ active: false, cityIds: [] });
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [toggleLeftDrawer, setRightDrawer, toggleCommand, setDrawMode]);
+  const onMap = route.view === "map";
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        overflow: "hidden",
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr)",
-        gridTemplateRows: "44px minmax(0, 1fr)",
-        gridTemplateAreas: `"top" "center"`,
-      }}
-    >
-      <TopBar />
-      <div
-        style={{
-          gridArea: "center",
-          position: "relative",
-          overflow: "hidden",
-          background: "var(--bg)",
-        }}
-      >
-        {/* Globe stays mounted across navigation to preserve the map instance */}
-        <Globe />
-        {route.view === "trips" && <TripsPage tripId={route.tripId} />}
-        {route.view === "seasons" && <SeasonalityPage />}
-        {route.view === "journal" && <JournalPage route={route} />}
-      </div>
-      <LeftDrawer />
-      <RightDrawer />
-      <CommandPalette />
-      <TripCandidates />
-      <TripsOverlay />
-      <BookingModal />
-      <BookingsPanel />
+    <>
+      <AppShell route={route}>
+        {/* The map stays mounted across navigation so the map instance survives. */}
+        <div className="shell-screen" hidden={!onMap}>
+          <MapScreen active={onMap} />
+        </div>
+        {route.view === "trips" && (
+          <div className="shell-screen">
+            <TripsScreen route={route} />
+          </div>
+        )}
+        {route.view === "plan" && (
+          <div className="shell-screen">
+            <PlanScreen route={route} />
+          </div>
+        )}
+        {route.view === "inbox" && (
+          <div className="shell-screen">
+            <InboxScreen />
+          </div>
+        )}
+        {route.view === "world" && (
+          <div className="shell-screen">
+            <WorldScreen />
+          </div>
+        )}
+      </AppShell>
+
+      {/* Global layers, reachable from any route. */}
+      {cityPanel && <CityPanel key={cityPanel.cityId} cityId={cityPanel.cityId} onClose={closeCity} />}
       <QuickLogSheet />
-      <AlertsPanel />
-      <ThemeWipe />
-    </div>
+      <BookingSheet />
+      <Toaster />
+    </>
   );
 }

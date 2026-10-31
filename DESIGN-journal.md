@@ -1,5 +1,11 @@
 # DESIGN — Journal & Replay
 
+> **Superseded for UI (v3).** `DESIGN-v3.md` and `src/shell/CONTRACT.md` replace every UI,
+> layout, visual-language and component section of this document. The old components it names
+> (`src/components/**`, `src/pages/**`) and their stylesheets have been deleted; the UI now lives in
+> `src/screens/**`, `src/ui/**` and `src/shell/**`. Data contracts, API behaviour and server rules
+> described here still apply.
+
 Scope: spec-journal.md §7 (inbox UI), §8 (UI), §10 (alert delivery) and §14 R1 (unlock).
 The type contract is `src/types.ts` → "Journal & Replay". This document covers the UI
 only, and an implementer can follow it as written. Terms are those in CONTEXT.md: a **Journey** happened,

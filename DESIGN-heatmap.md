@@ -1,5 +1,11 @@
 # DESIGN — Seasonality Heatmap Calendar
 
+> **Superseded for UI (v3).** `DESIGN-v3.md` and `src/shell/CONTRACT.md` replace every UI,
+> layout, visual-language and component section of this document. The old components it names
+> (`src/components/**`, `src/pages/**`) and their stylesheets have been deleted; the UI now lives in
+> `src/screens/**`, `src/ui/**` and `src/shell/**`. Data contracts, API behaviour and server rules
+> described here still apply.
+
 Scope: spec.md §4.2 (Seasonality heatmap calendar) and §5 flow 2 ("Find the best
 time"). This document specifies the UI surface only. It is the single source of
 truth for an implementer. Follow it literally — every size, color, and copy string

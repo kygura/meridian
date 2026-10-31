@@ -1,0 +1,404 @@
+/* Ask panel (DESIGN-v3 §6 Ask). Prefix .ask-*. Tokens only. */
+
+/* ── Docked column (desktop) ────────────────────────────── */
+.ask-docked {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.ask-docked-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  border-bottom: var(--border-width) solid var(--border);
+}
+.ask-docked-head h2 {
+  font-size: 26px;
+  font-weight: var(--weight-regular);
+  font-family: var(--font-display);
+  font-style: italic;
+  line-height: 1.1;
+}
+.ask-docked-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.ask-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-5);
+}
+.ask-docked-foot {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: var(--border-width) solid var(--border);
+  background: var(--surface);
+}
+
+/* ── Sheet (phone) ──────────────────────────────────────── */
+.ask-sheet .ui-sheet-footer {
+  display: block;
+}
+
+/* ── Thread ─────────────────────────────────────────────── */
+.ask-thread-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.ask-thread-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.ask-msg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ask-msg--user {
+  align-items: flex-end;
+}
+.ask-bubble {
+  max-width: 85%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 0;
+  border-bottom-right-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: var(--border-width) solid var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+.ask-prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  line-height: var(--leading);
+  overflow-wrap: anywhere;
+}
+.ask-prose ul {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ask-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.ask-typing {
+  display: inline-flex;
+  gap: 4px;
+  padding: var(--space-2) 0;
+}
+.ask-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--subtle);
+  animation: ask-dot 1.2s infinite ease-in-out;
+}
+.ask-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.ask-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes ask-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ask-typing span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* ── Intro ──────────────────────────────────────────────── */
+.ask-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+.ask-intro-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--space-2);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--accent);
+  border: var(--border-width) solid var(--rule);
+}
+.ask-intro-title {
+  font-size: 28px;
+  font-weight: var(--weight-regular);
+  line-height: 1.1;
+  font-family: var(--font-display);
+  font-style: italic;
+}
+.ask-intro-desc {
+  color: var(--muted);
+}
+.ask-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* ── Rich bits ──────────────────────────────────────────── */
+.ask-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ask-photos {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+.ask-photo {
+  flex: none;
+  width: 120px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.ask-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ask-matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.ask-matches li + li {
+  border-top: var(--border-width) solid var(--border);
+}
+.ask-match {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.ask-match:hover,
+.ask-match:focus-visible {
+  background: var(--surface-2);
+}
+.ask-match-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ask-match-name {
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.ask-match-country {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+.ask-match-meta {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.ask-match-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+.ask-match-score {
+  font-weight: var(--weight-semibold);
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+}
+
+.ask-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  min-height: 32px;
+  color: var(--accent-text);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+.ask-link:hover {
+  text-decoration: underline;
+}
+.ask-ideas-offer {
+  display: flex;
+  margin-left: calc(-1 * var(--space-2));
+}
+
+/* ── Trip ideas ─────────────────────────────────────────── */
+.ask-ideas {
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+.ask-ideas-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-bottom: var(--border-width) solid var(--border);
+  background: var(--surface-2);
+}
+.ask-ideas-head h3 {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-style: normal;
+}
+.ask-ideas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ask-idea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+.ask-idea + .ask-idea {
+  border-top: var(--border-width) solid var(--border);
+}
+.ask-idea-main {
+  min-width: 0;
+}
+.ask-idea-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.ask-idea-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+}
+.ask-idea-chain {
+  margin-top: 2px;
+  color: var(--text);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.ask-idea-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.ask-idea-mock {
+  flex: none;
+}
+.ask-idea-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.ask-end {
+  height: 1px;
+}
+
+/* ── Composer ───────────────────────────────────────────── */
+.ask-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+.ask-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--control-h);
+  max-height: 160px;
+  resize: none;
+  overflow-y: auto;
+}
+
+@media (max-width: 899.98px) {
+  /* A steady height so the sheet doesn't jump while replies stream in. */
+  .ask-sheet {
+    min-height: 70dvh;
+  }
+  .ask-input {
+    min-height: var(--touch);
+    font-size: var(--text-md);
+  }
+  .ask-idea-actions > .ui-btn,
+  .ask-ideas-head > .ui-btn {
+    min-height: var(--touch);
+  }
+  .ask-idea-actions > .ui-btn {
+    flex: 1;
+  }
+}

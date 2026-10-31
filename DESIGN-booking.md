@@ -1,5 +1,11 @@
 # DESIGN — Flight Booking Flow UI
 
+> **Superseded for UI (v3).** `DESIGN-v3.md` and `src/shell/CONTRACT.md` replace every UI,
+> layout, visual-language and component section of this document. The old components it names
+> (`src/components/**`, `src/pages/**`) and their stylesheets have been deleted; the UI now lives in
+> `src/screens/**`, `src/ui/**` and `src/shell/**`. Data contracts, API behaviour and server rules
+> described here still apply.
+
 Scope: spec §4.1 (booking pipeline UI) and §5 flow 1. Governed by assumptions A1
 (bookings server-side, self-contained; trips stay client-side), A2 (offers ephemeral,
 orders durable), A5 (no Duffel key locally → clearly-labeled mock offers; test mode only).

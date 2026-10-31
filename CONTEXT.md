@@ -1,7 +1,12 @@
 # Meridian
 
-Travel-intelligence app: a cartographic globe over a world city database, with trip
-planning, flight booking (test mode), seasonality insight, and an AI research agent.
+Travel-intelligence app: a flat map over a world city database, with trip planning,
+flight booking (test mode), seasonality insight, a travel journal, and an AI research agent.
+
+The UI is described by `DESIGN-v3.md` (brief) and `src/shell/CONTRACT.md` (how the screens fit).
+Those supersede the UI sections of the older `DESIGN-*.md` files. User-facing labels differ from
+some terms below: "Repeat a trip" for Replay, "When to go" for the seasonality heatmap, "Crowds"
+for the crowd proxy, "Ask" for the agent panel.
 
 ## Language
 
@@ -135,8 +140,8 @@ A suggested Journey: Import candidates grouped by date proximity.
 _Avoid_: group, bundle
 
 **Inbox**:
-The review screen (`#/journal/inbox`) for Clusters and Import candidates. Its count shows in
-the TopBar.
+The review screen (`#/inbox`) for Clusters and Import candidates. Its pending count shows as
+a badge on Inbox in the sidebar and the phone tab bar.
 
 **Crowd proxy**:
 A 0–100 estimate of how busy a City is in a month, from its comfort-peak curve and holiday

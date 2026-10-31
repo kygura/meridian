@@ -72,7 +72,7 @@ function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>): 
     lng: city.lng,
     population: city.population,
     score: score.overall,
-    summaryLine: `${popLabel} · Meridian score ${score.overall}/100 · ${tierLabel(tier)}`,
+    summaryLine: `${popLabel} · score ${score.overall} of 100 · ${tierLabel(tier)}`,
   };
 }
 

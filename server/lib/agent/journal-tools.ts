@@ -305,11 +305,11 @@ export function createJournalTools(ctx: { unlocked: boolean }) {
           report,
           notice: pending ? "already_pending" : "already_reviewed",
           next: pending
-            ? "This draft is already waiting in the journal inbox (#/journal/inbox); nothing new was added."
-            : "Nothing was drafted: these stops were already imported or reviewed (accepted or discarded) in the journal inbox.",
+            ? "This draft is already waiting in your Inbox; nothing new was added."
+            : "Nothing was drafted: these stops were already imported or reviewed in your Inbox.",
         };
       }
-      return { drafted: report.added, duplicates: report.duplicates, report, title: p.data.title, next: "Review and accept in the journal inbox (#/journal/inbox); the agent cannot confirm journeys." };
+      return { drafted: report.added, duplicates: report.duplicates, report, title: p.data.title, next: "Review and accept it in your Inbox; the agent cannot confirm trips." };
     } catch (err) {
       return fail("draft_journey", err);
     }

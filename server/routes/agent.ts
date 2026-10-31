@@ -450,6 +450,17 @@ function journalUnlocked(authHeader: string | undefined): boolean {
   return !!expected && !!m && tokenMatches(m[1].trim(), expected);
 }
 
+/** Plain words for fingerprint dimensions, so replies never show internal field names (crowdProxy → crowds). */
+const DIM_WORDS: Record<string, string> = {
+  month: "season",
+  comfort: "comfort",
+  tempC: "temperature",
+  precipMm: "rainfall",
+  dailySpendEur: "daily spend",
+  flightCostEurPer1000km: "flight cost",
+  crowdProxy: "crowds",
+};
+
 const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 /** Mock path for "somewhere like <past trip> but …": search_journal → find_similar_windows → Open Places. */
@@ -476,11 +487,11 @@ async function streamMockJournalChat(
       let text: string;
       if ("error" in found) {
         text = found.error === "journal_locked"
-          ? "Your journal is locked, so I can't look up the trip you mean. Unlock it (paste your Meridian token in the journal view), then ask again."
-          : `I couldn't read your journal (${found.error}).`;
+          ? "Your journal is locked, so I can't look up the trip you mean. Unlock it in Settings with your Meridian token, then ask again."
+          : "I couldn't read your journal just now. Try again in a moment.";
       } else if (found.journeys.length === 0) {
         text = `I couldn't find a journey in your journal matching ${intent.cityName ?? "that"}${intent.pastMonth ? ` in ${MONTH_LONG[intent.pastMonth - 1]}` : ""}. ` +
-          "Log it in the journal (or import it) and I can find similar windows.";
+          "Log it as a past trip (or import it) and I can find places like it.";
       } else {
         const template = found.journeys[0]!;
         const simArgs = findSimilarWindowsParams.parse({
@@ -492,8 +503,8 @@ async function streamMockJournalChat(
         const sim = await call("find_similar_windows", simArgs, tools.findSimilarWindows);
         if ("error" in sim) {
           text = sim.error === "template_not_fingerprinted"
-            ? `"${template.title}" doesn't have a fingerprint yet (its weather may still be loading). Try again in a moment.`
-            : `I couldn't run the similarity search (${sim.error}).`;
+            ? `"${template.title}" is still being analysed (its weather may still be loading). Try again in a moment.`
+            : "I couldn't search for similar places just now. Try again in a moment.";
         } else {
           const bends = [
             intent.bend.tempC ? `${intent.bend.tempC > 0 ? "warmer" : "cooler"} (${intent.bend.tempC > 0 ? "+" : ""}${intent.bend.tempC}°C)` : "",
@@ -502,13 +513,13 @@ async function streamMockJournalChat(
           ].filter(Boolean);
           const lines = sim.places.map((p) => {
             const top = [...(p.replayMatch?.dims ?? [])].sort((a, b) => b.contribution - a.contribution)[0];
-            return `• ${p.name}, ${p.country} — ${p.summaryLine}${top ? ` (strongest on ${top.name})` : ""}`;
+            return `• ${p.name}, ${p.country} — ${p.summaryLine}${top ? ` (closest on ${DIM_WORDS[top.name] ?? "overall feel"})` : ""}`;
           });
           text =
-            `Based on "${template.title}" (${template.startDate}), here are the closest windows${bends.length ? `, bent ${bends.join(" and ")}` : ""}` +
+            `Based on "${template.title}" (${template.startDate}), here are the closest matches${bends.length ? `, bent ${bends.join(" and ")}` : ""}` +
             `${intent.months ? ` in ${intent.months.map((m) => MONTH_LONG[m - 1]).join("/")}` : ""}:\n\n` +
-            (lines.length ? lines.join("\n") : "No windows matched — try loosening the months or bends.") +
-            `\n\nScored on ${sim.universeSize} cities with seasonality data. Flight prices marked mock are estimates and aren't scored.`;
+            (lines.length ? lines.join("\n") : "Nothing matched. Try more months or fewer changes.") +
+            `\n\nCompared against ${sim.universeSize} cities with climate data. Flight prices marked mock are estimates and don't affect the match.`;
         }
       }
       for (const tok of text.split(/(\s+)/)) {
@@ -581,20 +592,20 @@ async function streamMockChatWithTools(messages: Array<{ role: string; content: 
 
       // 4. Streamed text summary, built from the real tool results above.
       const angle = cheap
-        ? "ranked by affordability"
+        ? "cheapest first"
         : safe
-          ? "ranked by overall score with a safety-conscious floor"
-          : "ranked by overall Meridian score";
-      const lines = places.map((p) => `• ${p.name}, ${p.country} — score ${p.score}/100. ${p.summaryLine}`);
-      const imageNote = top && topImages.length ? ` Found ${topImages.length} image(s) for ${top.name}.` : "";
-      const seasonNote = top && seasonality.available ? ` Seasonality data is available for ${top.name}.` : "";
+          ? "best overall, with a safety floor"
+          : "best overall first";
+      const lines = places.map((p) => `• ${p.name}, ${p.country}: ${p.summaryLine}`);
+      const imageNote = top && topImages.length ? ` Found ${topImages.length === 1 ? "a photo" : `${topImages.length} photos`} of ${top.name}.` : "";
+      const seasonNote = top && seasonality.available ? ` Best months to visit ${top.name} are available.` : "";
 
       const text =
-        `Here are the strongest matches ${regionLabel} right now, ${angle}:\n\n` +
-        (lines.length ? lines.join("\n") : "No matches found for that query — try a broader region or lower the score threshold.") +
+        `Here are the best places ${regionLabel} right now, ${angle}:\n\n` +
+        (lines.length ? lines.join("\n") : "Nothing matched that. Try a broader region.") +
         `\n\n${(imageNote + seasonNote).trim()}`.trimEnd() +
-        `\n\nTap any city below to open its full intelligence brief. ` +
-        `(Live AI narration is disabled because OPENAI_API_KEY isn't set — these picks come from the local scoring engine and tool core.)`;
+        `\n\nTap a city below to open it. ` +
+        `(Live AI replies are off on this server, so these picks come from Meridian's own scoring.)`;
 
       const tokens = text.split(/(\s+)/);
       for (const tok of tokens) {
@@ -775,7 +786,11 @@ you could look up. Be concise, specific, and actionable.
 For the user's own travel history use the journal tools: search_journal to find a past journey, get_fingerprint for the
 conditions it had, find_similar_windows to rank other destination/month windows like it (bend with tempC/spendPct/crowd),
 and draft_journey to propose a journey for the user to review in the inbox (you cannot confirm it). If a journal tool
-returns journal_locked, tell the user to unlock the journal.`,
+returns journal_locked, tell the user to unlock their journal in Settings.
+Write for a traveller in plain words: never mention tool names, field names, ids or error codes. Say "crowds" not
+"crowdProxy", "temperature" not "tempC", "rainfall" not "precipMm", "daily spend" not "dailySpendEur", "flight cost" not
+"flightCostEurPer1000km", "best months" not "seasonality", and "similar places" not "windows". Mention city names in full
+(e.g. "Lisbon") so the app can link them.`,
       messages: parsed.data.messages,
       tools: {
         search_places: tool({

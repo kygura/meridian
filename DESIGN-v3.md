@@ -35,7 +35,7 @@ Detail routes:
 Legacy hashes redirect: `#/journal` → `#/trips/past`, `#/journal/<id>` → `#/trips/past/<id>`, `#/journal/inbox` → `#/inbox`, `#/journal/replay/...` → `#/plan/repeat/...`, `#/seasons` → `#/plan/when`, `#/trips/<id>` → `#/trips/plan/<id>`.
 
 Global actions:
-- **Log a trip** (primary, in the sidebar and a floating button on Map and Trips › Past) opens the quick-log sheet.
+- **Log a trip** (primary, in the sidebar and a floating button on the Map) opens the quick-log sheet.
 - **Ask** toggles the chat panel.
 - Theme toggle (light / dark / system) and journal unlock live in a **Settings** popover at the sidebar foot.
 
