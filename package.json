@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "start": "bun run server/index.ts",
+    "start": "tsx server/index.ts",
     "dev:all": "concurrently \"vite\" \"tsx watch server/index.ts\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
