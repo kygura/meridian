@@ -1,0 +1,321 @@
+/* Plan › Watches. Prefix .plan-watches-*. Tokens only. */
+
+.plan-watches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.plan-watches-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.plan-watches-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-h);
+}
+
+.plan-watches-h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: var(--weight-regular);
+  line-height: 1.1;
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.plan-watches-h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+.plan-watches-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-watches-meta {
+  margin: var(--space-1) 0 0;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.plan-watches-line {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading);
+}
+
+/* ── Alerts ──────────────────────────────────────────────── */
+
+.plan-watches-alert {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-watches-alert.is-seen {
+  background: transparent;
+  border-style: dashed;
+}
+
+.plan-watches-alert-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.plan-watches-alert-text {
+  min-width: 0;
+}
+
+.plan-watches-alert-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.plan-watches-price {
+  font-size: 20px;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  font-family: var(--font-mono);
+}
+
+.plan-watches-compare {
+  margin: 0;
+  font-size: 11px;
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+}
+
+.plan-watches-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.plan-watches-dismiss {
+  margin-left: auto;
+}
+
+/* ── Watches ─────────────────────────────────────────────── */
+
+.plan-watches-watch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.plan-watches-watch-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Sheet form ──────────────────────────────────────────── */
+
+.plan-watches-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.plan-watches-row2 {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-3);
+}
+
+.plan-watches-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-watches-fieldset legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+}
+
+.plan-watches-fieldset .ui-field-hint,
+.plan-watches-fieldset .ui-field-error {
+  margin: 0;
+}
+
+.plan-watches-months {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.plan-watches-months .ui-chip {
+  justify-content: center;
+}
+
+.plan-watches-picked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.plan-watches-picked-name {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.plan-watches-picked .ui-btn {
+  margin-left: auto;
+}
+
+.plan-watches-lead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.plan-watches-lead .ui-input {
+  width: 80px;
+}
+
+.plan-watches-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-watches-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--control-h);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+
+.plan-watches-rule:hover {
+  border-color: var(--rule);
+}
+
+.plan-watches-rule.is-checked {
+  border-color: var(--rule);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan-watches-rule input {
+  margin: 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.plan-watches-rule:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.plan-watches-max {
+  max-width: 220px;
+  margin-top: var(--space-1);
+}
+
+.plan-watches-eur {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.plan-watches-summary {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: 17px;
+  line-height: 1.35;
+  border: var(--border-width) dashed var(--border-strong);
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.plan-watches-sheet-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* ── Phone ───────────────────────────────────────────────── */
+
+@media (max-width: 899.98px) {
+  .plan-watches {
+    gap: var(--space-5);
+  }
+
+  .plan-watches-row2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .plan-watches-months {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .plan-watches-months .ui-chip,
+  .plan-watches-rule,
+  .plan-watches-picked {
+    min-height: var(--touch);
+  }
+
+  .plan-watches-actions .ui-btn {
+    min-height: var(--touch);
+  }
+
+  .plan-watches-sheet-foot > .ui-btn {
+    flex: 1;
+  }
+}

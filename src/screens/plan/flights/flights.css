@@ -1,0 +1,836 @@
+/* Plan › Flights and the global booking sheet. Prefix .plan-flights-*. Tokens only. */
+
+.plan-flights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.plan-flights-h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: var(--weight-regular);
+  line-height: 1.1;
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.plan-flights-h3 {
+  margin: 0;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  font-family: var(--font-mono);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-style: normal;
+}
+
+.plan-flights-sub {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
+
+.plan-flights-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.plan-flights-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.plan-flights-summary {
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.plan-flights-status {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.plan-flights-grow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-flights-skel-gap {
+  margin-top: var(--space-2);
+}
+
+/* ── Search form ─────────────────────────────────────────── */
+
+.plan-flights-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.plan-flights-route {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.plan-flights-route > .plan-flights-f-origin {
+  grid-column: 1;
+}
+
+.plan-flights-route > .plan-flights-f-dest {
+  grid-column: 3;
+}
+
+.plan-flights-route:not(:has(.plan-flights-swap)) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.plan-flights-route:not(:has(.plan-flights-swap)) > .plan-flights-f-dest {
+  grid-column: 2;
+}
+
+.plan-flights-swap {
+  grid-column: 2;
+  align-self: end;
+  margin-bottom: 2px;
+}
+
+.plan-flights-when {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.plan-flights-form--page .plan-flights-when {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(120px, auto);
+}
+
+.plan-flights-submit {
+  display: flex;
+}
+
+.plan-flights-picked,
+.plan-flights-fixed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  min-width: 0;
+}
+
+.plan-flights-fixed {
+  background: var(--surface-2);
+}
+
+.plan-flights-picked {
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.plan-flights-picked:hover {
+  border-color: var(--border-strong);
+}
+
+.plan-flights-picked-name {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.plan-flights-picked-change {
+  margin-left: auto;
+  color: var(--accent-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  flex-shrink: 0;
+}
+
+/* ── Notes ───────────────────────────────────────────────── */
+
+.plan-flights-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  font-size: var(--text-sm);
+  line-height: var(--leading);
+}
+
+.plan-flights-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.plan-flights-note--mock {
+  background: var(--warning-soft);
+  color: var(--text);
+}
+
+.plan-flights-note--mock svg {
+  color: var(--accent);
+}
+
+.plan-flights-note--test {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.plan-flights-note--test svg {
+  color: var(--accent-text);
+}
+
+/* ── Offers ──────────────────────────────────────────────── */
+
+.plan-flights-offers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.plan-flights-offers-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.plan-flights-count {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.plan-flights-offer-list,
+.plan-flights-booking-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-flights-offer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: 72px;
+}
+
+.plan-flights-offer.is-selected {
+  border-color: var(--rule);
+  box-shadow: var(--shadow);
+}
+
+.plan-flights-offer-hit,
+.plan-flights-booking-hit {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.plan-flights-offer-hit {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.plan-flights-offer-hit:focus-visible,
+.plan-flights-booking-hit:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-card);
+}
+
+.plan-flights-offer-skel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.plan-flights-carrier {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.plan-flights-offer-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-flights-offer-line1 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.plan-flights-offer-times {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+}
+
+.plan-flights-offer-times svg {
+  color: var(--subtle);
+}
+
+.plan-flights-offer-line2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  min-width: 0;
+}
+
+.plan-flights-nonstop {
+  color: var(--success);
+}
+
+.plan-flights-offer-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.plan-flights-price {
+  font-size: 16px;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.plan-flights-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.plan-flights-countdown.is-urgent {
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+
+.plan-flights-countdown.is-expired {
+  color: var(--danger);
+}
+
+/* ── Passenger form ──────────────────────────────────────── */
+
+.plan-flights-pax,
+.plan-flights-review,
+.plan-flights-ticket-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.plan-flights-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  background: var(--surface-2);
+}
+
+.plan-flights-selected-main {
+  min-width: 0;
+}
+
+.plan-flights-selected-line1 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.plan-flights-selected-line2 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+}
+
+.plan-flights-pax-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 120px) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-3);
+}
+
+.plan-flights-pax-grid > :nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+@media (min-width: 900px) {
+  .plan-flights-pax-grid > :nth-child(n + 4) {
+    grid-column: auto;
+  }
+  .plan-flights-pax-grid > :nth-child(4) {
+    grid-column: 1 / span 2;
+  }
+  .plan-flights-pax-grid > :nth-child(5) {
+    grid-column: 3;
+  }
+  .plan-flights-pax-grid > :nth-child(6) {
+    grid-column: 1 / span 2;
+  }
+  .plan-flights-pax-grid > :nth-child(7) {
+    grid-column: 3;
+  }
+}
+
+.plan-flights-radios {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-flights-radios legend {
+  padding: 0;
+  margin-bottom: var(--space-1);
+}
+
+.plan-flights-radio-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.plan-flights-radio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.plan-flights-radio:hover {
+  border-color: var(--rule);
+}
+
+.plan-flights-radio.is-checked {
+  border-color: var(--rule);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.plan-flights-radio input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.plan-flights-radio:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.plan-flights-radios.is-invalid .plan-flights-radio {
+  border-color: var(--danger);
+}
+
+/* ── Review and ticket ───────────────────────────────────── */
+
+.plan-flights-dl {
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plan-flights-dl-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.plan-flights-dl-row dt {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  padding-top: 3px;
+  font-style: normal;
+}
+
+.plan-flights-dl-row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.plan-flights-total {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: var(--border-width) solid var(--rule);
+  box-shadow: var(--shadow);
+}
+
+.plan-flights-total-label {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  font-style: normal;
+}
+
+.plan-flights-total-value {
+  font-size: 28px;
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  font-family: var(--font-mono);
+}
+
+.plan-flights-ticket {
+  overflow: hidden;
+}
+
+.plan-flights-ticket.is-cancelled .plan-flights-ticket-route {
+  opacity: 0.55;
+}
+
+.plan-flights-ticket-head {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.plan-flights-ticket-badges {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.plan-flights-ticket-route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.plan-flights-ticket-end {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.plan-flights-ticket-end--to {
+  align-items: flex-end;
+  text-align: right;
+  margin-left: auto;
+}
+
+.plan-flights-ticket-iata {
+  font-size: 28px;
+  font-weight: var(--weight-semibold);
+  color: var(--text);
+  line-height: var(--leading-tight);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.plan-flights-ticket-plane {
+  flex: 1;
+  color: var(--subtle);
+}
+
+.plan-flights-ticket-ref {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--border-width) dashed var(--border-strong);
+  border-bottom: var(--border-width) solid var(--border-strong);
+  background: var(--surface-2);
+}
+
+.plan-flights-ref {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+}
+
+.plan-flights-ticket-dl {
+  margin: 0;
+  padding: var(--space-4);
+}
+
+/* ── Bookings list ───────────────────────────────────────── */
+
+.plan-flights-booking-hit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-radius: inherit;
+}
+
+.plan-flights-booking.is-cancelled .plan-flights-booking-main,
+.plan-flights-booking.is-cancelled .plan-flights-price {
+  opacity: 0.6;
+}
+
+.plan-flights-booking-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-flights-booking-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--weight-semibold);
+  min-width: 0;
+}
+
+.plan-flights-booking-title svg {
+  color: var(--subtle);
+  flex-shrink: 0;
+}
+
+.plan-flights-booking-names {
+  margin-left: var(--space-2);
+  font-weight: var(--weight-regular);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.plan-flights-booking-meta {
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-flights-booking-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.plan-flights-booking-badges {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.plan-flights-booking-chev {
+  color: var(--subtle);
+  flex-shrink: 0;
+}
+
+/* ── Sheet ───────────────────────────────────────────────── */
+
+.plan-flights-sheet-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.plan-flights-sheet-foot > :only-child.ui-btn--block {
+  flex: 1;
+}
+
+.plan-flights-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+}
+
+.plan-flights-center p {
+  margin: 0;
+  max-width: 40ch;
+  font-size: var(--text-sm);
+}
+
+.plan-flights-error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── Phone ───────────────────────────────────────────────── */
+
+@media (max-width: 899.98px) {
+  .plan-flights {
+    gap: var(--space-5);
+  }
+
+  .plan-flights-route,
+  .plan-flights-route:not(:has(.plan-flights-swap)) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .plan-flights-route > .plan-flights-f-origin,
+  .plan-flights-route > .plan-flights-f-dest,
+  .plan-flights-route:not(:has(.plan-flights-swap)) > .plan-flights-f-dest {
+    grid-column: 1;
+  }
+
+  /* Swap sits at the right edge between the two fields. */
+  .plan-flights-swap {
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    z-index: 1;
+    background: var(--surface);
+    margin: 0;
+  }
+
+  .plan-flights-route:has(.plan-flights-swap) .plan-flights-picked {
+    padding-right: calc(var(--touch) + var(--space-3));
+  }
+
+  .plan-flights-when,
+  .plan-flights-form--page .plan-flights-when {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .plan-flights-f-pax,
+  .plan-flights-submit {
+    grid-column: 1 / -1;
+  }
+
+  .plan-flights-picked,
+  .plan-flights-fixed,
+  .plan-flights-radio {
+    min-height: var(--touch);
+  }
+
+  .plan-flights-offer {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .plan-flights-carrier {
+    width: 32px;
+    height: 32px;
+  }
+
+  .plan-flights-pax-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .plan-flights-pax-grid > :nth-child(1) {
+    grid-column: 1 / -1;
+    max-width: 50%;
+  }
+
+  .plan-flights-pax-grid > :nth-child(n + 2) {
+    grid-column: 1 / -1;
+  }
+
+  .plan-flights-dl-row {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .plan-flights-booking-hit {
+    padding: var(--space-3);
+  }
+
+  .plan-flights-booking-names {
+    display: none;
+  }
+
+  .plan-flights-sheet-foot > .ui-btn {
+    flex: 1;
+  }
+}

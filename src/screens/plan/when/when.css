@@ -1,0 +1,100 @@
+/* Plan › When to go. Prefix .plan-when-*. Tokens only. */
+
+.plan-when {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.plan-when-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.plan-when-search {
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 420px;
+}
+.plan-when-search input {
+  width: 100%;
+}
+.plan-when-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.plan-when-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.plan-when-suggest-label {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  font-style: normal;
+}
+.plan-when-suggest-country {
+  color: var(--muted);
+}
+
+.plan-when-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+.plan-when-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.plan-when-best {
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+
+.plan-when-empty-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: min(360px, 100%);
+}
+.plan-when-empty-actions > * {
+  width: 100%;
+}
+
+@media (max-width: 899.98px) {
+  .plan-when-search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .plan-when-controls {
+    margin-left: 0;
+    width: 100%;
+  }
+  .plan-when-seg {
+    flex: 1 1 100%;
+  }
+  .plan-when-select {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

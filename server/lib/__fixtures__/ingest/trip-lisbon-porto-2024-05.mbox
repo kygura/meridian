@@ -1,0 +1,436 @@
+From 1790000000000000000@xxx Tue Feb 20 10:12:00 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: TAP Air Portugal <noreply@booking.tap.example>
+To: Traveler <traveler@example.com>
+Subject: Your TAP booking XK7P2Q is confirmed
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-flight-out@mail.tap.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_tripflightou"
+
+------=_Part_tripflightou
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Flight LHR-LIS, 2 May 2024.
+
+------=_Part_tripflightou
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Flight confirmation</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "FlightReservation",
+  "reservationNumber": "XK7P2Q",
+  "reservationStatus": "http://schema.org/Confirmed",
+  "underName": {
+    "@type": "Person",
+    "name": "Alex Traveler"
+  },
+  "totalPrice": "189.50",
+  "priceCurrency": "EUR",
+  "reservationFor": {
+    "@type": "Flight",
+    "flightNumber": "1355",
+    "airline": {
+      "@type": "Airline",
+      "name": "TAP Air Portugal",
+      "iataCode": "TP"
+    },
+    "departureAirport": {
+      "@type": "Airport",
+      "name": "London Heathrow",
+      "iataCode": "LHR"
+    },
+    "departureTime": "2024-05-02T09:05:00+01:00",
+    "arrivalAirport": {
+      "@type": "Airport",
+      "name": "Humberto Delgado Airport",
+      "iataCode": "LIS"
+    },
+    "arrivalTime": "2024-05-02T11:35:00+01:00"
+  }
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Flight confi=
+rmation</td></tr>
+<tr><td><p>LHR to LIS</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_tripflightou--
+
+From 1790000000000000001@xxx Tue Feb 20 10:20:00 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Hotel Avenida Palace <reservas@avenida.example>
+To: Traveler <traveler@example.com>
+Subject: Reservation confirmed: Hotel Avenida Palace
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-hotel-lisbon@mail.hotel.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_triphotellis"
+
+------=_Part_triphotellis
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+TGlzYm9uIHN0YXkgMi02IE1heS4K
+------=_Part_triphotellis
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGh0dHAtZXF1aXY9
+IkNvbnRlbnQtVHlwZSIgY29udGVudD0idGV4dC9odG1sOyBjaGFyc2V0PVVURi04Ij4KPHRpdGxl
+PkhvdGVsIEF2ZW5pZGEgUGFsYWNlPC90aXRsZT4KPHNjcmlwdCB0eXBlPSJhcHBsaWNhdGlvbi9s
+ZCtqc29uIj4KewogICJAY29udGV4dCI6ICJodHRwOi8vc2NoZW1hLm9yZyIsCiAgIkB0eXBlIjog
+IkxvZGdpbmdSZXNlcnZhdGlvbiIsCiAgInJlc2VydmF0aW9uTnVtYmVyIjogIkhBUC04ODIzMSIs
+CiAgInRvdGFsUHJpY2UiOiAiNjQwLjAwIiwKICAicHJpY2VDdXJyZW5jeSI6ICJFVVIiLAogICJj
+aGVja2luVGltZSI6ICIyMDI0LTA1LTAyVDE1OjAwOjAwIiwKICAiY2hlY2tvdXRUaW1lIjogIjIw
+MjQtMDUtMDZUMTE6MDA6MDAiLAogICJyZXNlcnZhdGlvbkZvciI6IHsKICAgICJAdHlwZSI6ICJI
+b3RlbCIsCiAgICAibmFtZSI6ICJIb3RlbCBBdmVuaWRhIFBhbGFjZSIsCiAgICAiYWRkcmVzcyI6
+IHsKICAgICAgIkB0eXBlIjogIlBvc3RhbEFkZHJlc3MiLAogICAgICAiYWRkcmVzc0xvY2FsaXR5
+IjogIkxpc2JvbiIsCiAgICAgICJhZGRyZXNzQ291bnRyeSI6ICJQVCIKICAgIH0KICB9Cn0KPC9z
+Y3JpcHQ+CjxzdHlsZT5ib2R5e2ZvbnQtZmFtaWx5OkhlbHZldGljYSxBcmlhbCxzYW5zLXNlcmlm
+O2NvbG9yOiMyMjJ9dGR7cGFkZGluZzo2cHggMTJweH08L3N0eWxlPgo8L2hlYWQ+Cjxib2R5IHN0
+eWxlPSJtYXJnaW46MDtiYWNrZ3JvdW5kOiNmNGY0ZjQiPgo8dGFibGUgd2lkdGg9IjYwMCIgYWxp
+Z249ImNlbnRlciIgY2VsbHBhZGRpbmc9IjAiIGNlbGxzcGFjaW5nPSIwIiBzdHlsZT0iYmFja2dy
+b3VuZDojZmZmZmZmO21hcmdpbi10b3A6MjRweCI+Cjx0cj48dGQgc3R5bGU9ImJhY2tncm91bmQ6
+IzBiM2Q2Yjtjb2xvcjojZmZmO2ZvbnQtc2l6ZToyMHB4Ij5Ib3RlbCBBdmVuaWRhIFBhbGFjZTwv
+dGQ+PC90cj4KPHRyPjx0ZD48cD4yLTYgTWF5IDIwMjQ8L3A+PC90ZD48L3RyPgo8dHI+PHRkIHN0
+eWxlPSJmb250LXNpemU6MTFweDtjb2xvcjojODg4Ij5UaGlzIGlzIGFuIGF1dG9tYXRlZCBjb25m
+aXJtYXRpb24uIFBsZWFzZSBkbyBub3QgcmVwbHkgdG8gdGhpcyBtZXNzYWdlLjwvdGQ+PC90cj4K
+PC90YWJsZT4KPC9ib2R5Pgo8L2h0bWw+Cg==
+------=_Part_triphotellis--
+
+From 1790000000000000002@xxx Wed Feb 21 08:01:10 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Sam <sam@example.com>
+To: Traveler <traveler@example.com>
+Subject: Fwd: our trip plans
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-newsletter@news.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_tripnewslett"
+
+------=_Part_tripnewslett
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi!
+
+>From the notes we made last week:
+>>From the airport take the metro, it is cheap.
+>>>From there walk.
+No structured data in this one, just chat about restaurants.
+
+------=_Part_tripnewslett
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Fwd: our trip plans</title>
+
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Fwd: our tri=
+p plans</td></tr>
+<tr><td><p>No markup here, just chatting.</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_tripnewslett--
+
+From 1790000000000000003@xxx Thu Mar 07 17:44:00 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Bilheteira <tickets@saoluiz.example>
+To: Traveler <traveler@example.com>
+Subject: Seus bilhetes: Noite de Fado
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-event@tickets.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_tripeventtic"
+
+------=_Part_tripeventtic
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Bilhete 4 maio 2024.
+
+------=_Part_tripeventtic
+Content-Type: text/html; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Bilhete Noite de Fado</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "EventReservation",
+  "reservationNumber": "TKT-70012",
+  "totalPrice": 35,
+  "priceCurrency": "EUR",
+  "reservationFor": {
+    "@type": "Event",
+    "name": "Noite de Fado no Teatro S=E3o Luiz",
+    "startDate": "2024-05-04T21:30:00+01:00",
+    "location": {
+      "@type": "Place",
+      "name": "Teatro S=E3o Luiz",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Lisbon",
+        "addressCountry": "PT"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "38.7107",
+        "longitude": "-9.1427"
+      }
+    }
+  }
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Bilhete Noit=
+e de Fado</td></tr>
+<tr><td><p>Teatro S=E3o Lu=EDz</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_tripeventtic--
+
+From 1790000000000000004@xxx Thu Mar 07 18:02:30 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: CP <noreply@cp.example>
+To: Traveler <traveler@example.com>
+Subject: CP: o seu bilhete Lisboa - Porto
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-train@cp.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_triptraincpe"
+
+------=_Part_triptraincpe
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Alfa Pendular 122.
+
+------=_Part_triptraincpe
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Bilhete CP</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "TrainReservation",
+  "reservationNumber": "CP-QW19",
+  "totalPrice": "31.50",
+  "priceCurrency": "EUR",
+  "reservationFor": {
+    "@type": "TrainTrip",
+    "trainName": "Alfa Pendular",
+    "trainNumber": "122",
+    "provider": {
+      "@type": "Organization",
+      "name": "CP - Comboios de Portugal"
+    },
+    "departureStation": {
+      "@type": "TrainStation",
+      "name": "Lisboa Santa Apol=C3=B3nia",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Lisbon",
+        "addressCountry": "PT"
+      }
+    },
+    "departureTime": "2024-05-06T12:30:00+01:00",
+    "arrivalStation": {
+      "@type": "TrainStation",
+      "name": "Porto Campanh=C3=A3",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Porto",
+        "addressCountry": "PT"
+      }
+    },
+    "arrivalTime": "2024-05-06T15:15:00+01:00"
+  }
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Bilhete CP</=
+td></tr>
+<tr><td><p>Lisboa to Porto</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_triptraincpe--
+
+From 1790000000000000005@xxx Fri Mar 08 09:15:00 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Pestana <reservas@pestana.example>
+To: Traveler <traveler@example.com>
+Subject: Booking confirmed: Pestana Vintage Porto
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-hotel-porto@mail.hotel.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_triphotelpor"
+
+------=_Part_triphotelpor
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Porto stay 6-9 May.
+
+------=_Part_triphotelpor
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Pestana Vintage Porto</title>
+<script type=3D"application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@graph": [
+    {
+      "@context": "http://schema.org",
+      "@type": "LodgingReservation",
+      "reservationNumber": "PX-5521",
+      "totalPrice": "615,00",
+      "priceCurrency": "EUR",
+      "checkinTime": "2024-05-06T14:00:00",
+      "checkoutTime": "2024-05-09T11:00:00",
+      "reservationFor": {
+        "@type": "LodgingBusiness",
+        "name": "Pestana Vintage Porto",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Porto",
+          "addressCountry": "Portugal"
+        }
+      }
+    }
+  ]
+}
+</script>
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Pestana Vint=
+age Porto</td></tr>
+<tr><td><p>6-9 May 2024</p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_triphotelpor--
+
+From 1790000000000000006@xxx Sat Mar 09 11:00:00 +0000 2024
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: TAP Air Portugal <noreply@booking.tap.example>
+To: Traveler <traveler@example.com>
+Subject: Your return flight OPO-LHR
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <trip-flight-back@mail.tap.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_tripflightba"
+
+------=_Part_tripflightba
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+UmV0dXJuIGZsaWdodCA5IE1heS4K
+------=_Part_tripflightba
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGh0dHAtZXF1aXY9
+IkNvbnRlbnQtVHlwZSIgY29udGVudD0idGV4dC9odG1sOyBjaGFyc2V0PVVURi04Ij4KPHRpdGxl
+PkZsaWdodCBjb25maXJtYXRpb248L3RpdGxlPgo8c2NyaXB0IHR5cGU9ImFwcGxpY2F0aW9uL2xk
+K2pzb24iPgp7CiAgIkBjb250ZXh0IjogImh0dHA6Ly9zY2hlbWEub3JnIiwKICAiQHR5cGUiOiAi
+RmxpZ2h0UmVzZXJ2YXRpb24iLAogICJyZXNlcnZhdGlvbk51bWJlciI6ICJYSzdQMlEiLAogICJ0
+b3RhbFByaWNlIjogIjE2NC4yMCIsCiAgInByaWNlQ3VycmVuY3kiOiAiRVVSIiwKICAicmVzZXJ2
+YXRpb25Gb3IiOiB7CiAgICAiQHR5cGUiOiAiRmxpZ2h0IiwKICAgICJmbGlnaHROdW1iZXIiOiAi
+MTM2MiIsCiAgICAiYWlybGluZSI6IHsKICAgICAgIkB0eXBlIjogIkFpcmxpbmUiLAogICAgICAi
+bmFtZSI6ICJUQVAgQWlyIFBvcnR1Z2FsIiwKICAgICAgImlhdGFDb2RlIjogIlRQIgogICAgfSwK
+ICAgICJkZXBhcnR1cmVBaXJwb3J0IjogewogICAgICAiQHR5cGUiOiAiQWlycG9ydCIsCiAgICAg
+ICJuYW1lIjogIkZyYW5jaXNjbyBTw6EgQ2FybmVpcm8iLAogICAgICAiaWF0YUNvZGUiOiAiT1BP
+IgogICAgfSwKICAgICJkZXBhcnR1cmVUaW1lIjogIjIwMjQtMDUtMDlUMTg6NDA6MDArMDE6MDAi
+LAogICAgImFycml2YWxBaXJwb3J0IjogewogICAgICAiQHR5cGUiOiAiQWlycG9ydCIsCiAgICAg
+ICJuYW1lIjogIkxvbmRvbiBIZWF0aHJvdyIsCiAgICAgICJpYXRhQ29kZSI6ICJMSFIiCiAgICB9
+LAogICAgImFycml2YWxUaW1lIjogIjIwMjQtMDUtMDlUMjE6MDA6MDArMDE6MDAiCiAgfQp9Cjwv
+c2NyaXB0Pgo8c3R5bGU+Ym9keXtmb250LWZhbWlseTpIZWx2ZXRpY2EsQXJpYWwsc2Fucy1zZXJp
+Zjtjb2xvcjojMjIyfXRke3BhZGRpbmc6NnB4IDEycHh9PC9zdHlsZT4KPC9oZWFkPgo8Ym9keSBz
+dHlsZT0ibWFyZ2luOjA7YmFja2dyb3VuZDojZjRmNGY0Ij4KPHRhYmxlIHdpZHRoPSI2MDAiIGFs
+aWduPSJjZW50ZXIiIGNlbGxwYWRkaW5nPSIwIiBjZWxsc3BhY2luZz0iMCIgc3R5bGU9ImJhY2tn
+cm91bmQ6I2ZmZmZmZjttYXJnaW4tdG9wOjI0cHgiPgo8dHI+PHRkIHN0eWxlPSJiYWNrZ3JvdW5k
+OiMwYjNkNmI7Y29sb3I6I2ZmZjtmb250LXNpemU6MjBweCI+RmxpZ2h0IGNvbmZpcm1hdGlvbjwv
+dGQ+PC90cj4KPHRyPjx0ZD48cD5PUE8gdG8gTEhSPC9wPjwvdGQ+PC90cj4KPHRyPjx0ZCBzdHls
+ZT0iZm9udC1zaXplOjExcHg7Y29sb3I6Izg4OCI+VGhpcyBpcyBhbiBhdXRvbWF0ZWQgY29uZmly
+bWF0aW9uLiBQbGVhc2UgZG8gbm90IHJlcGx5IHRvIHRoaXMgbWVzc2FnZS48L3RkPjwvdHI+Cjwv
+dGFibGU+CjwvYm9keT4KPC9odG1sPgo=
+------=_Part_tripflightba--

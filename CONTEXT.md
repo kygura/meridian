@@ -1,7 +1,12 @@
 # Meridian
 
-Travel-intelligence app: a cartographic globe over a world city database, with trip
-planning, flight booking (test mode), seasonality insight, and an AI research agent.
+Travel-intelligence app: a flat map over a world city database, with trip planning,
+flight booking (test mode), seasonality insight, a travel journal, and an AI research agent.
+
+The UI is described by `DESIGN-v3.md` (brief) and `src/shell/CONTRACT.md` (how the screens fit).
+Those supersede the UI sections of the older `DESIGN-*.md` files. User-facing labels differ from
+some terms below: "Repeat a trip" for Replay, "When to go" for the seasonality heatmap, "Crowds"
+for the crowd proxy, "Ask" for the agent panel.
 
 ## Language
 
@@ -29,7 +34,7 @@ The 12-month Comfort Index profile of a city or region, rendered as a heatmap ca
 **Trip**:
 A named, ordered list of city nodes (legs between consecutive nodes), client-side only,
 persisted in the browser.
-_Avoid_: itinerary, journey
+_Avoid_: itinerary
 
 **Leg**:
 The segment between two consecutive trip nodes, identified by `tripId` + `legIndex`.
@@ -76,3 +81,86 @@ always visibly labeled as mock.
 
 **Shortlist**:
 The server-persisted set of cities the user has flagged for consideration.
+
+### Journal and replay
+
+**Journey**:
+Something that happened: dated stops, segments, stays and experiences, with spend, rating
+and notes. Not a Trip, which is a plan.
+_Avoid_: trip (for past travel), itinerary
+
+**Stop**:
+A city within a Journey, with arrival and departure dates and an optional rating.
+_Avoid_: node (that's a Trip node)
+
+**Segment**:
+A move between two cities within a Journey (flight, train, bus, car, ferry, other).
+_Avoid_: leg (that's a Trip Leg)
+
+**Experience**:
+A dated activity in a city within a Journey, with optional cost and rating.
+_Avoid_: event (that's a Meridian Event)
+
+**Provenance**:
+Where a record came from: `source`, an optional `sourceRef` used for dedupe, and `confidence`.
+_Avoid_: origin
+
+**Fingerprint**:
+The conditions a Journey or Stop actually met: month, observed comfort, temperature, rain,
+daily spend, flight cost per 1000 km, crowd proxy, nights. Each dimension is `ok`,
+`pending` or `absent`.
+_Avoid_: signature, profile
+
+**Template**:
+The Fingerprint that Replay matches against, before any Bend.
+_Avoid_: pattern, reference
+
+**Bend**:
+Slider offsets applied to a Template before matching (temperature, spend, crowd, month
+shift). Shifts the target; constraints filter the candidates.
+_Avoid_: filter
+
+**Window**:
+A destination City × month pair. The unit Replay ranks. Monthly in v1.
+_Avoid_: slot, cell (a cell is the heatmap view of a Window)
+
+**Replay**:
+Ranking Windows by similarity to a Template after its Bend. Deterministic: no LLM in the
+scoring.
+_Avoid_: simulation, recommendation
+
+**Import candidate**:
+A proposed Journey record (segment, stop, stay or experience) from an ingestion source,
+held for review until accepted, merged or discarded. Nothing from ingestion becomes a
+Journey unreviewed.
+_Avoid_: candidate (alone, see Trip Candidates), draft journey
+
+**Cluster**:
+A suggested Journey: Import candidates grouped by date proximity.
+_Avoid_: group, bundle
+
+**Inbox**:
+The review screen (`#/inbox`) for Clusters and Import candidates. Its pending count shows as
+a badge on Inbox in the sidebar and the phone tab bar.
+
+**Crowd proxy**:
+A 0–100 estimate of how busy a City is in a month, from its comfort-peak curve and holiday
+overlap. Always labeled a proxy; a per-stop user override wins.
+_Avoid_: crowd score, crowd data
+
+**Watch**:
+A saved Replay query that runs daily and checks whether a top-matching Window has come
+into booking range at a qualifying price.
+_Avoid_: alarm, subscription
+
+**Alert**:
+What a Watch writes when a Window passes its price rule. One per Window per day.
+_Avoid_: notification
+
+**Promote**:
+Turning a Trip and its Bookings into a Journey, or a past Booking into Journey Segments.
+_Avoid_: import (imports are Import candidates)
+
+**Repeat**:
+Creating a Trip from a Journey or a Replay result so the existing booking flow applies.
+_Avoid_: rebook, clone

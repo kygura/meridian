@@ -1,0 +1,310 @@
+/* Meridian design tokens — the original "modern atlas" identity.
+   The only place colours are defined. Screen CSS reads these variables and
+   never hard-codes a colour. Light (parchment, ink, burnt orange) is the default;
+   dark ("night ops": navy graphite, teal offset shadow) applies with
+   html[data-theme="dark"], or with prefers-color-scheme when
+   html[data-theme="system"]. The shell writes data-theme.
+
+   Print language: ink hairline frames, square corners, hard offset shadows
+   (no blur), Instrument Serif display, DM Sans body, JetBrains Mono labels. */
+
+:root {
+  /* Type */
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Aliases used by the original stylesheets. */
+  --sans: var(--font-sans);
+  --display: var(--font-display);
+  --mono: var(--font-mono);
+  --text-2xs: 10px;         /* mono labels, kickers */
+  --text-xs: 12px;
+  --text-sm: 14px; /* body */
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 34px;          /* display (serif) page titles */
+  --leading-tight: 1.15;
+  --leading: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 700;
+  --label-tracking: 0.18em; /* mono uppercase labels */
+  --kicker-tracking: 0.22em;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Shape: square, print-like. */
+  --radius-sm: 2px;
+  --radius-control: 0px;
+  --radius-card: 0px;
+  --radius-pill: 2px;
+  --border-width: 1px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-sheet: 200ms;
+
+  /* Layout */
+  --sidebar-w: 224px;
+  --ask-w: 400px;
+  --content-max: 1080px;
+  --page-pad: 24px;
+  --tabbar-h: 56px;
+  --control-h: 34px;
+  --control-h-sm: 28px;
+  --touch: 44px;
+  --icon: 20px;
+
+  /* Layers */
+  --z-map-controls: 10;
+  --z-nav: 20;
+  --z-panel: 30;
+  --z-sheet: 40;
+  --z-popover: 50;
+  --z-toast: 60;
+  --z-grain: 1000;
+
+  /* ── Light colours: parchment, ink, burnt orange ── */
+  --bg: #f4ecd8;
+  --surface: #fbf5e6;       /* paper */
+  --surface-2: #ece1c6;     /* bg2: hover rows, segmented track */
+  --surface-3: #e2d4b2;     /* pressed / skeleton */
+  --text: #1c1814;          /* ink */
+  --ink: #1c1814;
+  --ink-2: #3a342b;
+  --muted: #6b624f;         /* ink3, darkened a touch for AA on parchment */
+  --subtle: #b3a98f;        /* ink4: placeholders, disabled */
+  --border: rgba(28, 24, 20, 0.16);        /* hairline */
+  --border-strong: rgba(28, 24, 20, 0.32); /* hairline2 */
+  --rule: #1c1814;          /* ink frame for cards, controls, floating layers */
+  --accent: #c2680c;
+  --accent-hover: #a8590a;
+  --accent-soft: rgba(194, 104, 12, 0.12);
+  --accent-text: #9a4f06;   /* accent as text on paper (AA) */
+  --on-accent: #fbf5e6;
+  --success: #0f766e;
+  --success-soft: rgba(15, 118, 110, 0.12);
+  --warning: #c2680c;
+  --warning-soft: rgba(194, 104, 12, 0.12);
+  --danger: #b3261e;
+  --danger-hover: #8f1e18;
+  --danger-soft: rgba(179, 38, 30, 0.12);
+  --on-danger: #fbf5e6;
+  --info: #1e40af;
+  --info-soft: rgba(30, 64, 175, 0.10);
+  --scrim: rgba(28, 24, 20, 0.36);
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  --shadow-color: #1c1814;
+  --shadow: 3px 3px 0 #1c1814;
+  --shadow-lg: 6px 6px 0 #1c1814;
+  --shadow-sm: 2px 2px 0 #1c1814;
+  --grain-op: 0.05;
+
+  /* Warm ramp from the original seasons heatmap (pale straw -> deep sienna).
+     Heatmaps, replay grid, map tints. */
+  --ramp-0: #f1e9cf;
+  --ramp-1: #efe0b0;
+  --ramp-2: #e8ce86;
+  --ramp-3: #ddab4e;
+  --ramp-4: #ce7f22;
+  --ramp-5: #c2680c;
+  --ramp-6: #8f4a0e;
+  --ramp-text-dark: #3a2a0c;  /* label on ramp-0..3 */
+  --ramp-text-light: #fbf5e6; /* label on ramp-4..6 */
+  --ramp-best: #0f766e;       /* teal best-window marker */
+
+  /* Diverging ramp for deltas: negative (warn red) -> zero -> positive (teal). */
+  --div-neg-3: #b3261e;
+  --div-neg-2: #d9685f;
+  --div-neg-1: #ecbdb2;
+  --div-0: #e6dbc0;
+  --div-pos-1: #a9d4cc;
+  --div-pos-2: #4fa497;
+  --div-pos-3: #0f766e;
+
+  /* Map surfaces: the original atlas globe (read via src/ui/palette.ts). */
+  --land: #d6c6a2;
+  --ocean: #e9dcbe;
+  --grat: rgba(28, 24, 20, 0.10);
+  --equator: rgba(28, 24, 20, 0.22);
+  --border-country: rgba(28, 24, 20, 0.50);
+  --air-route: rgba(28, 24, 20, 0.16);
+  --map-land: #d6c6a2;
+  --map-water: #e9dcbe;
+  --map-border: rgba(28, 24, 20, 0.5);
+  --map-label: #3a342b;
+  --map-arc: #c2680c;
+  --map-dot: #1c1814;
+  --trip-a: #b3261e;
+  --trip-b: #0f766e;
+  --trip-c: #6d28d9;
+
+  color-scheme: light;
+}
+
+/* ── Dark colours: night ops ── */
+html[data-theme="dark"] {
+  --bg: #0b0f17;
+  --surface: #161c2c;       /* paper */
+  --surface-2: #1c2336;
+  --surface-3: #242c42;
+  --text: #eef2f8;          /* ink */
+  --ink: #eef2f8;
+  --ink-2: #b8c2d6;
+  --muted: #8a94a9;         /* ink3, lifted for contrast */
+  --subtle: #4a5468;        /* ink4 */
+  --border: rgba(238, 242, 248, 0.14);
+  --border-strong: rgba(238, 242, 248, 0.30);
+  --rule: #eef2f8;          /* ink frame */
+  --accent: #f59e0b;
+  --accent-hover: #fbb53c;
+  --accent-soft: rgba(245, 158, 11, 0.16);
+  --accent-text: #f5a524;
+  --on-accent: #0b0f17;
+  --success: #2dd4bf;
+  --success-soft: rgba(45, 212, 191, 0.16);
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.16);
+  --danger: #ff5b5b;
+  --danger-hover: #ff8a8a;
+  --danger-soft: rgba(255, 91, 91, 0.16);
+  --on-danger: #0b0f17;
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.16);
+  --scrim: rgba(3, 5, 10, 0.6);
+  --shadow-color: #2dd4bf;
+  --shadow: 3px 3px 0 #2dd4bf;
+  --shadow-lg: 6px 6px 0 #2dd4bf;
+  --shadow-sm: 2px 2px 0 #2dd4bf;
+  --grain-op: 0.06;
+
+  /* Warm ramp from the original seasons heatmap (dim ember -> bright gold). */
+  --ramp-0: #241a10;
+  --ramp-1: #3a2a16;
+  --ramp-2: #6e4a18;
+  --ramp-3: #8a5a14;
+  --ramp-4: #d08a18;
+  --ramp-5: #f59e0b;
+  --ramp-6: #fbc55a;
+  --ramp-text-dark: #f1dcb4;  /* label on ramp-0..3 */
+  --ramp-text-light: #0b0f17; /* label on ramp-4..6 */
+  --ramp-best: #2dd4bf;
+
+  --div-neg-3: #ff5b5b;
+  --div-neg-2: #a8443f;
+  --div-neg-1: #4a2626;
+  --div-0: #1f2738;
+  --div-pos-1: #164a46;
+  --div-pos-2: #1f8f82;
+  --div-pos-3: #2dd4bf;
+
+  /* Original "night ops" globe. */
+  --land: #1f2738;
+  --ocean: #0e1320;
+  --grat: rgba(238, 242, 248, 0.08);
+  --equator: rgba(238, 242, 248, 0.22);
+  --border-country: rgba(238, 242, 248, 0.45);
+  --air-route: rgba(238, 242, 248, 0.10);
+  --map-land: #1f2738;
+  --map-water: #0e1320;
+  --map-border: rgba(238, 242, 248, 0.45);
+  --map-label: #b8c2d6;
+  --map-arc: #f59e0b;
+  --map-dot: #eef2f8;
+  --trip-a: #ff5b5b;
+  --trip-b: #2dd4bf;
+  --trip-c: #a78bfa;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] {
+    --bg: #0b0f17;
+    --surface: #161c2c;       /* paper */
+    --surface-2: #1c2336;
+    --surface-3: #242c42;
+    --text: #eef2f8;          /* ink */
+    --ink: #eef2f8;
+    --ink-2: #b8c2d6;
+    --muted: #8a94a9;         /* ink3, lifted for contrast */
+    --subtle: #4a5468;        /* ink4 */
+    --border: rgba(238, 242, 248, 0.14);
+    --border-strong: rgba(238, 242, 248, 0.30);
+    --rule: #eef2f8;          /* ink frame */
+    --accent: #f59e0b;
+    --accent-hover: #fbb53c;
+    --accent-soft: rgba(245, 158, 11, 0.16);
+    --accent-text: #f5a524;
+    --on-accent: #0b0f17;
+    --success: #2dd4bf;
+    --success-soft: rgba(45, 212, 191, 0.16);
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.16);
+    --danger: #ff5b5b;
+    --danger-hover: #ff8a8a;
+    --danger-soft: rgba(255, 91, 91, 0.16);
+    --on-danger: #0b0f17;
+    --info: #60a5fa;
+    --info-soft: rgba(96, 165, 250, 0.16);
+    --scrim: rgba(3, 5, 10, 0.6);
+    --shadow-color: #2dd4bf;
+    --shadow: 3px 3px 0 #2dd4bf;
+    --shadow-lg: 6px 6px 0 #2dd4bf;
+    --shadow-sm: 2px 2px 0 #2dd4bf;
+    --grain-op: 0.06;
+
+    /* Warm ramp from the original seasons heatmap (dim ember -> bright gold). */
+    --ramp-0: #241a10;
+    --ramp-1: #3a2a16;
+    --ramp-2: #6e4a18;
+    --ramp-3: #8a5a14;
+    --ramp-4: #d08a18;
+    --ramp-5: #f59e0b;
+    --ramp-6: #fbc55a;
+    --ramp-text-dark: #f1dcb4;  /* label on ramp-0..3 */
+    --ramp-text-light: #0b0f17; /* label on ramp-4..6 */
+    --ramp-best: #2dd4bf;
+
+    --div-neg-3: #ff5b5b;
+    --div-neg-2: #a8443f;
+    --div-neg-1: #4a2626;
+    --div-0: #1f2738;
+    --div-pos-1: #164a46;
+    --div-pos-2: #1f8f82;
+    --div-pos-3: #2dd4bf;
+
+    /* Original "night ops" globe. */
+    --land: #1f2738;
+    --ocean: #0e1320;
+    --grat: rgba(238, 242, 248, 0.08);
+    --equator: rgba(238, 242, 248, 0.22);
+    --border-country: rgba(238, 242, 248, 0.45);
+    --air-route: rgba(238, 242, 248, 0.10);
+    --map-land: #1f2738;
+    --map-water: #0e1320;
+    --map-border: rgba(238, 242, 248, 0.45);
+    --map-label: #b8c2d6;
+    --map-arc: #f59e0b;
+    --map-dot: #eef2f8;
+    --trip-a: #ff5b5b;
+    --trip-b: #2dd4bf;
+    --trip-c: #a78bfa;
+
+    color-scheme: dark;
+  }
+}
+
+@media (max-width: 899.98px) {
+  :root {
+    --page-pad: 16px;
+  }
+}

@@ -1,0 +1,43 @@
+Delivered-To: traveler@example.com
+Received: by 2002:a05:6a00:1234:b0:1 with SMTP id abc; Tue, 20 Feb 2024 10:12:00 +0000
+From: Wanderly <hello@wanderly.example>
+To: Traveler <traveler@example.com>
+Subject: Ten hidden beaches you must see this summer
+Date: Tue, 20 Feb 2024 10:12:00 +0000
+Message-ID: <newsletter-0042@news.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_Part_newsletter00"
+
+------=_Part_newsletter00
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Plan your summer. Hidden beaches, cheap flights, and more.
+
+------=_Part_newsletter00
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8">
+<title>Wanderly weekly</title>
+
+<style>body{font-family:Helvetica,Arial,sans-serif;color:#222}td{padding:6p=
+x 12px}</style>
+</head>
+<body style=3D"margin:0;background:#f4f4f4">
+<table width=3D"600" align=3D"center" cellpadding=3D"0" cellspacing=3D"0" s=
+tyle=3D"background:#ffffff;margin-top:24px">
+<tr><td style=3D"background:#0b3d6b;color:#fff;font-size:20px">Wanderly wee=
+kly</td></tr>
+<tr><td><p>Ten hidden beaches you must see this summer.</p><p><a href=3D"ht=
+tps://wanderly.example/beaches">Read more</a></p></td></tr>
+<tr><td style=3D"font-size:11px;color:#888">This is an automated confirmati=
+on. Please do not reply to this message.</td></tr>
+</table>
+</body>
+</html>
+
+------=_Part_newsletter00--
