@@ -1,3 +1,4 @@
+import { join } from "path";
 import { readFileSync, writeFileSync } from "fs";
 import { getDataPath, ensureDataDir } from "./paths.js";
 import { getCities, getCityById } from "./cities.js";
@@ -128,12 +129,18 @@ let cache: SeasonalityDataset | null = null;
 /** Loads and caches data/seasonality.json (falls back to an empty dataset if missing). */
 export function loadSeasonality(): SeasonalityDataset {
   if (cache) return cache;
-  try {
-    const raw = readFileSync(getDataPath("seasonality.json"), "utf-8");
-    cache = JSON.parse(raw) as SeasonalityDataset;
-  } catch {
-    cache = { version: 1, generatedAt: new Date(0).toISOString(), window: "", cities: {} };
+  // DATA_DIR first (tests and overrides), then the committed seed in the repo:
+  // on Render DATA_DIR is the persistent disk, which never holds the seed.
+  const candidates = new Set([getDataPath("seasonality.json"), join(process.cwd(), "data", "seasonality.json")]);
+  for (const path of candidates) {
+    try {
+      cache = JSON.parse(readFileSync(path, "utf-8")) as SeasonalityDataset;
+      return cache;
+    } catch {
+      // try the next location
+    }
   }
+  cache = { version: 1, generatedAt: new Date(0).toISOString(), window: "", cities: {} };
   return cache;
 }
 
