@@ -1,0 +1,167 @@
+{
+  "kind": "meridian-trips",
+  "version": 1,
+  "exportedAt": "2026-11-05T00:00:00.000Z",
+  "trips": [
+    {
+      "id": "plan-2027-southeast-asia",
+      "name": "Southeast Asia · Nov–Dec 2027",
+      "color": "#0f766e",
+      "status": "scouting",
+      "nodes": [
+        {
+          "cityId": "bangkok-thailand",
+          "name": "Bangkok",
+          "iata": "DMK",
+          "lat": 13.75,
+          "lng": 100.5166
+        },
+        {
+          "cityId": "chiang-mai-thailand",
+          "name": "Chiang Mai",
+          "iata": "CNX",
+          "lat": 18.8,
+          "lng": 98.98
+        },
+        {
+          "cityId": "hanoi-vietnam",
+          "name": "Hanoi",
+          "iata": "HAN",
+          "lat": 21.0333,
+          "lng": 105.85
+        },
+        {
+          "cityId": "da-nang-vietnam",
+          "name": "Da Nang",
+          "iata": "DAD",
+          "lat": 16.06,
+          "lng": 108.25
+        },
+        {
+          "cityId": "ho-chi-minh-city-vietnam",
+          "name": "Ho Chi Minh City",
+          "iata": "SGN",
+          "lat": 10.78,
+          "lng": 106.695
+        },
+        {
+          "cityId": "siem-reap-cambodia",
+          "name": "Siem Reap",
+          "iata": "SAI",
+          "lat": 13.3666,
+          "lng": 103.85
+        },
+        {
+          "cityId": "phuket-thailand",
+          "name": "Phuket",
+          "iata": "HKT",
+          "lat": 7.8765,
+          "lng": 98.3815
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "plan-2028-east-africa-safari",
+      "name": "East Africa family safari · Jul–Aug 2028",
+      "color": "#c2680c",
+      "status": "scouting",
+      "nodes": [
+        {
+          "cityId": "nairobi-kenya",
+          "name": "Nairobi",
+          "iata": "NBO",
+          "lat": -1.2833,
+          "lng": 36.8167
+        },
+        {
+          "cityId": "arusha-tanzania",
+          "name": "Arusha",
+          "iata": "JRO",
+          "lat": -3.36,
+          "lng": 36.67
+        },
+        {
+          "cityId": "zanzibar-tanzania",
+          "name": "Zanzibar",
+          "iata": "ZNZ",
+          "lat": -6.16,
+          "lng": 39.2
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "plan-2029-south-america",
+      "name": "South America · Sep–Oct 2029",
+      "color": "#6d28d9",
+      "status": "scouting",
+      "nodes": [
+        {
+          "cityId": "lima-peru",
+          "name": "Lima",
+          "iata": "LIM",
+          "lat": -12.048,
+          "lng": -77.0501
+        },
+        {
+          "cityId": "cusco-peru",
+          "name": "Cusco",
+          "iata": "CUZ",
+          "lat": -13.525,
+          "lng": -71.9722
+        },
+        {
+          "cityId": "la-paz-bolivia",
+          "name": "La Paz",
+          "iata": "LPB",
+          "lat": -16.498,
+          "lng": -68.15
+        },
+        {
+          "cityId": "calama-chile",
+          "name": "Calama",
+          "iata": "CJC",
+          "lat": -22.45,
+          "lng": -68.92
+        },
+        {
+          "cityId": "salta-argentina",
+          "name": "Salta",
+          "iata": "SLA",
+          "lat": -24.7834,
+          "lng": -65.4166
+        },
+        {
+          "cityId": "mendoza-argentina",
+          "name": "Mendoza",
+          "iata": "MDZ",
+          "lat": -32.8833,
+          "lng": -68.8166
+        },
+        {
+          "cityId": "buenos-aires-argentina",
+          "name": "Buenos Aires",
+          "iata": "AEP",
+          "lat": -34.6025,
+          "lng": -58.3975
+        },
+        {
+          "cityId": "foz-do-igua-u-brazil",
+          "name": "Foz do Iguaçu",
+          "iata": "IGU",
+          "lat": -25.5235,
+          "lng": -54.53
+        },
+        {
+          "cityId": "rio-de-janeiro-brazil",
+          "name": "Rio de Janeiro",
+          "iata": "SDU",
+          "lat": -22.925,
+          "lng": -43.225
+        }
+      ],
+      "origin": "manual"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { TRIP_COLORS, randomTripColor } from "./lib/tripColors";
+import { mergeTrips } from "./lib/tripTransfer";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -58,6 +59,8 @@ export interface MeridianState {
   reorderTripNodes: (tripId: string, fromIndex: number, toIndex: number) => void;
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
+  /** Add trips from a file; same-id trips are replaced. Returns counts for the toast. */
+  importTrips: (trips: Trip[]) => { added: number; replaced: number };
 
   // Agent-generated trip candidates (origin: "agent" trips awaiting confirmation)
   setAgentCandidates: (options: TripOption[]) => void;
@@ -268,6 +271,11 @@ export const useMeridianStore = create<MeridianState>()(
           trips: state.trips.filter((t) => t.id !== id),
           activeTripId: state.activeTripId === id ? null : state.activeTripId,
         })),
+      importTrips: (incoming) => {
+        const { trips, added, replaced } = mergeTrips(get().trips, incoming);
+        set((state) => ({ trips, activeTripId: state.activeTripId ?? incoming[0]?.id ?? null }));
+        return { added, replaced };
+      },
 
       // Agent-generated trip candidates
       setAgentCandidates: (options) =>
