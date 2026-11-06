@@ -5,7 +5,7 @@
   "trips": [
     {
       "id": "plan-2027-southeast-asia",
-      "name": "Southeast Asia · Nov–Dec 2027",
+      "name": "Southeast Asia · Feb–Jul 2027",
       "color": "#0f766e",
       "status": "scouting",
       "nodes": [
@@ -31,11 +31,31 @@
           "lng": 105.85
         },
         {
+          "cityId": "ninh-b-nh-vietnam",
+          "name": "Ninh Bình",
+          "lat": 20.2543,
+          "lng": 105.975
+        },
+        {
+          "cityId": "hue-vietnam",
+          "name": "Hue",
+          "iata": "DAD",
+          "lat": 16.47,
+          "lng": 107.58
+        },
+        {
           "cityId": "da-nang-vietnam",
           "name": "Da Nang",
           "iata": "DAD",
           "lat": 16.06,
           "lng": 108.25
+        },
+        {
+          "cityId": "da-lat-vietnam",
+          "name": "Da Lat",
+          "iata": "DLI",
+          "lat": 11.9304,
+          "lng": 108.42
         },
         {
           "cityId": "ho-chi-minh-city-vietnam",
@@ -45,6 +65,41 @@
           "lng": 106.695
         },
         {
+          "cityId": "phuket-thailand",
+          "name": "Phuket",
+          "iata": "HKT",
+          "lat": 7.8765,
+          "lng": 98.3815
+        },
+        {
+          "cityId": "george-town-malaysia",
+          "name": "George Town",
+          "iata": "PEN",
+          "lat": 5.4136,
+          "lng": 100.3294
+        },
+        {
+          "cityId": "kuala-lumpur-malaysia",
+          "name": "Kuala Lumpur",
+          "iata": "SZB",
+          "lat": 3.1667,
+          "lng": 101.7
+        },
+        {
+          "cityId": "yogyakarta-indonesia",
+          "name": "Yogyakarta",
+          "iata": "YIA",
+          "lat": -7.78,
+          "lng": 110.375
+        },
+        {
+          "cityId": "denpasar-indonesia",
+          "name": "Denpasar",
+          "iata": "DPS",
+          "lat": -8.65,
+          "lng": 115.22
+        },
+        {
           "cityId": "siem-reap-cambodia",
           "name": "Siem Reap",
           "iata": "SAI",
@@ -52,11 +107,32 @@
           "lng": 103.85
         },
         {
-          "cityId": "phuket-thailand",
-          "name": "Phuket",
-          "iata": "HKT",
-          "lat": 7.8765,
-          "lng": 98.3815
+          "cityId": "phnom-penh-cambodia",
+          "name": "Phnom Penh",
+          "iata": "KTI",
+          "lat": 11.55,
+          "lng": 104.9166
+        },
+        {
+          "cityId": "louangphrabang-laos",
+          "name": "Louangphrabang",
+          "iata": "LPQ",
+          "lat": 19.8845,
+          "lng": 102.1416
+        },
+        {
+          "cityId": "chiang-mai-thailand",
+          "name": "Chiang Mai",
+          "iata": "CNX",
+          "lat": 18.8,
+          "lng": 98.98
+        },
+        {
+          "cityId": "bangkok-thailand",
+          "name": "Bangkok",
+          "iata": "DMK",
+          "lat": 13.75,
+          "lng": 100.5166
         }
       ],
       "origin": "manual"

@@ -1,6 +1,6 @@
 # Trip plans 2027–2029
 
-Three trips, one per year. `trips-2027-2029.json` loads them into Meridian:
+Three trips across 2027–2029. `trips-2027-2029.json` loads them into Meridian:
 **Settings › Trips › Import**, then pick the file. Re-importing updates them in place (same ids).
 
 Meridian trip nodes are cities without dates, so dates, nights and notes live here.
@@ -8,30 +8,58 @@ Comfort scores quoted below come from `data/seasonality.json` (2015–2024 clima
 
 | Trip | When | Length | Who |
 |---|---|---|---|
-| Southeast Asia | ~20 Nov – 18 Dec 2027 | 28 nights | solo |
+| Southeast Asia | ~1 Feb – 3 Jul 2027 | ~150 nights | solo |
 | East Africa safari | ~18 Jul – 1 Aug 2028 | 14 nights | family of 3 |
 | South America | ~3 Sep – 3 Oct 2029 | 30 nights | open |
 
-## 1. Southeast Asia — Nov–Dec 2027
+## 1. Southeast Asia — Feb–Jul 2027
 
-Bangkok → Chiang Mai → Hanoi → Da Nang → Ho Chi Minh City → Siem Reap → Phuket
+One long, slow trip across both seasons: the dry season through Vietnam and the coasts,
+then the start of the monsoon in places that are greener and emptier in the rain.
+Each stop is timed for its own season, because the monsoon doesn't reach every coast at the same time.
 
-| Stop | Nights | What it's for |
-|---|---|---|
-| Bangkok | 4 | Arrival, temples, food, day trip to Ayutthaya |
-| Chiang Mai | 4 | Old city, Doi Suthep, ethical elephant sanctuary, cooking class |
-| Hanoi | 5 | Old Quarter; 1 night on Ha Long or Lan Ha Bay |
-| Da Nang | 4 | Hoi An (30 min away), Marble Mountains, Hai Van Pass |
-| Ho Chi Minh City | 3 | War Remnants Museum, Cu Chi tunnels, Mekong Delta day |
-| Siem Reap | 3 | Angkor temples (3-day pass) |
-| Phuket | 5 | Beach finish; boat trips to Phang Nga Bay and Phi Phi |
+Bangkok → Chiang Mai → Hanoi → Ninh Bình → Hue → Da Nang → Da Lat → Ho Chi Minh City → Phuket →
+George Town → Kuala Lumpur → Yogyakarta → Bali → Siem Reap → Phnom Penh → Luang Prabang → Chiang Mai → Bangkok
 
-Why these dates: dry season on the mainland. Comfort index Bangkok 83 (Nov) / 96 (Dec), Hanoi 95 / 98.
-It also stays clear of Tết (Vietnamese New Year, early Feb), when much of Vietnam shuts.
-The Andaman coast (Phuket) dries out from December, which is why it comes last.
+### Phase 1: dry season (Feb – Apr)
 
-Weak spot: central Vietnam (Da Nang, Hoi An) is still in its rainy season in late Nov / early Dec.
-If the forecast looks bad, cut Da Nang to 2 nights and give them to Chiang Mai or Phuket.
+| Stop | Dates (approx.) | Nights | Why then |
+|---|---|---|---|
+| Bangkok | 1–5 Feb | 4 | Arrival; comfort index 88 in Feb |
+| Chiang Mai | 5–19 Feb | 14 | Cool and clear. Leave before the burning-season smoke (Mar–Apr) |
+| Hanoi | 19–25 Feb | 6 | After Tết (6 Feb 2027), so the city has reopened; index 97 |
+| Ninh Bình | 25–28 Feb | 3 | Karst rivers and rice paddies |
+| Hue | 28 Feb – 3 Mar | 3 | Imperial city; central coast drying out |
+| Da Nang | 3–15 Mar | 12 | Base for Hoi An. March is the sweet spot before the heat |
+| Da Lat | 15–20 Mar | 5 | Highlands, cool break |
+| Ho Chi Minh City | 20–25 Mar | 5 | Mekong Delta trips |
+| Phuket | 25 Mar – 8 Apr | 14 | Last of the Andaman dry season; Phang Nga Bay, Phi Phi |
+| George Town | 8–16 Apr | 8 | Food capital; avoids Songkran (13–15 Apr) chaos in Thailand, or go back for it |
+| Kuala Lumpur | 16–20 Apr | 4 | Hub for the hop to Java |
+
+### Phase 2: as the monsoon arrives (late Apr – Jul)
+
+Indonesia's dry season is the mainland's wet one, so May there is dry and still quiet before the July–August peak.
+From June the mainland turns green, prices drop and the crowds thin out. Rain mostly comes as afternoon downpours.
+
+| Stop | Dates (approx.) | Nights | Why then |
+|---|---|---|---|
+| Yogyakarta | 20–28 Apr | 8 | Borobudur and Prambanan at the start of Java's dry season |
+| Bali | 28 Apr – 26 May | 28 | Dry, between the Easter and summer crowds. Ubud, Sidemen, east coast |
+| Siem Reap | 26 May – 5 Jun | 10 | Green season: Angkor nearly empty, moats full, jungle lush |
+| Phnom Penh | 5–9 Jun | 4 | On the way north |
+| Luang Prabang | 9–21 Jun | 12 | Kuang Si falls at full flow, quiet town, rice planting |
+| Chiang Mai | 21 Jun – 1 Jul | 10 | Same city as February, but green and empty. Good for a slow finish |
+| Bangkok | 1–3 Jul | 2 | Fly out |
+
+Luang Prabang shows up as "Louangphrabang" in Meridian's city list.
+
+### Before booking
+
+- **Visas over long stays:** 36 nights in Indonesia is more than a standard 30-day visa on arrival, so plan an extension or a different visa. Also check Thailand's current visa-exempt length (it has changed often) and Vietnam's 90-day e-visa against your passport.
+- **Northern Thailand smoke:** March–April burning season is why Chiang Mai comes early and then again in June.
+- **Monsoon days:** pack for heavy afternoon rain. Some boat trips (Ha Long, Andaman islands) run less or stop in the wet season, which is why the coasts come in Phase 1.
+- **Shifting the year:** a Feb–Jul 2028 run would end right before the July 2028 safari. 2027 keeps them apart.
 
 ## 2. East Africa family safari — Jul–Aug 2028
 
