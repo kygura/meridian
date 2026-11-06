@@ -126,14 +126,14 @@ bookings.post("/", async (c) => {
 
 // ── GET / (list) ────────────────────────────────────────────────────
 
-bookings.get("/", (c) => {
-  return c.json({ bookings: listBookings() });
+bookings.get("/", async (c) => {
+  return c.json({ bookings: await listBookings() });
 });
 
 // ── GET /:id ────────────────────────────────────────────────────────
 
-bookings.get("/:id", (c) => {
-  const booking = getBooking(c.req.param("id"));
+bookings.get("/:id", async (c) => {
+  const booking = await getBooking(c.req.param("id"));
   if (!booking) return c.json({ error: "not_found", message: "Booking not found" }, 404);
   return c.json({ booking });
 });

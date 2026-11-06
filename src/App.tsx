@@ -5,6 +5,8 @@ import { apiUrl } from "./lib/api";
 import { AppShell } from "./shell/AppShell";
 import { useUIStore } from "./shell/uiStore";
 import { Toaster } from "./ui";
+import { onJournalTokenChange } from "./ui/journalToken";
+import { startTripSync } from "./lib/tripSync";
 import MapScreen from "./screens/map/MapScreen";
 import CityPanel from "./screens/map/CityPanel";
 import TripsScreen from "./screens/trips/TripsScreen";
@@ -38,6 +40,9 @@ export default function App() {
 
     void useMeridianStore.getState().fetchBookings();
   }, []);
+
+  // Trips sync to the server while the journal is unlocked (ADR 0006).
+  useEffect(() => startTripSync(onJournalTokenChange), []);
 
   const onMap = route.view === "map";
 

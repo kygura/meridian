@@ -32,8 +32,8 @@ The 12-month Comfort Index profile of a city or region, rendered as a heatmap ca
 ### Trips and booking
 
 **Trip**:
-A named, ordered list of city nodes (legs between consecutive nodes), client-side only,
-persisted in the browser.
+A named, ordered list of city nodes (legs between consecutive nodes), kept in the browser
+and synced to the server while the journal is unlocked (ADR 0006).
 _Avoid_: itinerary
 
 **Leg**:

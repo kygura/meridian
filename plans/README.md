@@ -1,7 +1,7 @@
 # Trip plans 2027–2029
 
 Three trips across 2027–2029. `trips-2027-2029.json` loads them into Meridian:
-**Settings › Trips › Import**, then pick the file. Re-importing updates them in place (same ids).
+**Settings › Trips › Import**, then pick the file. Re-importing updates them in place (same ids). With the journal unlocked, they then sync to every device.
 
 Meridian trip nodes are cities without dates, so dates, nights and notes live here.
 Comfort scores quoted below come from `data/seasonality.json` (2015–2024 climate normals).

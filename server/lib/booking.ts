@@ -12,8 +12,7 @@
 // mock offers/orders (source "mock") so the whole flow is exercisable locally
 // with zero credentials and zero risk of a real charge.
 
-import { readFileSync, writeFileSync } from "fs";
-import { ensureDataDir, getDataPath } from "./paths.js";
+import { createJsonStore } from "./jsonStore.js";
 import {
   hasDuffelKey,
   searchBookingOffers,
@@ -138,23 +137,9 @@ export class BookingValidationError extends Error {
 
 const MOCK_OFFER_PREFIX = "mock_off_";
 
-ensureDataDir();
-
-function bookingsPath(): string {
-  return getDataPath("bookings.json");
-}
-
-function readBookings(): Booking[] {
-  try {
-    return JSON.parse(readFileSync(bookingsPath(), "utf-8")) as Booking[];
-  } catch {
-    return [];
-  }
-}
-
-function writeBookings(bookings: Booking[]): void {
-  writeFileSync(bookingsPath(), JSON.stringify(bookings, null, 2));
-}
+// A bare array, as the file has always been. Same store as the journal: a file under
+// DATA_DIR, or Postgres when DATABASE_URL is set.
+const bookingStore = createJsonStore<Booking[]>("bookings.json", () => []);
 
 // ── Deterministic mock generation ───────────────────────────────────
 
@@ -341,22 +326,22 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
     },
   };
 
-  const all = readBookings();
-  all.push(booking);
-  writeBookings(all);
+  await bookingStore.update((all) => {
+    all.push(booking);
+  });
   return booking;
 }
 
-export function listBookings(): Booking[] {
-  return readBookings();
+export function listBookings(): Promise<Booking[]> {
+  return bookingStore.read();
 }
 
-export function getBooking(id: string): Booking | undefined {
-  return readBookings().find((b) => b.id === id);
+export async function getBooking(id: string): Promise<Booking | undefined> {
+  return (await bookingStore.read()).find((b) => b.id === id);
 }
 
 export async function cancelBooking(id: string): Promise<Booking | null> {
-  const all = readBookings();
+  const all = await bookingStore.read();
   const idx = all.findIndex((b) => b.id === id);
   if (idx === -1) return null;
 
@@ -370,9 +355,15 @@ export async function cancelBooking(id: string): Promise<Booking | null> {
     await cancelOrder(booking.orderId);
   }
 
-  booking.status = "cancelled";
-  booking.cancelledAt = new Date().toISOString();
-  all[idx] = booking;
-  writeBookings(all);
-  return booking;
+  const cancelledAt = new Date().toISOString();
+  // Re-read under the store's lock: the provider call above may have taken a while.
+  return bookingStore.update((current) => {
+    const b = current.find((x) => x.id === id);
+    if (!b) return null;
+    if (b.status !== "cancelled") {
+      b.status = "cancelled";
+      b.cancelledAt = cancelledAt;
+    }
+    return b;
+  });
 }

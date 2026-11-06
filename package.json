@@ -29,6 +29,7 @@
     "fast-xml-parser": "^5.8.0",
     "hono": "^4.7.0",
     "maplibre-gl": "^5.1.0",
+    "postgres": "^3.4.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.24.0",

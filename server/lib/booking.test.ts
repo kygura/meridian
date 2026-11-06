@@ -138,8 +138,8 @@ describe("createBooking — persistence + reference", () => {
     expect(booking.leg.originIata).toBe("LHR");
     expect(booking.offerSnapshot.carrier).toBe(offers[0]!.carrier);
     // persisted + retrievable
-    expect(getBooking(booking.id)?.id).toBe(booking.id);
-    expect(listBookings().some((b) => b.id === booking.id)).toBe(true);
+    expect((await getBooking(booking.id))?.id).toBe(booking.id);
+    expect((await listBookings()).some((b) => b.id === booking.id)).toBe(true);
   });
 
   it("only stores the passenger fields the aggregate needs", async () => {
@@ -191,7 +191,7 @@ describe("cancelBooking — state transitions", () => {
     const cancelled = await cancelBooking(booking.id);
     expect(cancelled?.status).toBe("cancelled");
     expect(cancelled?.cancelledAt).toBeTruthy();
-    expect(getBooking(booking.id)?.status).toBe("cancelled");
+    expect((await getBooking(booking.id))?.status).toBe("cancelled");
   });
 
   it("double-cancel is idempotent, not an error", async () => {

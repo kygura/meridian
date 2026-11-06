@@ -408,12 +408,12 @@ function bookingLegs(b: Booking): Leg[] {
  * same payload schema as an external candidate (an invalid booking is skipped whole), mock
  * bookings are flagged low confidence, and legs already reported by another source are skipped.
  */
-function promoteBookings(file: ImportsFile, now: Date): void {
+function promoteBookings(file: ImportsFile, now: Date, bookings: Booking[]): void {
   const today = now.toISOString().slice(0, 10);
   const seen = new Set(file.candidates.filter((c) => c.provenance.source === "booking").map((c) => c.provenance.sourceRef));
   const ids = new Set(file.candidates.map((c) => c.id));
   const keys = new Set(file.candidates.flatMap(contentKeys));
-  for (const b of listBookings()) {
+  for (const b of bookings) {
     if (b.status !== "booked" || seen.has(b.id)) continue;
     const legs = bookingLegs(b).sort((x, y) => x.departAt.localeCompare(y.departAt));
     if (!legs.length || legs[0].departAt.slice(0, 10) >= today) continue;
@@ -560,6 +560,7 @@ export function clusterCandidates(pending: ImportCandidate[], homeCityId?: strin
  * suggestedJourneyId: the confirmed journey overlapping the cluster or within its 2-day gap) and clusters.
  */
 export async function getQueue(now: Date = new Date()): Promise<ImportQueue> {
+  const bookings = await listBookings();
   await store.update((file) => {
     for (const c of file.candidates) {
       if (c.claimedAt && !c.journeyId && now.getTime() - Date.parse(c.claimedAt) > CLAIM_TIMEOUT_MS) {
@@ -567,7 +568,7 @@ export async function getQueue(now: Date = new Date()): Promise<ImportQueue> {
         delete c.claimedAt;
       }
     }
-    promoteBookings(file, now);
+    promoteBookings(file, now, bookings);
   });
   const { candidates } = await store.read();
   const pending = candidates.filter((c) => c.state === "pending");

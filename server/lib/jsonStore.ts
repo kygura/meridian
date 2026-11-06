@@ -7,6 +7,8 @@
 // - Writes (and read-modify-write `update`s) are serialized per absolute path
 //   through a promise chain, so concurrent updates never interleave or lose
 //   each other's changes within this process.
+// - With DATABASE_URL set, documents live in Postgres instead (pgDocuments.ts),
+//   keyed by the same relative path. The backend is picked per call, like DATA_DIR.
 // - A missing file reads as the default. A corrupt file THROWS rather than
 //   reading as the default — silently "recovering" would let the next write
 //   wipe the user's history.
@@ -15,9 +17,10 @@ import { mkdir, readFile, rename, rm, writeFile } from "fs/promises";
 import { dirname } from "path";
 import { randomUUID } from "crypto";
 import { getDataPath } from "./paths.js";
+import { databaseUrl, pgRead, pgUpdate, pgWrite } from "./pgDocuments.js";
 
 export interface JsonStore<T> {
-  /** Absolute path of the backing file (resolved now). */
+  /** Absolute path of the backing file, or `postgres:<key>` on the database backend. */
   path(): string;
   /** Current value, or a fresh default when the file does not exist. */
   read(): Promise<T>;
@@ -67,16 +70,19 @@ async function writeJsonAtomic(file: string, value: unknown): Promise<void> {
 
 /** `relPath` is relative to the data root, e.g. "journal.json" or "cache/fx.json". */
 export function createJsonStore<T>(relPath: string, defaultValue: () => T): JsonStore<T> {
-  const path = () => getDataPath(relPath);
+  const filePath = () => getDataPath(relPath);
+  const path = () => (databaseUrl() ? `postgres:${relPath}` : filePath());
   return {
     path,
-    read: () => readJson(path(), defaultValue),
+    read: () => (databaseUrl() ? pgRead(relPath, defaultValue) : readJson(filePath(), defaultValue)),
     write: (value) => {
-      const file = path();
+      if (databaseUrl()) return enqueue(path(), () => pgWrite(relPath, value));
+      const file = filePath();
       return enqueue(file, () => writeJsonAtomic(file, value));
     },
     update: (fn) => {
-      const file = path();
+      if (databaseUrl()) return enqueue(path(), () => pgUpdate(relPath, defaultValue, fn));
+      const file = filePath();
       return enqueue(file, async () => {
         const current = await readJson(file, defaultValue);
         const result = await fn(current);

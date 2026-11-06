@@ -29,7 +29,7 @@ export const requireToken: MiddlewareHandler = async (c, next) => {
 };
 
 /** Route prefixes that hold personal data. /api/bookings stays ungated (ruling R2). */
-export const GATED_PREFIXES = ["/api/journal", "/api/replay", "/api/import", "/api/watches"] as const;
+export const GATED_PREFIXES = ["/api/journal", "/api/replay", "/api/import", "/api/watches", "/api/trips"] as const;
 
 /** Gate each prefix itself and everything under it. Call before mounting routes. */
 export function gateRoutes(app: Hono, prefixes: readonly string[] = GATED_PREFIXES): void {
