@@ -22,7 +22,8 @@ export interface SeasonalityDataset {
 
 export interface RegionAggregate {
   region: string;
-  months: Array<{ score: number }>;
+  /** Means over the country's covered cities. tempC to 1dp, precipMm rounded. */
+  months: Array<{ score: number; tempC: number; precipMm: number }>;
 }
 
 // ── Comfort score formula ───────────────────────────────────────────────
@@ -347,26 +348,37 @@ export function getSeasonalityWindow(): string {
   return loadSeasonality().window || WINDOW;
 }
 
+/** Every covered city's 12 months (seed + runtime cache merged), for map-wide climate search. */
+export function getAllCitySeasonality(): Record<string, MonthSeasonality[]> {
+  const out: Record<string, MonthSeasonality[]> = {};
+  for (const [id, entry] of Object.entries(mergedCities())) if (Array.isArray(entry?.months)) out[id] = entry.months;
+  return out;
+}
+
 /** Per-country monthly average of covered cities' scores (seed + runtime cache merged). */
 export function getRegionAggregates(): RegionAggregate[] {
   const dataset = mergedCities();
   const cities = getCities();
-  const byCountry = new Map<string, number[][]>();
+  const byCountry = new Map<string, MonthSeasonality[][]>();
 
   for (const city of cities) {
     const entry = dataset[city.id];
     if (!entry) continue;
     const arr = byCountry.get(city.country) ?? [];
-    arr.push(entry.months.map((m) => m.score));
+    arr.push(entry.months);
     byCountry.set(city.country, arr);
   }
 
+  const mean = (vals: number[]) => vals.reduce((a, b) => a + b, 0) / vals.length;
   const result: RegionAggregate[] = [];
-  for (const [region, scoreLists] of byCountry) {
+  for (const [region, lists] of byCountry) {
     const months = Array.from({ length: 12 }, (_, i) => {
-      const vals = scoreLists.map((s) => s[i]!);
-      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { score: Math.round(avg) };
+      const ms = lists.map((l) => l[i]).filter((m): m is MonthSeasonality => !!m);
+      return {
+        score: Math.round(mean(ms.map((m) => m.score))),
+        tempC: Math.round(mean(ms.map((m) => m.tempC)) * 10) / 10,
+        precipMm: Math.round(mean(ms.map((m) => m.precipMm))),
+      };
     });
     result.push({ region, months });
   }

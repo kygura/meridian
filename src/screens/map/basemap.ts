@@ -5,6 +5,7 @@ import type { RegionSeason } from "../../lib/seasonalityApi";
 import type { City } from "../../types";
 import { cityRank, OVERLAY_SOURCES, type overlayLayers } from "./overlays";
 import type { MapColors } from "./useMapColors";
+import { isFilterActive, matchesFilter, modeStep, monthTraits, type ClimateFilter, type ClimateMode, type ClimateMonth } from "../../lib/climate";
 
 type OverlayLayers = ReturnType<typeof overlayLayers>;
 
@@ -150,30 +151,57 @@ export function labelFeatures(cities: City[]): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
+export interface TintOptions {
+  mode: ClimateMode;
+  /** 1-12 */
+  month: number;
+  /** Countries that miss it keep the plain land colour. */
+  filter: ClimateFilter;
+  /** 7-step ramp per mode (MapColors.ramps). */
+  ramps: Record<ClimateMode, string[]>;
+  /** countryKey()s left untinted regardless (e.g. conflict advisories when avoiding them). */
+  excluded?: Set<string>;
+}
+
+/** A region's 12 months as climate months, or null when it lacks temperature and rain. */
+function regionMonths(r: RegionSeason): ClimateMonth[] | null {
+  if (!r.months.every((m) => typeof m.tempC === "number" && typeof m.precipMm === "number")) return null;
+  return r.months.map((m) => ({ score: m.score, tempC: m.tempC!, precipMm: m.precipMm! }));
+}
+
 /**
- * Countries with a `tint` colour for the month's comfort score (seasons layer), or the
- * plain polygons when `regions` is null. Countries without data keep the land colour.
+ * Countries with a `tint` colour for the month (seasons layer), or the plain polygons
+ * when `regions` is null. The tint follows the mode (comfort, temperature, rain,
+ * greenery); with a filter active only countries whose average month meets it are
+ * tinted. Countries without data keep the land colour.
  */
-export function tintCountries(
-  fc: CountryCollection,
-  regions: RegionSeason[] | null,
-  month: number,
-  ramp: string[]
-): GeoJSON.FeatureCollection {
+export function tintCountries(fc: CountryCollection, regions: RegionSeason[] | null, opts: TintOptions): GeoJSON.FeatureCollection {
   if (!regions) return fc;
-  const score = new Map<string, number>();
+  const { mode, month, filter, ramps, excluded } = opts;
+  const ramp = ramps[mode];
+  const filtering = isFilterActive(filter);
+  const tint = new Map<string, string>();
   for (const r of regions) {
-    const s = r.months[month - 1]?.score;
-    if (typeof s === "number") score.set(countryKey(r.region), s);
+    const key = countryKey(r.region);
+    if (excluded?.has(key)) continue;
+    const months = regionMonths(r);
+    if (!months) {
+      // Older server: scores only, so comfort is all we can show.
+      const s = r.months[month - 1]?.score;
+      if (mode === "comfort" && !filtering && typeof s === "number") tint.set(key, ramp[tintStep(s)]);
+      continue;
+    }
+    const t = monthTraits(months, month);
+    if (!t || (filtering && !matchesFilter(t, filter))) continue;
+    tint.set(key, ramp[modeStep(mode, t)]);
   }
   return {
     type: "FeatureCollection",
     features: fc.features.map((f) => {
       const keys = featureKeys(f.properties ?? {});
-      const s = keys.map((k) => score.get(k)).find((v) => v !== undefined);
-      if (s === undefined) return f;
-      const step = tintStep(s);
-      return { ...f, properties: { ...f.properties, tint: ramp[step] } };
+      const c = keys.map((k) => tint.get(k)).find((v) => v !== undefined);
+      if (c === undefined) return f;
+      return { ...f, properties: { ...f.properties, tint: c } };
     }),
   };
 }

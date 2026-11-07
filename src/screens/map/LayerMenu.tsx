@@ -1,8 +1,10 @@
 import { useId, useRef, useState } from "react";
-import { Button, Popover, UnlockCard, useJournalToken } from "../../ui";
+import { Button, Popover, Segmented, Select, UnlockCard, useJournalToken } from "../../ui";
 import { IconLayers } from "../../ui/icons";
 import { useMapPrefs, type MapLayer } from "../../shell/mapPrefs";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
+import { CLIMATE_MODES } from "../../lib/climate";
+import { METRICS, type MetricId } from "../../lib/cityMetrics";
 import type { MapColors } from "./useMapColors";
 
 interface LayerMenuProps {
@@ -81,6 +83,10 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
   const { unlocked } = useJournalToken();
   const month = useMapPrefs((s) => s.month);
   const setMonth = useMapPrefs((s) => s.setMonth);
+  const climateMode = useMapPrefs((s) => s.climateMode);
+  const setClimateMode = useMapPrefs((s) => s.setClimateMode);
+  const avoidConflicts = useMapPrefs((s) => s.avoidConflicts);
+  const setAvoidConflicts = useMapPrefs((s) => s.setAvoidConflicts);
 
   const pastHint = !unlocked ? (
     "Unlock your journal to show them"
@@ -114,7 +120,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
         Layers
       </Button>
       <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchor} placement="bottom-end" label="Map layers" className="map-layers-pop">
-        <p className="map-layers-title map-kicker">Show on map</p>
+        <p className="map-layers-title map-kicker">Trips</p>
         <SwitchRow layer="past" name="Past trips" hint={pastHint} disabled={!unlocked}>
           {null}
         </SwitchRow>
@@ -128,11 +134,85 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
           )
         ) : null}
         <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in teal." />
+
+        <p className="map-layers-title map-layers-section map-kicker">Places and climate</p>
         <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in" />
-        <SwitchRow layer="seasons" name="Seasons" hint={`Pleasant weather in ${MONTH_NAMES[month - 1]}`}>
+        <SwitchRow layer="seasons" name="Climate" hint={`Tint and search by weather in ${MONTH_NAMES[month - 1]}`}>
           <MonthPicker value={month} onChange={setMonth} />
+          <Segmented
+            label="Tint countries by"
+            size="sm"
+            block
+            className="map-layer-seg"
+            value={climateMode}
+            onChange={setClimateMode}
+            options={CLIMATE_MODES.map((m) => ({ value: m.value, label: m.label }))}
+          />
+        </SwitchRow>
+
+        <p className="map-layers-title map-layers-section map-kicker">Conditions</p>
+        <SwitchRow layer="metrics" name="City metrics" hint="Safety, social, infrastructure, cost, crowds">
+          <MetricControls />
+        </SwitchRow>
+        <SwitchRow layer="events" name="Events" hint={`Eclipses, festivals and fixtures in ${MONTH_NAMES[month - 1]}`} />
+        <SwitchRow layer="anomalies" name="Anomalies" hint="Conflicts, seasonal hazards and news alerts">
+          <label className="map-check">
+            <input type="checkbox" checked={avoidConflicts} onChange={(e) => setAvoidConflicts(e.target.checked)} />
+            <span>Leave conflict countries out of matches</span>
+          </label>
         </SwitchRow>
       </Popover>
     </>
+  );
+}
+
+/** Colour-by and per-metric thresholds for the City metrics layer. */
+function MetricControls() {
+  const colorBy = useMapPrefs((s) => s.metrics.colorBy);
+  const thresholds = useMapPrefs((s) => s.metrics.thresholds);
+  const setMetricColor = useMapPrefs((s) => s.setMetricColor);
+  const setThreshold = useMapPrefs((s) => s.setThreshold);
+  const selectId = useId();
+  return (
+    <div className="map-lm">
+      <label className="map-lm-row" htmlFor={selectId}>
+        <span className="map-lm-label">Colour cities by</span>
+        <Select
+          id={selectId}
+          size="sm"
+          value={colorBy}
+          onChange={(e) => setMetricColor(e.target.value as MetricId | "none")}
+          options={[{ value: "none", label: "Nothing" }, ...METRICS.map((m) => ({ value: m.id, label: `${m.label} (${m.theme.toLowerCase()})` }))]}
+        />
+      </label>
+      <p className="map-lm-label">Only match cities with</p>
+      {METRICS.map((m) => {
+        const max = m.direction === "max";
+        const value = thresholds[m.id] ?? (max ? 100 : 0);
+        const off = max ? value >= 100 : value <= 0;
+        return (
+          <label key={m.id} className="map-lm-slider">
+            <span className="map-lm-name">
+              {m.label}
+              <span className="map-lm-value num">{off ? "Any" : `${max ? "≤" : "≥"} ${value}`}</span>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={value}
+              aria-label={`${m.label}: ${max ? "at most" : "at least"}`}
+              aria-valuetext={off ? "Any" : `${max ? "at most" : "at least"} ${value}`}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setThreshold(m.id, (max ? v >= 100 : v <= 0) ? undefined : v);
+              }}
+            />
+          </label>
+        );
+      })}
+      <p className="map-lm-note">Indicative scores, partly modelled. Higher affordability means cheaper.</p>
+    </div>
   );
 }

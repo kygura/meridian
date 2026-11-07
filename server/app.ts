@@ -17,6 +17,7 @@ import { registerJournalFingerprint } from "./lib/journalFingerprint.js";
 import importRoutes from "./routes/import.js";
 import watchesRoutes from "./routes/watches.js";
 import tripsRoutes from "./routes/trips.js";
+import overlaysRoutes from "./routes/overlays.js";
 import { gateRoutes } from "./middleware/auth.js";
 
 // Load city data on startup
@@ -54,6 +55,7 @@ app.route("/api/replay", replayRoutes);
 app.route("/api/import", importRoutes);
 app.route("/api/watches", watchesRoutes);
 app.route("/api/trips", tripsRoutes);
+app.route("/api/overlays", overlaysRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

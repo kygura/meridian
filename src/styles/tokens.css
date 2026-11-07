@@ -147,6 +147,29 @@
   --trip-b: #0f766e;
   --trip-c: #6d28d9;
 
+  /* Climate overlay ramps (map Seasons layer): cold -> hot, dry -> wet, barren -> lush. */
+  --temp-0: #2f5f9e;
+  --temp-1: #6f97c4;
+  --temp-2: #b9cfe0;
+  --temp-3: #efe6c8;
+  --temp-4: #efb77c;
+  --temp-5: #d9763f;
+  --temp-6: #b3261e;
+  --wet-0: #efe4c4;
+  --wet-1: #d9dcb8;
+  --wet-2: #b5d0bf;
+  --wet-3: #86bcc4;
+  --wet-4: #5a9fc0;
+  --wet-5: #3a7cae;
+  --wet-6: #24578a;
+  --green-0: #ead9b0;
+  --green-1: #d9cf98;
+  --green-2: #bcc47f;
+  --green-3: #93b26a;
+  --green-4: #6a9a55;
+  --green-5: #457f42;
+  --green-6: #2a5f30;
+
   color-scheme: light;
 }
 
@@ -223,6 +246,29 @@ html[data-theme="dark"] {
   --trip-b: #2dd4bf;
   --trip-c: #a78bfa;
 
+  /* Climate overlay ramps (map Seasons layer): cold -> hot, dry -> wet, barren -> lush. */
+  --temp-0: #4f86c9;
+  --temp-1: #3a6596;
+  --temp-2: #2a4260;
+  --temp-3: #3a3426;
+  --temp-4: #8a5a24;
+  --temp-5: #c76a2c;
+  --temp-6: #ff5b5b;
+  --wet-0: #2a2418;
+  --wet-1: #2b3328;
+  --wet-2: #224046;
+  --wet-3: #1f5266;
+  --wet-4: #2a6f8f;
+  --wet-5: #3f8fb8;
+  --wet-6: #6cb4dd;
+  --green-0: #2a2214;
+  --green-1: #333218;
+  --green-2: #3d4520;
+  --green-3: #46592a;
+  --green-4: #4f7233;
+  --green-5: #5f8f3f;
+  --green-6: #7fb257;
+
   color-scheme: dark;
 }
 
@@ -298,6 +344,29 @@ html[data-theme="dark"] {
     --trip-a: #ff5b5b;
     --trip-b: #2dd4bf;
     --trip-c: #a78bfa;
+
+    /* Climate overlay ramps (map Seasons layer): cold -> hot, dry -> wet, barren -> lush. */
+    --temp-0: #4f86c9;
+    --temp-1: #3a6596;
+    --temp-2: #2a4260;
+    --temp-3: #3a3426;
+    --temp-4: #8a5a24;
+    --temp-5: #c76a2c;
+    --temp-6: #ff5b5b;
+    --wet-0: #2a2418;
+    --wet-1: #2b3328;
+    --wet-2: #224046;
+    --wet-3: #1f5266;
+    --wet-4: #2a6f8f;
+    --wet-5: #3f8fb8;
+    --wet-6: #6cb4dd;
+    --green-0: #2a2214;
+    --green-1: #333218;
+    --green-2: #3d4520;
+    --green-3: #46592a;
+    --green-4: #4f7233;
+    --green-5: #5f8f3f;
+    --green-6: #7fb257;
 
     color-scheme: dark;
   }

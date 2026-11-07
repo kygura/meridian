@@ -110,6 +110,22 @@ describe("GET /api/seasonality/regions", () => {
     expect(france).toBeDefined();
     expect(france.months).toHaveLength(12);
     expect(france.months[0].score).toBe(50);
+    // Temperature and rain ride along so the map can tint by them.
+    expect(france.months[0].tempC).toBe(10);
+    expect(france.months[0].precipMm).toBe(40);
+  });
+});
+
+describe("GET /api/seasonality/cities", () => {
+  it("returns every covered city's months without fetching", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const res = await app.request("/cities");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.window).toBe("2015-2024");
+    expect(body.cities["paris-france"]).toHaveLength(12);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });
 

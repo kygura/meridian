@@ -70,7 +70,43 @@ export interface CityDatum {
   rank: 0 | 1 | 2 | 3;
 }
 
-export type PickDatum = ArcDatum | StopDatum | RouteDatum | NodeDatum | BookingDatum | CityDatum;
+export interface EventDatum {
+  kind: "event";
+  coord: LngLat;
+  eventId: string;
+  title: string;
+  eventKind: string;
+  date?: string;
+  recurring: boolean;
+  cityId: string;
+  cityName: string;
+}
+
+export interface AnomalyDatum {
+  kind: "anomaly";
+  coord: LngLat;
+  id: string;
+  /** conflict advisory, seasonal hazard, or a live news alert. */
+  source: "conflict" | "hazard" | "news";
+  label: string;
+  sub: string;
+  severity: number;
+  /** Peak month of a hazard's season. */
+  peak?: boolean;
+  cityId?: string;
+}
+
+/** Per-city styling from the finder: filter matches and metric colour. */
+export interface CityStyling {
+  /** Any filter running? When false every city is neutral. */
+  filtering: boolean;
+  matches: Set<string>;
+  /** cityId -> 0-100 "goodness" for the colour-by metric (crowds inverted). */
+  metric: Map<string, number> | null;
+  onlyMatches: boolean;
+}
+
+export type PickDatum = ArcDatum | StopDatum | RouteDatum | NodeDatum | BookingDatum | CityDatum | EventDatum | AnomalyDatum;
 
 export function hubsOf(cities: City[]): FlightHub[] {
   return cities
@@ -202,26 +238,56 @@ export interface OverlayData {
     routes: RouteDatum[];
     nodes: NodeDatum[];
     bookings: BookingDatum[];
+    events: EventDatum[];
+    anomalies: AnomalyDatum[];
   };
 }
 
-export type OverlaySource = "ov-cities" | "ov-arcs" | "ov-stops" | "ov-routes" | "ov-nodes" | "ov-bookings" | "ov-selected";
-export const OVERLAY_SOURCES: OverlaySource[] = ["ov-cities", "ov-arcs", "ov-stops", "ov-routes", "ov-nodes", "ov-bookings", "ov-selected"];
+export type OverlaySource =
+  | "ov-cities"
+  | "ov-arcs"
+  | "ov-stops"
+  | "ov-routes"
+  | "ov-nodes"
+  | "ov-bookings"
+  | "ov-events"
+  | "ov-anomalies"
+  | "ov-selected";
+export const OVERLAY_SOURCES: OverlaySource[] = [
+  "ov-cities",
+  "ov-arcs",
+  "ov-stops",
+  "ov-routes",
+  "ov-nodes",
+  "ov-bookings",
+  "ov-events",
+  "ov-anomalies",
+  "ov-selected",
+];
 
 export interface OverlayInput {
   colors: MapColors;
-  show: { past: boolean; planned: boolean; cities: boolean };
+  show: { past: boolean; planned: boolean; cities: boolean; events?: boolean; anomalies?: boolean };
   past: ReturnType<typeof buildPast> | null;
   planned: ReturnType<typeof buildPlanned>;
   bookings: BookingDatum[];
   cities: CityDatum[];
   selectedCityId: string | null;
+  /** Finder styling for city dots; null = plain dots. */
+  styling?: CityStyling | null;
+  events?: EventDatum[];
+  anomalies?: AnomalyDatum[];
+}
+
+/** Colour of an anomaly marker by source. */
+export function anomalyColor(source: AnomalyDatum["source"], colors: MapColors): string {
+  return source === "conflict" ? colors.danger : source === "hazard" ? colors.warning : colors.info;
 }
 
 /** GeoJSON for every overlay source. Hidden layers get empty collections. */
 export function buildOverlayData(input: OverlayInput): OverlayData {
-  const { colors, show, past, planned, bookings, cities, selectedCityId } = input;
-  const pick: OverlayData["pick"] = { cities: [], arcs: [], stops: [], routes: [], nodes: [], bookings: [] };
+  const { colors, show, past, planned, bookings, cities, selectedCityId, styling, events = [], anomalies = [] } = input;
+  const pick: OverlayData["pick"] = { cities: [], arcs: [], stops: [], routes: [], nodes: [], bookings: [], events: [], anomalies: [] };
   const src: Record<OverlaySource, FC> = {
     "ov-cities": EMPTY,
     "ov-arcs": EMPTY,
@@ -229,6 +295,8 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
     "ov-routes": EMPTY,
     "ov-nodes": EMPTY,
     "ov-bookings": EMPTY,
+    "ov-events": EMPTY,
+    "ov-anomalies": EMPTY,
     "ov-selected": EMPTY,
   };
 
@@ -236,7 +304,43 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
     pick.cities = cities;
     src["ov-cities"] = {
       type: "FeatureCollection",
-      features: cities.map((c, i) => point(c.coord, { i, hid: c.id, rank: c.rank, pop: c.population })),
+      features: cities.map((c, i) =>
+        point(c.coord, {
+          i,
+          hid: c.id,
+          rank: c.rank,
+          pop: c.population,
+          // -1 = no filter running, 1 = match, 0 = miss.
+          hl: styling?.filtering ? (styling.matches.has(c.id) ? 1 : 0) : -1,
+          mv: styling?.metric?.get(c.id) ?? -1,
+        })
+      ),
+    };
+  }
+
+  if (show.events && events.length) {
+    pick.events = events;
+    src["ov-events"] = {
+      type: "FeatureCollection",
+      features: events.map((e, i) => point(e.coord, { i, hid: `${e.eventId}|${e.cityId}` })),
+    };
+  }
+
+  if (show.anomalies && anomalies.length) {
+    pick.anomalies = anomalies;
+    // Most severe drawn last, on top.
+    const order = anomalies.map((_, i) => i).sort((a, b) => anomalies[a].severity - anomalies[b].severity);
+    src["ov-anomalies"] = {
+      type: "FeatureCollection",
+      features: order.map((i) =>
+        point(anomalies[i].coord, {
+          i,
+          hid: anomalies[i].id,
+          sev: anomalies[i].severity,
+          peak: !!anomalies[i].peak,
+          color: anomalyColor(anomalies[i].source, colors),
+        })
+      ),
     };
   }
 
@@ -290,6 +394,8 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
 
 /** Pickable layer id -> which pick array its features index into. Topmost first. */
 export const PICK_LAYERS: [string, keyof OverlayData["pick"]][] = [
+  ["ov-anomalies", "anomalies"],
+  ["ov-events", "events"],
   ["ov-nodes", "nodes"],
   ["ov-stops", "stops"],
   ["ov-bookings", "bookings"],
@@ -309,14 +415,21 @@ const z = (stops: [number, number | maplibregl.ExpressionSpecification][]): mapl
  * reads on ink dots and borders), then stop / node dots and the selected-city ring.
  * City labels sit between the dots and the lines (see basemap.ts `beforeId`).
  */
-export function overlayLayers(colors: MapColors, hover: string | null, maxRank: number, selected: string | null): {
+export function overlayLayers(
+  colors: MapColors,
+  hover: string | null,
+  maxRank: number,
+  selected: string | null,
+  onlyMatches = false
+): {
   below: maplibregl.LayerSpecification[];
   above: maplibregl.LayerSpecification[];
 } {
   const paint = overlayPaint(colors, hover);
   const lineLayout: maplibregl.LineLayerSpecification["layout"] = { "line-cap": "round", "line-join": "round" };
   const below: maplibregl.LayerSpecification[] = [
-    { id: "ov-cities", type: "circle", source: "ov-cities", filter: cityFilter(maxRank, selected), paint: paint["ov-cities"] },
+    { id: "ov-cities", type: "circle", source: "ov-cities", filter: cityFilter(maxRank, selected, onlyMatches), paint: paint["ov-cities"] },
+    { id: "ov-anomalies-halo", type: "circle", source: "ov-anomalies", paint: paint["ov-anomalies-halo"] },
   ];
   const above: maplibregl.LayerSpecification[] = [
     { id: "ov-arcs-casing", type: "line", source: "ov-arcs", layout: lineLayout, paint: paint["ov-arcs-casing"] },
@@ -349,13 +462,22 @@ export function overlayLayers(colors: MapColors, hover: string | null, maxRank: 
     },
     { id: "ov-stops", type: "circle", source: "ov-stops", paint: paint["ov-stops"] },
     { id: "ov-nodes", type: "circle", source: "ov-nodes", paint: paint["ov-nodes"] },
+    { id: "ov-events", type: "circle", source: "ov-events", paint: paint["ov-events"] },
+    { id: "ov-anomalies", type: "circle", source: "ov-anomalies", paint: paint["ov-anomalies"] },
     { id: "ov-selected", type: "circle", source: "ov-selected", paint: paint["ov-selected"] },
   ] as maplibregl.LayerSpecification[];
   return { below, above };
 }
 
-export function cityFilter(maxRank: number, selected: string | null): maplibregl.FilterSpecification {
-  return ["any", ["<=", ["get", "rank"], maxRank], ["==", ["get", "hid"], selected ?? HOVER]];
+/**
+ * Cities drawn at a zoom: those within the rank budget, the selected one, and every
+ * finder match (so a search shows results at world zoom). With `onlyMatches`, misses
+ * are hidden instead of faded.
+ */
+export function cityFilter(maxRank: number, selected: string | null, onlyMatches = false): maplibregl.FilterSpecification {
+  const isSelected: maplibregl.ExpressionSpecification = ["==", ["get", "hid"], selected ?? HOVER];
+  const shown: maplibregl.ExpressionSpecification = ["any", ["<=", ["get", "rank"], maxRank], isSelected, ["==", ["get", "hl"], 1]];
+  return onlyMatches ? ["all", shown, ["any", ["!=", ["get", "hl"], 0], isSelected]] : shown;
 }
 
 type Paint = Record<string, unknown>;
@@ -363,6 +485,9 @@ type Paint = Record<string, unknown>;
 /** Paint for every overlay layer. Re-applied on theme and hover changes. */
 export function overlayPaint(colors: MapColors, hover: string | null): Record<string, Paint> {
   const h = isHover(hover);
+  const match: maplibregl.ExpressionSpecification = ["==", ["get", "hl"], 1];
+  const miss: maplibregl.ExpressionSpecification = ["==", ["get", "hl"], 0];
+  const coloured: maplibregl.ExpressionSpecification = [">=", ["get", "mv"], 0];
   // Population-sized ink dots: small and soft at world zoom so trip lines lead.
   const popR = (base: number, k: number, max: number): maplibregl.ExpressionSpecification => [
     "min",
@@ -373,20 +498,26 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
     "ov-cities": {
       // Lie flat on the sphere so dots foreshorten toward the horizon.
       "circle-pitch-alignment": "map",
-      "circle-color": colors.dot,
+      // Coloured by the chosen metric (red = poor .. teal = good), else ink.
+      "circle-color": [
+        "case",
+        [">=", ["get", "mv"], 0],
+        ["interpolate", ["linear"], ["get", "mv"], ...colors.diverging.flatMap((c, k) => [(k * 100) / 6, c])],
+        colors.dot,
+      ],
       "circle-radius": z([
-        [1, ["case", h, 3.5, popR(0.9, 1.4, 2.2)]],
-        [4, ["case", h, 5, popR(1.5, 3, 4.5)]],
-        [8, ["case", h, 7, popR(2.4, 4, 6.5)]],
+        [1, ["case", h, 3.5, match, 3, popR(0.9, 1.4, 2.2)]],
+        [4, ["case", h, 5, match, 4.6, popR(1.5, 3, 4.5)]],
+        [8, ["case", h, 7, match, 6.5, popR(2.4, 4, 6.5)]],
       ]),
       "circle-opacity": z([
-        [1, ["case", h, 1, 0.42]],
-        [4, ["case", h, 1, 0.7]],
-        [7, ["case", h, 1, 0.85]],
+        [1, ["case", h, 1, miss, 0.16, match, 1, coloured, 0.85, 0.42]],
+        [4, ["case", h, 1, miss, 0.22, match, 1, coloured, 0.95, 0.7]],
+        [7, ["case", h, 1, miss, 0.3, match, 1, 0.85]],
       ]),
-      "circle-stroke-color": colors.paper,
-      "circle-stroke-width": z([[2, 0], [4, 0.8]]),
-      "circle-stroke-opacity": 0.85,
+      "circle-stroke-color": ["case", match, colors.accent, colors.paper],
+      "circle-stroke-width": z([[2, ["case", match, 1.4, 0]], [4, ["case", match, 1.8, 0.8]]]),
+      "circle-stroke-opacity": ["case", miss, 0.3, 0.85],
     },
     "ov-arcs-casing": {
       "line-color": colors.paper,
@@ -433,6 +564,29 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
       "circle-stroke-color": colors.paper,
       "circle-stroke-width": 2,
     },
+    "ov-events": {
+      "circle-color": colors.accent,
+      "circle-radius": z([[1, ["case", h, 5.5, 4]], [6, ["case", h, 7.5, 6]]]),
+      "circle-stroke-color": colors.dot,
+      "circle-stroke-width": 1.6,
+    },
+    "ov-anomalies-halo": {
+      "circle-pitch-alignment": "map",
+      "circle-color": ["get", "color"],
+      "circle-opacity": ["case", h, 0.3, ["get", "peak"], 0.22, 0.13],
+      "circle-radius": z([
+        [1, ["*", ["get", "sev"], 5]],
+        [4, ["*", ["get", "sev"], 9]],
+        [7, ["*", ["get", "sev"], 14]],
+      ]),
+      "circle-blur": 0.35,
+    },
+    "ov-anomalies": {
+      "circle-color": ["get", "color"],
+      "circle-radius": ["case", h, 6, ["+", 2.5, ["get", "sev"]]],
+      "circle-stroke-color": colors.paper,
+      "circle-stroke-width": 1.5,
+    },
     "ov-selected": {
       "circle-radius": 10,
       "circle-color": colors.accent,
@@ -467,5 +621,9 @@ export function describe(d: PickDatum, fmtDate: (iso: string) => string): { titl
       return { title: d.name, sub: d.tripName };
     case "booking":
       return { title: `${d.from} to ${d.to}`, sub: `Booked flight · ${fmtDate(d.date)}` };
+    case "event":
+      return { title: d.title, sub: `${d.cityName} · ${d.date ? fmtDate(d.date) : d.recurring ? "Every year" : d.eventKind}` };
+    case "anomaly":
+      return { title: d.label, sub: d.sub };
   }
 }

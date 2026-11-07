@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useResolvedTheme } from "../../shell/theme";
-import { readToken, toRgba } from "../../ui/palette";
+import { DIVERGING_VARS, readToken, toRgba } from "../../ui/palette";
+import { CLIMATE_MODES, modeRampVars, type ClimateMode } from "../../lib/climate";
 
 // Canvas colours for the MapLibre globe, read from tokens.css (the original atlas
 // palette: parchment land and ocean, ink borders, graticule, burnt-orange accent).
@@ -29,6 +30,14 @@ export interface MapColors {
   success: string;
   /** Sequential ramp, low to high (7 steps) as CSS colour strings. */
   ramp: string[];
+  /** Seasons-layer ramps per climate mode (7 steps each). */
+  ramps: Record<ClimateMode, string[]>;
+  /** Diverging ramp, poor (red) -> good (teal), 7 steps: city metric colours. */
+  diverging: string[];
+  /** Anomalies: conflicts, seasonal hazards, live news alerts. */
+  danger: string;
+  warning: string;
+  info: string;
   /** Year colours for past journeys: oldest -> newest. */
   yearFrom: RGBA;
   yearTo: RGBA;
@@ -39,6 +48,9 @@ function read(theme: "light" | "dark"): MapColors {
   const dark = theme === "dark";
   const ramp = [0, 1, 2, 3, 4, 5, 6].map((i) => t(`--ramp-${i}`, "#888888"));
   const ink = t("--ink", dark ? "#eef2f8" : "#1c1814");
+  const ramps = Object.fromEntries(
+    CLIMATE_MODES.map(({ value }) => [value, modeRampVars(value).map((v, i) => t(v, ramp[i] ?? "#888888"))])
+  ) as Record<ClimateMode, string[]>;
   return {
     theme,
     bg: t("--bg", dark ? "#0b0f17" : "#f4ecd8"),
@@ -54,6 +66,11 @@ function read(theme: "light" | "dark"): MapColors {
     accent: t("--accent", dark ? "#f59e0b" : "#c2680c"),
     success: t("--success", dark ? "#2dd4bf" : "#0f766e"),
     ramp,
+    ramps,
+    diverging: DIVERGING_VARS.map((v, i) => t(v, ["#b3261e", "#d9685f", "#ecbdb2", "#e6dbc0", "#a9d4cc", "#4fa497", "#0f766e"][i]!)),
+    danger: t("--danger", dark ? "#ff5b5b" : "#b3261e"),
+    warning: t("--warning", dark ? "#f59e0b" : "#c2680c"),
+    info: t("--info", dark ? "#60a5fa" : "#1e40af"),
     // Oldest trips fade toward muted ink; the newest burn in the accent.
     yearFrom: toRgba(t("--muted", dark ? "#8a94a9" : "#6b624f")),
     yearTo: toRgba(t("--accent", dark ? "#f59e0b" : "#c2680c")),

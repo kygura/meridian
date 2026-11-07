@@ -29,6 +29,21 @@ _Avoid_: weather score, climate score
 **Seasonality**:
 The 12-month Comfort Index profile of a city or region, rendered as a heatmap calendar.
 
+**Climate Traits**:
+What a month is like beyond comfort, read from the same normals (`src/lib/climate.ts`):
+warmth (freezing to hot), wetness (arid to very wet), greenery (a rain-times-warmth
+vegetation proxy, not satellite data) and snow. The map searches and filters by them.
+_Avoid_: weather type
+
+**Condition**:
+One searchable climate trait value ("Warm", "Dry", "Lush", "Snowy"). Conditions OR within
+a group and AND across groups.
+
+**Anomaly**:
+A map marker for something to avoid or watch: a standing conflict advisory or a recurring
+seasonal hazard (`data/phenomena.json`), or a live news alert placed on a country's capital.
+_Avoid_: incident, disaster (too narrow)
+
 ### Trips and booking
 
 **Trip**:
