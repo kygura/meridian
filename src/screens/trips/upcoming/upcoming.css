@@ -712,3 +712,82 @@
     transform: none;
   }
 }
+
+/* ── Seasons (season.tsx) ── */
+.trips-up-season {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.trips-season-stop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: 0 0 var(--space-2) calc(var(--space-2) + 52px);
+  font-size: 12px;
+  color: var(--muted);
+}
+.trips-season-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.trips-season-picker .ui-select-wrap {
+  width: 84px;
+}
+.trips-season-strip {
+  display: inline-grid;
+  grid-template-columns: repeat(12, 10px);
+  gap: 2px;
+  flex: none;
+}
+.trips-season-cell {
+  height: 14px;
+  background: var(--surface-2);
+}
+.trips-season-cell.is-off {
+  opacity: 0.28;
+}
+.trips-season-cell.is-empty {
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 3px, transparent 3px 6px);
+}
+.trips-season-note {
+  display: inline-flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.trips-season-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  flex-basis: 100%;
+}
+.trips-season-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.trips-season-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+.trips-season-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.trips-season-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 720px) {
+  .trips-season-stop {
+    padding-left: 0;
+  }
+}

@@ -494,6 +494,170 @@
         "festival",
         "lanterns"
       ]
+    },
+    {
+      "id": "tet-2027",
+      "title": "Tết (Vietnamese New Year): many shops and sights close for about a week, transport sells out",
+      "kind": "culture",
+      "cityIds": [
+        "hanoi-vietnam",
+        "ho-chi-minh-city-vietnam",
+        "da-nang-vietnam",
+        "hue-vietnam",
+        "ninh-b-nh-vietnam",
+        "da-lat-vietnam",
+        "nha-trang-vietnam"
+      ],
+      "month": 2,
+      "date": "2027-02-06",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year",
+        "closures"
+      ]
+    },
+    {
+      "id": "lunar-new-year-2027",
+      "title": "Lunar New Year: two public holidays, busy travel and some closures",
+      "kind": "culture",
+      "cityIds": [
+        "singapore-singapore",
+        "kuala-lumpur-malaysia",
+        "george-town-malaysia",
+        "malacca-malaysia",
+        "ipoh-malaysia"
+      ],
+      "month": 2,
+      "date": "2027-02-06",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year"
+      ]
+    },
+    {
+      "id": "tet-2028",
+      "title": "Tết (Vietnamese New Year): many shops and sights close for about a week, transport sells out",
+      "kind": "culture",
+      "cityIds": [
+        "hanoi-vietnam",
+        "ho-chi-minh-city-vietnam",
+        "da-nang-vietnam",
+        "hue-vietnam",
+        "ninh-b-nh-vietnam",
+        "da-lat-vietnam",
+        "nha-trang-vietnam"
+      ],
+      "month": 1,
+      "date": "2028-01-26",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year",
+        "closures"
+      ]
+    },
+    {
+      "id": "lunar-new-year-2028",
+      "title": "Lunar New Year: two public holidays, busy travel and some closures",
+      "kind": "culture",
+      "cityIds": [
+        "singapore-singapore",
+        "kuala-lumpur-malaysia",
+        "george-town-malaysia",
+        "malacca-malaysia",
+        "ipoh-malaysia"
+      ],
+      "month": 1,
+      "date": "2028-01-26",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year"
+      ]
+    },
+    {
+      "id": "tet-2029",
+      "title": "Tết (Vietnamese New Year): many shops and sights close for about a week, transport sells out",
+      "kind": "culture",
+      "cityIds": [
+        "hanoi-vietnam",
+        "ho-chi-minh-city-vietnam",
+        "da-nang-vietnam",
+        "hue-vietnam",
+        "ninh-b-nh-vietnam",
+        "da-lat-vietnam",
+        "nha-trang-vietnam"
+      ],
+      "month": 2,
+      "date": "2029-02-13",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year",
+        "closures"
+      ]
+    },
+    {
+      "id": "lunar-new-year-2029",
+      "title": "Lunar New Year: two public holidays, busy travel and some closures",
+      "kind": "culture",
+      "cityIds": [
+        "singapore-singapore",
+        "kuala-lumpur-malaysia",
+        "george-town-malaysia",
+        "malacca-malaysia",
+        "ipoh-malaysia"
+      ],
+      "month": 2,
+      "date": "2029-02-13",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year"
+      ]
+    },
+    {
+      "id": "tet-2030",
+      "title": "Tết (Vietnamese New Year): many shops and sights close for about a week, transport sells out",
+      "kind": "culture",
+      "cityIds": [
+        "hanoi-vietnam",
+        "ho-chi-minh-city-vietnam",
+        "da-nang-vietnam",
+        "hue-vietnam",
+        "ninh-b-nh-vietnam",
+        "da-lat-vietnam",
+        "nha-trang-vietnam"
+      ],
+      "month": 2,
+      "date": "2030-02-03",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year",
+        "closures"
+      ]
+    },
+    {
+      "id": "lunar-new-year-2030",
+      "title": "Lunar New Year: two public holidays, busy travel and some closures",
+      "kind": "culture",
+      "cityIds": [
+        "singapore-singapore",
+        "kuala-lumpur-malaysia",
+        "george-town-malaysia",
+        "malacca-malaysia",
+        "ipoh-malaysia"
+      ],
+      "month": 2,
+      "date": "2030-02-03",
+      "recurring": false,
+      "tags": [
+        "holiday",
+        "lunar-new-year"
+      ]
     }
   ]
 }

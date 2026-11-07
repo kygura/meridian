@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { TRIP_COLORS, randomTripColor } from "./lib/tripColors";
 import { mergeTrips } from "./lib/tripTransfer";
+import { withMonths } from "./lib/season";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -12,6 +13,7 @@ import type {
   City,
   Trip,
   TripNode,
+  MonthSpan,
   TripOption,
   ShortlistEntry,
   TickerItem,
@@ -56,6 +58,12 @@ export interface MeridianState {
   addCityToActiveTrip: (node: TripNode) => void;
   removeNodeAt: (tripId: string, index: number) => void;
   replaceNodeAt: (tripId: string, index: number, node: TripNode) => void;
+  /** Place a stop in the season (or clear it with undefined). */
+  setStopMonths: (tripId: string, index: number, months: MonthSpan | undefined) => void;
+  /** The trip's own season, used while no stop is placed. */
+  setTripSeason: (tripId: string, season: MonthSpan | undefined) => void;
+  /** Plan the season for a year, or back to any year with undefined. */
+  setTripYear: (tripId: string, year: number | undefined) => void;
   reorderTripNodes: (tripId: string, fromIndex: number, toIndex: number) => void;
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
@@ -193,6 +201,30 @@ export const useMeridianStore = create<MeridianState>()(
       updateTripColor: (tripId, color) =>
         set((state) => ({
           trips: state.trips.map((t) => (t.id === tripId ? { ...t, color } : t)),
+        })),
+      setStopMonths: (tripId, index, months) =>
+        set((state) => ({
+          trips: state.trips.map((t) =>
+            t.id === tripId && t.nodes[index]
+              ? { ...t, nodes: t.nodes.map((n, i) => (i === index ? withMonths(n, months) : n)) }
+              : t
+          ),
+        })),
+      setTripSeason: (tripId, season) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            const { season: _old, ...rest } = t;
+            return season ? { ...rest, season } : rest;
+          }),
+        })),
+      setTripYear: (tripId, year) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            const { year: _old, ...rest } = t;
+            return year ? { ...rest, year } : rest;
+          }),
         })),
       addCityToTrip: (tripId, node) =>
         set((state) => ({

@@ -26,6 +26,16 @@ describe("tripTransfer", () => {
     expect(parsed[0].origin).toBe("manual");
   });
 
+  it("keeps seasons, years and stop months; drops invalid ones", () => {
+    const seasonal = trip("s", { season: { start: 2, end: 7 }, year: 2027, nodes: [{ ...node, months: { start: 2, end: 3 } }] });
+    const [back] = parseTripFile(serializeTrips([seasonal]));
+    expect(back).toMatchObject({ season: { start: 2, end: 7 }, year: 2027, nodes: [{ months: { start: 2, end: 3 } }] });
+    const [loose] = parseTripFile(JSON.stringify([{ id: "x", name: "X", nodes: [node], season: { start: 0, end: 4 }, year: "2027" }]));
+    expect(loose.season).toBeUndefined();
+    expect(loose.year).toBeUndefined();
+    expect(() => parseTripFile(JSON.stringify([{ id: "x", name: "X", nodes: [{ ...node, months: { start: 13, end: 1 } }] }]))).toThrow(/malformed/);
+  });
+
   it("accepts a bare array and defaults bad status/color", () => {
     const [t] = parseTripFile(JSON.stringify([{ id: "x", name: "X", status: "nope", nodes: [node] }]));
     expect(t.status).toBe("draft");
@@ -45,9 +55,13 @@ describe("tripTransfer", () => {
   });
 
   it("parses the committed trip plans file", () => {
-    const text = readFileSync(join(process.cwd(), "plans/trips-2027-2029.json"), "utf-8");
+    const text = readFileSync(join(process.cwd(), "plans/trips.json"), "utf-8");
     const trips = parseTripFile(text);
     expect(trips).toHaveLength(3);
-    for (const t of trips) expect(t.nodes.length).toBeGreaterThan(2);
+    for (const t of trips) {
+      expect(t.nodes.length).toBeGreaterThan(2);
+      expect(t.nodes.every((n) => n.months)).toBe(true); // seasonal: every stop placed in the year
+      expect(t.name).not.toMatch(/20\d\d/); // and not tied to one
+    }
   });
 });

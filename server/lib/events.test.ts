@@ -37,7 +37,13 @@ describe("data/events.json", () => {
     const early = await loadEvents(new Date("2026-01-01T00:00:00Z"));
     expect(dated(early)).toEqual(["eclipse-2026-08-12"]);
     expect(early.filter((e) => e.recurring)).toHaveLength(events.filter((e) => e.recurring).length);
-    expect(dated(await loadEvents(new Date("2027-10-01T00:00:00Z")))).toEqual(["eclipse-2028-01-26", "eclipse-2028-07-22"]); // next Jan and Jul occurrences
+    // Next Jan and Jul occurrences: the 2028 eclipses, plus Tết and Lunar New Year (26 Jan 2028).
+    expect(dated(await loadEvents(new Date("2027-10-01T00:00:00Z")))).toEqual([
+      "eclipse-2028-01-26",
+      "eclipse-2028-07-22",
+      "tet-2028",
+      "lunar-new-year-2028",
+    ]);
     const later = await loadEvents(new Date("2027-01-01T00:00:00Z"));
     expect(later.find((e) => e.id === "eclipse-2026-08-12")).toBeUndefined();
     expect(later.find((e) => e.id === "eclipse-2027-08-02")).toBeDefined();

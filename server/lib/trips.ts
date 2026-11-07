@@ -24,12 +24,17 @@ const TOMBSTONE_TTL_MS = 180 * 24 * 3600 * 1000;
 
 const store = createJsonStore<TripsFile>("trips.json", () => ({ version: 1, trips: [], deleted: [] }));
 
+const month = z.number().int().min(1).max(12);
+/** Months with no year (src/types.ts MonthSpan); start > end wraps the new year. */
+const monthSpanSchema = z.object({ start: month, end: month });
+
 const nodeSchema = z.object({
   cityId: z.string().min(1).max(200),
   name: z.string().max(200),
   iata: z.string().max(8).optional(),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
+  months: monthSpanSchema.optional(),
 });
 
 export const tripInputSchema = z.object({
@@ -37,6 +42,8 @@ export const tripInputSchema = z.object({
   color: z.string().max(32),
   status: z.enum(["draft", "scouting", "confirmed"]),
   nodes: z.array(nodeSchema).max(200),
+  season: monthSpanSchema.optional(),
+  year: z.number().int().min(2000).max(2100).optional(),
 });
 
 export type TripInput = z.infer<typeof tripInputSchema>;

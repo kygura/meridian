@@ -48,7 +48,14 @@ _Avoid_: incident, disaster (too narrow)
 
 **Trip**:
 A named, ordered list of city nodes (legs between consecutive nodes), kept in the browser
-and synced to the server while the journal is unlocked (ADR 0006).
+and synced to the server while the journal is unlocked (ADR 0006). A trip is a Season you can
+take any year; choosing a year makes it concrete (ADR 0007).
+
+**Season**:
+The months a trip or a stop happens in, with no year: a MonthSpan such as February to July,
+wrapping the new year when it starts after it ends. Each stop can carry its own months; the
+trip's season runs from the first placed stop to the last.
+_Avoid_: dates, trip dates (those exist only once a year is chosen)
 _Avoid_: itinerary
 
 **Leg**:

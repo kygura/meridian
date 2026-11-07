@@ -17,6 +17,8 @@ import { Badge, Button, CitySearch, EmptyState, IconButton, toast, useIsDesktop 
 import { IconArrowLeft, IconChevronDown, IconChevronUp, IconDrag, IconExternal, IconPin, IconPlane, IconTrash } from "../../../ui/icons";
 import type { Trip } from "../../../types";
 import { useTripMoney } from "./money";
+import { StopSeason, useStopDates, useTripSeasonData } from "./season";
+import { legDepartureHint } from "../../../lib/season";
 
 interface StopListProps {
   trip: Trip;
@@ -35,6 +37,8 @@ export default function StopList({ trip, legs }: StopListProps) {
   const [dragKey, setDragKey] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
   const keys = useMemo(() => stopKeys(trip.nodes), [trip.nodes]);
+  const seasonData = useTripSeasonData(trip);
+  const dates = useStopDates(trip);
   const count = trip.nodes.length;
   const tripId = trip.id;
 
@@ -179,7 +183,16 @@ export default function StopList({ trip, legs }: StopListProps) {
                     <IconButton label={`Remove ${node.name}`} icon={<IconTrash size={18} />} size={sz} onClick={() => remove(i)} />
                   </div>
                 </div>
-                {leg ? <LegRow leg={leg} tripId={tripId} size={sz} booking={findLegBooking(bookings, tripId, i)} /> : null}
+                <StopSeason trip={trip} index={i} node={node} data={seasonData} dates={dates[i]} />
+                {leg ? (
+                  <LegRow
+                    leg={leg}
+                    tripId={tripId}
+                    size={sz}
+                    booking={findLegBooking(bookings, tripId, i)}
+                    departureDateHint={legDepartureHint(trip, i)}
+                  />
+                ) : null}
               </li>
             );
           })}
@@ -221,16 +234,21 @@ function LegRow({
   tripId,
   booking,
   size,
+  departureDateHint,
 }: {
   leg: TripLeg;
   tripId: string;
   booking: ReturnType<typeof findLegBooking>;
   size: "sm" | "md";
+  /** Set once the trip is planned for a year: the next stop's first day. */
+  departureDateHint?: string;
 }) {
   const live = booking && booking.status === "booked";
   const money = useTripMoney();
   const book = () =>
-    useMeridianStore.getState().openBookingModal({ tripId, legIndex: leg.index, origin: leg.from, dest: leg.to });
+    useMeridianStore
+      .getState()
+      .openBookingModal({ tripId, legIndex: leg.index, origin: leg.from, dest: leg.to, departureDateHint });
 
   return (
     <div className="trips-ed-leg">

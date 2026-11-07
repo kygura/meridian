@@ -9,7 +9,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | Screen | What it does |
 |---|---|
 | **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate and news. Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
-| **Trips** | Planned trips as ordered city routes with flight estimates, plus past journeys from the journal. |
+| **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. Plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
 | **Plan › Watches** | Saved Repeat-a-trip searches, checked daily, that alert when a match comes into booking range at a good price. |
@@ -79,7 +79,7 @@ server/         Hono API: app.ts (routes), index.ts (Node server), vercel.ts (Ve
   lib/          domain logic, storage (jsonStore.ts, pgDocuments.ts), agent tools
 scripts/        dataset builders, Vercel build, data copy to Postgres
 data/           read-only datasets (cities, airports, seasonality, events, phenomena)
-plans/          trip plans as importable files (Settings › Trips › Import)
+plans/          seasonal trip plans as an importable file (Settings › Trips › Import)
 docs/
   adr/          architecture decisions, numbered
   design/       UI and feature design briefs

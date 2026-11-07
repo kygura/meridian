@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { getDataPath } from "./paths.js";
 import { getCityById } from "./cities.js";
-import { loadEvents } from "./replayService.js";
+import { loadAllEvents, loadEvents } from "./replayService.js";
 import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
 
 // Map overlay data that is not a metric surface: dated events (data/events.json) placed
@@ -58,6 +58,19 @@ export function anomaliesFor(month?: number): { asOf: string; note?: string; ite
   const data = loadPhenomena();
   const items = month ? data.items.filter((a) => !a.months || a.months.includes(month)) : data.items;
   return { asOf: data.asOf, note: data.note, items };
+}
+
+/**
+ * Every event touching any of these cities, in any month: recurring ones, and dated
+ * ones that haven't passed (a trip planned for a later year needs that year's dates).
+ */
+export async function eventsForCities(cityIds: string[], now: Date = new Date()): Promise<MeridianEvent[]> {
+  const wanted = new Set(cityIds);
+  const today = now.toISOString().slice(0, 10);
+  return (await loadAllEvents())
+    .filter((e) => e.recurring || !e.date || e.date >= today)
+    .map((e) => ({ ...e, cityIds: e.cityIds.filter((id) => wanted.has(id)) }))
+    .filter((e) => e.cityIds.length > 0);
 }
 
 /** Events in a month (1-12), one point per city they touch. Unknown city ids are dropped. */
