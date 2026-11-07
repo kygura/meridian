@@ -38,7 +38,7 @@ It keeps documents already in the database unless you pass `--overwrite`.
   - `MERIDIAN_TOKEN` gates the journal, replay, import, watches and trips APIs. Without it they return 401, and trips stay in each browser.
   - `OPENAI_API_KEY` is optional. Without it the agent uses its mock path.
   - `ALERT_WEBHOOK_URL` is optional.
-- Daily watch run: nothing schedules `POST /api/watches/run` yet (see `wiki/tensions.md`, T6).
+- Daily watch run: Render needs a Cron Job (paid) to call `POST /api/watches/run`. Vercel runs it for free (see below).
 
 ## Vercel
 

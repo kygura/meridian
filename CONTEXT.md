@@ -3,8 +3,8 @@
 Travel-intelligence app: a flat map over a world city database, with trip planning,
 flight booking (test mode), seasonality insight, a travel journal, and an AI research agent.
 
-The UI is described by `DESIGN-v3.md` (brief) and `src/shell/CONTRACT.md` (how the screens fit).
-Those supersede the UI sections of the older `DESIGN-*.md` files. User-facing labels differ from
+The UI is described by `docs/design/DESIGN-v3.md` (brief) and `src/shell/CONTRACT.md` (how the screens fit).
+Those supersede the UI sections of the older `docs/design/DESIGN-*.md` files. User-facing labels differ from
 some terms below: "Repeat a trip" for Replay, "When to go" for the seasonality heatmap, "Crowds"
 for the crowd proxy, "Ask" for the agent panel.
 
