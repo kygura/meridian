@@ -271,3 +271,12 @@ export function sortRows(
 
   return [...pinned, ...sorted];
 }
+
+/**
+ * Formats the dataset's climate window ("2015-2024") for display ("2015–2024").
+ * Returns null when the window is missing or not a "YYYY-YYYY" range.
+ */
+export function formatClimateWindow(window: string | null | undefined): string | null {
+  const m = /^\s*(\d{4})\s*[-–]\s*(\d{4})\s*$/.exec(window ?? "");
+  return m ? `${m[1]}–${m[2]}` : null;
+}

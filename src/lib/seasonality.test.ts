@@ -7,6 +7,7 @@ import {
   bestWindow,
   isMonthInWindow,
   formatBestSpan,
+  formatClimateWindow,
   assembleCityRows,
   sortRows,
   type HeatRowDef,
@@ -225,5 +226,21 @@ describe("sortRows (DESIGN §3.3)", () => {
       "az"
     );
     expect(sorted[0]?.cityId).toBe("z");
+  });
+});
+
+describe("formatClimateWindow", () => {
+  it("renders the dataset window with an en dash", () => {
+    expect(formatClimateWindow("2015-2024")).toBe("2015–2024");
+    expect(formatClimateWindow("2010-2019")).toBe("2010–2019");
+  });
+  it("accepts an already-dashed window and stray whitespace", () => {
+    expect(formatClimateWindow(" 2015–2024 ")).toBe("2015–2024");
+  });
+  it("returns null for missing or malformed windows", () => {
+    expect(formatClimateWindow(null)).toBeNull();
+    expect(formatClimateWindow(undefined)).toBeNull();
+    expect(formatClimateWindow("")).toBeNull();
+    expect(formatClimateWindow("recent")).toBeNull();
   });
 });

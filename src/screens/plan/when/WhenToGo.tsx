@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
 import { apiUrl } from "../../../lib/api";
-import { assembleCityRows, bestWindow, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
+import { assembleCityRows, bestWindow, formatClimateWindow, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
 import { fetchRegions, fetchSeasonality, type SeasonMonth } from "../../../lib/seasonalityApi";
 import { MONTH_NAMES, MONTH_SHORT } from "../../../lib/repeatCopy";
 import { WORLD_REGIONS, countryRegions, type WorldRegion } from "../../../lib/worldRegion";
@@ -81,6 +81,7 @@ export default function WhenToGo() {
   const [sort, setSort] = useState<SortMode>("best");
   const [unavailable, setUnavailable] = useState(false);
   const [regionsError, setRegionsError] = useState(false);
+  const [climateWindow, setClimateWindow] = useState<string | null>(null);
   const [inflight, setInflight] = useState(0);
   const [attempt, setAttempt] = useState(0);
   const inflightRef = useRef(new Set<string>());
@@ -116,8 +117,9 @@ export default function WhenToGo() {
       setInflight(inflightRef.current.size);
     };
     fetchSeasonality(missing)
-      .then((record) => {
+      .then(({ cities: record, window: win }) => {
         settle();
+        if (win) setClimateWindow(win);
         // Merge even when this effect was superseded: the data is still good, and the
         // newer run skipped these ids because they were in flight.
         mergeSeasonality(record);
@@ -128,7 +130,7 @@ export default function WhenToGo() {
           nulls.forEach((id) => retriedRef.current.add(id));
           retryTimer = window.setTimeout(() => {
             fetchSeasonality(nulls)
-              .then((again) => mergeSeasonality(again))
+              .then(({ cities: again }) => mergeSeasonality(again))
               .catch(() => {});
           }, NULL_RETRY_MS);
         }
@@ -385,7 +387,10 @@ export default function WhenToGo() {
               <Spinner size={14} /> Loading climate data
             </>
           ) : (
-            "From 1991–2020 climate averages"
+            (() => {
+              const span = formatClimateWindow(climateWindow);
+              return span ? `From ${span} climate averages` : "From recent climate averages";
+            })()
           )}
         </span>
       </div>

@@ -339,6 +339,11 @@ export async function getCitySeasonality(cityId: string): Promise<MonthSeasonali
 }
 
 /** Per-country monthly average of covered cities' scores (seed + runtime cache merged). */
+/** The "YYYY-YYYY" climate window the dataset was built from. */
+export function getSeasonalityWindow(): string {
+  return loadSeasonality().window || WINDOW;
+}
+
 export function getRegionAggregates(): RegionAggregate[] {
   const dataset = mergedCities();
   const cities = getCities();

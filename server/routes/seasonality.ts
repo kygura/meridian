@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import {
   getRegionAggregates,
+  getSeasonalityWindow,
   peekCitySeasonality,
   resolveCitySeasonality,
   type MonthSeasonality,
@@ -81,7 +82,7 @@ seasonality.get("/", async (c) => {
     cities[id] = result.kind === "hit" ? result.months : null;
   });
 
-  return c.json({ cities });
+  return c.json({ cities, window: getSeasonalityWindow() });
 });
 
 /**

@@ -121,6 +121,12 @@ describe("GET /api/seasonality?cityIds=", () => {
     expect(body.cities["nowhere-nowhere"]).toBeNull();
   });
 
+  it("includes the dataset's climate window", async () => {
+    const res = await app.request("/?cityIds=paris-france");
+    const body = await res.json();
+    expect(body.window).toMatch(/^\d{4}-\d{4}$/);
+  });
+
   it("rejects more than 100 ids", async () => {
     const ids = Array.from({ length: 101 }, (_, i) => `city-${i}`).join(",");
     const res = await app.request(`/?cityIds=${ids}`);
