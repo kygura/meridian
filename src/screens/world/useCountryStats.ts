@@ -46,7 +46,11 @@ export function useCountryStats(): { stats: (country: string) => CountryStats | 
     ).catch(() => live && setError(true));
     if (!useMeridianStore.getState().seasonalityRegions)
       fetchRegions()
-        .then((r) => useMeridianStore.getState().setSeasonalityRegions(r))
+        .then((r) => {
+          const store = useMeridianStore.getState();
+          store.setSeasonalityRegions(r.regions);
+          store.setSeasonalityWindow(r.window);
+        })
         .catch(() => {
           /* weather-now is optional; the year-round surface stands in */
         });

@@ -149,6 +149,27 @@ export function formatBestSpan(window: BestWindow | null): string {
   return `${MONTH_ABBR[window.startMonth]}–${MONTH_ABBR[window.endMonth]}`;
 }
 
+// ── Data window caption ─────────────────────────────────────────────
+
+/**
+ * Formats the dataset's `window` ("2015-2024") for display: "2015–2024" with
+ * an en dash, "2020" for a single year. Returns null for anything that isn't
+ * a four-digit year or year range, so callers can fall back to neutral copy.
+ */
+export function formatClimateWindow(window: string | null | undefined): string | null {
+  const m = /^\s*(\d{4})\s*(?:[-–—]\s*(\d{4}))?\s*$/.exec(window ?? "");
+  if (!m) return null;
+  const [, start, end] = m;
+  if (!end || end === start) return start!;
+  return `${start}–${end}`;
+}
+
+/** Caption under the When-to-go legend: "From 2015–2024 climate averages". */
+export function climateWindowCaption(window: string | null | undefined): string {
+  const range = formatClimateWindow(window);
+  return range ? `From ${range} climate averages` : "From historical climate averages";
+}
+
 // ── Row assembly (DESIGN-heatmap.md §5) ─────────────────────────────
 
 export type RowBadge = "SELECTED" | "SHORTLIST" | "TRIP" | "REGION";

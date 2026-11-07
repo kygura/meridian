@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
 import { apiUrl } from "../../../lib/api";
-import { assembleCityRows, bestWindow, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
+import { assembleCityRows, bestWindow, climateWindowCaption, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
 import { fetchRegions, fetchSeasonality, type SeasonMonth } from "../../../lib/seasonalityApi";
 import { MONTH_NAMES, MONTH_SHORT } from "../../../lib/repeatCopy";
 import { WORLD_REGIONS, countryRegions, type WorldRegion } from "../../../lib/worldRegion";
@@ -72,6 +72,8 @@ export default function WhenToGo() {
   const mergeSeasonality = useMeridianStore((s) => s.mergeSeasonality);
   const regions = useMeridianStore((s) => s.seasonalityRegions);
   const setRegions = useMeridianStore((s) => s.setSeasonalityRegions);
+  const climateWindow = useMeridianStore((s) => s.seasonalityWindow);
+  const setClimateWindow = useMeridianStore((s) => s.setSeasonalityWindow);
   const showRegions = useMeridianStore((s) => s.seasonsShowRegions);
   const setShowRegions = useMeridianStore((s) => s.setSeasonsShowRegions);
 
@@ -116,8 +118,9 @@ export default function WhenToGo() {
       setInflight(inflightRef.current.size);
     };
     fetchSeasonality(missing)
-      .then((record) => {
+      .then(({ cities: record, window: dataWindow }) => {
         settle();
+        setClimateWindow(dataWindow);
         // Merge even when this effect was superseded: the data is still good, and the
         // newer run skipped these ids because they were in flight.
         mergeSeasonality(record);
@@ -128,7 +131,7 @@ export default function WhenToGo() {
           nulls.forEach((id) => retriedRef.current.add(id));
           retryTimer = window.setTimeout(() => {
             fetchSeasonality(nulls)
-              .then((again) => mergeSeasonality(again))
+              .then((again) => mergeSeasonality(again.cities))
               .catch(() => {});
           }, NULL_RETRY_MS);
         }
@@ -152,7 +155,10 @@ export default function WhenToGo() {
     setRegionsLoading(true);
     setRegionsError(false);
     fetchRegions()
-      .then((r) => !cancelled && setRegions(r))
+      .then((r) => {
+        setClimateWindow(r.window);
+        if (!cancelled) setRegions(r.regions);
+      })
       .catch(() => !cancelled && setRegionsError(true))
       .finally(() => !cancelled && setRegionsLoading(false));
     return () => {
@@ -385,7 +391,7 @@ export default function WhenToGo() {
               <Spinner size={14} /> Loading climate data
             </>
           ) : (
-            "From 1991–2020 climate averages"
+            climateWindowCaption(climateWindow)
           )}
         </span>
       </div>

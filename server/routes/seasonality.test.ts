@@ -105,6 +105,7 @@ describe("GET /api/seasonality/regions", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body.regions)).toBe(true);
+    expect(body.window).toBe("2015-2024");
     const france = body.regions.find((r: { region: string }) => r.region === "France");
     expect(france).toBeDefined();
     expect(france.months).toHaveLength(12);
@@ -119,6 +120,7 @@ describe("GET /api/seasonality?cityIds=", () => {
     const body = await res.json();
     expect(body.cities["paris-france"]).toHaveLength(12);
     expect(body.cities["nowhere-nowhere"]).toBeNull();
+    expect(body.window).toBe("2015-2024");
   });
 
   it("rejects more than 100 ids", async () => {
