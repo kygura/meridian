@@ -23,7 +23,7 @@ import {
   useJournalToken,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
-import { CITY_METRICS, sentenceCase, useCityMetrics, useCitySeasonality } from "./cityData";
+import { ago, CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, usePlaceNews, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -94,6 +94,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <BestMonths cityId={city.id} />
         <AtAGlance city={city} />
         <Visits city={city} />
+        <Watch city={city} />
         <News city={city} />
       </div>
     </Sheet>
@@ -421,9 +422,140 @@ function Visits({ city }: { city: City }) {
   );
 }
 
+// ── Watch: advisories and recurring risk news ───────────────────────
+
+function Watch({ city }: { city: City }) {
+  const { data } = usePlaceNews(city.id);
+  if (!data) return null;
+  const { advisories, flags } = data;
+  // A curated advisory already covers its topic; don't repeat it as a news flag.
+  const covered = new Set(advisories.map((a) => a.topic).filter(Boolean));
+  const newsFlags = flags.filter((f) => !covered.has(f.topic)).slice(0, 3);
+  if (!advisories.length && !newsFlags.length) return null;
+  const country = displayCountry(city.country);
+  return (
+    <section className="map-city-section" aria-labelledby={`${city.id}-watch`}>
+      <h3 className="map-city-h" id={`${city.id}-watch`}>
+        Watch in {country}
+      </h3>
+      <ul className="map-watch">
+        {advisories.map((a) => (
+          <li key={a.id} className="map-watch-item" data-sev={a.severity}>
+            <span className="map-watch-kicker">
+              {a.kind === "conflict" ? "Conflict" : (TOPIC_LABELS[a.topic as NewsTopic] ?? "Advisory")}
+              {a.since ? ` · since ${fmtSince(a.since)}` : ""}
+            </span>
+            <span className="map-watch-title">{a.label}</span>
+            {a.detail ? <span className="map-watch-detail">{a.detail}</span> : null}
+            {a.sources?.length ? (
+              <span className="map-watch-sources">
+                {a.sources.map((src, i) => (
+                  <a key={src.url} href={src.url} target="_blank" rel="noopener noreferrer">
+                    {i === 0 ? "Sources: " : ""}
+                    {src.title}
+                  </a>
+                ))}
+              </span>
+            ) : null}
+          </li>
+        ))}
+        {newsFlags.map((f) => (
+          <li key={f.topic} className="map-watch-item" data-sev={f.severity}>
+            <span className="map-watch-kicker">
+              {TOPIC_LABELS[f.topic]} · {f.count} {f.count === 1 ? "headline" : "headlines"} · in the news
+            </span>
+            {f.url ? (
+              <a className="map-watch-title" href={f.url} target="_blank" rel="noopener noreferrer">
+                {f.headline}
+              </a>
+            ) : (
+              <span className="map-watch-title">{f.headline}</span>
+            )}
+            <span className="map-watch-detail">Latest {ago(f.latest).toLowerCase()}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function fmtSince(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return y && m ? `${MONTH_SHORT[m - 1]} ${y}` : ym;
+}
+
 // ── News ────────────────────────────────────────────────────────────
 
+const NEWS_LIMIT = 5;
+
+/** Local headlines (city, then country) from the place search; the world feed as fallback. */
 function News({ city }: { city: City }) {
+  const place = usePlaceNews(city.id);
+  const placeItems = useMemo(() => {
+    const all = place.data?.available ? place.data.items : [];
+    // Headlines that name the place first; search hits about elsewhere only as filler.
+    const named = all.filter((i) => i.mentions !== false);
+    const items = named.length >= 3 ? named : all;
+    const recent = items.filter((i) => Date.now() - Date.parse(i.pubDate) < 21 * 86_400_000);
+    const pool = recent.length >= 3 ? recent : items;
+    const cityFirst = [...pool.filter((i) => i.scope === "city"), ...pool.filter((i) => i.scope === "country")];
+    return cityFirst.slice(0, NEWS_LIMIT);
+  }, [place.data]);
+
+  if (place.status === "loading")
+    return (
+      <section className="map-city-section" aria-label="News">
+        <h3 className="map-city-h">News</h3>
+        <Skeleton lines={3} />
+      </section>
+    );
+  if (!placeItems.length) return <WorldNews city={city} />;
+
+  const country = displayCountry(city.country);
+  const hasCity = placeItems.some((i) => i.scope === "city");
+  return (
+    <section className="map-city-section" aria-labelledby={`${city.id}-news`}>
+      <h3 className="map-city-h" id={`${city.id}-news`}>
+        {hasCity && city.name !== country ? `News from ${city.name} and ${country}` : `News from ${country}`}
+      </h3>
+      <ul className="map-list">
+        {placeItems.map((it) => {
+          const meta = [ago(it.pubDate), it.severity > 1 ? it.topics.map((t) => TOPIC_LABELS[t]).join(", ") : ""]
+            .filter(Boolean)
+            .join(" · ");
+          const inner = (
+            <>
+              <span className="map-list-title">{it.title}</span>
+              <span className="map-list-meta">
+                {it.source ? (
+                  <>
+                    {/* Publisher names can be right-to-left; keep them from reordering the line. */}
+                    <bdi>{it.source}</bdi>
+                    {meta ? " · " : ""}
+                  </>
+                ) : null}
+                {meta}
+              </span>
+            </>
+          );
+          return (
+            <li key={it.url || it.title}>
+              {it.url ? (
+                <a className="map-list-item" href={it.url} target="_blank" rel="noopener noreferrer">
+                  {inner}
+                </a>
+              ) : (
+                <div className="map-list-item">{inner}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function WorldNews({ city }: { city: City }) {
   const { items, status, reload } = useNews();
   const country = displayCountry(city.country);
   const local = useMemo(() => newsForCountry(items, city.country), [items, city.country]);

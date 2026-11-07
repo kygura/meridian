@@ -1,34 +1,425 @@
 {
   "version": 1,
   "asOf": "2026-11",
-  "note": "Curated seed list. Conflicts are standing travel advisories; hazards are recurring seasonal risks by month. Check current advisories before travel.",
+  "note": "Curated seed list. Conflicts and advisories are standing; hazards are recurring seasonal risks by month. Check current advisories before travel.",
   "items": [
-    { "id": "conflict-ukraine", "kind": "conflict", "type": "war", "label": "War in eastern and southern Ukraine", "country": "Ukraine", "lat": 48.5, "lng": 36.5, "severity": 3 },
-    { "id": "conflict-gaza", "kind": "conflict", "type": "war", "label": "Gaza conflict", "country": "Israel", "lat": 31.45, "lng": 34.4, "severity": 3 },
-    { "id": "conflict-sudan", "kind": "conflict", "type": "war", "label": "Civil war in Sudan", "country": "Sudan", "lat": 15.5, "lng": 32.5, "severity": 3 },
-    { "id": "conflict-drc-east", "kind": "conflict", "type": "armed-groups", "label": "Armed conflict in eastern DR Congo", "country": "Congo (Kinshasa)", "lat": -1.7, "lng": 29.2, "severity": 2 },
-    { "id": "conflict-yemen", "kind": "conflict", "type": "war", "label": "Conflict in Yemen", "country": "Yemen", "lat": 15.35, "lng": 44.2, "severity": 2 },
-    { "id": "conflict-myanmar", "kind": "conflict", "type": "civil-war", "label": "Civil war in Myanmar", "country": "Burma", "lat": 21.0, "lng": 96.0, "severity": 2 },
-    { "id": "conflict-sahel", "kind": "conflict", "type": "insurgency", "label": "Insurgency across the central Sahel", "country": "Mali", "lat": 14.5, "lng": -2.5, "severity": 2 },
-    { "id": "conflict-sahel-bf", "kind": "conflict", "type": "insurgency", "label": "Insurgency in Burkina Faso", "country": "Burkina Faso", "lat": 13.0, "lng": -1.0, "severity": 2 },
-    { "id": "conflict-haiti", "kind": "conflict", "type": "unrest", "label": "Gang violence around Port-au-Prince", "country": "Haiti", "lat": 18.55, "lng": -72.3, "severity": 2 },
-    { "id": "conflict-somalia", "kind": "conflict", "type": "insurgency", "label": "Insurgency in Somalia", "country": "Somalia", "lat": 3.0, "lng": 45.3, "severity": 2 },
-
-    { "id": "hazard-atlantic-hurricanes", "kind": "hazard", "type": "storm", "label": "Atlantic hurricane season", "lat": 20.0, "lng": -72.0, "severity": 2, "months": [6, 7, 8, 9, 10, 11], "peak": [8, 9, 10] },
-    { "id": "hazard-wpac-typhoons", "kind": "hazard", "type": "storm", "label": "West Pacific typhoon season", "lat": 18.0, "lng": 127.0, "severity": 2, "months": [6, 7, 8, 9, 10, 11], "peak": [8, 9] },
-    { "id": "hazard-bay-of-bengal-cyclones", "kind": "hazard", "type": "storm", "label": "Bay of Bengal cyclones", "lat": 17.0, "lng": 88.0, "severity": 2, "months": [4, 5, 10, 11, 12], "peak": [5, 11] },
-    { "id": "hazard-south-asia-monsoon", "kind": "hazard", "type": "flood", "label": "South Asian monsoon floods", "lat": 24.5, "lng": 89.5, "severity": 2, "months": [6, 7, 8, 9], "peak": [7, 8] },
-    { "id": "hazard-north-india-smog", "kind": "hazard", "type": "air", "label": "Winter smog over the Indo-Gangetic plain", "lat": 28.6, "lng": 77.2, "severity": 2, "months": [11, 12, 1], "peak": [11] },
-    { "id": "hazard-se-asia-haze", "kind": "hazard", "type": "air", "label": "Burning-season haze in mainland Southeast Asia", "lat": 18.8, "lng": 99.0, "severity": 1, "months": [2, 3, 4], "peak": [3] },
-    { "id": "hazard-sumatra-haze", "kind": "hazard", "type": "air", "label": "Peatland fire haze, Sumatra and Borneo", "lat": 0.5, "lng": 106.0, "severity": 1, "months": [8, 9, 10], "peak": [9] },
-    { "id": "hazard-australia-bushfire", "kind": "hazard", "type": "fire", "label": "Southeast Australian bushfire season", "lat": -35.5, "lng": 148.5, "severity": 2, "months": [12, 1, 2], "peak": [1] },
-    { "id": "hazard-california-wildfire", "kind": "hazard", "type": "fire", "label": "California wildfire season", "lat": 38.5, "lng": -121.5, "severity": 2, "months": [8, 9, 10, 11], "peak": [9, 10] },
-    { "id": "hazard-mediterranean-heat", "kind": "hazard", "type": "heat", "label": "Mediterranean heatwaves and wildfires", "lat": 38.5, "lng": 22.0, "severity": 1, "months": [7, 8], "peak": [7] },
-    { "id": "hazard-gulf-heat", "kind": "hazard", "type": "heat", "label": "Extreme Gulf summer heat", "lat": 25.2, "lng": 55.3, "severity": 2, "months": [6, 7, 8, 9], "peak": [7, 8] },
-    { "id": "hazard-amazon-fires", "kind": "hazard", "type": "fire", "label": "Amazon and Cerrado fire season", "lat": -10.0, "lng": -55.0, "severity": 1, "months": [8, 9, 10], "peak": [9] },
-    { "id": "hazard-harmattan", "kind": "hazard", "type": "dust", "label": "Harmattan dust over West Africa", "lat": 12.0, "lng": 2.0, "severity": 1, "months": [12, 1, 2], "peak": [1] },
-    { "id": "hazard-east-africa-rains", "kind": "hazard", "type": "flood", "label": "East African long rains", "lat": -1.3, "lng": 36.8, "severity": 1, "months": [4, 5], "peak": [4] },
-    { "id": "hazard-tornado-alley", "kind": "hazard", "type": "storm", "label": "US tornado season", "lat": 36.0, "lng": -97.5, "severity": 1, "months": [4, 5, 6], "peak": [5] },
-    { "id": "hazard-japan-rainy", "kind": "hazard", "type": "flood", "label": "Tsuyu rainy season, southern Japan", "lat": 33.5, "lng": 131.0, "severity": 1, "months": [6, 7], "peak": [6] }
+    {
+      "id": "conflict-ukraine",
+      "kind": "conflict",
+      "type": "war",
+      "label": "War in eastern and southern Ukraine",
+      "country": "Ukraine",
+      "lat": 48.5,
+      "lng": 36.5,
+      "severity": 3
+    },
+    {
+      "id": "conflict-gaza",
+      "kind": "conflict",
+      "type": "war",
+      "label": "Gaza conflict",
+      "country": "Israel",
+      "lat": 31.45,
+      "lng": 34.4,
+      "severity": 3
+    },
+    {
+      "id": "conflict-sudan",
+      "kind": "conflict",
+      "type": "war",
+      "label": "Civil war in Sudan",
+      "country": "Sudan",
+      "lat": 15.5,
+      "lng": 32.5,
+      "severity": 3
+    },
+    {
+      "id": "conflict-drc-east",
+      "kind": "conflict",
+      "type": "armed-groups",
+      "label": "Armed conflict in eastern DR Congo",
+      "country": "Congo (Kinshasa)",
+      "lat": -1.7,
+      "lng": 29.2,
+      "severity": 2
+    },
+    {
+      "id": "conflict-yemen",
+      "kind": "conflict",
+      "type": "war",
+      "label": "Conflict in Yemen",
+      "country": "Yemen",
+      "lat": 15.35,
+      "lng": 44.2,
+      "severity": 2
+    },
+    {
+      "id": "conflict-myanmar",
+      "kind": "conflict",
+      "type": "civil-war",
+      "label": "Civil war in Myanmar",
+      "country": "Burma",
+      "lat": 21.0,
+      "lng": 96.0,
+      "severity": 2
+    },
+    {
+      "id": "conflict-sahel",
+      "kind": "conflict",
+      "type": "insurgency",
+      "label": "Insurgency across the central Sahel",
+      "country": "Mali",
+      "lat": 14.5,
+      "lng": -2.5,
+      "severity": 2
+    },
+    {
+      "id": "conflict-sahel-bf",
+      "kind": "conflict",
+      "type": "insurgency",
+      "label": "Insurgency in Burkina Faso",
+      "country": "Burkina Faso",
+      "lat": 13.0,
+      "lng": -1.0,
+      "severity": 2
+    },
+    {
+      "id": "conflict-haiti",
+      "kind": "conflict",
+      "type": "unrest",
+      "label": "Gang violence around Port-au-Prince",
+      "country": "Haiti",
+      "lat": 18.55,
+      "lng": -72.3,
+      "severity": 2
+    },
+    {
+      "id": "conflict-somalia",
+      "kind": "conflict",
+      "type": "insurgency",
+      "label": "Insurgency in Somalia",
+      "country": "Somalia",
+      "lat": 3.0,
+      "lng": 45.3,
+      "severity": 2
+    },
+    {
+      "id": "advisory-spain-high-speed-rail",
+      "kind": "advisory",
+      "type": "rail",
+      "topic": "transport",
+      "label": "High-speed rail safety in Spain",
+      "detail": "Two fatal high-speed crashes in 2026: Adamuz, Córdoba (18 Jan, at least 41 dead) and Urda, Toledo, on the Madrid–Seville line (28 Oct, at least 68 dead). Investigators are looking at a signalling order in the October crash; drivers' union SEMAF had warned the track operator Adif about track wear months before the January crash.",
+      "country": "Spain",
+      "lat": 39.41,
+      "lng": -3.71,
+      "severity": 2,
+      "since": "2026-01",
+      "sources": [
+        {
+          "title": "NPR: Spain train derailment (Jan 2026)",
+          "url": "https://www.npr.org/2026/01/18/nx-s1-5681493/spain-train-derailment"
+        },
+        {
+          "title": "Al Jazeera: high-speed crash kills at least 40 (Jan 2026)",
+          "url": "https://www.aljazeera.com/news/2026/1/18/two-high-speed-trains-collide-in-spain-killing"
+        },
+        {
+          "title": "CNN: What caused the deadly train crash in Spain? (Oct 2026)",
+          "url": "https://www.cnn.com/2026/10/28/europe/spain-train-crash-cause-what-we-know-intl"
+        },
+        {
+          "title": "ABC News: 'Inexplicable' order probed as cause (Oct 2026)",
+          "url": "https://abcnews.com/International/10-killed-train-collision-high-speed-line-spain/story?id=137633323"
+        }
+      ]
+    },
+    {
+      "id": "hazard-atlantic-hurricanes",
+      "kind": "hazard",
+      "type": "storm",
+      "label": "Atlantic hurricane season",
+      "lat": 20.0,
+      "lng": -72.0,
+      "severity": 2,
+      "months": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "peak": [
+        8,
+        9,
+        10
+      ]
+    },
+    {
+      "id": "hazard-wpac-typhoons",
+      "kind": "hazard",
+      "type": "storm",
+      "label": "West Pacific typhoon season",
+      "lat": 18.0,
+      "lng": 127.0,
+      "severity": 2,
+      "months": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "peak": [
+        8,
+        9
+      ]
+    },
+    {
+      "id": "hazard-bay-of-bengal-cyclones",
+      "kind": "hazard",
+      "type": "storm",
+      "label": "Bay of Bengal cyclones",
+      "lat": 17.0,
+      "lng": 88.0,
+      "severity": 2,
+      "months": [
+        4,
+        5,
+        10,
+        11,
+        12
+      ],
+      "peak": [
+        5,
+        11
+      ]
+    },
+    {
+      "id": "hazard-south-asia-monsoon",
+      "kind": "hazard",
+      "type": "flood",
+      "label": "South Asian monsoon floods",
+      "lat": 24.5,
+      "lng": 89.5,
+      "severity": 2,
+      "months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "peak": [
+        7,
+        8
+      ]
+    },
+    {
+      "id": "hazard-north-india-smog",
+      "kind": "hazard",
+      "type": "air",
+      "label": "Winter smog over the Indo-Gangetic plain",
+      "lat": 28.6,
+      "lng": 77.2,
+      "severity": 2,
+      "months": [
+        11,
+        12,
+        1
+      ],
+      "peak": [
+        11
+      ]
+    },
+    {
+      "id": "hazard-se-asia-haze",
+      "kind": "hazard",
+      "type": "air",
+      "label": "Burning-season haze in mainland Southeast Asia",
+      "lat": 18.8,
+      "lng": 99.0,
+      "severity": 1,
+      "months": [
+        2,
+        3,
+        4
+      ],
+      "peak": [
+        3
+      ]
+    },
+    {
+      "id": "hazard-sumatra-haze",
+      "kind": "hazard",
+      "type": "air",
+      "label": "Peatland fire haze, Sumatra and Borneo",
+      "lat": 0.5,
+      "lng": 106.0,
+      "severity": 1,
+      "months": [
+        8,
+        9,
+        10
+      ],
+      "peak": [
+        9
+      ]
+    },
+    {
+      "id": "hazard-australia-bushfire",
+      "kind": "hazard",
+      "type": "fire",
+      "label": "Southeast Australian bushfire season",
+      "lat": -35.5,
+      "lng": 148.5,
+      "severity": 2,
+      "months": [
+        12,
+        1,
+        2
+      ],
+      "peak": [
+        1
+      ]
+    },
+    {
+      "id": "hazard-california-wildfire",
+      "kind": "hazard",
+      "type": "fire",
+      "label": "California wildfire season",
+      "lat": 38.5,
+      "lng": -121.5,
+      "severity": 2,
+      "months": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "peak": [
+        9,
+        10
+      ]
+    },
+    {
+      "id": "hazard-mediterranean-heat",
+      "kind": "hazard",
+      "type": "heat",
+      "label": "Mediterranean heatwaves and wildfires",
+      "lat": 38.5,
+      "lng": 22.0,
+      "severity": 1,
+      "months": [
+        7,
+        8
+      ],
+      "peak": [
+        7
+      ]
+    },
+    {
+      "id": "hazard-gulf-heat",
+      "kind": "hazard",
+      "type": "heat",
+      "label": "Extreme Gulf summer heat",
+      "lat": 25.2,
+      "lng": 55.3,
+      "severity": 2,
+      "months": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "peak": [
+        7,
+        8
+      ]
+    },
+    {
+      "id": "hazard-amazon-fires",
+      "kind": "hazard",
+      "type": "fire",
+      "label": "Amazon and Cerrado fire season",
+      "lat": -10.0,
+      "lng": -55.0,
+      "severity": 1,
+      "months": [
+        8,
+        9,
+        10
+      ],
+      "peak": [
+        9
+      ]
+    },
+    {
+      "id": "hazard-harmattan",
+      "kind": "hazard",
+      "type": "dust",
+      "label": "Harmattan dust over West Africa",
+      "lat": 12.0,
+      "lng": 2.0,
+      "severity": 1,
+      "months": [
+        12,
+        1,
+        2
+      ],
+      "peak": [
+        1
+      ]
+    },
+    {
+      "id": "hazard-east-africa-rains",
+      "kind": "hazard",
+      "type": "flood",
+      "label": "East African long rains",
+      "lat": -1.3,
+      "lng": 36.8,
+      "severity": 1,
+      "months": [
+        4,
+        5
+      ],
+      "peak": [
+        4
+      ]
+    },
+    {
+      "id": "hazard-tornado-alley",
+      "kind": "hazard",
+      "type": "storm",
+      "label": "US tornado season",
+      "lat": 36.0,
+      "lng": -97.5,
+      "severity": 1,
+      "months": [
+        4,
+        5,
+        6
+      ],
+      "peak": [
+        5
+      ]
+    },
+    {
+      "id": "hazard-japan-rainy",
+      "kind": "hazard",
+      "type": "flood",
+      "label": "Tsuyu rainy season, southern Japan",
+      "lat": 33.5,
+      "lng": 131.0,
+      "severity": 1,
+      "months": [
+        6,
+        7
+      ],
+      "peak": [
+        6
+      ]
+    }
   ]
 }

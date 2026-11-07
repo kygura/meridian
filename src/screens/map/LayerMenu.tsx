@@ -155,7 +155,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
           <MetricControls />
         </SwitchRow>
         <SwitchRow layer="events" name="Events" hint={`Eclipses, festivals and fixtures in ${MONTH_NAMES[month - 1]}`} />
-        <SwitchRow layer="anomalies" name="Anomalies" hint="Conflicts, seasonal hazards and news alerts">
+        <SwitchRow layer="anomalies" name="Anomalies" hint="Conflicts, advisories, seasonal hazards and news alerts">
           <label className="map-check">
             <input type="checkbox" checked={avoidConflicts} onChange={(e) => setAvoidConflicts(e.target.checked)} />
             <span>Leave conflict countries out of matches</span>

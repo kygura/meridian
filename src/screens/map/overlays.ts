@@ -86,8 +86,8 @@ export interface AnomalyDatum {
   kind: "anomaly";
   coord: LngLat;
   id: string;
-  /** conflict advisory, seasonal hazard, or a live news alert. */
-  source: "conflict" | "hazard" | "news";
+  /** conflict, standing advisory (e.g. unsafe rail), seasonal hazard, or a live news alert. */
+  source: "conflict" | "advisory" | "hazard" | "news";
   label: string;
   sub: string;
   severity: number;
@@ -281,7 +281,7 @@ export interface OverlayInput {
 
 /** Colour of an anomaly marker by source. */
 export function anomalyColor(source: AnomalyDatum["source"], colors: MapColors): string {
-  return source === "conflict" ? colors.danger : source === "hazard" ? colors.warning : colors.info;
+  return source === "conflict" ? colors.danger : source === "advisory" ? colors.advisory : source === "hazard" ? colors.warning : colors.info;
 }
 
 /** GeoJSON for every overlay source. Hidden layers get empty collections. */

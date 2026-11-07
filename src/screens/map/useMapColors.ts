@@ -38,6 +38,8 @@ export interface MapColors {
   danger: string;
   warning: string;
   info: string;
+  /** Standing advisories (unsafe infrastructure and the like). */
+  advisory: string;
   /** Year colours for past journeys: oldest -> newest. */
   yearFrom: RGBA;
   yearTo: RGBA;
@@ -71,6 +73,7 @@ function read(theme: "light" | "dark"): MapColors {
     danger: t("--danger", dark ? "#ff5b5b" : "#b3261e"),
     warning: t("--warning", dark ? "#f59e0b" : "#c2680c"),
     info: t("--info", dark ? "#60a5fa" : "#1e40af"),
+    advisory: t("--trip-c", dark ? "#a78bfa" : "#6d28d9"),
     // Oldest trips fade toward muted ink; the newest burn in the accent.
     yearFrom: toRgba(t("--muted", dark ? "#8a94a9" : "#6b624f")),
     yearTo: toRgba(t("--accent", dark ? "#f59e0b" : "#c2680c")),
