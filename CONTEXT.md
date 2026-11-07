@@ -26,6 +26,15 @@ normals (temperature comfort band minus precipitation penalty). Deliberately lab
 index, not "best time" truth.
 _Avoid_: weather score, climate score
 
+**Data layer**:
+The map's configurable overlay (Layers > Data, config in `src/lib/overlayConfig.ts`, state in
+`useMapPrefs().overlay`). It tints countries by one metric, filters cities by weather
+conditions (warm, dry, lush ...) and value ranges, and pins signals (events, conflict zones,
+disasters). Weather variables are derived from the monthly normals; greenness is a rain-and-warmth
+proxy. Social, political and infrastructure metrics are the `/api/metrics` indices, mostly
+synthesized, so the UI labels them "Estimated". Conflict and disaster pins are the static list in
+`src/lib/phenomena.ts`, not a live feed. Bulk data comes from `/api/overlay/*`.
+
 **Seasonality**:
 The 12-month Comfort Index profile of a city or region, rendered as a heatmap calendar.
 

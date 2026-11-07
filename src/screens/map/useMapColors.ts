@@ -25,8 +25,12 @@ export interface MapColors {
   /** Paper: casings and dot strokes. */
   paper: string;
   accent: string;
-  /** Booked flights. */
+  /** Booked flights, events. */
   success: string;
+  /** Conflict zones. */
+  danger: string;
+  /** Disasters. */
+  warning: string;
   /** Sequential ramp, low to high (7 steps) as CSS colour strings. */
   ramp: string[];
   /** Year colours for past journeys: oldest -> newest. */
@@ -53,6 +57,8 @@ function read(theme: "light" | "dark"): MapColors {
     paper: t("--surface", dark ? "#161c2c" : "#fbf5e6"),
     accent: t("--accent", dark ? "#f59e0b" : "#c2680c"),
     success: t("--success", dark ? "#2dd4bf" : "#0f766e"),
+    danger: t("--danger", dark ? "#f87171" : "#b3261e"),
+    warning: t("--warning", dark ? "#fbbf24" : "#b7791f"),
     ramp,
     // Oldest trips fade toward muted ink; the newest burn in the accent.
     yearFrom: toRgba(t("--muted", dark ? "#8a94a9" : "#6b624f")),

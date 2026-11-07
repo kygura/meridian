@@ -5,12 +5,11 @@ import { useMeridianStore } from "../../store";
 import { useUIStore, openCity } from "../../shell/uiStore";
 import { navigate } from "../../lib/router";
 import { refreshJourneys } from "../../lib/journalApi";
-import { fetchRegions, type RegionSeason } from "../../lib/seasonalityApi";
 import { Button, Fab, IconButton, Spinner, useIsDesktop, useJournalToken } from "../../ui";
 import { IconChevronLeft, IconChevronRight, IconMinus, IconPlus, IconRefresh } from "../../ui/icons";
 import { useMapPrefs } from "../../shell/mapPrefs";
 import { loadCountries, type CountryCollection } from "./countries";
-import { buildStyle, labelFeatures, MONTH_NAMES, repaintBasemap, tintCountries } from "./basemap";
+import { buildStyle, labelFeatures, MONTH_NAMES, repaintBasemap, tintByValues } from "./basemap";
 import {
   applyOverlayPaint,
   buildBookings,
@@ -26,10 +25,29 @@ import {
   PICK_LAYERS,
   type OverlayData,
   type PickDatum,
+  type SignalDatum,
 } from "./overlays";
 import { haversineKm } from "../../lib/geo";
 import { useMapColors } from "./useMapColors";
 import LayerMenu from "./LayerMenu";
+import type { DataLayerInfo } from "./OverlayPanel";
+import { useOverlayData } from "./useOverlayData";
+import { buildProfiles } from "../../lib/overlayApi";
+import { CONFLICTS, DISASTERS } from "../../lib/phenomena";
+import {
+  countryTint,
+  EVENT_KINDS,
+  filtersActive,
+  formatMetric,
+  isSociety,
+  matchesCity,
+  metricDef,
+  metricValue,
+  visibleConflicts,
+  visibleDisasters,
+  visibleEvents,
+  type MetricKey,
+} from "../../lib/overlayConfig";
 
 export interface MapScreenProps {
   /**
@@ -48,6 +66,7 @@ function fitGlobeZoom(el: HTMLElement): number {
   // MapLibre's globe radius in px is worldSize / 2π = 512·2^z / 2π.
   return Math.max(0.4, Math.log2((0.42 * side * 2 * Math.PI) / 512));
 }
+const isWeatherKey = (k: string) => !isSociety(k as MetricKey);
 const DATE_FMT = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
 
 function fmtDate(iso: string): string {
@@ -73,9 +92,6 @@ export default function MapScreen({ active }: MapScreenProps) {
   const [center, setCenter] = useState<[number, number]>(START_CENTER);
   const [countries, setCountries] = useState<CountryCollection | null>(null);
   const [countriesError, setCountriesError] = useState(false);
-  const [regions, setRegions] = useState<RegionSeason[] | null>(null);
-  const [regionsError, setRegionsError] = useState(false);
-  const [regionsAttempt, setRegionsAttempt] = useState(0);
   const [tip, setTip] = useState<Tip | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
@@ -83,6 +99,7 @@ export default function MapScreen({ active }: MapScreenProps) {
   const isDesktop = useIsDesktop();
   const prefs = useMapPrefs((s) => s.layers);
   const month = useMapPrefs((s) => s.month);
+  const overlay = useMapPrefs((s) => s.overlay);
   const setMonth = useMapPrefs((s) => s.setMonth);
 
   const cities = useMeridianStore((s) => s.cities);
@@ -164,32 +181,97 @@ export default function MapScreen({ active }: MapScreenProps) {
     };
   }, [countriesAttempt]);
 
-  useEffect(() => {
-    if (!prefs.seasons || regions) return;
-    let live = true;
-    setRegionsError(false);
-    const cached = useMeridianStore.getState().seasonalityRegions;
-    if (cached) {
-      setRegions(cached);
-      return;
-    }
-    fetchRegions()
-      .then((r) => {
-        const store = useMeridianStore.getState();
-        store.setSeasonalityRegions(r.regions);
-        store.setSeasonalityWindow(r.window);
-        if (live) setRegions(r.regions);
-      })
-      .catch(() => live && setRegionsError(true));
-    return () => {
-      live = false;
-    };
-  }, [prefs.seasons, regions, regionsAttempt]);
-
-  const tinted = useMemo(
-    () => (countries ? tintCountries(countries, prefs.seasons ? regions : null, month, colors.ramp) : null),
-    [countries, prefs.seasons, regions, month, colors.ramp]
+  // ── Data layer: what to load, who matches, what to tint and pin ──
+  const dataOn = prefs.seasons;
+  const ranges = overlay.ranges;
+  const needs = useMemo(
+    () => ({
+      climate:
+        dataOn && ((overlay.tint !== "none" && isWeatherKey(overlay.tint)) || overlay.conditions.length > 0 || Object.keys(ranges).some(isWeatherKey)),
+      metrics: dataOn && ((overlay.tint !== "none" && !isWeatherKey(overlay.tint)) || Object.keys(ranges).some((k) => !isWeatherKey(k))),
+      events: dataOn && overlay.signals.events,
+    }),
+    [dataOn, overlay.tint, overlay.conditions, overlay.signals.events, ranges]
   );
+  const datasets = useOverlayData(needs);
+
+  useEffect(() => {
+    if (datasets.climate?.window) useMeridianStore.getState().setSeasonalityWindow(datasets.climate.window);
+  }, [datasets.climate]);
+
+  const profiles = useMemo(() => buildProfiles(datasets.climate, datasets.metrics), [datasets.climate, datasets.metrics]);
+
+  const tinted = useMemo(() => {
+    if (!countries) return null;
+    if (!dataOn || overlay.tint === "none") return tintByValues(countries, null, colors.ramp);
+    return tintByValues(countries, countryTint(cities, profiles, overlay.tint, month), colors.ramp, overlay.invertTint);
+  }, [countries, dataOn, overlay.tint, overlay.invertTint, cities, profiles, month, colors.ramp]);
+
+  const filtering = dataOn && filtersActive(overlay);
+  const matchIds = useMemo(() => {
+    if (!filtering) return null;
+    const ids = new Set<string>();
+    for (const c of cities) {
+      const p = profiles.get(c.id);
+      if (p && matchesCity(overlay, p, month)) ids.add(c.id);
+    }
+    return ids;
+  }, [filtering, cities, profiles, overlay, month]);
+
+  const signals = useMemo<SignalDatum[]>(() => {
+    if (!dataOn) return [];
+    const out: SignalDatum[] = [];
+    const byId = new Map(cities.map((c) => [c.id, c]));
+    const kindLabel = new Map(EVENT_KINDS.map((k) => [k.id, k.label.replace(/s$/, "")]));
+    for (const e of visibleEvents(datasets.events ?? [], overlay.signals, month)) {
+      for (const id of e.cityIds) {
+        const c = byId.get(id);
+        if (c) out.push({ kind: "signal", signal: "event", coord: [c.lng, c.lat], title: e.title, sub: `${kindLabel.get(e.kind) ?? "Event"} · ${c.name} · ${MONTH_NAMES[e.month - 1]}`, sev: 0, type: e.kind });
+      }
+    }
+    for (const p of visibleConflicts(CONFLICTS, overlay.signals))
+      out.push({ kind: "signal", signal: "conflict", coord: [p.lng, p.lat], title: p.label, sub: `Conflict zone · severity ${p.sev} of 3`, sev: p.sev, type: "conflict" });
+    for (const p of visibleDisasters(DISASTERS, overlay.signals))
+      out.push({ kind: "signal", signal: "disaster", coord: [p.lng, p.lat], title: p.label, sub: `Disaster · ${p.type ?? "event"} · severity ${p.sev} of 3`, sev: p.sev, type: p.type ?? "" });
+    return out;
+  }, [dataOn, datasets.events, overlay.signals, cities, month]);
+
+  const dataInfo = useMemo<DataLayerInfo>(() => {
+    const rankKey: MetricKey = overlay.tint !== "none" ? overlay.tint : "comfort";
+    const covered = filtering ? cities.filter((c) => profiles.has(c.id)).length : 0;
+    const matches: DataLayerInfo["matches"] = [];
+    if (matchIds) {
+      const ranked = cities
+        .filter((c) => matchIds.has(c.id))
+        .map((c) => ({ c, v: metricValue(rankKey, profiles.get(c.id)!, month) }))
+        .sort((a, b) => (overlay.invertTint ? -1 : 1) * ((b.v ?? -Infinity) - (a.v ?? -Infinity)));
+      for (const { c, v } of ranked.slice(0, 8))
+        matches.push({ id: c.id, name: c.name, country: c.country, readout: v === null ? "" : formatMetric(rankKey, v) });
+    }
+    return {
+      loading: datasets.loading,
+      failed: datasets.failed,
+      retry: datasets.retry,
+      matchCount: matchIds ? matchIds.size : null,
+      covered,
+      matches,
+      climateWindow: datasets.climate?.window ?? null,
+      rankedBy: metricDef(rankKey).label,
+    };
+  }, [overlay.tint, overlay.invertTint, filtering, cities, profiles, matchIds, month, datasets]);
+
+  /** "Comfort 84" for the tinted metric, shown under a city's name on hover. */
+  const cityReadout = useCallback(
+    (id: string): string | null => {
+      if (!dataOn || overlay.tint === "none") return null;
+      const p = profiles.get(id);
+      const v = p ? metricValue(overlay.tint, p, month) : null;
+      return v === null ? null : `${metricDef(overlay.tint).label} ${formatMetric(overlay.tint, v)}`;
+    },
+    [dataOn, overlay.tint, profiles, month]
+  );
+  const readoutRef = useRef(cityReadout);
+  readoutRef.current = cityReadout;
 
   useEffect(() => {
     const map = mapRef.current;
@@ -239,8 +321,9 @@ export default function MapScreen({ active }: MapScreenProps) {
         bookings: bookingData,
         cities: cityData,
         selectedCityId,
+        data: { matchIds, nonMatches: overlay.nonMatches, signals },
       }),
-    [colors, prefs, past, planned, bookingData, cityData, selectedCityId]
+    [colors, prefs, past, planned, bookingData, cityData, selectedCityId, matchIds, overlay.nonMatches, signals]
   );
 
   useEffect(() => {
@@ -300,10 +383,18 @@ export default function MapScreen({ active }: MapScreenProps) {
         canvas.style.cursor = "";
         return;
       }
-      const text = describe(d, fmtDate);
+      const text = describe(d, fmtDate, readoutRef.current);
       setTip(text ? { x: e.point.x, y: e.point.y, ...text } : null);
       setHoverId(
-        d.kind === "city" ? d.id : d.kind === "arc" || d.kind === "stop" ? d.journeyId : d.kind === "booking" ? d.bookingId : d.tripId
+        d.kind === "city"
+          ? d.id
+          : d.kind === "arc" || d.kind === "stop"
+            ? d.journeyId
+            : d.kind === "booking"
+              ? d.bookingId
+              : d.kind === "signal"
+                ? `signal:${pickRef.current?.signals.indexOf(d) ?? -1}`
+                : d.tripId
       );
       canvas.style.cursor = "pointer";
     };
@@ -345,6 +436,8 @@ export default function MapScreen({ active }: MapScreenProps) {
         }
         case "booking":
           navigate(d.tripId ? `/trips/plan/${encodeURIComponent(d.tripId)}` : "/plan/flights");
+          break;
+        case "signal":
           break;
       }
     };
@@ -426,7 +519,7 @@ export default function MapScreen({ active }: MapScreenProps) {
       {isDesktop && !prefs.seasons && zoom < 3 ? <p className="map-hint">Drag to rotate · scroll to zoom</p> : null}
 
       <div className="map-controls">
-        <LayerMenu colors={colors} years={years} pastLoading={pastLoading} />
+        <LayerMenu colors={colors} years={years} pastLoading={pastLoading} data={dataInfo} />
         {isDesktop ? (
           <div className="map-zoom" role="group" aria-label="Zoom">
             <IconButton label="Zoom in" icon={<IconPlus />} variant="secondary" onClick={() => zoomBy(1)} />
@@ -447,37 +540,58 @@ export default function MapScreen({ active }: MapScreenProps) {
         </div>
       ) : null}
 
-      {prefs.seasons ? (
+      {prefs.seasons && (overlay.tint !== "none" || signals.length > 0) ? (
         <div className="map-legend" aria-live="polite">
           <div className="map-legend-head">
             <IconButton label="Previous month" icon={<IconChevronLeft />} size="sm" onClick={() => stepMonth(-1)} />
-            <span className="map-legend-title map-kicker">Weather in {MONTH_NAMES[month - 1]}</span>
+            <span className="map-legend-title map-kicker">
+              {overlay.tint !== "none" ? metricDef(overlay.tint).label : "Signals"} · {MONTH_NAMES[month - 1]}
+            </span>
             <IconButton label="Next month" icon={<IconChevronRight />} size="sm" onClick={() => stepMonth(1)} />
           </div>
-          {regionsError ? (
-            <div className="map-legend-error">
-              <span>Seasons are unavailable right now.</span>
-              <Button size="sm" variant="ghost" onClick={() => setRegionsAttempt((n) => n + 1)}>
-                Retry
-              </Button>
-            </div>
-          ) : !regions ? (
-            <div className="map-legend-error">
-              <Spinner size={16} /> <span>Loading seasons…</span>
-            </div>
-          ) : (
-            <>
-              <div className="map-legend-ramp" aria-hidden="true">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <span key={i} style={{ background: `var(--ramp-${i})` }} />
+          {overlay.tint !== "none" ? (
+            datasets.failed ? (
+              <div className="map-legend-error">
+                <span>This data is unavailable right now.</span>
+                <Button size="sm" variant="ghost" onClick={datasets.retry}>
+                  Retry
+                </Button>
+              </div>
+            ) : datasets.loading ? (
+              <div className="map-legend-error">
+                <Spinner size={16} /> <span>Loading data…</span>
+              </div>
+            ) : (
+              <>
+                <div className="map-legend-ramp" aria-hidden="true" style={overlay.invertTint ? { direction: "rtl" } : undefined}>
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <span key={i} style={{ background: `var(--ramp-${i})` }} />
+                  ))}
+                </div>
+                <div className="map-legend-scale">
+                  <span>{overlay.invertTint ? metricDef(overlay.tint).high : metricDef(overlay.tint).low}</span>
+                  <span>{overlay.invertTint ? metricDef(overlay.tint).low : metricDef(overlay.tint).high}</span>
+                </div>
+                {metricDef(overlay.tint).estimated ? <p className="map-legend-note">Estimated, not measured.</p> : null}
+              </>
+            )
+          ) : null}
+          {signals.length > 0 ? (
+            <ul className="map-legend-keys" aria-label="Signals">
+              {[
+                ["event", "Events", "var(--success)"],
+                ["conflict", "Conflicts", "var(--danger)"],
+                ["disaster", "Disasters", "var(--warning)"],
+              ]
+                .filter(([k]) => signals.some((x) => x.signal === k))
+                .map(([k, label, color]) => (
+                  <li key={k}>
+                    <span className="map-legend-dot" style={{ background: color }} aria-hidden="true" />
+                    {label} <span className="num">{signals.filter((x) => x.signal === k).length}</span>
+                  </li>
                 ))}
-              </div>
-              <div className="map-legend-scale">
-                <span>Harsh</span>
-                <span>Pleasant</span>
-              </div>
-            </>
-          )}
+            </ul>
+          ) : null}
         </div>
       ) : null}
 
