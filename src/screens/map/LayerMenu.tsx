@@ -4,12 +4,14 @@ import { IconLayers } from "../../ui/icons";
 import { useMapPrefs, type MapLayer } from "../../shell/mapPrefs";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import type { MapColors } from "./useMapColors";
+import OverlayPanel, { type DataLayerInfo } from "./OverlayPanel";
 
 interface LayerMenuProps {
   colors: MapColors;
   /** Year span of past journeys, for the legend (null while unknown). */
   years: { min: number; max: number } | null;
   pastLoading: boolean;
+  data: DataLayerInfo;
 }
 
 function rgb(c: [number, number, number, number]) {
@@ -74,7 +76,7 @@ export function MonthPicker({ value, onChange }: { value: number; onChange: (m: 
   );
 }
 
-export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps) {
+export default function LayerMenu({ colors, years, pastLoading, data }: LayerMenuProps) {
   const [open, setOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const anchor = useRef<HTMLButtonElement>(null);
@@ -129,8 +131,9 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
         ) : null}
         <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in teal." />
         <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in" />
-        <SwitchRow layer="seasons" name="Seasons" hint={`Pleasant weather in ${MONTH_NAMES[month - 1]}`}>
+        <SwitchRow layer="seasons" name="Data" hint={`Weather, society and signals for ${MONTH_NAMES[month - 1]}`}>
           <MonthPicker value={month} onChange={setMonth} />
+          <OverlayPanel info={data} />
         </SwitchRow>
       </Popover>
     </>

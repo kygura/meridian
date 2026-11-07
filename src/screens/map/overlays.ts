@@ -70,7 +70,22 @@ export interface CityDatum {
   rank: 0 | 1 | 2 | 3;
 }
 
-export type PickDatum = ArcDatum | StopDatum | RouteDatum | NodeDatum | BookingDatum | CityDatum;
+export type SignalKind = "event" | "conflict" | "disaster";
+
+/** A dated event, conflict zone or disaster pinned to the globe (the data layer's signals). */
+export interface SignalDatum {
+  kind: "signal";
+  signal: SignalKind;
+  coord: LngLat;
+  title: string;
+  sub: string;
+  /** 1-3; events have none. */
+  sev: number;
+  /** Disaster type, or event kind. */
+  type: string;
+}
+
+export type PickDatum = ArcDatum | StopDatum | RouteDatum | NodeDatum | BookingDatum | CityDatum | SignalDatum;
 
 export function hubsOf(cities: City[]): FlightHub[] {
   return cities
@@ -202,11 +217,29 @@ export interface OverlayData {
     routes: RouteDatum[];
     nodes: NodeDatum[];
     bookings: BookingDatum[];
+    signals: SignalDatum[];
   };
 }
 
-export type OverlaySource = "ov-cities" | "ov-arcs" | "ov-stops" | "ov-routes" | "ov-nodes" | "ov-bookings" | "ov-selected";
-export const OVERLAY_SOURCES: OverlaySource[] = ["ov-cities", "ov-arcs", "ov-stops", "ov-routes", "ov-nodes", "ov-bookings", "ov-selected"];
+export type OverlaySource =
+  | "ov-cities"
+  | "ov-arcs"
+  | "ov-stops"
+  | "ov-routes"
+  | "ov-nodes"
+  | "ov-bookings"
+  | "ov-signals"
+  | "ov-selected";
+export const OVERLAY_SOURCES: OverlaySource[] = [
+  "ov-cities",
+  "ov-arcs",
+  "ov-stops",
+  "ov-routes",
+  "ov-nodes",
+  "ov-bookings",
+  "ov-signals",
+  "ov-selected",
+];
 
 export interface OverlayInput {
   colors: MapColors;
@@ -216,12 +249,21 @@ export interface OverlayInput {
   bookings: BookingDatum[];
   cities: CityDatum[];
   selectedCityId: string | null;
+  /**
+   * Data-layer filters. `matchIds` = city ids that pass (null = no filter active);
+   * `signals` = events, conflicts and disasters to pin.
+   */
+  data?: {
+    matchIds: ReadonlySet<string> | null;
+    nonMatches: "dim" | "hide";
+    signals: SignalDatum[];
+  };
 }
 
 /** GeoJSON for every overlay source. Hidden layers get empty collections. */
 export function buildOverlayData(input: OverlayInput): OverlayData {
-  const { colors, show, past, planned, bookings, cities, selectedCityId } = input;
-  const pick: OverlayData["pick"] = { cities: [], arcs: [], stops: [], routes: [], nodes: [], bookings: [] };
+  const { colors, show, past, planned, bookings, cities, selectedCityId, data } = input;
+  const pick: OverlayData["pick"] = { cities: [], arcs: [], stops: [], routes: [], nodes: [], bookings: [], signals: [] };
   const src: Record<OverlaySource, FC> = {
     "ov-cities": EMPTY,
     "ov-arcs": EMPTY,
@@ -229,14 +271,30 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
     "ov-routes": EMPTY,
     "ov-nodes": EMPTY,
     "ov-bookings": EMPTY,
+    "ov-signals": EMPTY,
     "ov-selected": EMPTY,
   };
 
   if (show.cities) {
     pick.cities = cities;
-    src["ov-cities"] = {
+    const matchIds = data?.matchIds ?? null;
+    const hide = data?.nonMatches === "hide";
+    // Keep indices stable for picking: hidden cities stay in `pick.cities`, just not drawn.
+    const features: GeoJSON.Feature[] = [];
+    cities.forEach((c, i) => {
+      const match = !matchIds || matchIds.has(c.id);
+      if (!match && hide && c.id !== selectedCityId) return;
+      // `hit` = passes an active filter (accent dot); `match` = not faded.
+      features.push(point(c.coord, { i, hid: c.id, rank: c.rank, pop: c.population, match, hit: !!matchIds && match }));
+    });
+    src["ov-cities"] = { type: "FeatureCollection", features };
+  }
+
+  if (data && data.signals.length > 0) {
+    pick.signals = data.signals;
+    src["ov-signals"] = {
       type: "FeatureCollection",
-      features: cities.map((c, i) => point(c.coord, { i, hid: c.id, rank: c.rank, pop: c.population })),
+      features: data.signals.map((s, i) => point(s.coord, { i, hid: `signal:${i}`, signal: s.signal, sev: s.sev })),
     };
   }
 
@@ -291,6 +349,7 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
 /** Pickable layer id -> which pick array its features index into. Topmost first. */
 export const PICK_LAYERS: [string, keyof OverlayData["pick"]][] = [
   ["ov-nodes", "nodes"],
+  ["ov-signals", "signals"],
   ["ov-stops", "stops"],
   ["ov-bookings", "bookings"],
   ["ov-routes-solid", "routes"],
@@ -347,6 +406,8 @@ export function overlayLayers(colors: MapColors, hover: string | null, maxRank: 
       filter: ["get", "dashed"],
       paint: { ...paint["ov-routes-dashed"], "line-dasharray": [2.2, 1.6] },
     },
+    { id: "ov-signals-halo", type: "circle", source: "ov-signals", paint: paint["ov-signals-halo"] },
+    { id: "ov-signals", type: "circle", source: "ov-signals", paint: paint["ov-signals"] },
     { id: "ov-stops", type: "circle", source: "ov-stops", paint: paint["ov-stops"] },
     { id: "ov-nodes", type: "circle", source: "ov-nodes", paint: paint["ov-nodes"] },
     { id: "ov-selected", type: "circle", source: "ov-selected", paint: paint["ov-selected"] },
@@ -359,6 +420,11 @@ export function cityFilter(maxRank: number, selected: string | null): maplibregl
 }
 
 type Paint = Record<string, unknown>;
+
+/** Events in teal, conflicts in red, disasters in amber. */
+function signalColor(colors: MapColors): maplibregl.ExpressionSpecification {
+  return ["match", ["get", "signal"], "event", colors.success, "conflict", colors.danger, colors.warning];
+}
 
 /** Paint for every overlay layer. Re-applied on theme and hover changes. */
 export function overlayPaint(colors: MapColors, hover: string | null): Record<string, Paint> {
@@ -373,20 +439,22 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
     "ov-cities": {
       // Lie flat on the sphere so dots foreshorten toward the horizon.
       "circle-pitch-alignment": "map",
-      "circle-color": colors.dot,
+      // Accent when the city passes an active data filter, ink otherwise.
+      "circle-color": ["case", ["get", "hit"], colors.accent, colors.dot],
       "circle-radius": z([
-        [1, ["case", h, 3.5, popR(0.9, 1.4, 2.2)]],
-        [4, ["case", h, 5, popR(1.5, 3, 4.5)]],
-        [8, ["case", h, 7, popR(2.4, 4, 6.5)]],
+        [1, ["case", h, 3.5, ["case", ["get", "hit"], ["+", 1.6, popR(0.9, 1.4, 2.2)], popR(0.9, 1.4, 2.2)]]],
+        [4, ["case", h, 5, ["case", ["get", "hit"], ["+", 1.6, popR(1.5, 3, 4.5)], popR(1.5, 3, 4.5)]]],
+        [8, ["case", h, 7, ["case", ["get", "hit"], ["+", 1.6, popR(2.4, 4, 6.5)], popR(2.4, 4, 6.5)]]],
       ]),
+      // Cities that fail an active filter fade back (unless hovered).
       "circle-opacity": z([
-        [1, ["case", h, 1, 0.42]],
-        [4, ["case", h, 1, 0.7]],
-        [7, ["case", h, 1, 0.85]],
+        [1, ["case", h, 1, ["get", "match"], 0.42, 0.1]],
+        [4, ["case", h, 1, ["get", "match"], 0.7, 0.12]],
+        [7, ["case", h, 1, ["get", "match"], 0.85, 0.15]],
       ]),
       "circle-stroke-color": colors.paper,
       "circle-stroke-width": z([[2, 0], [4, 0.8]]),
-      "circle-stroke-opacity": 0.85,
+      "circle-stroke-opacity": ["case", ["get", "match"], 0.85, 0.2],
     },
     "ov-arcs-casing": {
       "line-color": colors.paper,
@@ -433,6 +501,19 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
       "circle-stroke-color": colors.paper,
       "circle-stroke-width": 2,
     },
+    "ov-signals-halo": {
+      "circle-pitch-alignment": "map",
+      "circle-color": signalColor(colors),
+      "circle-opacity": 0.22,
+      "circle-radius": ["case", h, 17, ["match", ["get", "signal"], "event", 11, ["+", 9, ["*", 3, ["get", "sev"]]]]],
+    },
+    "ov-signals": {
+      "circle-pitch-alignment": "map",
+      "circle-color": signalColor(colors),
+      "circle-radius": ["case", h, 7, ["match", ["get", "signal"], "event", 4.4, ["+", 3.2, ["*", 0.8, ["get", "sev"]]]]],
+      "circle-stroke-color": colors.paper,
+      "circle-stroke-width": 1.5,
+    },
     "ov-selected": {
       "circle-radius": 10,
       "circle-color": colors.accent,
@@ -453,10 +534,19 @@ export function applyOverlayPaint(map: maplibregl.Map, colors: MapColors, hover:
 }
 
 /** Hover text for a picked object, or null. */
-export function describe(d: PickDatum, fmtDate: (iso: string) => string): { title: string; sub?: string } | null {
+export function describe(
+  d: PickDatum,
+  fmtDate: (iso: string) => string,
+  /** Extra line for a city, such as its reading for the tinted metric. */
+  cityReadout?: (cityId: string) => string | null
+): { title: string; sub?: string } | null {
   switch (d.kind) {
-    case "city":
-      return { title: d.name, sub: d.country };
+    case "signal":
+      return { title: d.title, sub: d.sub };
+    case "city": {
+      const extra = cityReadout?.(d.id);
+      return { title: d.name, sub: extra ? `${d.country} · ${extra}` : d.country };
+    }
     case "arc":
       return { title: `${d.from} to ${d.to}`, sub: `${fmtDate(d.date)} · Open trip` };
     case "stop":

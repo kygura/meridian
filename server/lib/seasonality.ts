@@ -347,6 +347,13 @@ export function getSeasonalityWindow(): string {
   return loadSeasonality().window || WINDOW;
 }
 
+/** Every covered city's 12 months (seed + runtime cache merged), keyed by city id. */
+export function getAllCityMonths(): Record<string, MonthSeasonality[]> {
+  const out: Record<string, MonthSeasonality[]> = {};
+  for (const [id, entry] of Object.entries(mergedCities())) out[id] = entry.months;
+  return out;
+}
+
 /** Per-country monthly average of covered cities' scores (seed + runtime cache merged). */
 export function getRegionAggregates(): RegionAggregate[] {
   const dataset = mergedCities();

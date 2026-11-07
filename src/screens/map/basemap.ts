@@ -1,7 +1,5 @@
 import type maplibregl from "maplibre-gl";
-import { countryKey } from "../../lib/countryNames";
 import { featureKeys, type CountryCollection } from "./countries";
-import type { RegionSeason } from "../../lib/seasonalityApi";
 import type { City } from "../../types";
 import { cityRank, OVERLAY_SOURCES, type overlayLayers } from "./overlays";
 import type { MapColors } from "./useMapColors";
@@ -151,34 +149,30 @@ export function labelFeatures(cities: City[]): GeoJSON.FeatureCollection {
 }
 
 /**
- * Countries with a `tint` colour for the month's comfort score (seasons layer), or the
- * plain polygons when `regions` is null. Countries without data keep the land colour.
+ * Countries with a `tint` colour for the data layer, or the plain polygons when `values`
+ * is null. `values` maps countryKey -> 0-100 ramp position; countries without a value
+ * keep the land colour.
  */
-export function tintCountries(
+export function tintByValues(
   fc: CountryCollection,
-  regions: RegionSeason[] | null,
-  month: number,
-  ramp: string[]
+  values: ReadonlyMap<string, number> | null,
+  ramp: string[],
+  invert = false
 ): GeoJSON.FeatureCollection {
-  if (!regions) return fc;
-  const score = new Map<string, number>();
-  for (const r of regions) {
-    const s = r.months[month - 1]?.score;
-    if (typeof s === "number") score.set(countryKey(r.region), s);
-  }
+  if (!values) return fc;
   return {
     type: "FeatureCollection",
     features: fc.features.map((f) => {
-      const keys = featureKeys(f.properties ?? {});
-      const s = keys.map((k) => score.get(k)).find((v) => v !== undefined);
-      if (s === undefined) return f;
-      const step = tintStep(s);
-      return { ...f, properties: { ...f.properties, tint: ramp[step] } };
+      const v = featureKeys(f.properties ?? {})
+        .map((k) => values.get(k))
+        .find((x) => x !== undefined);
+      if (v === undefined) return f;
+      return { ...f, properties: { ...f.properties, tint: ramp[tintStep(invert ? 100 - v : v)] } };
     }),
   };
 }
 
-/** Comfort score 0-100 -> ramp step 1-6 (step 0 is too close to plain land). */
+/** Ramp position 0-100 -> ramp step 1-6 (step 0 is too close to plain land). */
 export function tintStep(score: number): number {
   return 1 + Math.max(0, Math.min(5, Math.round((score / 100) * 5)));
 }
