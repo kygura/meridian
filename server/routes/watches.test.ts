@@ -48,6 +48,7 @@ describe("auth", () => {
       ["POST", "/api/watches"],
       ["GET", "/api/watches"],
       ["POST", "/api/watches/run"],
+      ["GET", "/api/watches/run"],
       ["GET", "/api/watches/alerts"],
       ["POST", "/api/watches/alerts/x/seen"],
       ["DELETE", "/api/watches/x"],
@@ -90,7 +91,8 @@ describe("run + alerts", () => {
     const r1 = (await (await req("POST", "/api/watches/run")).json()) as { watches: number; alerts: Alert[]; evaluated: number; skipped: number };
     expect(r1).toMatchObject({ watches: 1, evaluated: 1, skipped: 0 });
     expect(r1.alerts).toHaveLength(1);
-    const r2 = (await (await req("POST", "/api/watches/run")).json()) as { alerts: Alert[] };
+    // Second run arrives the way Vercel Cron sends it: GET with the bearer token.
+    const r2 = (await (await req("GET", "/api/watches/run")).json()) as { alerts: Alert[] };
     expect(r2.alerts).toHaveLength(0);
 
     // /alerts is not swallowed by /:id

@@ -23,7 +23,9 @@ function db(): { sql: Sql; ready: Promise<unknown> } {
   if (!url) throw new Error("DATABASE_URL is not set");
   if (client?.url !== url) {
     if (client) void client.sql.end({ timeout: 1 });
-    const sql = postgres(url, { max: 5, onnotice: () => {}, idle_timeout: 30 });
+    // prepare: false keeps it working behind transaction-mode poolers (Supabase, Neon),
+    // which serverless hosts should use.
+    const sql = postgres(url, { max: 5, onnotice: () => {}, idle_timeout: 30, prepare: false });
     const ready = sql`
       create table if not exists meridian_documents (
         key text primary key,
@@ -33,7 +35,16 @@ function db(): { sql: Sql; ready: Promise<unknown> } {
       // Two processes creating it at once: the loser sees a duplicate; the table exists either way.
       if (err.code !== "23505" && err.code !== "42P07") throw err;
     });
-    client = { url, sql, ready };
+    const created = { url, sql, ready };
+    // A failed setup (database down at first use) must not stick: drop this client so
+    // the next call reconnects instead of replaying the old error forever.
+    ready.catch(() => {
+      if (client === created) {
+        client = null;
+        void sql.end({ timeout: 1 });
+      }
+    });
+    client = created;
   }
   return client;
 }

@@ -1,7 +1,7 @@
 // /api/watches (spec-journal §10, R7). Token-gated (also by gateRoutes in index.ts).
 // Static paths (/run, /alerts) are registered before /:id.
 
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { ZodError } from "zod";
 import { requireToken } from "../middleware/auth.js";
 import { executeReplay } from "../lib/replayService.js";
@@ -40,14 +40,18 @@ watches.post("/", async (c) => {
 
 watches.get("/", async (c) => c.json({ watches: await listWatches() }));
 
-watches.post("/run", async (c) => {
+const runHandler = async (c: Context) => {
   try {
     return c.json(await runWatches(depsFactory()));
   } catch (err) {
     console.error("[watches] run failed:", err);
     return c.json({ error: "run_failed", message: "Could not run watches." }, 500);
   }
-});
+};
+watches.post("/run", runHandler);
+// Vercel Cron calls GET with "Authorization: Bearer $CRON_SECRET"; set CRON_SECRET to the
+// same value as MERIDIAN_TOKEN and the token gate above accepts it.
+watches.get("/run", runHandler);
 
 watches.get("/alerts", async (c) => c.json({ alerts: await listAlerts({ unseen: c.req.query("unseen") === "1" }) }));
 

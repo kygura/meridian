@@ -42,4 +42,28 @@ It keeps documents already in the database unless you pass `--overwrite`.
 
 ## Vercel
 
-With `DATABASE_URL` set, storage is no longer the blocker. What remains is wrapping the Hono app as a function (it currently starts a long-running server) and moving the few disk caches (images, news, crowd data) to `/tmp` or dropping them. Until that's done, use a host that runs `npm start`.
+`vercel.json` sets the install command (`npm ci`) and build command (`npm run build:vercel`). The build writes Vercel's Build Output API directly (`scripts/build-vercel.mjs`):
+
+- the Vite build as static files, with every non-API path falling back to `index.html`;
+- one Node 22 function (`api.func`) holding the whole Hono server, bundled with esbuild, with the read-only datasets (cities, airports, seasonality) beside it. `/api/*` routes to it. Max duration 60 s;
+- a daily cron (06:17 UTC) that calls `GET /api/watches/run`.
+
+On Vercel only `/tmp` is writable, so caches go to `/tmp/meridian` and rebuild on a cold start. Personal data must be in Postgres: **`DATABASE_URL` is required on Vercel.** Without it, writes land in `/tmp` and disappear.
+
+### Steps
+
+1. **Database.** Create a Postgres database (Supabase or Neon both have free tiers). Copy its connection string. On Supabase, use the pooled "Transaction" connection (port 6543), since serverless functions open many short connections.
+2. **Project.** In Vercel, import the GitHub repo. Leave the framework as "Other"; `vercel.json` supplies the commands.
+3. **Environment variables** (Production and Preview):
+   - `DATABASE_URL`: the connection string from step 1. Mark it Sensitive.
+   - `MERIDIAN_TOKEN`: a long random string, e.g. `openssl rand -hex 32`. This is the password you paste into Settings › Journal.
+   - `CRON_SECRET`: the same value as `MERIDIAN_TOKEN`. Vercel Cron sends it as a bearer token, and the token gate accepts it.
+   - Optional: `OPENAI_API_KEY`, `DUFFEL_API_KEY`, `SERPAPI_KEY`, `ALERT_WEBHOOK_URL`.
+4. **Deploy.** Push, or redeploy from the dashboard. Check `https://<your-app>/api/health`.
+5. **Move existing data** (only if you had data on a disk):
+   `DATA_DIR=/path/to/data DATABASE_URL=… npx tsx scripts/copy-data-to-postgres.ts`
+6. **Unlock** on each device: Settings › Journal, paste `MERIDIAN_TOKEN`. Trips then sync.
+
+Cron jobs run on Production deployments only. Preview deployments sit behind Vercel Authentication by default.
+
+To check a build locally: `npm run build:vercel`, then look in `.vercel/output`.

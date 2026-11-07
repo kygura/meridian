@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import postgres from "postgres";
+import { connect, createServer } from "net";
 import { closeDatabase, pgRead, pgUpdate, pgWrite } from "./pgDocuments";
 import { createJsonStore } from "./jsonStore";
 
@@ -52,6 +53,39 @@ describe.skipIf(!PG_URL)("pgDocuments", () => {
       throw new Error("boom");
     })).rejects.toThrow("boom");
     expect(await pgRead("x.json", () => ({ n: 0 }))).toEqual({ n: 1 });
+  });
+
+  it("recovers on the same URL after the database was unreachable at first use", async () => {
+    // A TCP proxy that isn't listening yet stands in for a database that is down.
+    const target = new URL(PG_URL!);
+    const proxy = createServer((client) => {
+      const upstream = connect(Number(target.port || 5432), target.hostname);
+      client.pipe(upstream).pipe(client);
+      const close = () => (client.destroy(), upstream.destroy());
+      client.on("error", close);
+      upstream.on("error", close);
+    });
+    const port = await new Promise<number>((resolve) => {
+      const probe = createServer().listen(0, () => {
+        const p = (probe.address() as { port: number }).port;
+        probe.close(() => resolve(p));
+      });
+    });
+    const viaProxy = new URL(PG_URL!);
+    viaProxy.hostname = "127.0.0.1";
+    viaProxy.port = String(port);
+    process.env.DATABASE_URL = viaProxy.toString();
+    await closeDatabase();
+
+    await expect(pgRead("x.json", () => 0)).rejects.toThrow();
+    await new Promise<void>((resolve) => proxy.listen(port, "127.0.0.1", resolve));
+    try {
+      await expect(pgRead("x.json", () => 0)).resolves.toBe(0);
+    } finally {
+      await closeDatabase();
+      await new Promise((r) => proxy.close(r));
+      process.env.DATABASE_URL = PG_URL;
+    }
   });
 
   it("backs createJsonStore when DATABASE_URL is set", async () => {
