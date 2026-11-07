@@ -26,6 +26,7 @@ import {
   parseJournalIntent,
 } from "../lib/agent/journal-tools.js";
 import { tokenMatches } from "../middleware/auth.js";
+import { CLAUDE_MODELS, DEFAULT_MODEL, completeText, hasAnthropicKey, parseJsonReply, resolveModel, runClaudeChat, type AgentTool } from "../lib/agent/claude.js";
 import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
 
 const agent = new Hono();
@@ -34,9 +35,9 @@ const CACHE_DIR = ensureDataDir("cache");
 const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours for research (more current)
 const BRIEF_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h for simple briefs
 
-function hasOpenAIKey(): boolean {
-  return !!process.env.OPENAI_API_KEY;
-}
+// Claude (Anthropic) powers chat, research and the ticker; without ANTHROPIC_API_KEY
+// every route runs its deterministic mock path.
+const hasAIKey = hasAnthropicKey;
 
 const MOCK_TICKER: TickerItem[] = [
   { glyph: "alert", location: "UKRAINE", text: "Air-defense activity around Kyiv overnight.", time: "12m" },
@@ -328,9 +329,6 @@ async function buildAIResearch(city: City): Promise<CityResearch> {
   const nearby = findNearbyDestinations(city);
   const nearbyNames = nearby.slice(0, 4).map((n) => `${n.name}, ${n.country}`).join("; ");
 
-  const { generateText } = await import("ai");
-  const { openai } = await import("@ai-sdk/openai");
-
   const prompt = `Research the city of ${city.name}, ${city.country} for a digital nomad / remote worker audience. Today's date: ${new Date().toISOString().split("T")[0]}.
 
 City data:
@@ -376,16 +374,13 @@ Return a JSON object with exactly these fields (no markdown, no code fences, jus
 
 Be specific to ${city.name}, ${city.country}. Use real price ranges and real information. Do not give generic advice. If you're uncertain about a specific number, give your best estimate with a range.`;
 
-  const { text } = await generateText({
-    model: openai("gpt-4o-mini"),
+  const text = await completeText({
     system: "You are Meridian, a nomadic intelligence analyst. You provide detailed, specific, and actionable intelligence about cities for digital nomads and remote workers. Always return valid JSON with no markdown formatting.",
     prompt,
-    temperature: 0.3,
-    maxTokens: 2000,
   });
 
   try {
-    const parsed = JSON.parse(text);
+    const parsed = parseJsonReply<CityResearch & Record<string, unknown>>(text);
     // Merge in computed nearby destinations (AI doesn't have our city DB)
     parsed.nearbyDestinations = nearby;
     parsed.cityId = city.id;
@@ -398,9 +393,9 @@ Be specific to ${city.name}, ${city.country}. Use real price ranges and real inf
 }
 
 // ── Mock chat (ADR 0003: keyless path calls the SAME tool-core functions
-// the real streamText loop wraps, and emits the same AI SDK v4 data-stream
+// the real Claude loop wraps, and emits the same AI SDK v4 data-stream
 // tool-call/tool-result parts so useChat's message.toolInvocations shape is
-// identical whether OPENAI_API_KEY is set or not) ──────────────────────
+// identical whether ANTHROPIC_API_KEY is set or not) ──────────────────────
 
 function parseMockIntent(lastUserText: string): {
   region?: string;
@@ -655,7 +650,7 @@ agent.post("/research", async (c) => {
 
   let research: CityResearch;
 
-  if (hasOpenAIKey()) {
+  if (hasAIKey()) {
     try {
       research = await buildAIResearch(city);
     } catch (err) {
@@ -723,7 +718,7 @@ agent.post("/profile", async (c) => {
 
   // Profile now just returns a subset of the research endpoint
   let research: CityResearch;
-  if (hasOpenAIKey()) {
+  if (hasAIKey()) {
     try {
       research = await buildAIResearch(city);
     } catch (err) {
@@ -749,36 +744,7 @@ agent.post("/profile", async (c) => {
   return c.json(brief);
 });
 
-/** POST /api/agent/chat - Discovery chat */
-agent.post("/chat", async (c) => {
-  const body = await c.req.json();
-  const schema = z.object({
-    messages: z.array(
-      z.object({
-        role: z.enum(["user", "assistant", "system"]),
-        content: z.string(),
-      })
-    ),
-  });
-  const parsed = schema.safeParse(body);
-
-  if (!parsed.success) {
-    return c.json({ error: "Invalid request", details: parsed.error.issues }, 400);
-  }
-
-  const unlocked = journalUnlocked(c.req.header("Authorization"));
-  if (!hasOpenAIKey()) {
-    return streamMockChatWithTools(parsed.data.messages, unlocked);
-  }
-  const journal = createJournalTools({ unlocked });
-
-  try {
-    const { streamText, tool } = await import("ai");
-    const { openai } = await import("@ai-sdk/openai");
-
-    const result = streamText({
-      model: openai("gpt-4o-mini"),
-      system: `You are Meridian, a travel research analyst. Help users discover cities for remote work and travel by
+const CHAT_SYSTEM = `You are Meridian, a travel research analyst. Help users discover cities for remote work and travel by
 actively using your tools: search_places to find and rank candidate cities, get_place_images to pull a
 representative photo, get_seasonality to check the best months to visit, and get_flight_estimate to price a route.
 Call the relevant tools before making specific claims about scores, images, timing, or prices — don't guess numbers
@@ -790,76 +756,110 @@ returns journal_locked, tell the user to unlock their journal in Settings.
 Write for a traveller in plain words: never mention tool names, field names, ids or error codes. Say "crowds" not
 "crowdProxy", "temperature" not "tempC", "rainfall" not "precipMm", "daily spend" not "dailySpendEur", "flight cost" not
 "flightCostEurPer1000km", "best months" not "seasonality", and "similar places" not "windows". Mention city names in full
-(e.g. "Lisbon") so the app can link them.`,
-      messages: parsed.data.messages,
-      tools: {
-        search_places: tool({
-          description:
-            "Search and rank cities/places by name, country, region, budget tier, or minimum Meridian score. Returns up to 8 ranked results.",
-          parameters: searchPlacesParams,
-          execute: searchPlaces,
-        }),
-        get_place_images: tool({
-          description:
-            "Get up to 4 representative photos for a city (by cityId) or a free-text place title, sourced from Wikipedia/Wikimedia Commons with attribution.",
-          parameters: getPlaceImagesParams,
-          execute: getPlaceImages,
-        }),
-        get_seasonality: tool({
-          description: "Get monthly climate/comfort seasonality for a city, when available.",
-          parameters: getSeasonalityParams,
-          execute: getSeasonality,
-        }),
-        get_flight_estimate: tool({
-          description:
-            "Estimate flight price between two IATA airport codes, optionally for a given departure date.",
-          parameters: getFlightEstimateParams,
-          execute: getFlightEstimateTool,
-        }),
-        search_journal: tool({
-          description: "Search the user's past journeys by text, cityId, country, year, month, tags or minimum rating. Returns summaries with a fingerprint brief.",
-          parameters: searchJournalParams,
-          execute: journal.searchJournal,
-        }),
-        get_fingerprint: tool({
-          description: "Get the conditions (weather, spend, crowd proxy) a past journey, or one of its stops, actually had.",
-          parameters: getFingerprintParams,
-          execute: journal.getFingerprint,
-        }),
-        find_similar_windows: tool({
-          description:
-            "Rank destination x month windows similar to a past journey (journeyId). bend: tempC -10..10, spendPct -50..50, crowd -50..50, monthShift. months restricts target months (1-12). Results also come as Open Places with a match breakdown.",
-          parameters: findSimilarWindowsParams,
-          execute: journal.findSimilarWindows,
-        }),
-        draft_journey: tool({
-          description: "Draft a journey (stops with cityId or cityHint, dates, optional segments) into the user's review inbox. Cannot confirm it.",
-          parameters: draftJourneyParams,
-          execute: journal.draftJourney,
-        }),
-      },
-      maxSteps: 6,
-    });
+(e.g. "Lisbon") so the app can link them.`;
 
-    return result.toDataStreamResponse();
-  } catch (err) {
-    console.error("[agent/chat] AI error:", err);
-    return c.json({ error: "AI service unavailable", message: String(err) }, 503);
+/** POST /api/agent/chat - Discovery chat */
+agent.post("/chat", async (c) => {
+  const body = await c.req.json();
+  const schema = z.object({
+    messages: z.array(
+      z.object({
+        role: z.enum(["user", "assistant", "system"]),
+        content: z.string(),
+      })
+    ),
+    /** Claude model id from GET /api/agent/models; unknown ids fall back to the default. */
+    model: z.string().optional(),
+  });
+  const parsed = schema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid request", details: parsed.error.issues }, 400);
   }
+
+  const unlocked = journalUnlocked(c.req.header("Authorization"));
+  if (!hasAIKey()) {
+    return streamMockChatWithTools(parsed.data.messages, unlocked);
+  }
+  const journal = createJournalTools({ unlocked });
+  const model = resolveModel(parsed.data.model);
+  const tools: Record<string, AgentTool> = {
+    search_places: {
+      description:
+        "Search and rank cities/places by name, country, region, budget tier, or minimum Meridian score. Returns up to 8 ranked results.",
+      parameters: searchPlacesParams,
+      execute: searchPlaces as AgentTool["execute"],
+    },
+    get_place_images: {
+      description:
+        "Get up to 4 representative photos for a city (by cityId) or a free-text place title, sourced from Wikipedia/Wikimedia Commons with attribution.",
+      parameters: getPlaceImagesParams,
+      execute: getPlaceImages as AgentTool["execute"],
+    },
+    get_seasonality: {
+      description: "Get monthly climate/comfort seasonality for a city, when available.",
+      parameters: getSeasonalityParams,
+      execute: getSeasonality as AgentTool["execute"],
+    },
+    get_flight_estimate: {
+      description: "Estimate flight price between two IATA airport codes, optionally for a given departure date.",
+      parameters: getFlightEstimateParams,
+      execute: getFlightEstimateTool as AgentTool["execute"],
+    },
+    search_journal: {
+      description: "Search the user's past journeys by text, cityId, country, year, month, tags or minimum rating. Returns summaries with a fingerprint brief.",
+      parameters: searchJournalParams,
+      execute: journal.searchJournal as AgentTool["execute"],
+    },
+    get_fingerprint: {
+      description: "Get the conditions (weather, spend, crowd proxy) a past journey, or one of its stops, actually had.",
+      parameters: getFingerprintParams,
+      execute: journal.getFingerprint as AgentTool["execute"],
+    },
+    find_similar_windows: {
+      description:
+        "Rank destination x month windows similar to a past journey (journeyId). bend: tempC -10..10, spendPct -50..50, crowd -50..50, monthShift. months restricts target months (1-12). Results also come as Open Places with a match breakdown.",
+      parameters: findSimilarWindowsParams,
+      execute: journal.findSimilarWindows as AgentTool["execute"],
+    },
+    draft_journey: {
+      description: "Draft a journey (stops with cityId or cityHint, dates, optional segments) into the user's review inbox. Cannot confirm it.",
+      parameters: draftJourneyParams,
+      execute: journal.draftJourney as AgentTool["execute"],
+    },
+  };
+
+  const { createDataStreamResponse, formatDataStreamPart } = await import("ai");
+  return createDataStreamResponse({
+    execute: (dataStream) =>
+      runClaudeChat({
+        model,
+        system: CHAT_SYSTEM,
+        messages: parsed.data.messages,
+        tools,
+        write: (part) => dataStream.write(part as never),
+        format: formatDataStreamPart,
+      }),
+    onError: (err) => {
+      console.error("[agent/chat] Claude error:", err);
+      return "The assistant is unavailable right now. Try again in a moment.";
+    },
+  });
+});
+
+/** GET /api/agent/models - the Claude models the Ask panel can switch between. */
+agent.get("/models", (c) => {
+  return c.json({ models: CLAUDE_MODELS, default: DEFAULT_MODEL, available: hasAIKey() });
 });
 
 /** POST /api/agent/ticker - Generate ticker items */
 agent.post("/ticker", async (c) => {
-  if (!hasOpenAIKey()) {
+  if (!hasAIKey()) {
     return c.json(MOCK_TICKER);
   }
 
   try {
-    const { generateText } = await import("ai");
-    const { openai } = await import("@ai-sdk/openai");
-
-    const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+    const text = await completeText({
       system: `You are a global events monitor. Return a JSON array of 5-8 ticker items about current global events relevant to travelers and digital nomads.
 Each item must have: glyph (one of: "alert", "hazard", "info", "good"), location (country or city name, UPPERCASE), text (one sentence), time (relative time like "12m", "1h", "3h").
 Return ONLY the JSON array, no markdown or explanation.`,
@@ -867,7 +867,7 @@ Return ONLY the JSON array, no markdown or explanation.`,
     });
 
     try {
-      const items = JSON.parse(text) as TickerItem[];
+      const items = parseJsonReply<TickerItem[]>(text);
       return c.json(items);
     } catch {
       console.error("[agent/ticker] Failed to parse AI response, using mock");

@@ -1,7 +1,7 @@
 import "./ask.css";
 import { useChat } from "ai/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, type FormEvent, type KeyboardEvent } from "react";
-import { Chip, ErrorState, IconButton, Sheet, Textarea, toast, useJournalToken } from "../../ui";
+import { Chip, ErrorState, IconButton, Select, Sheet, Textarea, toast, useJournalToken } from "../../ui";
 import { IconAsk, IconClose, IconEdit, IconSend, IconSparkle } from "../../ui/icons";
 import { apiUrl } from "../../lib/api";
 import { bearerHeaders } from "../../lib/replayMatch";
@@ -12,6 +12,7 @@ import AskMessage, { type AskMessageModel } from "./AskMessage";
 import TripIdeas from "./TripIdeas";
 import { cityNameIndex } from "./askText";
 import { useTripIdeas } from "./tripIdeas";
+import { useAskModel, useAskModels } from "./askModel";
 
 export interface AskPanelProps {
   /**
@@ -44,12 +45,16 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
   const ideas = useTripIdeas();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const models = useAskModels();
+  const setModel = useAskModel((s) => s.setModel);
 
   // Journal tools only run when the request carries the token; headers are re-read on every request.
   const { messages, input, setInput, append, status, error, reload, stop, setMessages } = useChat({
     id: CHAT_ID,
     api: apiUrl("/api/agent/chat"),
     headers: bearerHeaders(unlocked ? token : null),
+    // Read on every request, so switching models applies to the next message.
+    body: models.selected ? { model: models.selected } : undefined,
     experimental_throttle: 50,
   });
   const busy = status === "submitted" || status === "streaming";
@@ -220,11 +225,37 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
     </form>
   );
 
+  // Shown only when the server has a Claude key; the demo path has no model to pick.
+  const modelPicker = models.list?.available ? (
+    <Select
+      size="sm"
+      className="ask-model"
+      aria-label="Model"
+      title={models.list.models.find((m) => m.id === models.selected)?.note}
+      value={models.selected ?? models.list.default}
+      onChange={(e) => setModel(e.target.value)}
+      options={models.list.models.map((m) => ({ value: m.id, label: m.label }))}
+    />
+  ) : null;
+
   const newChatButton = messages.length > 0 ? <IconButton size="sm" label="New chat" icon={<IconEdit size={18} />} onClick={newChat} /> : null;
 
   if (mode === "sheet") {
     return (
-      <Sheet open onClose={onClose} title="Ask" size="lg" headerExtra={newChatButton} footer={composer} className="ask-sheet">
+      <Sheet
+        open
+        onClose={onClose}
+        title="Ask"
+        size="lg"
+        headerExtra={
+          <>
+            {modelPicker}
+            {newChatButton}
+          </>
+        }
+        footer={composer}
+        className="ask-sheet"
+      >
         {thread}
       </Sheet>
     );
@@ -235,6 +266,7 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
       <header className="ask-docked-head">
         <h2>Ask</h2>
         <div className="ask-docked-tools">
+          {modelPicker}
           {newChatButton}
           <IconButton label="Close" icon={<IconClose />} onClick={onClose} />
         </div>

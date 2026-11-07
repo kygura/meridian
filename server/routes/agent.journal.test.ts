@@ -17,7 +17,7 @@ const TOKEN = "test-token";
 const EXAMPLE = "somewhere like Lisbon last May but warmer and cheaper, in spring";
 let TMP: string;
 let unregister: () => void;
-const savedKey = process.env.OPENAI_API_KEY;
+const savedKey = process.env.ANTHROPIC_API_KEY;
 
 interface Part {
   code: string;
@@ -61,7 +61,7 @@ beforeEach(async () => {
   TMP = mkdtempSync(join(tmpdir(), "meridian-agent-journal-"));
   process.env.DATA_DIR = TMP;
   process.env.MERIDIAN_TOKEN = TOKEN;
-  delete process.env.OPENAI_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
   setFingerprintDepsFactory(() => ({ ...fixtureFingerprintDeps().deps, getCity: getCityById }));
   setReplayDepsFactory((p) => ({
     journeys: p.journeys,
@@ -80,7 +80,7 @@ afterEach(() => {
   rmSync(TMP, { recursive: true, force: true });
   delete process.env.DATA_DIR;
   delete process.env.MERIDIAN_TOKEN;
-  if (savedKey !== undefined) process.env.OPENAI_API_KEY = savedKey;
+  if (savedKey !== undefined) process.env.ANTHROPIC_API_KEY = savedKey;
 });
 
 async function seedLisbon() {
