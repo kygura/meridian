@@ -28,7 +28,7 @@ function validAnomaly(x: unknown): x is MapAnomaly {
   return (
     !!a &&
     typeof a.id === "string" &&
-    (a.kind === "conflict" || a.kind === "hazard") &&
+    (a.kind === "conflict" || a.kind === "advisory" || a.kind === "hazard") &&
     typeof a.label === "string" &&
     Number.isFinite(a.lat) &&
     Number.isFinite(a.lng) &&
@@ -53,7 +53,13 @@ export function loadPhenomena(): PhenomenaFile {
   return cache;
 }
 
-/** Anomalies active in a month (1-12): standing conflicts always, hazards in their season. */
+/** Standing conflicts and advisories for one country (worldcities.csv spelling). */
+export function advisoriesForCountry(country: string): MapAnomaly[] {
+  const key = country.toLowerCase();
+  return loadPhenomena().items.filter((a) => a.kind !== "hazard" && a.country?.toLowerCase() === key);
+}
+
+/** Anomalies active in a month (1-12): standing conflicts and advisories always, hazards in their season. */
 export function anomaliesFor(month?: number): { asOf: string; note?: string; items: MapAnomaly[] } {
   const data = loadPhenomena();
   const items = month ? data.items.filter((a) => !a.months || a.months.includes(month)) : data.items;

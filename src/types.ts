@@ -594,10 +594,20 @@ export interface MapEventPoint {
   lng: number;
 }
 
-/** A conflict advisory or seasonal hazard (data/phenomena.json, GET /api/overlays/anomalies). */
+/**
+ * A conflict, an advisory (a standing problem such as unsafe rail) or a seasonal hazard
+ * (data/phenomena.json, GET /api/overlays/anomalies).
+ */
 export interface MapAnomaly {
   id: string;
-  kind: "conflict" | "hazard";
+  kind: "conflict" | "advisory" | "hazard";
+  /** Risk topic for advisories: transport, safety, unrest, governance, health, utilities. */
+  topic?: string;
+  /** Longer explanation, shown in the city panel. */
+  detail?: string;
+  /** YYYY-MM the advisory has applied since. */
+  since?: string;
+  sources?: { title: string; url: string }[];
   /** war, insurgency, unrest, storm, flood, fire, heat, air, dust... */
   type?: string;
   label: string;

@@ -36,7 +36,7 @@ It keeps documents already in the database unless you pass `--overwrite`.
 - Environment:
   - `DATA_DIR=/var/data`, so personal data survives deploys. Set `DATABASE_URL` instead to drop the disk.
   - `MERIDIAN_TOKEN` gates the journal, replay, import, watches and trips APIs. Without it they return 401, and trips stay in each browser.
-  - `OPENAI_API_KEY` is optional. Without it the agent uses its mock path.
+  - `ANTHROPIC_API_KEY` is optional. Without it Ask uses its mock path and the city news briefing is rule-based.
   - `ALERT_WEBHOOK_URL` is optional.
 - Daily watch run: Render needs a Cron Job (paid) to call `POST /api/watches/run`. Vercel runs it for free (see below).
 
@@ -58,7 +58,7 @@ On Vercel only `/tmp` is writable, so caches go to `/tmp/meridian` and rebuild o
    - `DATABASE_URL`: the connection string from step 1. Mark it Sensitive.
    - `MERIDIAN_TOKEN`: a long random string, e.g. `openssl rand -hex 32`. This is the password you paste into Settings › Journal.
    - `CRON_SECRET`: the same value as `MERIDIAN_TOKEN`. Vercel Cron sends it as a bearer token, and the token gate accepts it.
-   - Optional: `OPENAI_API_KEY`, `DUFFEL_API_KEY`, `SERPAPI_KEY`, `ALERT_WEBHOOK_URL`.
+   - Optional: `ANTHROPIC_API_KEY`, `DUFFEL_API_KEY`, `SERPAPI_KEY`, `ALERT_WEBHOOK_URL`.
 4. **Deploy.** Push, or redeploy from the dashboard. Check `https://<your-app>/api/health`.
 5. **Move existing data** (only if you had data on a disk):
    `DATA_DIR=/path/to/data DATABASE_URL=… npx tsx scripts/copy-data-to-postgres.ts`

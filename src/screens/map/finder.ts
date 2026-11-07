@@ -100,7 +100,9 @@ export function seedAnomalyData(items: MapAnomaly[], month: number): AnomalyDatu
     const sub =
       a.kind === "conflict"
         ? `Conflict advisory${a.country ? ` · ${a.country}` : ""}`
-        : `Seasonal hazard · ${monthSpan(a.months)}${peak ? " · peak now" : ""}`;
+        : a.kind === "advisory"
+          ? `Advisory${a.country ? ` · ${a.country}` : ""}${a.since ? ` · since ${a.since}` : ""}`
+          : `Seasonal hazard · ${monthSpan(a.months)}${peak ? " · peak now" : ""}`;
     return {
       kind: "anomaly",
       coord: [a.lng, a.lat],
