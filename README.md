@@ -8,7 +8,7 @@ Live: https://meridian-mocha-iota.vercel.app
 
 | Screen | What it does |
 |---|---|
-| **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate, a *Watch* list (curated advisories plus risk topics that keep showing up in local headlines: transport, unrest, corruption, crime, health, outages) and news from the city and its country. Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
+| **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate, a *Watch* list of problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption) and news from the city and its country. Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
 | **Trips** | Planned trips as ordered city routes with flight estimates, plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |

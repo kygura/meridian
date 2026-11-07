@@ -81,7 +81,7 @@ describe("getPlaceNews", () => {
     const spy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
     expect((await getPlaceNews("Madrid", "Spain")).available).toBe(false);
     await getPlaceNews("Madrid", "Spain");
-    expect(spy).toHaveBeenCalledTimes(6);
+    expect(spy).toHaveBeenCalledTimes(8);
   });
 
   it("dedupes across the city and country searches and caches", async () => {
@@ -92,6 +92,6 @@ describe("getPlaceNews", () => {
     expect(r.items).toHaveLength(1);
     expect(r.items[0].scope).toBe("city");
     await getPlaceNews("Madrid", "Spain");
-    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy).toHaveBeenCalledTimes(4);
   });
 });

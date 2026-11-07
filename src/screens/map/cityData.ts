@@ -135,10 +135,43 @@ export interface NewsFlag {
   latest: string;
 }
 
+export type IssueSubject = "rail" | "air" | "road" | "sea" | "buildings" | "power" | "water" | "health" | "crime" | "unrest" | "politics";
+
+/** A systemic problem detected from a country's headlines (server/lib/newsIssues.ts). */
+export interface NewsIssue {
+  subject: IssueSubject;
+  label: string;
+  level: "systemic" | "incident" | "recurring";
+  incidents: number;
+  deaths: number;
+  linked: ("governance" | "unrest")[];
+  headlineCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  headlines: { title: string; url: string; pubDate: string; source: string }[];
+  summary: string;
+}
+
+/** News-flag topic an issue subject already covers. */
+export const SUBJECT_TOPIC: Record<IssueSubject, NewsTopic | null> = {
+  rail: "transport",
+  air: "transport",
+  road: "transport",
+  sea: "transport",
+  buildings: null,
+  power: "utilities",
+  water: "utilities",
+  health: "health",
+  crime: "safety",
+  unrest: "unrest",
+  politics: "governance",
+};
+
 export interface PlaceNews {
   available: boolean;
   items: PlaceNewsItem[];
   flags: NewsFlag[];
+  issues: NewsIssue[];
   advisories: MapAnomaly[];
 }
 
@@ -173,6 +206,7 @@ export function usePlaceNews(cityId: string) {
           available: b.available === true,
           items: Array.isArray(b.items) ? b.items : [],
           flags: Array.isArray(b.flags) ? b.flags : [],
+          issues: Array.isArray(b.issues) ? b.issues : [],
           advisories: Array.isArray(b.advisories) ? b.advisories : [],
         };
         placeNewsCache.set(cityId, { at: Date.now(), value });

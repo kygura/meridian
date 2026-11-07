@@ -23,7 +23,7 @@ import {
   useJournalToken,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
-import { ago, CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, usePlaceNews, type NewsTopic } from "./cityData";
+import { ago, CITY_METRICS, sentenceCase, SUBJECT_TOPIC, TOPIC_LABELS, useCityMetrics, useCitySeasonality, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -424,14 +424,27 @@ function Visits({ city }: { city: City }) {
 
 // ── Watch: advisories and recurring risk news ───────────────────────
 
+const ISSUE_LEVEL: Record<NewsIssue["level"], string> = {
+  systemic: "Pattern",
+  incident: "Recent incident",
+  recurring: "Recurring",
+};
+
+/** Issues worth showing: every pattern, plus incidents and recurring problems up to a cap. */
+const WATCH_LIMIT = 4;
+
 function Watch({ city }: { city: City }) {
   const { data } = usePlaceNews(city.id);
   if (!data) return null;
-  const { advisories, flags } = data;
-  // A curated advisory already covers its topic; don't repeat it as a news flag.
-  const covered = new Set(advisories.map((a) => a.topic).filter(Boolean));
-  const newsFlags = flags.filter((f) => !covered.has(f.topic)).slice(0, 3);
-  if (!advisories.length && !newsFlags.length) return null;
+  const { advisories, flags, issues } = data;
+  const shownIssues = issues.filter((i, k) => i.level === "systemic" || k < WATCH_LIMIT);
+  // Don't repeat a topic an issue or a curated advisory already covers.
+  const covered = new Set<string>([
+    ...advisories.map((a) => a.topic ?? ""),
+    ...shownIssues.map((i) => SUBJECT_TOPIC[i.subject] ?? ""),
+  ]);
+  const newsFlags = flags.filter((f) => !covered.has(f.topic)).slice(0, Math.max(0, WATCH_LIMIT - shownIssues.length));
+  if (!advisories.length && !shownIssues.length && !newsFlags.length) return null;
   const country = displayCountry(city.country);
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-watch`}>
@@ -459,6 +472,32 @@ function Watch({ city }: { city: City }) {
             ) : null}
           </li>
         ))}
+        {shownIssues.map((issue) => (
+          <li key={issue.subject} className="map-watch-item" data-sev={issue.level === "systemic" ? 3 : 2}>
+            <span className="map-watch-kicker">
+              {ISSUE_LEVEL[issue.level]} · from {issue.headlineCount} {issue.headlineCount === 1 ? "headline" : "headlines"}
+            </span>
+            <span className="map-watch-title">{issue.label}</span>
+            <span className="map-watch-detail">{issue.summary}</span>
+            {issue.headlines.length ? (
+              <span className="map-watch-sources">
+                {issue.headlines.map((h) => (
+                  <a key={h.url || h.title} href={h.url} target="_blank" rel="noopener noreferrer">
+                    {h.title}
+                    {h.source ? (
+                      <>
+                        {" "}
+                        (<bdi>{h.source}</bdi>, {fmtSince(h.pubDate.slice(0, 7))})
+                      </>
+                    ) : (
+                      ` (${fmtSince(h.pubDate.slice(0, 7))})`
+                    )}
+                  </a>
+                ))}
+              </span>
+            ) : null}
+          </li>
+        ))}
         {newsFlags.map((f) => (
           <li key={f.topic} className="map-watch-item" data-sev={f.severity}>
             <span className="map-watch-kicker">
@@ -475,6 +514,9 @@ function Watch({ city }: { city: City }) {
           </li>
         ))}
       </ul>
+      {shownIssues.length || newsFlags.length ? (
+        <p className="map-city-note">Detected automatically from recent headlines. Read the sources before deciding.</p>
+      ) : null}
     </section>
   );
 }

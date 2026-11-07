@@ -44,6 +44,12 @@ A map marker for something to avoid or watch: a standing conflict, a standing ad
 (a known problem such as unsafe rail), a recurring seasonal hazard (`data/phenomena.json`),
 or a live news alert placed on a country's capital.
 
+**Issue**:
+A problem detected from a country's headlines over the past year, by subject (rail, air,
+roads, ferries, buildings, power, water, outbreaks, crime, strikes, corruption). Levels:
+*pattern* (two corroborated deadly incidents, or one plus corruption or accountability
+coverage), *recent incident*, *recurring* (repeated disruption). Not hand-curated.
+
 **Watch Flag**:
 A risk topic (transport, unrest, governance, safety, health, utilities, hazard, conflict)
 that a place's own headlines keep raising: once with deaths, or repeatedly with disruption.

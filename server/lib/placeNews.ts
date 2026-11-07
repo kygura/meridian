@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { detectIssues, LABOUR_STRIKE, type NewsIssue } from "./newsIssues.js";
 
 // Headlines about one place: the city itself and its country, from Google News search
 // RSS, each tagged with the travel-risk topics it touches (transport, safety, unrest,
@@ -35,6 +36,8 @@ export interface PlaceNews {
   available: boolean;
   items: PlaceNewsItem[];
   flags: NewsFlag[];
+  /** Systemic problems detected from the headlines (see newsIssues.ts). */
+  issues: NewsIssue[];
 }
 
 export const TOPIC_LABELS: Record<NewsTopic, string> = {
@@ -53,7 +56,7 @@ export const TOPIC_LABELS: Record<NewsTopic, string> = {
 const TOPIC_WORDS: Record<NewsTopic, string[]> = {
   transport: ["train", "rail*", "derail*", "metro", "subway", "tram", "high-speed", "airport", "flight", "airline", "runway", "ferry", "bridge collapse", "motorway", "highway", "bus crash", "renfe", "adif", "air traffic"],
   safety: ["crime", "murder*", "shooting", "stabbing", "robber*", "theft", "pickpocket", "kidnap*", "terror*", "gang", "cartel", "homicide", "assault", "scam"],
-  unrest: ["protest*", "riot*", "strike", "walkout", "curfew", "unrest", "demonstration", "clashes", "blockade", "state of emergency"],
+  unrest: ["protest*", "riot*", "walkout", "curfew", "unrest", "demonstration", "clashes", "blockade", "state of emergency"],
   governance: ["corruption", "bribe", "scandal", "indicted", "indictment", "fraud", "embezzl*", "resign*", "graft", "kickback", "coup", "impeach*"],
   health: ["outbreak", "epidemic", "cholera", "dengue", "measles", "malaria", "virus", "infection", "pandemic", "contaminat*", "food poisoning"],
   utilities: ["blackout", "power cut", "power outage", "outage", "water shortage", "drought restrictions", "rationing", "grid failure", "fuel shortage"],
@@ -62,7 +65,7 @@ const TOPIC_WORDS: Record<NewsTopic, string[]> = {
 };
 
 const HARM_WORDS = ["dead", "death", "die", "died", "kill*", "fatal*", "victim", "toll", "crash", "collision", "derail*", "massacre"];
-const DISRUPT_WORDS = ["cancel*", "suspend*", "delay*", "closed", "closure", "halt*", "disrupt*", "evacuat*", "warning", "alert", "shortage", "chaos", "injur*", "strike"];
+const DISRUPT_WORDS = ["cancel*", "suspend*", "delay*", "closed", "closure", "halt*", "disrupt*", "evacuat*", "warning", "alert", "shortage", "chaos", "injur*"];
 
 const escape = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const patterns = new Map<string, RegExp>();
@@ -80,8 +83,10 @@ function hasWord(text: string, w: string): boolean {
 export function classifyHeadline(title: string): { topics: NewsTopic[]; severity: 1 | 2 | 3 } {
   const t = title.toLowerCase();
   const topics = (Object.keys(TOPIC_WORDS) as NewsTopic[]).filter((topic) => TOPIC_WORDS[topic].some((w) => hasWord(t, w)));
+  const labour = LABOUR_STRIKE.test(t);
+  if (labour && !topics.includes("unrest")) topics.push("unrest");
   const harm = HARM_WORDS.some((w) => hasWord(t, w));
-  const disrupt = DISRUPT_WORDS.some((w) => hasWord(t, w));
+  const disrupt = labour || DISRUPT_WORDS.some((w) => hasWord(t, w));
   const severity: 1 | 2 | 3 = topics.length && harm ? 3 : topics.length && disrupt ? 2 : 1;
   return { topics, severity };
 }
@@ -165,6 +170,9 @@ function nameForms(name: string): string[] {
   return [...forms].filter((f) => f.length >= 3);
 }
 
+// Deadly events over a year, so an incident months back still counts toward a pattern.
+const DEADLY_TERMS = "(crash OR derailment OR collision OR collapse OR explosion OR fire OR outbreak OR shooting OR sinking) (killed OR dead OR deaths OR toll)";
+
 const RISK_TERMS = "(crash OR derailment OR strike OR protest OR outage OR blackout OR corruption OR outbreak OR flood OR wildfire OR earthquake OR shooting OR evacuation)";
 
 const TTL_MS = 30 * 60 * 1000;
@@ -176,8 +184,8 @@ export function resetPlaceNewsCache(): void {
 }
 
 /**
- * City headlines (14 days), country headlines (14 days) and country risk headlines
- * (90 days, so a serious incident keeps its flag for a season). Deduped by title,
+ * City headlines (14 days), country headlines (14 days), country risk headlines
+ * (90 days) and deadly-incident headlines (1 year, for issue detection). Deduped by title,
  * newest first. Network failure -> { available: false } (never cached).
  */
 export async function getPlaceNews(city: string, country: string, now = Date.now()): Promise<PlaceNews> {
@@ -190,11 +198,14 @@ export async function getPlaceNews(city: string, country: string, now = Date.now
     ...(sameName ? [] : ([[`"${city}" ${country} when:14d`, "city"]] as [string, PlaceNewsItem["scope"]][])),
     [`"${country}" when:14d`, "country"],
     [`"${country}" ${RISK_TERMS} when:90d`, "country"],
+    [`"${country}" ${DEADLY_TERMS} when:1y`, "country"],
   ];
   const results = await Promise.allSettled(queries.map(([q, scope]) => fetchText(searchUrl(q)).then((xml) => parseFeed(xml, scope))));
-  if (results.every((r) => r.status === "rejected")) return { available: false, items: [], flags: [] };
+  if (results.every((r) => r.status === "rejected")) return { available: false, items: [], flags: [], issues: [] };
 
-  const names = [...nameForms(city), ...nameForms(country)];
+  const names = [...nameForms(city), ...nameForms(country)].map(
+    (n) => new RegExp(`(^|[^\\p{L}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^\\p{L}])`, "u")
+  );
   const seen = new Set<string>();
   const items: PlaceNewsItem[] = [];
   for (const r of results) {
@@ -203,11 +214,12 @@ export async function getPlaceNews(city: string, country: string, now = Date.now
       const k = it.title.toLowerCase();
       if (seen.has(k) || isSports(it.title, it.source)) continue;
       seen.add(k);
-      items.push({ ...it, mentions: names.some((n) => k.includes(n)) });
+      // Whole-name match: "Japan" must not match "Japanese" (news about Japanese abroad).
+      items.push({ ...it, mentions: names.some((n) => n.test(k)) });
     }
   }
   items.sort((a, b) => Date.parse(b.pubDate) - Date.parse(a.pubDate));
-  const value: PlaceNews = { available: true, items: items.slice(0, 60), flags: buildFlags(items) };
+  const value: PlaceNews = { available: true, items: items.slice(0, 60), flags: buildFlags(items), issues: detectIssues(items) };
   cache.set(key, { at: now, value });
   return value;
 }
