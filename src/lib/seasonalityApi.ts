@@ -2,10 +2,11 @@
  * Seasonality API types + fetch wrappers.
  * Shapes match server/routes/seasonality.ts exactly:
  *  - GET /api/seasonality/:cityId      -> { cityId, months: SeasonMonth[12] } | 404
- *  - GET /api/seasonality?cityIds=a,b  -> { cities: Record<id, SeasonMonth[] | null> }
+ *  - GET /api/seasonality?cityIds=a,b  -> { cities: Record<id, SeasonMonth[] | null>, window }
  *    (null = uncovered/pending; the server may resolve misses on-demand, so a
  *    single re-request of nulls after a few seconds can fill them in)
- *  - GET /api/seasonality/regions      -> { regions: RegionSeason[] }
+ *  - GET /api/seasonality/regions      -> { regions: RegionSeason[], window }
+ *    (window = year range the scores average over, e.g. "2015-2024")
  *  - 503 = seasonality temporarily unavailable (provider quota)
  */
 
@@ -22,6 +23,22 @@ export interface SeasonMonth {
 export interface RegionSeason {
   region: string;
   months: Array<{ score: number }>;
+}
+
+/** Batch response: city records plus the dataset's year window (null if the server omitted it). */
+export interface SeasonalityBatch {
+  cities: Record<string, SeasonMonth[] | null>;
+  window: string | null;
+}
+
+/** Region aggregates plus the dataset's year window (null if the server omitted it). */
+export interface RegionsResult {
+  regions: RegionSeason[];
+  window: string | null;
+}
+
+function readWindow(value: unknown): string | null {
+  return typeof value === "string" && value ? value : null;
 }
 
 /** Thrown on a 503 — provider quota exhausted, retry later. Never fabricate data. */
@@ -42,13 +59,12 @@ function checkStatus(res: Response): void {
 
 /**
  * Batch fetch, chunked to the server's 100-id limit.
- * Returns a record where null means "not covered (yet)".
+ * In `cities`, null means "not covered (yet)".
  */
-export async function fetchSeasonality(
-  cityIds: string[]
-): Promise<Record<string, SeasonMonth[] | null>> {
+export async function fetchSeasonality(cityIds: string[]): Promise<SeasonalityBatch> {
   const unique = [...new Set(cityIds)].filter(Boolean);
   const result: Record<string, SeasonMonth[] | null> = {};
+  let window: string | null = null;
   for (let i = 0; i < unique.length; i += BATCH_LIMIT) {
     const chunk = unique.slice(i, i + BATCH_LIMIT);
     const qs = chunk.map(encodeURIComponent).join(",");
@@ -56,10 +72,12 @@ export async function fetchSeasonality(
     checkStatus(res);
     const body = (await res.json()) as {
       cities?: Record<string, SeasonMonth[] | null>;
+      window?: unknown;
     };
     Object.assign(result, body.cities ?? {});
+    window = readWindow(body.window) ?? window;
   }
-  return result;
+  return { cities: result, window };
 }
 
 /** Single-city fetch. 404 (uncovered) resolves to null. */
@@ -74,9 +92,12 @@ export async function fetchCitySeasonality(
 }
 
 /** Region aggregates for the REGIONS toggle / empty-state teaser. */
-export async function fetchRegions(): Promise<RegionSeason[]> {
+export async function fetchRegions(): Promise<RegionsResult> {
   const res = await fetch(apiUrl("/api/seasonality/regions"));
   checkStatus(res);
-  const body = (await res.json()) as { regions?: RegionSeason[] };
-  return Array.isArray(body.regions) ? body.regions : [];
+  const body = (await res.json()) as { regions?: RegionSeason[]; window?: unknown };
+  return {
+    regions: Array.isArray(body.regions) ? body.regions : [],
+    window: readWindow(body.window),
+  };
 }

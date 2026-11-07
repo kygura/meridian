@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import {
   getRegionAggregates,
+  getSeasonalityWindow,
   peekCitySeasonality,
   resolveCitySeasonality,
   type MonthSeasonality,
@@ -29,9 +30,12 @@ async function mapWithConcurrency(
   await Promise.all(lanes);
 }
 
-/** GET /api/seasonality/regions - per-country monthly comfort aggregates. */
+/**
+ * GET /api/seasonality/regions - per-country monthly comfort aggregates.
+ * `window` is the year range the scores average over (e.g. "2015-2024").
+ */
 seasonality.get("/regions", (c) => {
-  return c.json({ regions: getRegionAggregates() });
+  return c.json({ regions: getRegionAggregates(), window: getSeasonalityWindow() });
 });
 
 /**
@@ -40,7 +44,8 @@ seasonality.get("/regions", (c) => {
  * MAX_ON_DEMAND_FETCHES are fetched on-demand (bounded concurrency); the
  * rest are returned as null so the client can re-request later. Fetch
  * failures also come back as null in a batch — no 503 here, that's reserved
- * for the single-city route below.
+ * for the single-city route below. `window` is the year range the scores
+ * average over (e.g. "2015-2024").
  */
 seasonality.get("/", async (c) => {
   const schema = z.object({
@@ -81,7 +86,7 @@ seasonality.get("/", async (c) => {
     cities[id] = result.kind === "hit" ? result.months : null;
   });
 
-  return c.json({ cities });
+  return c.json({ cities, window: getSeasonalityWindow() });
 });
 
 /**

@@ -338,6 +338,15 @@ export async function getCitySeasonality(cityId: string): Promise<MonthSeasonali
   return result.kind === "hit" ? result.months : undefined;
 }
 
+/**
+ * Year range the comfort scores are averaged over, e.g. "2015-2024". Read from
+ * the seed dataset; falls back to the on-demand fetch window when the seed is
+ * missing or predates the field.
+ */
+export function getSeasonalityWindow(): string {
+  return loadSeasonality().window || WINDOW;
+}
+
 /** Per-country monthly average of covered cities' scores (seed + runtime cache merged). */
 export function getRegionAggregates(): RegionAggregate[] {
   const dataset = mergedCities();

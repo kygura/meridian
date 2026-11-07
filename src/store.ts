@@ -90,6 +90,9 @@ export interface MeridianState {
   mergeSeasonality: (record: Record<string, SeasonMonth[] | null>) => void;
   seasonalityRegions: RegionSeason[] | null;
   setSeasonalityRegions: (regions: RegionSeason[]) => void;
+  /** Year range the comfort scores average over, as served (e.g. "2015-2024"); null until known. */
+  seasonalityWindow: string | null;
+  setSeasonalityWindow: (window: string | null) => void;
   seasonsShowRegions: boolean;
   setSeasonsShowRegions: (on: boolean) => void;
 
@@ -352,6 +355,10 @@ export const useMeridianStore = create<MeridianState>()(
         })),
       seasonalityRegions: null,
       setSeasonalityRegions: (regions) => set({ seasonalityRegions: regions }),
+      seasonalityWindow: null,
+      setSeasonalityWindow: (window) => {
+        if (window) set({ seasonalityWindow: window });
+      },
       seasonsShowRegions: false,
       setSeasonsShowRegions: (on) => set({ seasonsShowRegions: on }),
 

@@ -7,6 +7,8 @@ import {
   bestWindow,
   isMonthInWindow,
   formatBestSpan,
+  formatClimateWindow,
+  climateWindowCaption,
   assembleCityRows,
   sortRows,
   type HeatRowDef,
@@ -225,5 +227,34 @@ describe("sortRows (DESIGN §3.3)", () => {
       "az"
     );
     expect(sorted[0]?.cityId).toBe("z");
+  });
+});
+
+describe("formatClimateWindow (When to go caption)", () => {
+  it("turns the dataset's hyphenated range into an en-dash range", () => {
+    expect(formatClimateWindow("2015-2024")).toBe("2015–2024");
+  });
+
+  it("accepts an en dash or spaces around the separator", () => {
+    expect(formatClimateWindow("2015–2024")).toBe("2015–2024");
+    expect(formatClimateWindow(" 2016 - 2025 ")).toBe("2016–2025");
+  });
+
+  it("collapses a single-year window", () => {
+    expect(formatClimateWindow("2020")).toBe("2020");
+    expect(formatClimateWindow("2020-2020")).toBe("2020");
+  });
+
+  it("returns null for missing or malformed windows", () => {
+    expect(formatClimateWindow(null)).toBeNull();
+    expect(formatClimateWindow(undefined)).toBeNull();
+    expect(formatClimateWindow("")).toBeNull();
+    expect(formatClimateWindow("last decade")).toBeNull();
+    expect(formatClimateWindow("15-24")).toBeNull();
+  });
+
+  it("builds the caption from the window, with neutral copy when unknown", () => {
+    expect(climateWindowCaption("2015-2024")).toBe("From 2015–2024 climate averages");
+    expect(climateWindowCaption(null)).toBe("From historical climate averages");
   });
 });

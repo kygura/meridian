@@ -175,8 +175,10 @@ export default function MapScreen({ active }: MapScreenProps) {
     }
     fetchRegions()
       .then((r) => {
-        useMeridianStore.getState().setSeasonalityRegions(r);
-        if (live) setRegions(r);
+        const store = useMeridianStore.getState();
+        store.setSeasonalityRegions(r.regions);
+        store.setSeasonalityWindow(r.window);
+        if (live) setRegions(r.regions);
       })
       .catch(() => live && setRegionsError(true));
     return () => {
