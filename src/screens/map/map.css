@@ -947,3 +947,48 @@ a.map-watch-title:hover {
   color: var(--muted);
   text-decoration: underline;
 }
+
+/* ── City panel: briefing ──────────────────────────────────────── */
+
+.map-brief-overview {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+.map-brief-ref {
+  margin-left: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+}
+.map-brief-ref a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.map-brief-ref + .map-brief-ref::before {
+  content: ",";
+  color: var(--muted);
+}
+.map-brief-sources {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--border);
+}
+.map-brief-sources ol {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.6em;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.map-brief-sources li {
+  padding: 1px 0;
+}
+.map-brief-sources a {
+  color: var(--text);
+}
+.map-brief-sources li:target {
+  background: var(--surface-2);
+}
+.map-watch + .map-brief-overview {
+  margin-top: var(--space-3);
+}

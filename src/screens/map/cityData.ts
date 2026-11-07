@@ -239,3 +239,55 @@ export function ago(iso: string, now = Date.now()): string {
   const mo = Math.round(d / 30);
   return mo === 1 ? "A month ago" : `${mo} months ago`;
 }
+
+// ── News briefing (GET /api/news/brief) ────────────────────────────
+
+export interface NewsBrief {
+  overview: string;
+  points: { title: string; level?: NewsIssue["level"]; text: string; sources: number[] }[];
+  sources: { n: number; source: string; url: string; pubDate: string; title: string }[];
+  by: "model" | "rules";
+  generatedAt: string;
+}
+
+const briefCache = new Map<string, { at: number; value: NewsBrief | null }>();
+
+/** null data with status "ready" = the news search is unavailable. */
+export function useNewsBrief(cityId: string) {
+  const fresh = () => {
+    const hit = briefCache.get(cityId);
+    return hit && Date.now() - hit.at < PLACE_NEWS_TTL ? hit : null;
+  };
+  const [data, setData] = useState<NewsBrief | null>(() => fresh()?.value ?? null);
+  const [status, setStatus] = useState<LoadStatus>(() => (fresh() ? "ready" : "loading"));
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const hit = fresh();
+    if (hit) {
+      setData(hit.value);
+      setStatus("ready");
+      return;
+    }
+    let live = true;
+    setStatus("loading");
+    fetch(apiUrl(`/api/news/brief?cityId=${encodeURIComponent(cityId)}`))
+      .then((r) => {
+        if (!r.ok) throw new Error(`brief ${r.status}`);
+        return r.json();
+      })
+      .then((b: { available?: boolean; brief?: NewsBrief }) => {
+        const value = b.available && b.brief && typeof b.brief.overview === "string" ? b.brief : null;
+        briefCache.set(cityId, { at: Date.now(), value });
+        if (!live) return;
+        setData(value);
+        setStatus("ready");
+      })
+      .catch(() => live && setStatus("error"));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cityId, attempt]);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return { data, status, retry };
+}

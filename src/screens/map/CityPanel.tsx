@@ -23,7 +23,7 @@ import {
   useJournalToken,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
-import { ago, CITY_METRICS, sentenceCase, SUBJECT_TOPIC, TOPIC_LABELS, useCityMetrics, useCitySeasonality, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
+import { CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -94,8 +94,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <BestMonths cityId={city.id} />
         <AtAGlance city={city} />
         <Visits city={city} />
-        <Watch city={city} />
-        <News city={city} />
+        <Briefing city={city} />
       </div>
     </Sheet>
   );
@@ -430,92 +429,87 @@ const ISSUE_LEVEL: Record<NewsIssue["level"], string> = {
   recurring: "Recurring",
 };
 
-/** Issues worth showing: every pattern, plus incidents and recurring problems up to a cap. */
-const WATCH_LIMIT = 4;
+const SOURCE_DATE = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
 
-function Watch({ city }: { city: City }) {
-  const { data } = usePlaceNews(city.id);
-  if (!data) return null;
-  const { advisories, flags, issues } = data;
-  const shownIssues = issues.filter((i, k) => i.level === "systemic" || k < WATCH_LIMIT);
-  // Don't repeat a topic an issue or a curated advisory already covers.
-  const covered = new Set<string>([
-    ...advisories.map((a) => a.topic ?? ""),
-    ...shownIssues.map((i) => SUBJECT_TOPIC[i.subject] ?? ""),
-  ]);
-  const newsFlags = flags.filter((f) => !covered.has(f.topic)).slice(0, Math.max(0, WATCH_LIMIT - shownIssues.length));
-  if (!advisories.length && !shownIssues.length && !newsFlags.length) return null;
+/**
+ * What's going on in the place, written as a neutral summary of its headlines (a cheap
+ * model on the server, or rules without a key), with numbered sources at the bottom.
+ * Headlines themselves are not printed. Curated conflicts and advisories sit on top.
+ */
+function Briefing({ city }: { city: City }) {
+  const place = usePlaceNews(city.id);
+  const brief = useNewsBrief(city.id);
   const country = displayCountry(city.country);
+  const advisories = place.data?.advisories ?? [];
+
+  if (brief.status === "ready" && !brief.data && !advisories.length) return <WorldNews city={city} />;
+
   return (
-    <section className="map-city-section" aria-labelledby={`${city.id}-watch`}>
-      <h3 className="map-city-h" id={`${city.id}-watch`}>
-        Watch in {country}
+    <section className="map-city-section" aria-labelledby={`${city.id}-brief`}>
+      <h3 className="map-city-h" id={`${city.id}-brief`}>
+        What’s happening in {country}
       </h3>
-      <ul className="map-watch">
-        {advisories.map((a) => (
-          <li key={a.id} className="map-watch-item" data-sev={a.severity}>
-            <span className="map-watch-kicker">
-              {a.kind === "conflict" ? "Conflict" : (TOPIC_LABELS[a.topic as NewsTopic] ?? "Advisory")}
-              {a.since ? ` · since ${fmtSince(a.since)}` : ""}
-            </span>
-            <span className="map-watch-title">{a.label}</span>
-            {a.detail ? <span className="map-watch-detail">{a.detail}</span> : null}
-            {a.sources?.length ? (
-              <span className="map-watch-sources">
-                {a.sources.map((src, i) => (
-                  <a key={src.url} href={src.url} target="_blank" rel="noopener noreferrer">
-                    {i === 0 ? "Sources: " : ""}
-                    {src.title}
-                  </a>
-                ))}
+      {advisories.length ? (
+        <ul className="map-watch">
+          {advisories.map((a) => (
+            <li key={a.id} className="map-watch-item" data-sev={a.severity}>
+              <span className="map-watch-kicker">
+                {a.kind === "conflict" ? "Conflict" : (TOPIC_LABELS[a.topic as NewsTopic] ?? "Advisory")}
+                {a.since ? ` · since ${fmtSince(a.since)}` : ""}
               </span>
-            ) : null}
-          </li>
-        ))}
-        {shownIssues.map((issue) => (
-          <li key={issue.subject} className="map-watch-item" data-sev={issue.level === "systemic" ? 3 : 2}>
-            <span className="map-watch-kicker">
-              {ISSUE_LEVEL[issue.level]} · from {issue.headlineCount} {issue.headlineCount === 1 ? "headline" : "headlines"}
-            </span>
-            <span className="map-watch-title">{issue.label}</span>
-            <span className="map-watch-detail">{issue.summary}</span>
-            {issue.headlines.length ? (
-              <span className="map-watch-sources">
-                {issue.headlines.map((h) => (
-                  <a key={h.url || h.title} href={h.url} target="_blank" rel="noopener noreferrer">
-                    {h.title}
-                    {h.source ? (
-                      <>
-                        {" "}
-                        (<bdi>{h.source}</bdi>, {fmtSince(h.pubDate.slice(0, 7))})
-                      </>
-                    ) : (
-                      ` (${fmtSince(h.pubDate.slice(0, 7))})`
-                    )}
-                  </a>
+              <span className="map-watch-title">{a.label}</span>
+              {a.detail ? <span className="map-watch-detail">{a.detail}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {brief.status === "loading" ? (
+        <Skeleton lines={4} />
+      ) : brief.status === "error" ? (
+        <ErrorState message="Couldn’t write the briefing." onRetry={brief.retry} />
+      ) : brief.data ? (
+        <>
+          <p className="map-brief-overview">{brief.data.overview}</p>
+          {brief.data.points.length ? (
+            <ul className="map-watch">
+              {brief.data.points.map((p) => (
+                <li key={p.title} className="map-watch-item" data-sev={p.level === "systemic" ? 3 : p.level ? 2 : 1}>
+                  {p.level ? <span className="map-watch-kicker">{ISSUE_LEVEL[p.level]}</span> : null}
+                  <span className="map-watch-title">{p.title}</span>
+                  <span className="map-watch-detail">
+                    {p.text}
+                    {p.sources.map((n) => (
+                      <sup key={n} className="map-brief-ref">
+                        <a href={`#${city.id}-src-${n}`} aria-label={`Source ${n}`}>
+                          {n}
+                        </a>
+                      </sup>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {brief.data.sources.length ? (
+            <div className="map-brief-sources">
+              <span className="map-watch-kicker">Sources</span>
+              <ol>
+                {brief.data.sources.map((s) => (
+                  <li key={s.n} id={`${city.id}-src-${s.n}`} value={s.n}>
+                    <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}>
+                      <bdi>{s.source || "Source"}</bdi>
+                    </a>
+                    <span className="map-brief-date"> · {SOURCE_DATE.format(new Date(s.pubDate))}</span>
+                  </li>
                 ))}
-              </span>
-            ) : null}
-          </li>
-        ))}
-        {newsFlags.map((f) => (
-          <li key={f.topic} className="map-watch-item" data-sev={f.severity}>
-            <span className="map-watch-kicker">
-              {TOPIC_LABELS[f.topic]} · {f.count} {f.count === 1 ? "headline" : "headlines"} · in the news
-            </span>
-            {f.url ? (
-              <a className="map-watch-title" href={f.url} target="_blank" rel="noopener noreferrer">
-                {f.headline}
-              </a>
-            ) : (
-              <span className="map-watch-title">{f.headline}</span>
-            )}
-            <span className="map-watch-detail">Latest {ago(f.latest).toLowerCase()}</span>
-          </li>
-        ))}
-      </ul>
-      {shownIssues.length || newsFlags.length ? (
-        <p className="map-city-note">Detected automatically from recent headlines. Read the sources before deciding.</p>
+              </ol>
+            </div>
+          ) : null}
+          <p className="map-city-note">
+            {brief.data.by === "model" ? "Summarised by a language model" : "Summarised automatically"} from recent headlines. Check the
+            sources before deciding.
+          </p>
+        </>
       ) : null}
     </section>
   );
@@ -526,76 +520,7 @@ function fmtSince(ym: string): string {
   return y && m ? `${MONTH_SHORT[m - 1]} ${y}` : ym;
 }
 
-// ── News ────────────────────────────────────────────────────────────
-
-const NEWS_LIMIT = 5;
-
-/** Local headlines (city, then country) from the place search; the world feed as fallback. */
-function News({ city }: { city: City }) {
-  const place = usePlaceNews(city.id);
-  const placeItems = useMemo(() => {
-    const all = place.data?.available ? place.data.items : [];
-    // Headlines that name the place first; search hits about elsewhere only as filler.
-    const named = all.filter((i) => i.mentions !== false);
-    const items = named.length >= 3 ? named : all;
-    const recent = items.filter((i) => Date.now() - Date.parse(i.pubDate) < 21 * 86_400_000);
-    const pool = recent.length >= 3 ? recent : items;
-    const cityFirst = [...pool.filter((i) => i.scope === "city"), ...pool.filter((i) => i.scope === "country")];
-    return cityFirst.slice(0, NEWS_LIMIT);
-  }, [place.data]);
-
-  if (place.status === "loading")
-    return (
-      <section className="map-city-section" aria-label="News">
-        <h3 className="map-city-h">News</h3>
-        <Skeleton lines={3} />
-      </section>
-    );
-  if (!placeItems.length) return <WorldNews city={city} />;
-
-  const country = displayCountry(city.country);
-  const hasCity = placeItems.some((i) => i.scope === "city");
-  return (
-    <section className="map-city-section" aria-labelledby={`${city.id}-news`}>
-      <h3 className="map-city-h" id={`${city.id}-news`}>
-        {hasCity && city.name !== country ? `News from ${city.name} and ${country}` : `News from ${country}`}
-      </h3>
-      <ul className="map-list">
-        {placeItems.map((it) => {
-          const meta = [ago(it.pubDate), it.severity > 1 ? it.topics.map((t) => TOPIC_LABELS[t]).join(", ") : ""]
-            .filter(Boolean)
-            .join(" · ");
-          const inner = (
-            <>
-              <span className="map-list-title">{it.title}</span>
-              <span className="map-list-meta">
-                {it.source ? (
-                  <>
-                    {/* Publisher names can be right-to-left; keep them from reordering the line. */}
-                    <bdi>{it.source}</bdi>
-                    {meta ? " · " : ""}
-                  </>
-                ) : null}
-                {meta}
-              </span>
-            </>
-          );
-          return (
-            <li key={it.url || it.title}>
-              {it.url ? (
-                <a className="map-list-item" href={it.url} target="_blank" rel="noopener noreferrer">
-                  {inner}
-                </a>
-              ) : (
-                <div className="map-list-item">{inner}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
+// ── News (fallback: world feed) ─────────────────────────────────────
 
 function WorldNews({ city }: { city: City }) {
   const { items, status, reload } = useNews();
