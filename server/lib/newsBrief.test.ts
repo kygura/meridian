@@ -38,6 +38,13 @@ afterEach(() => {
   resetBriefCache();
 });
 
+describe("parseBrief levels", () => {
+  it("maps level none to no level", () => {
+    const r = parseBrief('{"overview":"x","points":[{"title":"Museums","level":"none","text":"New wing opens.","sources":[1]}]}', 1)!;
+    expect(r.points[0].level).toBeUndefined();
+  });
+});
+
 describe("pickSources", () => {
   it("puts issue headlines first and skips items that don't name the place", () => {
     const s = pickSources(place());
@@ -105,6 +112,63 @@ describe("getNewsBrief", () => {
 
   it("uses rules without a key", async () => {
     setBriefGenerator(null);
+    expect((await getNewsBrief("Madrid", "Spain", place())).by).toBe("rules");
+  });
+});
+
+describe("Claude Haiku generator", () => {
+  const original = process.env.ANTHROPIC_API_KEY;
+  afterEach(() => {
+    if (original === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = original;
+    vi.restoreAllMocks();
+  });
+
+  const reply = (body: object) =>
+    new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json", "request-id": "req_test" } });
+
+  it("calls claude-haiku-5-5 with structured output and low effort", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    const spy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+      reply({
+        id: "msg_1",
+        type: "message",
+        role: "assistant",
+        model: "claude-haiku-5-5",
+        stop_reason: "end_turn",
+        stop_sequence: null,
+        usage: { input_tokens: 10, output_tokens: 10 },
+        content: [
+          { type: "thinking", thinking: "", signature: "x" },
+          { type: "text", text: JSON.stringify({ overview: "Rail safety is under scrutiny.", points: [{ title: "Rail safety", level: "systemic", text: "Two crashes.", sources: [2] }] }) },
+        ],
+      })
+    );
+    const b = await getNewsBrief("Madrid", "Spain", place());
+    expect(b.by).toBe("model");
+    const body = JSON.parse(String((spy.mock.calls[0]![1] as RequestInit).body));
+    expect(body.model).toBe("claude-haiku-5-5");
+    expect(body.output_config.effort).toBe("low");
+    expect(body.output_config.format.type).toBe("json_schema");
+    expect(body.temperature).toBeUndefined();
+  });
+
+  it("falls back to rules on a refusal", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+      reply({
+        id: "msg_2",
+        type: "message",
+        role: "assistant",
+        model: "claude-haiku-5-5",
+        stop_reason: "refusal",
+        stop_details: { type: "refusal", category: "general_harms", explanation: null },
+        stop_sequence: null,
+        usage: { input_tokens: 10, output_tokens: 0 },
+        content: [],
+      })
+    );
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     expect((await getNewsBrief("Madrid", "Spain", place())).by).toBe("rules");
   });
 });

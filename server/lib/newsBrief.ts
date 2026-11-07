@@ -2,10 +2,10 @@ import { createHash } from "crypto";
 import type { NewsIssue } from "./newsIssues.js";
 import type { PlaceNews } from "./placeNews.js";
 
-// A short, neutral briefing for a place, written by a cheap model from its headlines, so
+// A short, neutral briefing for a place, written by Claude Haiku from its headlines, so
 // the panel shows facts instead of the headlines' own wording. Claims cite numbered
-// sources that the panel lists at the bottom. Without OPENAI_API_KEY (or if the model
-// fails) the briefing is assembled from the detected issues by rules instead.
+// sources that the panel lists at the bottom. Without ANTHROPIC_API_KEY (or if the model
+// fails or declines) the briefing is assembled from the detected issues by rules instead.
 
 export interface BriefSource {
   n: number;
@@ -65,9 +65,7 @@ Rules:
 - Every point cites the numbers of the sources it relies on.
 - If nothing travel-relevant stands out, say so in the overview and return no points.
 
-Reply with JSON only, no code fences:
-{"overview": "2-3 sentences", "points": [{"title": "short subject, e.g. Rail safety", "level": "systemic|incident|recurring", "text": "1-3 sentences", "sources": [1, 2]}]}
-At most ${MAX_POINTS} points, most important first.`;
+Output: an overview of 2-3 sentences, then at most ${MAX_POINTS} points, most important first. Each point has a short title (e.g. "Rail safety"), a level (systemic, incident or recurring when it matches a detected issue, otherwise none), 1-3 sentences of text, and the source numbers it relies on.`;
 
 export function buildPrompt(city: string, country: string, issues: NewsIssue[], sources: BriefSource[], today = new Date()): string {
   const byTitle = new Map(sources.map((s) => [s.title, s.n]));
@@ -104,6 +102,7 @@ export function parseBrief(text: string, sourceCount: number): { overview: strin
   const points: BriefPoint[] = (Array.isArray(r.points) ? r.points : [])
     .map((p: Record<string, unknown>) => ({
       title: typeof p?.title === "string" ? p.title.trim() : "",
+      // "none" (an untyped point) and anything unexpected become no level.
       level: typeof p?.level === "string" && levels.has(p.level) ? (p.level as BriefPoint["level"]) : undefined,
       // Citations live in `sources`; strip inline [n] markers from the prose.
       text: typeof p?.text === "string" ? p.text.replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, "").trim() : "",
@@ -141,13 +140,50 @@ export function setBriefGenerator(g?: BriefGenerator | null): void {
   generator = g;
 }
 
+/** The JSON shape the model must return (structured outputs enforce it). */
+export const BRIEF_SCHEMA = {
+  type: "object",
+  properties: {
+    overview: { type: "string" },
+    points: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          level: { type: "string", enum: ["systemic", "incident", "recurring", "none"] },
+          text: { type: "string" },
+          sources: { type: "array", items: { type: "integer" } },
+        },
+        required: ["title", "level", "text", "sources"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["overview", "points"],
+  additionalProperties: false,
+} as const;
+
 async function defaultGenerator(): Promise<BriefGenerator | null> {
-  if (!process.env.OPENAI_API_KEY) return null;
-  const { generateText } = await import("ai");
-  const { openai } = await import("@ai-sdk/openai");
-  const model = process.env.NEWS_BRIEF_MODEL || "gpt-4o-mini";
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  const client = new Anthropic();
+  const model = process.env.NEWS_BRIEF_MODEL || "claude-haiku-5-5";
   return async (system, prompt) => {
-    const { text } = await generateText({ model: openai(model), system, prompt, temperature: 0.2, maxTokens: 700 });
+    const response = await client.messages.create({
+      model,
+      max_tokens: 8000,
+      // A short summary of headlines: low effort keeps it fast and cheap.
+      output_config: { effort: "low", format: { type: "json_schema", schema: BRIEF_SCHEMA } },
+      system,
+      messages: [{ role: "user", content: prompt }],
+    });
+    // Haiku 5.5 runs safety classifiers with no server-side fallback: a decline is a
+    // normal 200 with stop_reason "refusal". Throw so the rules briefing takes over.
+    if (response.stop_reason === "refusal") throw new Error(`refused (${response.stop_details?.category ?? "unknown"})`);
+    if (response.stop_reason === "max_tokens") throw new Error("briefing cut off at max_tokens");
+    const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
+    if (!text) throw new Error("empty briefing");
     return text;
   };
 }

@@ -506,7 +506,7 @@ function Briefing({ city }: { city: City }) {
             </div>
           ) : null}
           <p className="map-city-note">
-            {brief.data.by === "model" ? "Summarised by a language model" : "Summarised automatically"} from recent headlines. Check the
+            {brief.data.by === "model" ? "Summarised by Claude Haiku" : "Summarised automatically"} from recent headlines. Check the
             sources before deciding.
           </p>
         </>

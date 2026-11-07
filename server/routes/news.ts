@@ -27,7 +27,7 @@ news.get("/place", async (c) => {
 
 /**
  * GET /api/news/brief?cityId= - a neutral briefing written from the place's headlines
- * (a cheap model with OPENAI_API_KEY, rules without), citing numbered sources.
+ * (Claude Haiku with ANTHROPIC_API_KEY, rules without), citing numbered sources.
  * Separate from /place so the panel isn't held up by the model.
  */
 news.get("/brief", async (c) => {
