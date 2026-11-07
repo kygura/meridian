@@ -28,4 +28,5 @@ services:
       sizeGB: 1
   # Watches (spec-journal §10): no in-process timer. Something must POST
   # /api/watches/run daily with the Bearer token: a Render Cron Job (paid) or a
-  # scheduled Claude task. Not provisioned here; see wiki/tensions.md.
+  # scheduled Claude task. Not provisioned here. (On Vercel, the cron in
+  # scripts/build-vercel.mjs does it.)

@@ -1,0 +1,9 @@
+# Trips sync to the server; personal data can live in Postgres instead of a disk
+
+Supersedes the "trips stay client-side" half of ADR 0001.
+
+Trips were localStorage-only, so a plan made on one device was invisible on another and lost with the browser. They now sync to `/api/trips`, behind the same `MERIDIAN_TOKEN` gate as the journal (ADR 0004). Without a token the app behaves as before: trips stay in the browser. With one, each browser merges per trip against the server three ways (its copy, the server's, and the last copy both agreed on, kept in localStorage), pushes changes debounced, and pulls again on window focus. The server stamps `updatedAt`. Deletes leave a tombstone for 180 days so other devices drop the trip instead of re-uploading it. Same-trip conflicts are last write wins. Bookings still reference `tripId`/`legIndex` and stay self-contained.
+
+Storage is no longer tied to a host with a persistent disk. `createJsonStore` keeps its API but picks its backend per call: files under `DATA_DIR` by default, or one `meridian_documents` row per document in Postgres when `DATABASE_URL` is set. `update` takes a row lock in a transaction, so read-modify-write stays serialized across processes. Bookings and the shortlist moved onto `createJsonStore` so they follow the same switch. Caches (`cache/…`) follow it too; they are cheap to rebuild either way. `scripts/copy-data-to-postgres.ts` moves existing files into a database.
+
+Rejected: per-user accounts and a hosted auth provider (Meridian is single-user; sharing the token with family covers the safari plan, and the gate can be swapped later without changing the routes), a relational schema per entity (every store already reads and writes whole documents; a schema adds migrations for no query we run), and syncing the whole trip list as one blob (one device's stale list would overwrite another's edits).

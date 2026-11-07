@@ -1,33 +1,18 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { readFileSync, writeFileSync } from "fs";
 import { getCityById } from "../lib/cities.js";
 import { computeFullScore } from "../lib/scoring.js";
-import { ensureDataDir, getDataPath } from "../lib/paths.js";
+import { createJsonStore } from "../lib/jsonStore.js";
 import type { ShortlistEntry } from "../../src/types.js";
 
 const shortlist = new Hono();
 
-ensureDataDir();
-
-const SHORTLIST_PATH = getDataPath("shortlist.json");
-
-function readShortlist(): ShortlistEntry[] {
-  try {
-    const raw = readFileSync(SHORTLIST_PATH, "utf-8");
-    return JSON.parse(raw) as ShortlistEntry[];
-  } catch {
-    return [];
-  }
-}
-
-function writeShortlist(entries: ShortlistEntry[]): void {
-  writeFileSync(SHORTLIST_PATH, JSON.stringify(entries, null, 2));
-}
+// File under DATA_DIR, or Postgres when DATABASE_URL is set.
+const store = createJsonStore<ShortlistEntry[]>("shortlist.json", () => []);
 
 /** GET /api/shortlist - read shortlist */
-shortlist.get("/", (c) => {
-  return c.json(readShortlist());
+shortlist.get("/", async (c) => {
+  return c.json(await store.read());
 });
 
 /** POST /api/shortlist - add city to shortlist */
@@ -46,11 +31,6 @@ shortlist.post("/", async (c) => {
     return c.json({ error: `City '${cityId}' not found` }, 404);
   }
 
-  const entries = readShortlist();
-  if (entries.some((e) => e.cityId === cityId)) {
-    return c.json({ error: "City already in shortlist" }, 409);
-  }
-
   const score = computeFullScore(city);
   const entry: ShortlistEntry = {
     cityId: city.id,
@@ -63,23 +43,30 @@ shortlist.post("/", async (c) => {
     score: score.overall,
   };
 
-  entries.push(entry);
-  writeShortlist(entries);
+  const added = await store.update((entries) => {
+    if (entries.some((e) => e.cityId === cityId)) return false;
+    entries.push(entry);
+    return true;
+  });
+  if (!added) return c.json({ error: "City already in shortlist" }, 409);
 
   return c.json(entry, 201);
 });
 
 /** DELETE /api/shortlist/:cityId - remove from shortlist */
-shortlist.delete("/:cityId", (c) => {
+shortlist.delete("/:cityId", async (c) => {
   const cityId = c.req.param("cityId");
-  const entries = readShortlist();
-  const filtered = entries.filter((e) => e.cityId !== cityId);
+  const removed = await store.update((entries) => {
+    const idx = entries.findIndex((e) => e.cityId === cityId);
+    if (idx === -1) return false;
+    entries.splice(idx, 1);
+    return true;
+  });
 
-  if (filtered.length === entries.length) {
+  if (!removed) {
     return c.json({ error: `City '${cityId}' not in shortlist` }, 404);
   }
 
-  writeShortlist(filtered);
   return c.json({ success: true, cityId });
 });
 

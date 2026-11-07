@@ -277,10 +277,10 @@ journey with provenance on every item.
 writes exactly one alert per qualifying window and none on a second run the same day,
 and the agent mock path answers the §9 example with tool calls and surfaced places.
 
-## 12. Tensions to rule on (→ `wiki/tensions.md`)
+## 12. Tensions to rule on (open ones now listed in README.md, "Known gaps")
 
 T1 auth on bookings · T2 in-app LLM provider · T3 seasonality coverage backfill ·
-T4 crowd data source · T5 weekly resolution. Full text in `wiki/tensions.md`.
+T4 crowd data source · T5 weekly resolution. The wiki that held the full text has been removed; see README.md.
 
 ## 13. Out of scope
 

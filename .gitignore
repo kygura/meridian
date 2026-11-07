@@ -10,3 +10,4 @@ data/settings.json
 data/watches.json
 data/alerts.json
 data/bookings.json
+.vercel
