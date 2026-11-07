@@ -6,6 +6,7 @@
  *    (null = uncovered/pending; the server may resolve misses on-demand, so a
  *    single re-request of nulls after a few seconds can fill them in)
  *  - GET /api/seasonality/regions      -> { regions: RegionSeason[], window }
+ *  - GET /api/seasonality/cities       -> { cities: Record<id, SeasonMonth[]>, window } (cache-only)
  *    (window = year range the scores average over, e.g. "2015-2024")
  *  - 503 = seasonality temporarily unavailable (provider quota)
  */
@@ -19,10 +20,10 @@ export interface SeasonMonth {
   precipMm: number;
 }
 
-/** Region aggregate — note: months carry scores only (no temp/precip). */
+/** Region aggregate: means over the country's covered cities (temp/precip absent on older servers). */
 export interface RegionSeason {
   region: string;
-  months: Array<{ score: number }>;
+  months: Array<{ score: number; tempC?: number; precipMm?: number }>;
 }
 
 /** Batch response: city records plus the dataset's year window (null if the server omitted it). */
@@ -100,4 +101,12 @@ export async function fetchRegions(): Promise<RegionsResult> {
     regions: Array.isArray(body.regions) ? body.regions : [],
     window: readWindow(body.window),
   };
+}
+
+/** Every covered city's months, for the map's climate search. Cache-only on the server. */
+export async function fetchAllCitySeasonality(): Promise<SeasonalityBatch> {
+  const res = await fetch(apiUrl("/api/seasonality/cities"));
+  checkStatus(res);
+  const body = (await res.json()) as { cities?: Record<string, SeasonMonth[]>; window?: unknown };
+  return { cities: body.cities && typeof body.cities === "object" ? body.cities : {}, window: readWindow(body.window) };
 }

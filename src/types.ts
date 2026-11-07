@@ -580,6 +580,39 @@ export interface Alert {
   seen: boolean;
 }
 
+/** An event placed on one of its cities, for the map (GET /api/overlays/events). */
+export interface MapEventPoint {
+  eventId: string;
+  title: string;
+  kind: MeridianEvent["kind"];
+  date?: string;
+  recurring: boolean;
+  cityId: string;
+  cityName: string;
+  country: string;
+  lat: number;
+  lng: number;
+}
+
+/** A conflict advisory or seasonal hazard (data/phenomena.json, GET /api/overlays/anomalies). */
+export interface MapAnomaly {
+  id: string;
+  kind: "conflict" | "hazard";
+  /** war, insurgency, unrest, storm, flood, fire, heat, air, dust... */
+  type?: string;
+  label: string;
+  /** worldcities.csv spelling; set for conflicts so matching cities can be excluded. */
+  country?: string;
+  lat: number;
+  lng: number;
+  /** 1 (watch) .. 3 (avoid). */
+  severity: number;
+  /** Months (1-12) a hazard is in season; absent = standing. */
+  months?: number[];
+  /** Peak months within the season. */
+  peak?: number[];
+}
+
 export interface MeridianEvent {
   id: string;
   title: string;

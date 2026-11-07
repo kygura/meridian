@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import {
+  getAllCitySeasonality,
   getRegionAggregates,
   getSeasonalityWindow,
   peekCitySeasonality,
@@ -36,6 +37,15 @@ async function mapWithConcurrency(
  */
 seasonality.get("/regions", (c) => {
   return c.json({ regions: getRegionAggregates(), window: getSeasonalityWindow() });
+});
+
+/**
+ * GET /api/seasonality/cities - every covered city's 12 months, for the map's climate
+ * search. Cache-only: never triggers an on-demand fetch.
+ */
+seasonality.get("/cities", (c) => {
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.json({ cities: getAllCitySeasonality(), window: getSeasonalityWindow() });
 });
 
 /**

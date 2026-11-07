@@ -7,10 +7,10 @@ import { navigate } from "../../lib/router";
 import { refreshJourneys } from "../../lib/journalApi";
 import { fetchRegions, type RegionSeason } from "../../lib/seasonalityApi";
 import { Button, Fab, IconButton, Spinner, useIsDesktop, useJournalToken } from "../../ui";
-import { IconChevronLeft, IconChevronRight, IconMinus, IconPlus, IconRefresh } from "../../ui/icons";
+import { IconMinus, IconPlus, IconRefresh } from "../../ui/icons";
 import { useMapPrefs } from "../../shell/mapPrefs";
 import { loadCountries, type CountryCollection } from "./countries";
-import { buildStyle, labelFeatures, MONTH_NAMES, repaintBasemap, tintCountries } from "./basemap";
+import { buildStyle, labelFeatures, repaintBasemap, tintCountries } from "./basemap";
 import {
   applyOverlayPaint,
   buildBookings,
@@ -30,6 +30,11 @@ import {
 import { haversineKm } from "../../lib/geo";
 import { useMapColors } from "./useMapColors";
 import LayerMenu from "./LayerMenu";
+import MapFinder from "./MapFinder";
+import { conflictCountries, eventData, metricColours, newsAnomalyData, runFinder, seedAnomalyData } from "./finder";
+import { useAllCityClimate, useAnomalies, useMetricSurfaces, useMonthEvents } from "./useFinderData";
+import { loadNews } from "../world/useNews";
+import { activeThresholds, indexSurfaces, type MetricId } from "../../lib/cityMetrics";
 
 export interface MapScreenProps {
   /**
@@ -83,7 +88,12 @@ export default function MapScreen({ active }: MapScreenProps) {
   const isDesktop = useIsDesktop();
   const prefs = useMapPrefs((s) => s.layers);
   const month = useMapPrefs((s) => s.month);
-  const setMonth = useMapPrefs((s) => s.setMonth);
+  const climateMode = useMapPrefs((s) => s.climateMode);
+  const climate = useMapPrefs((s) => s.climate);
+  const metricPrefs = useMapPrefs((s) => s.metrics);
+  const onlyMatches = useMapPrefs((s) => s.onlyMatches);
+  const avoidConflicts = useMapPrefs((s) => s.avoidConflicts);
+  const ticker = useMeridianStore((s) => s.ticker);
 
   const cities = useMeridianStore((s) => s.cities);
   const trips = useMeridianStore((s) => s.trips);
@@ -99,7 +109,7 @@ export default function MapScreen({ active }: MapScreenProps) {
     const startZoom = fitGlobeZoom(el);
     const map = new maplibregl.Map({
       container: el,
-      style: buildStyle(colors, overlayLayers(colors, null, maxRankAt(startZoom), null)),
+      style: buildStyle(colors, overlayLayers(colors, null, maxRankAt(startZoom), null, useMapPrefs.getState().onlyMatches)),
       center: START_CENTER,
       zoom: startZoom,
       minZoom: 0.4,
@@ -186,9 +196,72 @@ export default function MapScreen({ active }: MapScreenProps) {
     };
   }, [prefs.seasons, regions, regionsAttempt]);
 
+  // ── Finder: climate search, metric thresholds, events, anomalies ──
+  const cityClimate = useAllCityClimate(prefs.seasons);
+  const metricIds = useMemo(() => {
+    if (!prefs.metrics) return [] as MetricId[];
+    const ids = activeThresholds(metricPrefs.thresholds).map(([id]) => id);
+    if (metricPrefs.colorBy !== "none") ids.push(metricPrefs.colorBy);
+    return ids;
+  }, [prefs.metrics, metricPrefs]);
+  const { surfaces } = useMetricSurfaces(metricIds);
+  const metricIndex = useMemo(() => indexSurfaces(surfaces, metricIds), [surfaces, metricIds]);
+  const events = useMonthEvents(prefs.events, month);
+  const anomalies = useAnomalies(prefs.anomalies);
+  useEffect(() => {
+    if (prefs.anomalies) void loadNews();
+  }, [prefs.anomalies]);
+
+  const excluded = useMemo(
+    () => (prefs.anomalies && avoidConflicts && anomalies.data ? conflictCountries(anomalies.data.items) : null),
+    [prefs.anomalies, avoidConflicts, anomalies.data]
+  );
+  const finder = useMemo(
+    () =>
+      runFinder({
+        cities,
+        month,
+        climate: prefs.seasons ? climate : null,
+        climateData: cityClimate.data,
+        thresholds: prefs.metrics ? activeThresholds(metricPrefs.thresholds) : [],
+        metricIndex,
+        excluded,
+      }),
+    [cities, month, prefs.seasons, prefs.metrics, climate, cityClimate.data, metricPrefs.thresholds, metricIndex, excluded]
+  );
+  const styling = useMemo(
+    () => ({
+      filtering: finder.filtering && !finder.pending,
+      matches: finder.matches,
+      metric: prefs.metrics ? metricColours(metricIndex, metricPrefs.colorBy) : null,
+      onlyMatches,
+    }),
+    [finder, prefs.metrics, metricIndex, metricPrefs.colorBy, onlyMatches]
+  );
+  const eventPoints = useMemo(() => (events.data ? eventData(events.data) : []), [events.data]);
+  const anomalyPoints = useMemo(() => {
+    if (!prefs.anomalies) return [];
+    const seed = anomalies.data
+      ? seedAnomalyData(
+          anomalies.data.items.filter((a) => !a.months || a.months.includes(month)),
+          month
+        )
+      : [];
+    return [...seed, ...newsAnomalyData(ticker, cities)];
+  }, [prefs.anomalies, anomalies.data, month, ticker, cities]);
+
   const tinted = useMemo(
-    () => (countries ? tintCountries(countries, prefs.seasons ? regions : null, month, colors.ramp) : null),
-    [countries, prefs.seasons, regions, month, colors.ramp]
+    () =>
+      countries
+        ? tintCountries(countries, prefs.seasons ? regions : null, {
+            mode: climateMode,
+            month,
+            filter: climate,
+            ramps: colors.ramps,
+            excluded: excluded ?? undefined,
+          })
+        : null,
+    [countries, prefs.seasons, regions, month, climateMode, climate, colors.ramps, excluded]
   );
 
   useEffect(() => {
@@ -239,8 +312,11 @@ export default function MapScreen({ active }: MapScreenProps) {
         bookings: bookingData,
         cities: cityData,
         selectedCityId,
+        styling,
+        events: eventPoints,
+        anomalies: anomalyPoints,
       }),
-    [colors, prefs, past, planned, bookingData, cityData, selectedCityId]
+    [colors, prefs, past, planned, bookingData, cityData, selectedCityId, styling, eventPoints, anomalyPoints]
   );
 
   useEffect(() => {
@@ -253,8 +329,8 @@ export default function MapScreen({ active }: MapScreenProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (map && loaded && map.getLayer("ov-cities")) map.setFilter("ov-cities", cityFilter(maxRank, selectedCityId));
-  }, [loaded, maxRank, selectedCityId]);
+    if (map && loaded && map.getLayer("ov-cities")) map.setFilter("ov-cities", cityFilter(maxRank, selectedCityId, onlyMatches && styling.filtering));
+  }, [loaded, maxRank, selectedCityId, onlyMatches, styling.filtering]);
 
   /** Topmost overlay object under a screen point (a few px of slop for thin lines). */
   const pickAt = useCallback((pt: maplibregl.Point): PickDatum | null => {
@@ -303,7 +379,17 @@ export default function MapScreen({ active }: MapScreenProps) {
       const text = describe(d, fmtDate);
       setTip(text ? { x: e.point.x, y: e.point.y, ...text } : null);
       setHoverId(
-        d.kind === "city" ? d.id : d.kind === "arc" || d.kind === "stop" ? d.journeyId : d.kind === "booking" ? d.bookingId : d.tripId
+        d.kind === "city"
+          ? d.id
+          : d.kind === "arc" || d.kind === "stop"
+            ? d.journeyId
+            : d.kind === "booking"
+              ? d.bookingId
+              : d.kind === "event"
+                ? `${d.eventId}|${d.cityId}`
+                : d.kind === "anomaly"
+                  ? d.id
+                  : d.tripId
       );
       canvas.style.cursor = "pointer";
     };
@@ -345,6 +431,12 @@ export default function MapScreen({ active }: MapScreenProps) {
         }
         case "booking":
           navigate(d.tripId ? `/trips/plan/${encodeURIComponent(d.tripId)}` : "/plan/flights");
+          break;
+        case "event":
+          openCity(d.cityId);
+          break;
+        case "anomaly":
+          if (d.cityId) openCity(d.cityId);
           break;
       }
     };
@@ -392,7 +484,6 @@ export default function MapScreen({ active }: MapScreenProps) {
   }, [selectedCityId, active, isDesktop]);
 
   const zoomBy = (d: number) => mapRef.current?.easeTo({ zoom: mapRef.current.getZoom() + d, duration: 250 });
-  const stepMonth = (d: number) => setMonth(((month - 1 + d + 12) % 12) + 1);
 
   const pastLoading = prefs.past && unlocked && journeys === null;
   const years = past && past.arcs.length + past.stops.length > 0 ? { min: past.minYear, max: past.maxYear } : null;
@@ -447,38 +538,18 @@ export default function MapScreen({ active }: MapScreenProps) {
         </div>
       ) : null}
 
-      {prefs.seasons ? (
-        <div className="map-legend" aria-live="polite">
-          <div className="map-legend-head">
-            <IconButton label="Previous month" icon={<IconChevronLeft />} size="sm" onClick={() => stepMonth(-1)} />
-            <span className="map-legend-title map-kicker">Weather in {MONTH_NAMES[month - 1]}</span>
-            <IconButton label="Next month" icon={<IconChevronRight />} size="sm" onClick={() => stepMonth(1)} />
-          </div>
-          {regionsError ? (
-            <div className="map-legend-error">
-              <span>Seasons are unavailable right now.</span>
-              <Button size="sm" variant="ghost" onClick={() => setRegionsAttempt((n) => n + 1)}>
-                Retry
-              </Button>
-            </div>
-          ) : !regions ? (
-            <div className="map-legend-error">
-              <Spinner size={16} /> <span>Loading seasons…</span>
-            </div>
-          ) : (
-            <>
-              <div className="map-legend-ramp" aria-hidden="true">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <span key={i} style={{ background: `var(--ramp-${i})` }} />
-                ))}
-              </div>
-              <div className="map-legend-scale">
-                <span>Harsh</span>
-                <span>Pleasant</span>
-              </div>
-            </>
-          )}
-        </div>
+      {prefs.seasons || prefs.metrics || prefs.events || prefs.anomalies ? (
+        <MapFinder
+          result={finder}
+          regionsStatus={regionsError ? "error" : regions ? "ready" : "loading"}
+          climateStatus={cityClimate.status}
+          onRetry={() => {
+            if (regionsError) setRegionsAttempt((n) => n + 1);
+            if (cityClimate.status === "error") cityClimate.retry();
+          }}
+          anomaliesAsOf={anomalies.data?.asOf}
+          eventCount={prefs.events && events.status === "ready" ? eventPoints.length : undefined}
+        />
       ) : null}
 
       <Fab icon={<IconPlus />} className="map-fab" onClick={() => useMeridianStore.getState().openQuickLog()}>
