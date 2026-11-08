@@ -30,6 +30,9 @@ export interface TripSeasonData {
 
 const EMPTY: TripSeasonData = { scores: {}, events: [] };
 
+/** How long to wait before asking again for cities the server was still fetching. */
+const RETRY_MISSING_MS = 4000;
+
 /** Comfort scores and events for the trip's cities. Refetches when the set of cities changes. */
 export function useTripSeasonData(trip: Trip): TripSeasonData {
   const key = useMemo(() => [...new Set(trip.nodes.map((n) => n.cityId))].sort().join(","), [trip.nodes]);
@@ -42,8 +45,17 @@ export function useTripSeasonData(trip: Trip): TripSeasonData {
     }
     let live = true;
     const ids = key.split(",");
+    // A city the server hasn't cached comes back null while it's fetched on demand
+    // (lib/seasonalityApi.ts): ask once more for those after a short wait.
     const scores = fetchSeasonality(ids)
-      .then((b) => b.cities)
+      .then(async (b) => {
+        const missing = ids.filter((id) => !b.cities[id]);
+        if (!missing.length) return b.cities;
+        await new Promise((r) => setTimeout(r, RETRY_MISSING_MS));
+        if (!live) return b.cities;
+        const again = await fetchSeasonality(missing).catch(() => null);
+        return again ? { ...b.cities, ...again.cities } : b.cities;
+      })
       .catch(() => ({}) as Record<string, SeasonMonth[] | null>);
     const events = fetch(apiUrl(`/api/overlays/events?cityIds=${encodeURIComponent(key)}`))
       .then((r) => (r.ok ? r.json() : { events: [] }))

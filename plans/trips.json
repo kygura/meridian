@@ -358,6 +358,103 @@
         }
       ],
       "origin": "manual"
+    },
+    {
+      "id": "plan-japan-autumn",
+      "name": "Japan in autumn colours",
+      "color": "#b3261e",
+      "status": "scouting",
+      "nodes": [
+        {
+          "cityId": "sapporo-japan",
+          "name": "Sapporo",
+          "iata": "CTS",
+          "lat": 43.075,
+          "lng": 141.34,
+          "months": {
+            "start": 10,
+            "end": 10
+          }
+        },
+        {
+          "cityId": "matsumoto-japan",
+          "name": "Matsumoto",
+          "iata": "MMJ",
+          "lat": 36.2404,
+          "lng": 137.97,
+          "months": {
+            "start": 10,
+            "end": 10
+          }
+        },
+        {
+          "cityId": "kanazawa-japan",
+          "name": "Kanazawa",
+          "iata": "KMQ",
+          "lat": 36.56,
+          "lng": 136.64,
+          "months": {
+            "start": 10,
+            "end": 10
+          }
+        },
+        {
+          "cityId": "tokyo-japan",
+          "name": "Tokyo",
+          "iata": "HND",
+          "lat": 35.685,
+          "lng": 139.7514,
+          "months": {
+            "start": 10,
+            "end": 11
+          }
+        },
+        {
+          "cityId": "kyoto-japan",
+          "name": "Kyoto",
+          "iata": "ITM",
+          "lat": 35.03,
+          "lng": 135.75,
+          "months": {
+            "start": 11,
+            "end": 11
+          }
+        },
+        {
+          "cityId": "saka-japan",
+          "name": "Ōsaka",
+          "iata": "ITM",
+          "lat": 34.75,
+          "lng": 135.4601,
+          "months": {
+            "start": 11,
+            "end": 11
+          }
+        },
+        {
+          "cityId": "hiroshima-japan",
+          "name": "Hiroshima",
+          "iata": "HIJ",
+          "lat": 34.3878,
+          "lng": 132.4429,
+          "months": {
+            "start": 11,
+            "end": 11
+          }
+        },
+        {
+          "cityId": "fukuoka-japan",
+          "name": "Fukuoka",
+          "iata": "FUK",
+          "lat": 33.595,
+          "lng": 130.41,
+          "months": {
+            "start": 11,
+            "end": 11
+          }
+        }
+      ],
+      "origin": "manual"
     }
   ]
 }

@@ -10,7 +10,17 @@ import { Button, Fab, IconButton, Spinner, useIsDesktop, useJournalToken } from 
 import { IconMinus, IconPlus, IconRefresh } from "../../ui/icons";
 import { useMapPrefs } from "../../shell/mapPrefs";
 import { loadCountries, type CountryCollection } from "./countries";
-import { buildStyle, labelFeatures, repaintBasemap, tintCountries } from "./basemap";
+import { buildStyle, CITY_LABEL_LAYERS, labelFeatures, labelText, repaintBasemap, tintCountries } from "./basemap";
+
+// Arabic and Hebrew native names need letter joining and right-to-left order, which
+// MapLibre gets from this plugin (self-hosted in public/vendor, BSD-2-Clause). Lazy:
+// it loads only when a right-to-left label first appears.
+if (typeof window !== "undefined" && maplibregl.getRTLTextPluginStatus() === "unavailable") {
+  maplibregl.setRTLTextPlugin(`${window.location.origin}/vendor/mapbox-gl-rtl-text-0.3.0.js`, true).catch(() => {});
+}
+
+/** Chinese, Japanese and Korean labels are drawn with the device's own fonts: prefer a serif. */
+const CJK_FONTS = "'Noto Serif CJK JP', 'Noto Serif JP', 'Hiragino Mincho ProN', 'Songti SC', 'Noto Serif KR', 'AppleMyungjo', 'Source Han Serif', serif";
 import {
   applyOverlayPaint,
   buildBookings,
@@ -93,6 +103,7 @@ export default function MapScreen({ active }: MapScreenProps) {
   const metricPrefs = useMapPrefs((s) => s.metrics);
   const onlyMatches = useMapPrefs((s) => s.onlyMatches);
   const avoidConflicts = useMapPrefs((s) => s.avoidConflicts);
+  const cityNames = useMapPrefs((s) => s.cityNames);
   const ticker = useMeridianStore((s) => s.ticker);
 
   const cities = useMeridianStore((s) => s.cities);
@@ -109,7 +120,12 @@ export default function MapScreen({ active }: MapScreenProps) {
     const startZoom = fitGlobeZoom(el);
     const map = new maplibregl.Map({
       container: el,
-      style: buildStyle(colors, overlayLayers(colors, null, maxRankAt(startZoom), null, useMapPrefs.getState().onlyMatches)),
+      style: buildStyle(
+        colors,
+        overlayLayers(colors, null, maxRankAt(startZoom), null, useMapPrefs.getState().onlyMatches),
+        useMapPrefs.getState().cityNames
+      ),
+      localIdeographFontFamily: CJK_FONTS,
       center: START_CENTER,
       zoom: startZoom,
       minZoom: 0.4,
@@ -276,9 +292,12 @@ export default function MapScreen({ active }: MapScreenProps) {
     if (!map || !loaded) return;
     (map.getSource("city-labels") as maplibregl.GeoJSONSource | undefined)?.setData(labels);
     const vis = prefs.cities ? "visible" : "none";
-    for (const id of ["city-labels-0", "city-labels-1", "city-labels-2"])
-      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
-  }, [loaded, labels, prefs.cities]);
+    for (const id of CITY_LABEL_LAYERS)
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, "visibility", vis);
+        map.setLayoutProperty(id, "text-field", labelText(cityNames));
+      }
+  }, [loaded, labels, prefs.cities, cityNames]);
 
   useEffect(() => {
     const map = mapRef.current;

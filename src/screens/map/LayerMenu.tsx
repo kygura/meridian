@@ -1,7 +1,7 @@
 import { useId, useRef, useState } from "react";
 import { Button, Popover, Segmented, Select, UnlockCard, useJournalToken } from "../../ui";
 import { IconLayers } from "../../ui/icons";
-import { useMapPrefs, type MapLayer } from "../../shell/mapPrefs";
+import { useMapPrefs, type CityNames, type MapLayer } from "../../shell/mapPrefs";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { CLIMATE_MODES } from "../../lib/climate";
 import { METRICS, type MetricId } from "../../lib/cityMetrics";
@@ -85,6 +85,8 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
   const setMonth = useMapPrefs((s) => s.setMonth);
   const climateMode = useMapPrefs((s) => s.climateMode);
   const setClimateMode = useMapPrefs((s) => s.setClimateMode);
+  const cityNames = useMapPrefs((s) => s.cityNames);
+  const setCityNames = useMapPrefs((s) => s.setCityNames);
   const avoidConflicts = useMapPrefs((s) => s.avoidConflicts);
   const setAvoidConflicts = useMapPrefs((s) => s.setAvoidConflicts);
 
@@ -136,7 +138,21 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
         <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in teal." />
 
         <p className="map-layers-title map-layers-section map-kicker">Places and climate</p>
-        <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in" />
+        <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in">
+          <Segmented<CityNames>
+            label="City names"
+            size="sm"
+            block
+            className="map-layer-seg"
+            value={cityNames}
+            onChange={setCityNames}
+            options={[
+              { value: "english", label: "English" },
+              { value: "native", label: "Native" },
+              { value: "both", label: "Both" },
+            ]}
+          />
+        </SwitchRow>
         <SwitchRow layer="seasons" name="Climate" hint={`Tint and search by weather in ${MONTH_NAMES[month - 1]}`}>
           <MonthPicker value={month} onChange={setMonth} />
           <Segmented

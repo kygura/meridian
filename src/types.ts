@@ -15,6 +15,8 @@ export interface City {
   region?: string;
   timezone?: string;
   currency?: string;
+  /** The city's name in its own language and script ("東京", "Москва"), when it differs. */
+  nativeName?: string;
 }
 
 export type MetricCategory =
@@ -26,7 +28,8 @@ export type MetricCategory =
   | "mobility"
   | "cost"
   | "connectivity"
-  | "events";
+  | "events"
+  | "beauty";
 
 export type Granularity =
   | "city"

@@ -658,6 +658,77 @@
         "holiday",
         "lunar-new-year"
       ]
+    },
+    {
+      "id": "koyo-hokkaido",
+      "title": "Autumn colours in Hokkaido (Daisetsuzan, Jozankei): early to mid October",
+      "kind": "culture",
+      "cityIds": [
+        "sapporo-japan"
+      ],
+      "month": 10,
+      "recurring": true,
+      "tags": [
+        "autumn-colours",
+        "koyo"
+      ]
+    },
+    {
+      "id": "koyo-japan-alps",
+      "title": "Autumn colours in the Japan Alps (Kamikochi, Norikura): mid to late October",
+      "kind": "culture",
+      "cityIds": [
+        "matsumoto-japan",
+        "nagano-japan"
+      ],
+      "month": 10,
+      "recurring": true,
+      "tags": [
+        "autumn-colours",
+        "koyo"
+      ]
+    },
+    {
+      "id": "koyo-tokyo-ginkgo",
+      "title": "Ginkgo and maple season in Tokyo and Nikko: late October to late November",
+      "kind": "culture",
+      "cityIds": [
+        "tokyo-japan"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "autumn-colours",
+        "koyo"
+      ]
+    },
+    {
+      "id": "koyo-kyoto",
+      "title": "Autumn colours peak in Kyoto: mid to late November",
+      "kind": "culture",
+      "cityIds": [
+        "kyoto-japan"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "autumn-colours",
+        "koyo"
+      ]
+    },
+    {
+      "id": "koyo-miyajima",
+      "title": "Autumn colours at Miyajima (Momijidani): mid to late November",
+      "kind": "culture",
+      "cityIds": [
+        "hiroshima-japan"
+      ],
+      "month": 11,
+      "recurring": true,
+      "tags": [
+        "autumn-colours",
+        "koyo"
+      ]
     }
   ]
 }
