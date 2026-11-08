@@ -176,8 +176,8 @@ export default function LiveLove() {
 
       <p className="plan-live-note">
         <b>Quality of life</b> blends human development, life satisfaction and safety (country figures) with air quality, measured
-        at the city for major cities. <b>Beauty</b> is half natural setting (mountains, sea and lakes nearby) and half built character
-        (World Heritage sites, how much the centre is photographed, notable places). Famous places score higher on character, so
+        at the city for major cities. <b>Beauty</b> combines natural setting (mountains, sea and lakes nearby) and built character
+        (World Heritage sites, how much the centre is photographed, notable places); the stronger of the two counts more. Famous places score higher on character, so
         quieter beautiful towns can sit lower than they deserve. Scores compare cities; they aren’t verdicts.
       </p>
     </div>
@@ -196,6 +196,30 @@ function Bar({ value }: { value: number }) {
 }
 
 const PAD = { top: 16, right: 16, bottom: 40, left: 44 };
+
+/**
+ * Greedy label placement: in priority order, try right of the dot, then left; skip a label
+ * that would overlap one already placed (width estimated from the 14px serif).
+ */
+function placeLabels(points: Point[], x: (v: number) => number, y: (v: number) => number, left: number, right: number) {
+  const placed: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const out: { p: Point; x: number; y: number; anchor: "start" | "end" }[] = [];
+  for (const p of points) {
+    const w = p.city.name.length * 6.6;
+    const cx = x(p.q);
+    const cy = y(p.b);
+    for (const side of ["start", "end"] as const) {
+      const x0 = side === "start" ? cx + 7 : cx - 7 - w;
+      const box = { x0, x1: x0 + w, y0: cy - 8, y1: cy + 8 };
+      if (box.x0 < left || box.x1 > right) continue;
+      if (placed.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1)) continue;
+      placed.push(box);
+      out.push({ p, x: side === "start" ? cx + 7 : cx - 7, y: cy + 4, anchor: side });
+      break;
+    }
+  }
+  return out;
+}
 
 function Scatter({ points, axis }: { points: Point[]; axis: BeautyAxis }) {
   const [ref, width] = useWidth<HTMLDivElement>();
@@ -281,9 +305,9 @@ function Scatter({ points, axis }: { points: Point[]; axis: BeautyAxis }) {
           .map((p) => (
             <circle key={p.city.id} cx={x(p.q)} cy={y(p.b)} r={5} className="plan-live-dot is-trip" />
           ))}
-        {labelled.map((p) => (
-          <text key={`l-${p.city.id}`} x={x(p.q) + 7} y={y(p.b) + 4} className="plan-live-label">
-            {p.city.name}
+        {placeLabels(labelled, x, y, PAD.left, PAD.left + iw).map((l) => (
+          <text key={`l-${l.p.city.id}`} x={l.x} y={l.y} textAnchor={l.anchor} className="plan-live-label">
+            {l.p.city.name}
           </text>
         ))}
         {hover ? <circle cx={x(hover.q)} cy={y(hover.b)} r={7} className="plan-live-hover" /> : null}

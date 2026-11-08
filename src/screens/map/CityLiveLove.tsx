@@ -67,7 +67,7 @@ export default function CityLiveLove({ city }: { city: City }) {
             <span className="map-live-big num">{data.beauty ?? "—"}</span>
             <span>
               Beauty
-              <small>Natural setting and built character, half each</small>
+              <small>Natural setting and built character; the stronger counts more</small>
             </span>
           </div>
           <div className="map-metrics">

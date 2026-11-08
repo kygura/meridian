@@ -8,7 +8,7 @@
 //   safety     intentional homicides per 100k, World Bank                           country
 //   air        fine particles (PM2.5): Open-Meteo/CAMS at the city for major cities,
 //              else the World Bank country mean                                     city or country
-// Beauty (0-100) has two axes:
+// Beauty (0-100): the stronger of two axes counts 65%, the weaker 35%:
 //   setting    terrain relief within 15 km (AWS Terrain Tiles) and water: sea within 15 km
 //              (the same tiles' bathymetry) or a lake within 10 km (Natural Earth), combined
 //              as either/or (mountains alone or sea alone make a setting; both more so)
@@ -269,7 +269,9 @@ async function terrain(c: City): Promise<{ relief: number; sea: number }> {
       const e = await elevationAt(c.lat + dLat, c.lng + dLng);
       if (e !== null) samples.push(e);
     }
-  const land = samples.filter((e) => e > -20).sort((a, b) => a - b);
+  // Relief is measured on dry land only: shallow sea (0 to -20 m) would read as "low ground" and
+  // inflate the relief of every flat coastal city. Sea is anything 20 m or more below sea level.
+  const land = samples.filter((e) => e > 0).sort((a, b) => a - b);
   const q = (p: number) => land[Math.min(land.length - 1, Math.floor(p * land.length))] ?? 0;
   return { relief: land.length ? Math.max(0, q(0.95) - q(0.05)) : 0, sea: samples.filter((e) => e <= -20).length / Math.max(1, samples.length) };
 }
@@ -371,8 +373,12 @@ const scoreSafety = (v?: number) => (v === undefined ? null : round((1 - clamp(M
 const scoreAir = (v?: number) => (v === undefined ? null : round((1 - clamp(Math.log(Math.max(v, 5) / 5) / Math.log(20))) * 100));
 /** 20 m of relief → 0, 2,500 m → 100, on a log scale. */
 const scoreRelief = (m: number) => round(clamp(Math.log10(Math.max(m, 20) / 20) / Math.log10(125)) * 100);
+/**
+ * Water: sea within 15 km (40-70 by how much of the view it is), or a lake (55 within 3 km,
+ * 40 within 10 km). Capped below mountains: a flat coastline is pleasant, not spectacular.
+ */
 const scoreWater = (sea: number, lake: number | null) =>
-  Math.max(sea > 0 ? round(60 + 40 * clamp(sea / 0.3)) : 0, lake === 0 ? 80 : lake === 1 ? 60 : 0);
+  Math.max(sea > 0 ? round(40 + 30 * clamp(sea / 0.3)) : 0, lake === 0 ? 55 : lake === 1 ? 40 : 0);
 /** World Heritage site within 5 km → 100, fading to 0 at 50 km. */
 const scoreHeritage = (d: number | null) => (d === null ? 0 : round(clamp(1 - (d - 5) / 45) * 100));
 /** Counts on a log scale: 0 → 0, `top` or more → 100. */
@@ -433,8 +439,12 @@ async function main() {
     // Mountains or water each make a setting; both make a better one ("either/or", not an average).
     const settingScore = setting ? round(100 * (1 - (1 - setting.relief / 100) * (1 - setting.water / 100))) : null;
     const characterScore = blend(character, { heritage: 0.4, photos: 0.35, notable: 0.25 });
+    // A quality score needs a development or happiness figure and at least two parts in all:
+    // small territories with only a homicide rate and air would otherwise score 0 or 100.
+    const present = Object.values(quality).filter((v) => v !== null).length;
+    const enough = (quality.hdi !== null || quality.happiness !== null) && present >= 2;
     out[c.id] = {
-      quality: blend(quality, qWeights),
+      quality: enough ? blend(quality, qWeights) : null,
       qualityParts: quality,
       // Share of the quality weight measured at the city itself (only air, for major cities).
       local: cityPm !== undefined && quality.air !== null ? qWeights.air : 0,
@@ -442,7 +452,12 @@ async function main() {
       settingParts: setting,
       character: characterScore,
       characterParts: character,
-      beauty: blend({ setting: settingScore, character: characterScore }, { setting: 0.5, character: 0.5 }),
+      // Either axis can make a place beautiful (Queenstown on setting, Venice on character), so
+      // the stronger one counts 65% and the weaker 35%.
+      beauty:
+        settingScore !== null && characterScore !== null
+          ? round(0.65 * Math.max(settingScore, characterScore) + 0.35 * Math.min(settingScore, characterScore))
+          : settingScore ?? characterScore,
       raw: {
         hdi: code ? hdiBy[code] : undefined,
         happiness: code ? happyBy[code] : undefined,
