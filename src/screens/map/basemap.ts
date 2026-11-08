@@ -13,8 +13,11 @@ type OverlayLayers = ReturnType<typeof overlayLayers>;
 // coloured from tokens (the original parchment atlas). Trip overlays from overlays.ts
 // are part of the same style so they wrap the sphere.
 
-const GLYPHS = "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf";
-const FONT = ["Noto Sans Regular"];
+// City labels use the app's own type: glyph ranges built from Instrument Serif (with
+// Noto Serif filling the letters it lacks) by scripts/build-map-glyphs.mjs, served from
+// public/fonts. MapLibre needs an absolute URL; the fonts ship with the frontend.
+const GLYPHS = `${typeof window === "undefined" ? "" : window.location.origin}/fonts/{fontstack}/{range}.pbf`;
+const SERIF = ["meridian-serif"];
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** Label tiers: rank -> minimum zoom. Rank 3 cities never get a label. */
@@ -57,8 +60,9 @@ export function buildStyle(colors: MapColors, overlays: OverlayLayers): maplibre
     filter: ["==", ["get", "rank"], rank],
     layout: {
       "text-field": ["get", "name"],
-      "text-font": FONT,
-      "text-size": rank === 0 ? 12 : 11,
+      "text-font": SERIF,
+      // Instrument Serif runs small for its size: set it larger than the old sans.
+      "text-size": rank === 0 ? 15 : rank === 1 ? 13.5 : 12.5,
       "text-letter-spacing": 0.02,
       "text-variable-anchor": ["left", "right", "top", "bottom"],
       "text-radial-offset": 0.7,
@@ -72,7 +76,8 @@ export function buildStyle(colors: MapColors, overlays: OverlayLayers): maplibre
     paint: {
       "text-color": colors.label,
       "text-halo-color": colors.halo,
-      "text-halo-width": 1.4,
+      "text-halo-width": 1,
+      "text-halo-blur": 0.2,
     },
   }));
   const grat = graticule();
