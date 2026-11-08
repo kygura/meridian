@@ -308,6 +308,9 @@ export default function MapFinder({ result, regionsStatus, climateStatus, onRetr
                 <span className="map-finder-dot" style={{ background: "var(--danger)" }} /> Conflict
               </span>
               <span className="map-finder-key-item">
+                <span className="map-finder-dot" style={{ background: "var(--trip-c)" }} /> Advisory
+              </span>
+              <span className="map-finder-key-item">
                 <span className="map-finder-dot" style={{ background: "var(--warning)" }} /> Hazard season
               </span>
               <span className="map-finder-key-item">

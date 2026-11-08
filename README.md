@@ -8,7 +8,7 @@ Live: https://meridian-mocha-iota.vercel.app
 
 | Screen | What it does |
 |---|---|
-| **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate and news. Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
+| **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
 | **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. Plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
@@ -16,7 +16,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | **Plan › Flights** | Flight search and booking in Duffel's test mode (mock offers without a key). Nothing is really ticketed. |
 | **Inbox** | Review queue for imports (past bookings, photo locations, Google location history, booking emails) before they become journal entries. Photos never leave the device; only time, place and a hash are sent. |
 | **World** | Travel news and country stats by region. |
-| **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on OpenAI with a key, or a deterministic mock without one. |
+| **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
 
@@ -25,7 +25,7 @@ Live: https://meridian-mocha-iota.vercel.app
 - **Frontend:** React 19, Vite 6, TypeScript, Zustand, MapLibre GL. Hand-written CSS.
 - **Server:** Hono on Node 22 (`tsx`), zod validation.
 - **Storage:** one document store with two backends: JSON files under `DATA_DIR`, or Postgres when `DATABASE_URL` is set (ADR 0006).
-- **External services, all optional:** OpenAI (assistant), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images).
+- **External services, all optional:** Anthropic Claude (assistant and news briefing), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images), Google News search RSS (city and country headlines; Google allows personal, non-commercial use of these feeds).
 - **Tests:** Vitest.
 
 ## Run it locally
@@ -61,7 +61,9 @@ To unlock the journal, trips sync, Repeat a trip and Watches, set `MERIDIAN_TOKE
 | `DATA_DIR` | Where JSON files and caches go when there's no database. Default `./data` |
 | `MERIDIAN_TOKEN` | Password for the journal, trips sync, Repeat a trip, imports and watches. Unset means those stay locked |
 | `CRON_SECRET` | Vercel only. Same value as `MERIDIAN_TOKEN`, so the daily watch run passes the gate |
-| `OPENAI_API_KEY` | Real assistant instead of the mock |
+| `ANTHROPIC_API_KEY` | Claude for Ask, city research and the news briefing, instead of the mock and rule-based paths |
+| `AGENT_MODEL` | Default Claude model for Ask and research (`claude-opus-5-5`, `claude-sonnet-5-5` or `claude-haiku-5-5`). Default `claude-opus-5-5` |
+| `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
 | `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
 | `ALERT_WEBHOOK_URL` | Where watch alerts are POSTed |
 | `VITE_API_BASE_URL` | Only if the frontend is served separately from the API |
@@ -92,7 +94,6 @@ docs/
 Open decisions carried over from the old wiki:
 
 - **Bookings have no auth.** `/api/bookings` holds passenger details and isn't behind `MERIDIAN_TOKEN` yet, so anyone with the URL can read them. Bookings are test-mode only, but they should be gated before real use.
-- **The assistant's OpenAI key** was out of quota last time it was checked. The mock path keeps it usable.
 - **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
 - **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
 - **Repeat a trip works by month**, not by week.

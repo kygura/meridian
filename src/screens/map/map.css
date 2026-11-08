@@ -895,3 +895,100 @@ a.map-list-item:focus-visible {
     min-height: var(--touch);
   }
 }
+
+/* ── City panel: Watch (advisories and recurring risk news) ─────── */
+
+.map-watch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.map-watch-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--warning);
+  background: var(--surface-2);
+}
+.map-watch-item[data-sev="3"] {
+  border-left-color: var(--danger);
+}
+.map-watch-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.map-watch-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text);
+}
+a.map-watch-title:hover {
+  text-decoration: underline;
+}
+.map-watch-detail {
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+.map-watch-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: var(--text-2xs);
+}
+.map-watch-sources a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+/* ── City panel: briefing ──────────────────────────────────────── */
+
+.map-brief-overview {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text);
+}
+.map-brief-ref {
+  margin-left: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+}
+.map-brief-ref a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.map-brief-ref + .map-brief-ref::before {
+  content: ",";
+  color: var(--muted);
+}
+.map-brief-sources {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--border);
+}
+.map-brief-sources ol {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.6em;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.map-brief-sources li {
+  padding: 1px 0;
+}
+.map-brief-sources a {
+  color: var(--text);
+}
+.map-brief-sources li:target {
+  background: var(--surface-2);
+}
+.map-watch + .map-brief-overview {
+  margin-top: var(--space-3);
+}

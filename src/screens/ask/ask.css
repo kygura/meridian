@@ -27,6 +27,13 @@
   align-items: center;
   gap: var(--space-1);
 }
+/* Model picker in the panel header. */
+.ask-model {
+  max-width: 168px;
+}
+.ask-model .ui-input {
+  font-size: var(--text-xs);
+}
 .ask-thread {
   flex: 1;
   min-height: 0;

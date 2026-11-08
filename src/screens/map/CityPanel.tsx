@@ -23,7 +23,7 @@ import {
   useJournalToken,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
-import { CITY_METRICS, sentenceCase, useCityMetrics, useCitySeasonality } from "./cityData";
+import { CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -94,7 +94,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <BestMonths cityId={city.id} />
         <AtAGlance city={city} />
         <Visits city={city} />
-        <News city={city} />
+        <Briefing city={city} />
       </div>
     </Sheet>
   );
@@ -421,9 +421,108 @@ function Visits({ city }: { city: City }) {
   );
 }
 
-// ── News ────────────────────────────────────────────────────────────
+// ── Watch: advisories and recurring risk news ───────────────────────
 
-function News({ city }: { city: City }) {
+const ISSUE_LEVEL: Record<NewsIssue["level"], string> = {
+  systemic: "Pattern",
+  incident: "Recent incident",
+  recurring: "Recurring",
+};
+
+const SOURCE_DATE = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" });
+
+/**
+ * What's going on in the place, written as a neutral summary of its headlines (a cheap
+ * model on the server, or rules without a key), with numbered sources at the bottom.
+ * Headlines themselves are not printed. Curated conflicts and advisories sit on top.
+ */
+function Briefing({ city }: { city: City }) {
+  const place = usePlaceNews(city.id);
+  const brief = useNewsBrief(city.id);
+  const country = displayCountry(city.country);
+  const advisories = place.data?.advisories ?? [];
+
+  if (brief.status === "ready" && !brief.data && !advisories.length) return <WorldNews city={city} />;
+
+  return (
+    <section className="map-city-section" aria-labelledby={`${city.id}-brief`}>
+      <h3 className="map-city-h" id={`${city.id}-brief`}>
+        What’s happening in {country}
+      </h3>
+      {advisories.length ? (
+        <ul className="map-watch">
+          {advisories.map((a) => (
+            <li key={a.id} className="map-watch-item" data-sev={a.severity}>
+              <span className="map-watch-kicker">
+                {a.kind === "conflict" ? "Conflict" : (TOPIC_LABELS[a.topic as NewsTopic] ?? "Advisory")}
+                {a.since ? ` · since ${fmtSince(a.since)}` : ""}
+              </span>
+              <span className="map-watch-title">{a.label}</span>
+              {a.detail ? <span className="map-watch-detail">{a.detail}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {brief.status === "loading" ? (
+        <Skeleton lines={4} />
+      ) : brief.status === "error" ? (
+        <ErrorState message="Couldn’t write the briefing." onRetry={brief.retry} />
+      ) : brief.data ? (
+        <>
+          <p className="map-brief-overview">{brief.data.overview}</p>
+          {brief.data.points.length ? (
+            <ul className="map-watch">
+              {brief.data.points.map((p) => (
+                <li key={p.title} className="map-watch-item" data-sev={p.level === "systemic" ? 3 : p.level ? 2 : 1}>
+                  {p.level ? <span className="map-watch-kicker">{ISSUE_LEVEL[p.level]}</span> : null}
+                  <span className="map-watch-title">{p.title}</span>
+                  <span className="map-watch-detail">
+                    {p.text}
+                    {p.sources.map((n) => (
+                      <sup key={n} className="map-brief-ref">
+                        <a href={`#${city.id}-src-${n}`} aria-label={`Source ${n}`}>
+                          {n}
+                        </a>
+                      </sup>
+                    ))}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {brief.data.sources.length ? (
+            <div className="map-brief-sources">
+              <span className="map-watch-kicker">Sources</span>
+              <ol>
+                {brief.data.sources.map((s) => (
+                  <li key={s.n} id={`${city.id}-src-${s.n}`} value={s.n}>
+                    <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}>
+                      <bdi>{s.source || "Source"}</bdi>
+                    </a>
+                    <span className="map-brief-date"> · {SOURCE_DATE.format(new Date(s.pubDate))}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+          <p className="map-city-note">
+            {brief.data.by === "model" ? "Summarised by Claude Haiku" : "Summarised automatically"} from recent headlines. Check the
+            sources before deciding.
+          </p>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function fmtSince(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return y && m ? `${MONTH_SHORT[m - 1]} ${y}` : ym;
+}
+
+// ── News (fallback: world feed) ─────────────────────────────────────
+
+function WorldNews({ city }: { city: City }) {
   const { items, status, reload } = useNews();
   const country = displayCountry(city.country);
   const local = useMemo(() => newsForCountry(items, city.country), [items, city.country]);

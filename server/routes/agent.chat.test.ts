@@ -31,7 +31,7 @@ function parseDataStreamLines(body: string): StreamPart[] {
 }
 
 describe("POST /api/agent/chat — mock path emits AI SDK v4 tool parts", () => {
-  const originalOpenAIKey = process.env.OPENAI_API_KEY;
+  const originalAnthropicKey = process.env.ANTHROPIC_API_KEY;
   let originalFetch: typeof fetch;
   let expectedTopCityId: string | undefined;
   let cachePathForTop: string | undefined;
@@ -50,7 +50,7 @@ describe("POST /api/agent/chat — mock path emits AI SDK v4 tool parts", () => 
   });
 
   beforeEach(() => {
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
     originalFetch = global.fetch;
     if (cachePathForTop) {
       cacheBackup = existsSync(cachePathForTop) ? readFileSync(cachePathForTop, "utf-8") : null;
@@ -78,7 +78,7 @@ describe("POST /api/agent/chat — mock path emits AI SDK v4 tool parts", () => 
 
   afterEach(() => {
     global.fetch = originalFetch;
-    if (originalOpenAIKey !== undefined) process.env.OPENAI_API_KEY = originalOpenAIKey;
+    if (originalAnthropicKey !== undefined) process.env.ANTHROPIC_API_KEY = originalAnthropicKey;
     if (cachePathForTop) {
       if (cacheBackup !== null) {
         mkdirSync(dirname(cachePathForTop), { recursive: true });
