@@ -4,7 +4,7 @@
 
 import type { MetricSurface } from "../types";
 
-export type MetricId = "stability" | "quality" | "connectivity" | "cost" | "tourism";
+export type MetricId = "stability" | "quality" | "beauty" | "connectivity" | "cost" | "tourism";
 
 export interface MetricDef {
   id: MetricId;
@@ -19,7 +19,8 @@ export interface MetricDef {
 
 export const METRICS: MetricDef[] = [
   { id: "stability", label: "Safety", theme: "Political stability", direction: "min", low: "Unsettled", high: "Very stable" },
-  { id: "quality", label: "Quality of life", theme: "Social", direction: "min", low: "Low", high: "High" },
+  { id: "quality", label: "Quality of life", theme: "How good it is to live there", direction: "min", low: "Low", high: "High" },
+  { id: "beauty", label: "Beauty", theme: "Natural setting and built character", direction: "min", low: "Plain", high: "Striking" },
   { id: "connectivity", label: "Internet", theme: "Infrastructure", direction: "min", low: "Poor", high: "Excellent" },
   { id: "cost", label: "Affordability", theme: "Economic", direction: "min", low: "Pricey", high: "Affordable" },
   { id: "tourism", label: "Crowds", theme: "Tourism pressure", direction: "max", low: "Quiet", high: "Crowded" },

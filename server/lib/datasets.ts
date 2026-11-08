@@ -1,4 +1,5 @@
 import type { MetricSurface, MetricValue } from "../../src/types.js";
+import { beautySurface, qualitySurface } from "./livability.js";
 import { getCities } from "./cities.js";
 
 const TOP_STABLE_COUNTRIES: Record<string, number> = {
@@ -137,42 +138,6 @@ export function getDensitySurface(): MetricSurface {
 }
 
 /**
- * Synthesized quality of life.
- */
-export function getQualitySurface(): MetricSurface {
-  const cities = getCities();
-  const values: MetricValue[] = cities.map((c) => {
-    // Deterministic pseudo-quality based on name hash
-    let h = 0;
-    for (let i = 0; i < c.name.length; i++) {
-      h = (h * 31 + c.name.charCodeAt(i)) | 0;
-    }
-    const base = ((h >>> 0) % 60) + 30; // 30-90 range
-    const score = Math.min(100, Math.max(0, base));
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: score,
-      unit: "quality-index",
-      normalized: score,
-      label: score >= 70 ? "High" : score >= 50 ? "Medium" : "Low",
-    };
-  });
-
-  return {
-    id: "quality",
-    label: "Quality of Life",
-    category: "quality",
-    source: "synthesized",
-    updatedAt: now(),
-    granularity: "city",
-    confidence: "low",
-    values,
-  };
-}
-
-/**
  * Synthesized internet speed / connectivity.
  */
 export function getConnectivitySurface(): MetricSurface {
@@ -291,6 +256,7 @@ const ALL_SURFACES = [
   "stability",
   "density",
   "quality",
+  "beauty",
   "connectivity",
   "tourism",
   "cost",
@@ -300,7 +266,9 @@ const SURFACE_GETTERS: Record<string, () => MetricSurface> = {
   weather: getWeatherSurface,
   stability: getStabilitySurface,
   density: getDensitySurface,
-  quality: getQualitySurface,
+  // Real data from data/livability.json (server/lib/livability.ts), not the old hash.
+  quality: qualitySurface,
+  beauty: beautySurface,
   connectivity: getConnectivitySurface,
   tourism: getTourismSurface,
   cost: getCostSurface,

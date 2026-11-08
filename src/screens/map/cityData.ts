@@ -96,7 +96,6 @@ export const CITY_METRICS: { id: string; label: string; hint: string }[] = [
   { id: "cost", label: "Cost of living", hint: "Higher is more affordable" },
   { id: "tourism", label: "Crowds", hint: "Tourism pressure" },
   { id: "connectivity", label: "Internet", hint: "Connection quality" },
-  { id: "quality", label: "Quality of life", hint: "Overall livability" },
 ];
 
 // ── Place news (GET /api/news/place) ───────────────────────────────

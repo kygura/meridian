@@ -3,6 +3,7 @@ import { hrefFor } from "../../lib/router";
 import { Page, PageActionsProvider, PageHeader, Tabs } from "../../ui";
 import { useBadgeCounts, badgeLabel } from "../../shell/useNavBadges";
 import WhenToGo from "./when/WhenToGo";
+import LiveLove from "./live/LiveLove";
 import RepeatTrip from "./repeat/RepeatTrip";
 import Watches from "./watches/Watches";
 import Flights from "./flights/Flights";
@@ -14,6 +15,7 @@ export interface PlanScreenProps {
 
 const TABS: { value: PlanTab; label: string }[] = [
   { value: "when", label: "When to go" },
+  { value: "live", label: "Live & love" },
   { value: "repeat", label: "Repeat a trip" },
   { value: "watches", label: "Watches" },
   { value: "flights", label: "Flights" },
@@ -46,6 +48,7 @@ export default function PlanScreen({ route }: PlanScreenProps) {
           }
         />
         {route.tab === "when" && <WhenToGo />}
+        {route.tab === "live" && <LiveLove />}
         {route.tab === "repeat" && (
           <RepeatTrip key={`${route.journeyId ?? ""}:${route.stopIndex ?? ""}`} journeyId={route.journeyId} stopIndex={route.stopIndex} />
         )}

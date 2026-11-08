@@ -28,7 +28,8 @@ export type MetricCategory =
   | "mobility"
   | "cost"
   | "connectivity"
-  | "events";
+  | "events"
+  | "beauty";
 
 export type Granularity =
   | "city"

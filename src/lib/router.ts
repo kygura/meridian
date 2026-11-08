@@ -4,7 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 // new route; useRoute() also rewrites the address bar to the canonical hash.
 
 export type TripsTab = "upcoming" | "past";
-export type PlanTab = "when" | "repeat" | "watches" | "flights";
+export type PlanTab = "when" | "live" | "repeat" | "watches" | "flights";
 
 export type Route =
   | { view: "map" }
@@ -15,7 +15,7 @@ export type Route =
 
 export type View = Route["view"];
 
-const PLAN_TABS: PlanTab[] = ["when", "repeat", "watches", "flights"];
+const PLAN_TABS: PlanTab[] = ["when", "live", "repeat", "watches", "flights"];
 
 const seg = (s: string): string => {
   try {

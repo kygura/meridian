@@ -1,0 +1,225 @@
+/* Plan › Live & love (LiveLove.tsx). Colours come from theme tokens, so dark mode is its own palette. */
+.plan-live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.plan-live-intro,
+.plan-live-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  max-width: 72ch;
+}
+.plan-live-note {
+  font-size: var(--text-xs);
+}
+.plan-live-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+.plan-live-controls .ui-select-wrap {
+  width: 170px;
+}
+.plan-live-card {
+  padding: var(--space-3);
+}
+.plan-live-chart {
+  position: relative;
+  width: 100%;
+}
+.plan-live-chart svg {
+  display: block;
+  touch-action: manipulation;
+}
+.plan-live-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.plan-live-cut {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.plan-live-tick {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.plan-live-axis {
+  fill: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.plan-live-corner {
+  fill: var(--muted);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 15px;
+}
+.plan-live-dot {
+  fill: var(--ink);
+  fill-opacity: 0.32;
+}
+.plan-live-dot.is-trip {
+  fill: var(--accent);
+  fill-opacity: 1;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.plan-live-hover {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  pointer-events: none;
+}
+.plan-live-label {
+  fill: var(--ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.plan-live-legend {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 0 44px;
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+.plan-live-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: var(--ink);
+  opacity: 0.4;
+  vertical-align: middle;
+}
+.plan-live-legend i.is-trip {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  opacity: 1;
+}
+.plan-live-tip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 200px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  font-size: var(--text-xs);
+  color: var(--text);
+  pointer-events: none;
+}
+.plan-live-tip > b {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 400;
+}
+.plan-live-tip-sub {
+  color: var(--muted);
+}
+.plan-live-h {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.plan-live-h small {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.plan-live-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.plan-live-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-strong);
+}
+.plan-live-table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.plan-live-table tbody tr {
+  cursor: pointer;
+}
+.plan-live-table tbody tr:hover {
+  background: var(--surface-2);
+}
+.plan-live-table tr.is-trip .plan-live-city {
+  color: var(--accent-text);
+}
+.plan-live-city {
+  all: unset;
+  cursor: pointer;
+  font-weight: 500;
+}
+.plan-live-city:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.plan-live-country {
+  margin-left: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.plan-live-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 120px;
+}
+.plan-live-bar-num {
+  width: 2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.plan-live-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-2);
+}
+.plan-live-bar-track span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 0 4px 4px 0;
+}
+@media (max-width: 640px) {
+  .plan-live-bar {
+    min-width: 0;
+  }
+  .plan-live-bar-track {
+    display: none;
+  }
+  .plan-live-country {
+    display: block;
+    margin: 0;
+  }
+}

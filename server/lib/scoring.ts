@@ -1,4 +1,5 @@
 import type { City, MeridianScore } from "../../src/types.js";
+import { livabilityFor } from "./livability.js";
 
 /**
  * Simple deterministic hash from a string, returns a number 0-1.
@@ -34,7 +35,8 @@ function climateFromLat(lat: number): number {
 
 export function computeScore(city: City): MeridianScore {
   const economics = pseudoScore(city, "economics", 35, 90);
-  const quality = pseudoScore(city, "quality", 30, 95);
+  // Real quality of life where the livability dataset covers the city; the old placeholder otherwise.
+  const quality = livabilityFor(city.id)?.quality ?? pseudoScore(city, "quality", 30, 95);
   const climate = Math.min(100, Math.max(0, climateFromLat(city.lat)));
   const stability = pseudoScore(city, "stability", 25, 95);
   const nomadInfra = pseudoScore(city, "nomadInfra", 20, 90);

@@ -40,9 +40,18 @@ await build({
 
 // Datasets the server reads from data/ (cities, airports, capitals, seasonality seed, events, phenomena).
 // Personal data never ships: it lives in Postgres (DATABASE_URL).
-const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "events.json", "phenomena.json", "native-names.json"];
+const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "events.json", "phenomena.json", "native-names.json", "livability.json"];
 mkdirSync(join(fn, "data"), { recursive: true });
-for (const f of DATASETS) cpSync(join(root, "data", f), join(fn, "data", f));
+// Optional datasets: the server copes without them (the feature reports "no data").
+const OPTIONAL = new Set(["native-names.json", "livability.json"]);
+for (const f of DATASETS) {
+  const src = join(root, "data", f);
+  if (!existsSync(src) && OPTIONAL.has(f)) {
+    console.warn(`[build-vercel] data/${f} missing; skipping`);
+    continue;
+  }
+  cpSync(src, join(fn, "data", f));
+}
 
 writeFileSync(
   join(fn, ".vc-config.json"),

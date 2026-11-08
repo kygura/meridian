@@ -11,6 +11,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | **Map** | Flat map of ~5,900 cities matched to their airports, labelled in English, in each city's own language and script (東京, Москва, القاهرة), or both (Layers › Cities). Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
 | **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. Plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
+| **Plan › Live & love** | Every city by quality of life (human development, life satisfaction, safety, air) against beauty (natural setting and built character), with a "best of both" ranking. The city panel shows each score's parts and the facts behind them. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
 | **Plan › Watches** | Saved Repeat-a-trip searches, checked daily, that alert when a match comes into booking range at a good price. |
 | **Plan › Flights** | Flight search and booking in Duffel's test mode (mock offers without a key). Nothing is really ticketed. |
@@ -33,6 +34,8 @@ Live: https://meridian-mocha-iota.vercel.app
 - Cities: `data/worldcities.csv` (name, coordinates, country, population; origin not recorded in this repo), matched to airports from [OurAirports](https://ourairports.com/data/) and capitals from [mledoze/countries](https://github.com/mledoze/countries).
 - Native city names: [Wikidata](https://www.wikidata.org/) (CC0), matched through [GeoNames](https://www.geonames.org/) ids (CC BY 4.0). Rebuilt with `scripts/build-native-names.ts`.
 - Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
+- Quality of life: [UNDP Human Development Index](https://hdr.undp.org/), [World Happiness Report](https://worldhappiness.report/) via [Our World in Data](https://ourworldindata.org/), [World Bank](https://data.worldbank.org/) homicide and PM2.5 data, and [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) for major cities.
+- Beauty: [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), [Natural Earth](https://www.naturalearthdata.com/) lakes, UNESCO World Heritage sites from Wikidata, [Wikimedia Commons](https://commons.wikimedia.org/) and English Wikipedia geotags. Built with `scripts/build-livability.ts`; method in ADR 0008.
 - Map label fonts: Instrument Serif and Noto (SIL OFL 1.1), see `public/fonts/LICENSE.md`.
 
 ## Run it locally
