@@ -1,6 +1,6 @@
 # Trip plans
 
-Three seasonal trips. Each is a route through the months it works best in, and you can take it any year.
+Four seasonal trips. Each is a route through the months it works best in, and you can take it any year.
 `trips.json` loads them into Meridian: **Settings › Trips › Import**, then pick the file.
 Re-importing updates them in place (same ids). With the journal unlocked, they sync to every device.
 
@@ -16,6 +16,7 @@ Comfort scores come from `data/seasonality.json` (2015–2024 climate data).
 | Southeast Asia, dry season into monsoon | February to July | ~150 nights | solo | 2027 |
 | East Africa family safari | July to August | 14 nights | family of 3 | 2028 (lodges book ~a year out) |
 | South America overland | September to October | 30 nights | open | 2027 |
+| Japan in autumn colours | October to November | ~54 nights | open | 2027 |
 
 ## 1. Southeast Asia, dry season into monsoon (February to July)
 
@@ -114,6 +115,35 @@ Comfort index Lima 94 → 97, Santiago (proxy for Mendoza) 79 → 89, Buenos Air
 Before booking:
 - Machu Picchu tickets and the Inca Trail (if wanted) sell out months ahead.
 - Altitude: Cusco 3,400 m, La Paz 3,600 m, Uyuni crossing up to ~4,900 m. Go up gradually, as routed.
+
+## 4. Japan in autumn colours (October to November)
+
+Sapporo → Matsumoto → Kanazawa → Tokyo → Kyoto → Osaka → Hiroshima → Fukuoka
+
+Why autumn: October is the best month in Meridian's comfort index across most of the route
+(Fukuoka 91, Hiroshima 87, Tokyo 76, Kyoto 75), and the colours move from Hokkaido and the mountains
+in early October down to Kyoto and Miyajima in late November, so the route follows them.
+It is quieter than cherry-blossom season and misses Golden Week (29 Apr – 5 May).
+The other good window is mid-May to early June (Tokyo 83 in May), after Golden Week and before the rainy season.
+
+| Stop | Dates (example) | Nights | Why then |
+|---|---|---|---|
+| Sapporo | 5–11 Oct | 6 | Hokkaido colours peak first (Daisetsuzan, Jozankei). Leave before it turns cold (comfort 58 in Oct, 28 in Nov) |
+| Matsumoto | 11–17 Oct | 6 | Japan Alps: Kamikochi (closes mid-November), Norikura, Takayama and Shirakawa-go as side trips |
+| Kanazawa | 17–21 Oct | 4 | Kenroku-en, the old districts; comfort 73 in October |
+| Tokyo | 21 Oct – 5 Nov | 15 | City, plus Nikko (colours late October) and Hakone (early November) as day or overnight trips |
+| Kyoto | 5–19 Nov | 14 | Temples as the colours come in; Nara as a day trip. Peak is mid to late November |
+| Osaka | 19–22 Nov | 3 | Food; Minoo falls for maples |
+| Hiroshima | 22–25 Nov | 3 | Peace Park; Miyajima's Momijidani at its peak |
+| Fukuoka | 25–28 Nov | 3 | Best comfort of the trip (91 in October, 73 in November); fly out |
+
+Osaka appears as "Ōsaka" (`saka-japan` in Meridian's city list).
+
+Before booking:
+- **Kyoto in November** is its second-busiest season: book rooms months ahead, go to the famous temples at opening time, and use quieter areas (Ohara, Kurama, Takao) for colours.
+- **Long weekends fill trains and hotels:** Sports Day (second Monday of October), Culture Day (3 November), Labour Thanksgiving Day (23 November). Check which fall on a Monday in your year.
+- **Typhoons** are possible into early October, mostly in the south; the route starts in the north for that reason too.
+- **Rail:** the national JR Pass got much more expensive in 2023. Compare it with regional passes and single tickets for this route before buying.
 
 ## Still open
 

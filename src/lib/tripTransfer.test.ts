@@ -57,7 +57,7 @@ describe("tripTransfer", () => {
   it("parses the committed trip plans file", () => {
     const text = readFileSync(join(process.cwd(), "plans/trips.json"), "utf-8");
     const trips = parseTripFile(text);
-    expect(trips).toHaveLength(3);
+    expect(trips).toHaveLength(4);
     for (const t of trips) {
       expect(t.nodes.length).toBeGreaterThan(2);
       expect(t.nodes.every((n) => n.months)).toBe(true); // seasonal: every stop placed in the year
