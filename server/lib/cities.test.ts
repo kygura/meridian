@@ -46,3 +46,14 @@ describe("country search returns that country's airports, ranked", () => {
     }
   });
 });
+
+describe("native names", () => {
+  it("attaches each city's own-language name from data/native-names.json", async () => {
+    const { loadCities, getCityById } = await import("./cities.js");
+    loadCities();
+    expect(getCityById("tokyo-japan")?.nativeName).toBe("東京");
+    expect(getCityById("moscow-russia")?.nativeName).toBe("Москва");
+    expect(getCityById("cairo-egypt")?.nativeName).toBe("القاهرة");
+    expect(getCityById("paris-france")?.nativeName).toBeUndefined(); // same as English
+  });
+});

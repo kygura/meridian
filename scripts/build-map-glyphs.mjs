@@ -2,9 +2,13 @@
 // so city names on the globe use the same type as the rest of Meridian.
 //
 // Output: public/fonts/<stack>/<start>-<end>.pbf, served at /fonts/... by Vite and Vercel.
-// Only ranges that city names in data/worldcities.csv need are written (plus Basic Latin).
-// Each stack fills the gaps in its main font from a Noto fallback (Vietnamese letters with
-// stacked diacritics, e.g. "Đồng Hới", are missing from Instrument Serif).
+// Only ranges that city names need are written: English names (data/worldcities.csv) and
+// native names (data/native-names.json), plus Basic Latin and, when Arabic appears, the
+// Arabic presentation forms the RTL plugin shapes into. Chinese, Japanese and Korean are
+// left out: MapLibre draws those with the device's fonts (localIdeographFontFamily).
+// The main font's gaps are filled from Noto fallbacks, first match wins: Noto Serif
+// (Vietnamese letters like "Đồng Hới", Greek, Cyrillic), then Arabic, Hebrew, Georgian,
+// Armenian and Ethiopic.
 //
 // One-off tool; its dependencies aren't part of the app:
 //   mkdir -p /tmp/glyph-tools && cd /tmp/glyph-tools && npm i fontnik@0.7.7 @mapbox/glyph-pbf-composite@0.0.3
@@ -29,16 +33,31 @@ const { combine } = req("@mapbox/glyph-pbf-composite");
 
 /** Stack name (what "text-font" asks for) → main font, then fallback. */
 const STACKS = {
-  "meridian-serif": ["InstrumentSerif-Regular.ttf", "NotoSerif[wdth,wght].ttf"],
+  "meridian-serif": [
+    "InstrumentSerif-Regular.ttf",
+    "NotoSerif[wdth,wght].ttf",
+    "NotoNaskhArabic[wght].ttf",
+    "NotoSerifHebrew[wdth,wght].ttf",
+    "NotoSerifGeorgian[wdth,wght].ttf",
+    "NotoSerifArmenian[wdth,wght].ttf",
+    "NotoSerifEthiopic[wdth,wght].ttf",
+  ],
 };
 
 // Ranges the labels can need: every character in a city name, plus Basic Latin and Latin-1.
-const names = readFileSync(join(root, "data/worldcities.csv"), "utf8")
+const english = readFileSync(join(root, "data/worldcities.csv"), "utf8")
   .split("\n")
   .slice(1)
   .map((l) => l.split(",")[0].replace(/"/g, ""));
+const native = Object.values(JSON.parse(readFileSync(join(root, "data/native-names.json"), "utf8")).names);
+const LOCAL = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\u3000-\u303f\uff00-\uffef]/u;
 const starts = new Set([0]);
-for (const n of names) for (const ch of n) starts.add(Math.floor(ch.codePointAt(0) / 256) * 256);
+for (const n of [...english, ...native])
+  for (const ch of n) if (!LOCAL.test(ch)) starts.add(Math.floor(ch.codePointAt(0) / 256) * 256);
+if (native.some((n) => /\p{Script=Arabic}/u.test(n))) {
+  // Presentation forms A (U+FB50–FDFF) and B (U+FE70–FEFF), which the RTL plugin shapes into.
+  for (let r = 0xfb00; r <= 0xfe00; r += 256) starts.add(r);
+}
 
 const range = (font, start) =>
   new Promise((ok, fail) => fontnik.range({ font, start, end: start + 255 }, (e, pbf) => (e ? fail(e) : ok(pbf))));

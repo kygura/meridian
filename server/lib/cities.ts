@@ -143,6 +143,19 @@ export function loadCities(): void {
     });
   }
 
+  // Native names (scripts/build-native-names.ts), for the map's label option.
+  try {
+    const native = JSON.parse(readFileSync(join(process.cwd(), "data/native-names.json"), "utf-8")) as {
+      names: Record<string, string>;
+    };
+    for (const city of base) {
+      const n = native.names[city.id];
+      if (n) city.nativeName = n;
+    }
+  } catch {
+    console.warn("[cities] data/native-names.json missing — run scripts/build-native-names.ts");
+  }
+
   cities = base;
   console.log(
     `[cities] Loaded ${cities.length} cities (${cities.filter((c) => c.iata).length} with airports)`

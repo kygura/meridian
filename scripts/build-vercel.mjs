@@ -40,7 +40,7 @@ await build({
 
 // Datasets the server reads from data/ (cities, airports, capitals, seasonality seed, events, phenomena).
 // Personal data never ships: it lives in Postgres (DATABASE_URL).
-const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "events.json", "phenomena.json"];
+const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "events.json", "phenomena.json", "native-names.json"];
 mkdirSync(join(fn, "data"), { recursive: true });
 for (const f of DATASETS) cpSync(join(root, "data", f), join(fn, "data", f));
 

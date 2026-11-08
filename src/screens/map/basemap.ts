@@ -5,6 +5,7 @@ import type { RegionSeason } from "../../lib/seasonalityApi";
 import type { City } from "../../types";
 import { cityRank, OVERLAY_SOURCES, type overlayLayers } from "./overlays";
 import type { MapColors } from "./useMapColors";
+import type { CityNames } from "../../shell/mapPrefs";
 import { isFilterActive, matchesFilter, modeStep, monthTraits, type ClimateFilter, type ClimateMode, type ClimateMonth } from "../../lib/climate";
 
 type OverlayLayers = ReturnType<typeof overlayLayers>;
@@ -51,7 +52,7 @@ export function graticule(step = 15): { lines: GeoJSON.FeatureCollection; equato
   return { lines: { type: "FeatureCollection", features }, equator: { type: "FeatureCollection", features: [seg(eq)] } };
 }
 
-export function buildStyle(colors: MapColors, overlays: OverlayLayers): maplibregl.StyleSpecification {
+export function buildStyle(colors: MapColors, overlays: OverlayLayers, names: CityNames = "english"): maplibregl.StyleSpecification {
   const labelLayers: maplibregl.LayerSpecification[] = LABEL_TIERS.map(([rank, minzoom]) => ({
     id: `city-labels-${rank}`,
     type: "symbol",
@@ -59,7 +60,7 @@ export function buildStyle(colors: MapColors, overlays: OverlayLayers): maplibre
     minzoom,
     filter: ["==", ["get", "rank"], rank],
     layout: {
-      "text-field": ["get", "name"],
+      "text-field": labelText(names),
       "text-font": SERIF,
       // Instrument Serif runs small for its size: set it larger than the old sans.
       "text-size": rank === 0 ? 15 : rank === 1 ? 13.5 : 12.5,
@@ -142,19 +143,42 @@ export function repaintBasemap(map: maplibregl.Map, colors: MapColors): void {
 }
 
 /** City label points (ranks 0-2 only). */
+const fold = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * One point per labelled city. `native` is the city's own name when it has one; `nativeExtra`
+ * is that name only when it says more than accents on the English one ("Москва" for Moscow,
+ * not "Bogotá" for Bogota), so "both" doesn't repeat a name.
+ */
 export function labelFeatures(cities: City[]): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];
   for (const c of cities) {
     const rank = cityRank(c);
     if (rank > 2 || !Number.isFinite(c.lat) || !Number.isFinite(c.lng)) continue;
-    features.push({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [c.lng, c.lat] },
-      properties: { name: c.name, rank, pop: c.population },
-    });
+    const props: Record<string, unknown> = { name: c.name, rank, pop: c.population };
+    if (c.nativeName) {
+      props.native = c.nativeName;
+      if (fold(c.nativeName) !== fold(c.name)) props.nativeExtra = c.nativeName;
+    }
+    features.push({ type: "Feature", geometry: { type: "Point", coordinates: [c.lng, c.lat] }, properties: props });
   }
   return { type: "FeatureCollection", features };
 }
+
+/** The label text for each naming choice. "both" sets the native name smaller on a second line. */
+export function labelText(names: CityNames): maplibregl.ExpressionSpecification {
+  if (names === "native") return ["coalesce", ["get", "native"], ["get", "name"]];
+  if (names === "both")
+    return [
+      "case",
+      ["has", "nativeExtra"],
+      ["format", ["get", "nativeExtra"], { "font-scale": 1 }, "\n", {}, ["get", "name"], { "font-scale": 0.8 }],
+      ["coalesce", ["get", "native"], ["get", "name"]],
+    ];
+  return ["get", "name"];
+}
+
+export const CITY_LABEL_LAYERS = ["city-labels-0", "city-labels-1", "city-labels-2"] as const;
 
 export interface TintOptions {
   mode: ClimateMode;

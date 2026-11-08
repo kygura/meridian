@@ -8,6 +8,9 @@ import type { MetricId, MetricThresholds } from "../lib/cityMetrics";
 
 export type MapLayer = "past" | "planned" | "cities" | "seasons" | "metrics" | "events" | "anomalies";
 
+/** How city labels are written: English, the city's own language, or both. */
+export type CityNames = "english" | "native" | "both";
+
 export interface MetricPrefs {
   /** Surface the city dots are coloured by, or "none" for plain ink. */
   colorBy: MetricId | "none";
@@ -30,6 +33,8 @@ interface MapPrefs {
   avoidConflicts: boolean;
   /** Finder panel expanded. */
   finderOpen: boolean;
+  cityNames: CityNames;
+  setCityNames: (names: CityNames) => void;
   setLayer: (key: MapLayer, on: boolean) => void;
   setMonth: (month: number) => void;
   setClimateMode: (mode: ClimateMode) => void;
@@ -86,6 +91,8 @@ export const useMapPrefs = create<MapPrefs>()(
       setOnlyMatches: (onlyMatches) => set({ onlyMatches }),
       setAvoidConflicts: (avoidConflicts) => set({ avoidConflicts }),
       setFinderOpen: (finderOpen) => set({ finderOpen }),
+      cityNames: "english",
+      setCityNames: (cityNames) => set({ cityNames }),
       clearFilters: () =>
         set((s) => ({ climate: EMPTY_FILTER, metrics: { ...s.metrics, thresholds: {} }, avoidConflicts: false })),
     }),
@@ -113,6 +120,7 @@ export const useMapPrefs = create<MapPrefs>()(
         onlyMatches: s.onlyMatches,
         avoidConflicts: s.avoidConflicts,
         finderOpen: s.finderOpen,
+        cityNames: s.cityNames,
       }),
     }
   )

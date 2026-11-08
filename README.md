@@ -8,7 +8,7 @@ Live: https://meridian-mocha-iota.vercel.app
 
 | Screen | What it does |
 |---|---|
-| **Map** | Flat map of ~5,900 cities matched to their airports. Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
+| **Map** | Flat map of ~5,900 cities matched to their airports, labelled in English, in each city's own language and script (東京, Москва, القاهرة), or both (Layers › Cities). Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
 | **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. Plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
@@ -27,6 +27,13 @@ Live: https://meridian-mocha-iota.vercel.app
 - **Storage:** one document store with two backends: JSON files under `DATA_DIR`, or Postgres when `DATABASE_URL` is set (ADR 0006).
 - **External services, all optional:** Anthropic Claude (assistant and news briefing), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images), Google News search RSS (city and country headlines; Google allows personal, non-commercial use of these feeds).
 - **Tests:** Vitest.
+
+## Data sources
+
+- Cities: [simplemaps World Cities](https://simplemaps.com/data/world-cities), matched to airports from [OurAirports](https://ourairports.com/data/).
+- Native city names: [Wikidata](https://www.wikidata.org/) (CC0), matched through [GeoNames](https://www.geonames.org/) ids (CC BY 4.0). Rebuilt with `scripts/build-native-names.ts`.
+- Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
+- Map label fonts: Instrument Serif and Noto (SIL OFL 1.1), see `public/fonts/LICENSE.md`.
 
 ## Run it locally
 
