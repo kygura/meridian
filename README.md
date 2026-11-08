@@ -30,7 +30,7 @@ Live: https://meridian-mocha-iota.vercel.app
 
 ## Data sources
 
-- Cities: [simplemaps World Cities](https://simplemaps.com/data/world-cities), matched to airports from [OurAirports](https://ourairports.com/data/).
+- Cities: `data/worldcities.csv` (name, coordinates, country, population; origin not recorded in this repo), matched to airports from [OurAirports](https://ourairports.com/data/) and capitals from [mledoze/countries](https://github.com/mledoze/countries).
 - Native city names: [Wikidata](https://www.wikidata.org/) (CC0), matched through [GeoNames](https://www.geonames.org/) ids (CC BY 4.0). Rebuilt with `scripts/build-native-names.ts`.
 - Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
 - Map label fonts: Instrument Serif and Noto (SIL OFL 1.1), see `public/fonts/LICENSE.md`.
