@@ -1,18 +1,23 @@
-# Trip plans 2027–2029
+# Trip plans
 
-Three trips across 2027–2029. `trips-2027-2029.json` loads them into Meridian:
-**Settings › Trips › Import**, then pick the file. Re-importing updates them in place (same ids). With the journal unlocked, they then sync to every device.
+Three seasonal trips. Each is a route through the months it works best in, and you can take it any year.
+`trips.json` loads them into Meridian: **Settings › Trips › Import**, then pick the file.
+Re-importing updates them in place (same ids). With the journal unlocked, they sync to every device.
 
-Meridian trip nodes are cities without dates, so dates, nights and notes live here.
-Comfort scores quoted below come from `data/seasonality.json` (2015–2024 climate normals).
+Every stop carries its months, so Meridian shows the trip's season, each stop's comfort in its months,
+and the events that happen while you're there. Choosing a year in the trip's **Season** card turns the months
+into dates: flight searches start on them, and that year's moving holidays (Tết, Lunar New Year) show up.
 
-| Trip | When | Length | Who |
-|---|---|---|---|
-| Southeast Asia | ~1 Feb – 3 Jul 2027 | ~150 nights | solo |
-| East Africa safari | ~18 Jul – 1 Aug 2028 | 14 nights | family of 3 |
-| South America | ~3 Sep – 3 Oct 2029 | 30 nights | open |
+The dates below are one worked example of each season, to make nights per stop concrete.
+Comfort scores come from `data/seasonality.json` (2015–2024 climate data).
 
-## 1. Southeast Asia — Feb–Jul 2027
+| Trip | Season | Length | Who | First year it fits |
+|---|---|---|---|---|
+| Southeast Asia, dry season into monsoon | February to July | ~150 nights | solo | 2027 |
+| East Africa family safari | July to August | 14 nights | family of 3 | 2028 (lodges book ~a year out) |
+| South America overland | September to October | 30 nights | open | 2027 |
+
+## 1. Southeast Asia, dry season into monsoon (February to July)
 
 One long, slow trip across both seasons: the dry season through Vietnam and the coasts,
 then the start of the monsoon in places that are greener and emptier in the rain.
@@ -27,7 +32,7 @@ George Town → Kuala Lumpur → Yogyakarta → Bali → Siem Reap → Phnom Pen
 |---|---|---|---|
 | Bangkok | 1–5 Feb | 4 | Arrival; comfort index 88 in Feb |
 | Chiang Mai | 5–19 Feb | 14 | Cool and clear. Leave before the burning-season smoke (Mar–Apr) |
-| Hanoi | 19–25 Feb | 6 | After Tết (6 Feb 2027), so the city has reopened; index 97 |
+| Hanoi | 19–25 Feb | 6 | After Tết in most years, so the city has reopened; index 97. Tết moves (6 Feb 2027, 26 Jan 2028, 13 Feb 2029): in a late year, shift Vietnam a week later. Meridian flags the clash once a year is chosen |
 | Ninh Bình | 25–28 Feb | 3 | Karst rivers and rice paddies |
 | Hue | 28 Feb – 3 Mar | 3 | Imperial city; central coast drying out |
 | Da Nang | 3–15 Mar | 12 | Base for Hoi An. March is the sweet spot before the heat |
@@ -59,9 +64,9 @@ Luang Prabang shows up as "Louangphrabang" in Meridian's city list.
 - **Visas over long stays:** 36 nights in Indonesia is more than a standard 30-day visa on arrival, so plan an extension or a different visa. Also check Thailand's current visa-exempt length (it has changed often) and Vietnam's 90-day e-visa against your passport.
 - **Northern Thailand smoke:** March–April burning season is why Chiang Mai comes early and then again in June.
 - **Monsoon days:** pack for heavy afternoon rain. Some boat trips (Ha Long, Andaman islands) run less or stop in the wet season, which is why the coasts come in Phase 1.
-- **Shifting the year:** a Feb–Jul 2028 run would end right before the July 2028 safari. 2027 keeps them apart.
+- **Same year as the safari:** this season ends in early July and the safari starts mid-July, so taking both in one year leaves about two weeks between them.
 
-## 2. East Africa family safari — Jul–Aug 2028
+## 2. East Africa family safari (July to August)
 
 Nairobi → (Masai Mara) → Arusha → Zanzibar
 
@@ -78,12 +83,12 @@ Why these dates: dry season, the migration is usually in the Mara Jul–Sep, and
 Comfort index Nairobi 98 (Jul) / 100 (Aug).
 
 Before booking:
-- Peak-season family lodges sell out. Book by ~Sep 2027.
+- Peak-season family lodges sell out. Book 10–12 months ahead, so around September of the year before.
 - Check minimum ages: some camps, walking safaris and private conservancies set 6+ or 12+.
 - Malaria: see a travel clinic about prophylaxis for all three, including the child's dose.
 - Kenya needs an eTA; Tanzania a visa/e-visa. Check yellow fever certificate rules for the Kenya → Tanzania crossing.
 
-## 3. South America — Sep–Oct 2029
+## 3. South America overland (September to October)
 
 Lima → Cusco → La Paz → (Uyuni) → Calama → Salta → Mendoza → Buenos Aires → Foz do Iguaçu → Rio de Janeiro
 

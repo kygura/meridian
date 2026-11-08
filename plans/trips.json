@@ -5,7 +5,7 @@
   "trips": [
     {
       "id": "plan-2027-southeast-asia",
-      "name": "Southeast Asia · Feb–Jul 2027",
+      "name": "Southeast Asia, dry season into monsoon",
       "color": "#0f766e",
       "status": "scouting",
       "nodes": [
@@ -14,132 +14,204 @@
           "name": "Bangkok",
           "iata": "DMK",
           "lat": 13.75,
-          "lng": 100.5166
+          "lng": 100.5166,
+          "months": {
+            "start": 2,
+            "end": 2
+          }
         },
         {
           "cityId": "chiang-mai-thailand",
           "name": "Chiang Mai",
           "iata": "CNX",
           "lat": 18.8,
-          "lng": 98.98
+          "lng": 98.98,
+          "months": {
+            "start": 2,
+            "end": 2
+          }
         },
         {
           "cityId": "hanoi-vietnam",
           "name": "Hanoi",
           "iata": "HAN",
           "lat": 21.0333,
-          "lng": 105.85
+          "lng": 105.85,
+          "months": {
+            "start": 2,
+            "end": 2
+          }
         },
         {
           "cityId": "ninh-b-nh-vietnam",
           "name": "Ninh Bình",
           "lat": 20.2543,
-          "lng": 105.975
+          "lng": 105.975,
+          "months": {
+            "start": 2,
+            "end": 2
+          }
         },
         {
           "cityId": "hue-vietnam",
           "name": "Hue",
           "iata": "DAD",
           "lat": 16.47,
-          "lng": 107.58
+          "lng": 107.58,
+          "months": {
+            "start": 2,
+            "end": 3
+          }
         },
         {
           "cityId": "da-nang-vietnam",
           "name": "Da Nang",
           "iata": "DAD",
           "lat": 16.06,
-          "lng": 108.25
+          "lng": 108.25,
+          "months": {
+            "start": 3,
+            "end": 3
+          }
         },
         {
           "cityId": "da-lat-vietnam",
           "name": "Da Lat",
           "iata": "DLI",
           "lat": 11.9304,
-          "lng": 108.42
+          "lng": 108.42,
+          "months": {
+            "start": 3,
+            "end": 3
+          }
         },
         {
           "cityId": "ho-chi-minh-city-vietnam",
           "name": "Ho Chi Minh City",
           "iata": "SGN",
           "lat": 10.78,
-          "lng": 106.695
+          "lng": 106.695,
+          "months": {
+            "start": 3,
+            "end": 3
+          }
         },
         {
           "cityId": "phuket-thailand",
           "name": "Phuket",
           "iata": "HKT",
           "lat": 7.8765,
-          "lng": 98.3815
+          "lng": 98.3815,
+          "months": {
+            "start": 3,
+            "end": 4
+          }
         },
         {
           "cityId": "george-town-malaysia",
           "name": "George Town",
           "iata": "PEN",
           "lat": 5.4136,
-          "lng": 100.3294
+          "lng": 100.3294,
+          "months": {
+            "start": 4,
+            "end": 4
+          }
         },
         {
           "cityId": "kuala-lumpur-malaysia",
           "name": "Kuala Lumpur",
           "iata": "SZB",
           "lat": 3.1667,
-          "lng": 101.7
+          "lng": 101.7,
+          "months": {
+            "start": 4,
+            "end": 4
+          }
         },
         {
           "cityId": "yogyakarta-indonesia",
           "name": "Yogyakarta",
           "iata": "YIA",
           "lat": -7.78,
-          "lng": 110.375
+          "lng": 110.375,
+          "months": {
+            "start": 4,
+            "end": 4
+          }
         },
         {
           "cityId": "denpasar-indonesia",
           "name": "Denpasar",
           "iata": "DPS",
           "lat": -8.65,
-          "lng": 115.22
+          "lng": 115.22,
+          "months": {
+            "start": 4,
+            "end": 5
+          }
         },
         {
           "cityId": "siem-reap-cambodia",
           "name": "Siem Reap",
           "iata": "SAI",
           "lat": 13.3666,
-          "lng": 103.85
+          "lng": 103.85,
+          "months": {
+            "start": 5,
+            "end": 6
+          }
         },
         {
           "cityId": "phnom-penh-cambodia",
           "name": "Phnom Penh",
           "iata": "KTI",
           "lat": 11.55,
-          "lng": 104.9166
+          "lng": 104.9166,
+          "months": {
+            "start": 6,
+            "end": 6
+          }
         },
         {
           "cityId": "louangphrabang-laos",
           "name": "Louangphrabang",
           "iata": "LPQ",
           "lat": 19.8845,
-          "lng": 102.1416
+          "lng": 102.1416,
+          "months": {
+            "start": 6,
+            "end": 6
+          }
         },
         {
           "cityId": "chiang-mai-thailand",
           "name": "Chiang Mai",
           "iata": "CNX",
           "lat": 18.8,
-          "lng": 98.98
+          "lng": 98.98,
+          "months": {
+            "start": 6,
+            "end": 6
+          }
         },
         {
           "cityId": "bangkok-thailand",
           "name": "Bangkok",
           "iata": "DMK",
           "lat": 13.75,
-          "lng": 100.5166
+          "lng": 100.5166,
+          "months": {
+            "start": 7,
+            "end": 7
+          }
         }
       ],
       "origin": "manual"
     },
     {
       "id": "plan-2028-east-africa-safari",
-      "name": "East Africa family safari · Jul–Aug 2028",
+      "name": "East Africa family safari",
       "color": "#c2680c",
       "status": "scouting",
       "nodes": [
@@ -148,28 +220,40 @@
           "name": "Nairobi",
           "iata": "NBO",
           "lat": -1.2833,
-          "lng": 36.8167
+          "lng": 36.8167,
+          "months": {
+            "start": 7,
+            "end": 7
+          }
         },
         {
           "cityId": "arusha-tanzania",
           "name": "Arusha",
           "iata": "JRO",
           "lat": -3.36,
-          "lng": 36.67
+          "lng": 36.67,
+          "months": {
+            "start": 7,
+            "end": 7
+          }
         },
         {
           "cityId": "zanzibar-tanzania",
           "name": "Zanzibar",
           "iata": "ZNZ",
           "lat": -6.16,
-          "lng": 39.2
+          "lng": 39.2,
+          "months": {
+            "start": 7,
+            "end": 8
+          }
         }
       ],
       "origin": "manual"
     },
     {
       "id": "plan-2029-south-america",
-      "name": "South America · Sep–Oct 2029",
+      "name": "South America overland",
       "color": "#6d28d9",
       "status": "scouting",
       "nodes": [
@@ -178,63 +262,99 @@
           "name": "Lima",
           "iata": "LIM",
           "lat": -12.048,
-          "lng": -77.0501
+          "lng": -77.0501,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "cusco-peru",
           "name": "Cusco",
           "iata": "CUZ",
           "lat": -13.525,
-          "lng": -71.9722
+          "lng": -71.9722,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "la-paz-bolivia",
           "name": "La Paz",
           "iata": "LPB",
           "lat": -16.498,
-          "lng": -68.15
+          "lng": -68.15,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "calama-chile",
           "name": "Calama",
           "iata": "CJC",
           "lat": -22.45,
-          "lng": -68.92
+          "lng": -68.92,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "salta-argentina",
           "name": "Salta",
           "iata": "SLA",
           "lat": -24.7834,
-          "lng": -65.4166
+          "lng": -65.4166,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "mendoza-argentina",
           "name": "Mendoza",
           "iata": "MDZ",
           "lat": -32.8833,
-          "lng": -68.8166
+          "lng": -68.8166,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "buenos-aires-argentina",
           "name": "Buenos Aires",
           "iata": "AEP",
           "lat": -34.6025,
-          "lng": -58.3975
+          "lng": -58.3975,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "foz-do-igua-u-brazil",
           "name": "Foz do Iguaçu",
           "iata": "IGU",
           "lat": -25.5235,
-          "lng": -54.53
+          "lng": -54.53,
+          "months": {
+            "start": 9,
+            "end": 9
+          }
         },
         {
           "cityId": "rio-de-janeiro-brazil",
           "name": "Rio de Janeiro",
           "iata": "SDU",
           "lat": -22.925,
-          "lng": -43.225
+          "lng": -43.225,
+          "months": {
+            "start": 9,
+            "end": 10
+          }
         }
       ],
       "origin": "manual"

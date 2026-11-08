@@ -3,7 +3,7 @@ import { mkdtempSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import type { Hono } from "hono";
-import type { MapAnomaly, MapEventPoint } from "../../src/types.js";
+import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
 
 let app: Hono;
 
@@ -19,6 +19,18 @@ describe("GET /api/overlays/events", () => {
   it("rejects a missing or bad month", async () => {
     expect((await app.request("/events")).status).toBe(400);
     expect((await app.request("/events?month=13")).status).toBe(400);
+  });
+
+  it("lists every upcoming event at the asked-for cities, narrowed to them", async () => {
+    expect((await app.request("/events?cityIds=")).status).toBe(400);
+    const res = await app.request("/events?cityIds=hanoi-vietnam,bangkok-thailand");
+    expect(res.status).toBe(200);
+    const { events } = (await res.json()) as { events: MeridianEvent[] };
+    const ids = events.map((e) => e.id);
+    expect(ids).toContain("tet-2028"); // dated, a later year, still included
+    expect(events.find((e) => e.id === "tet-2028")!.cityIds).toEqual(["hanoi-vietnam"]);
+    expect(events.some((e) => e.recurring && e.cityIds.includes("bangkok-thailand"))).toBe(true); // Songkran
+    expect(events.every((e) => e.recurring || !e.date || e.date >= new Date().toISOString().slice(0, 10))).toBe(true);
   });
 
   it("places a month's events on their cities", async () => {

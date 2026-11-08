@@ -44,18 +44,17 @@ async function readEventsFile(): Promise<string | undefined> {
 }
 
 /**
- * data/events.json — tolerant of a missing/corrupt file, array or {events}.
- * Replay matches events by month only and prices a month's next occurrence, so a one-off dated
- * event is kept only when it falls in that next occurrence (a 2028 eclipse must not tag 2027).
+ * Every valid entry in data/events.json, dated ones from every year. Tolerant of a
+ * missing/corrupt file, array or {events}; malformed entries are dropped (one bad
+ * entry must not throw inside every replay).
  */
-export async function loadEvents(now: Date = new Date()): Promise<MeridianEvent[]> {
+export async function loadAllEvents(): Promise<MeridianEvent[]> {
   try {
     const text = await readEventsFile();
     if (text === undefined) return [];
     const raw = JSON.parse(text) as unknown;
     const list = Array.isArray(raw) ? raw : (raw as { events?: unknown })?.events;
     if (!Array.isArray(list)) return [];
-    // Malformed entries are dropped (one bad entry must not throw inside every replay).
     const valid = (e: unknown): e is MeridianEvent => {
       const x = e as Partial<MeridianEvent> | null;
       return (
@@ -66,13 +65,22 @@ export async function loadEvents(now: Date = new Date()): Promise<MeridianEvent[
         (x.date === undefined || typeof x.date === "string")
       );
     };
-    return list.filter(valid).filter(
-      (e) => e.recurring || !e.date || representativeDate(e.month, now).slice(0, 7) === e.date.slice(0, 7)
-    );
+    return list.filter(valid);
   } catch (err) {
     console.warn("[replay] could not read events.json:", err instanceof Error ? err.message : String(err));
     return [];
   }
+}
+
+/**
+ * Events for Replay. Replay matches events by month only and prices a month's next
+ * occurrence, so a one-off dated event is kept only when it falls in that next
+ * occurrence (a 2028 eclipse must not tag 2027).
+ */
+export async function loadEvents(now: Date = new Date()): Promise<MeridianEvent[]> {
+  return (await loadAllEvents()).filter(
+    (e) => e.recurring || !e.date || representativeDate(e.month, now).slice(0, 7) === e.date.slice(0, 7)
+  );
 }
 
 /** Recompute the template journey's fingerprint if needed, then run the replay. Throws ReplayError. */

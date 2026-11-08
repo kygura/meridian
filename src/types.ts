@@ -68,12 +68,25 @@ export interface MeridianScore {
   nomadInfra: number;
 }
 
+/**
+ * Months of the year, inclusive, with no year attached: {start: 2, end: 7} is
+ * February to July. start > end wraps the new year ({start: 11, end: 2} is
+ * November to February). A trip is a season you can take any year; a year is
+ * only chosen to get concrete (dates, flights, holidays).
+ */
+export interface MonthSpan {
+  start: number; // 1-12
+  end: number; // 1-12
+}
+
 export interface TripNode {
   cityId: string;
   name: string;
   iata?: string;
   lat: number;
   lng: number;
+  /** When in the season this stop happens. Absent = not placed yet. */
+  months?: MonthSpan;
 }
 
 export interface TripEstimate {
@@ -96,6 +109,10 @@ export interface Trip {
   /** "agent" = generated candidate awaiting confirmation; "manual" = user-owned trip. */
   origin?: "agent" | "manual";
   estimate?: TripEstimate;
+  /** The trip's season when no stop has months; otherwise derived from the stops. */
+  season?: MonthSpan;
+  /** The year this season is planned for, once it gets concrete. Absent = any year. */
+  year?: number;
 }
 
 export interface ShortlistEntry {

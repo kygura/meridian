@@ -81,6 +81,14 @@ describe.each(backends)("trips routes ($name backend)", ({ url }) => {
     expect((await (await req("GET", "/api/trips")).json()).deleted).toEqual([]);
   });
 
+  it("stores a trip's season, year and per-stop months", async () => {
+    const body = { ...trip(), nodes: [{ ...lima, months: { start: 11, end: 2 } }], season: { start: 11, end: 2 }, year: 2027 };
+    const { trip: stored } = await (await req("PUT", "/api/trips/seasonal", body)).json();
+    expect(stored).toMatchObject({ season: { start: 11, end: 2 }, year: 2027, nodes: [{ months: { start: 11, end: 2 } }] });
+    expect((await req("PUT", "/api/trips/bad-month", { ...trip(), season: { start: 0, end: 13 } })).status).toBe(400);
+    expect((await req("PUT", "/api/trips/bad-year", { ...trip(), year: 27 })).status).toBe(400);
+  });
+
   it("rejects bad ids and bodies", async () => {
     expect((await req("PUT", "/api/trips/bad%20id", trip())).status).toBe(400);
     expect((await req("PUT", "/api/trips/ok", { ...trip(), status: "nope" })).status).toBe(400);

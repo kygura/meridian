@@ -17,12 +17,14 @@ const RETRY_MS = 30_000;
 /** Map of trip id → fingerprint of the synced fields. */
 export type SyncBase = Record<string, string>;
 
-export function tripFingerprint(t: Pick<Trip, "name" | "color" | "status" | "nodes">): string {
+export function tripFingerprint(t: Pick<Trip, "name" | "color" | "status" | "nodes" | "season" | "year">): string {
   return JSON.stringify({
     name: t.name,
     color: t.color,
     status: t.status,
-    nodes: t.nodes.map(({ cityId, name, iata, lat, lng }) => ({ cityId, name, iata, lat, lng })),
+    nodes: t.nodes.map(({ cityId, name, iata, lat, lng, months }) => ({ cityId, name, iata, lat, lng, months })),
+    season: t.season,
+    year: t.year,
   });
 }
 

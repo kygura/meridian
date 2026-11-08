@@ -51,6 +51,14 @@ describe("mergeRemote", () => {
 });
 
 describe("pendingChanges", () => {
+  it("pushes season, year and stop-month edits", () => {
+    const a = t("a");
+    const placed = { ...a, nodes: [{ ...a.nodes[0], months: { start: 2, end: 3 } }] };
+    expect(pendingChanges([placed], baseOf(a)).put).toEqual([placed]);
+    expect(pendingChanges([{ ...a, year: 2027 }], baseOf(a)).put).toHaveLength(1);
+    expect(pendingChanges([{ ...a, season: { start: 7, end: 8 } }], baseOf(a)).put).toHaveLength(1);
+  });
+
   it("ignores fields the server doesn't store", () => {
     const a = t("a");
     expect(pendingChanges([{ ...a, estimate: { priceEstimate: 1, currency: "USD", dateRange: { start: "", end: "" } } }], baseOf(a))).toEqual({ put: [], del: [] });

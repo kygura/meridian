@@ -17,6 +17,7 @@ import type { Trip } from "../../../types";
 import type { FlightHub } from "../../../lib/geo";
 import type { Booking } from "../../../lib/bookingApi";
 import { StatusBadge, TripDot, useHubs } from "./parts";
+import { seasonText } from "../../../lib/season";
 import Suggested from "./Suggested";
 import SavedPlaces from "./SavedPlaces";
 import "./upcoming.css";
@@ -103,6 +104,7 @@ function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; boo
   const booked = bookedLegCount(trip, bookings);
   const range = tripDateRange(trip);
   const days = tripDays(trip);
+  const season = seasonText(trip);
   const name = displayTripName(trip.name);
   const stops = trip.nodes.length;
 
@@ -119,8 +121,9 @@ function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; boo
       </div>
       <p className="trips-up-chain">{stops > 0 ? stopChain(trip.nodes) : "No stops yet"}</p>
       <div className="trips-up-meta">
+        {season ? <span className="trips-up-season">{season}</span> : null}
         <span className="tabular">
-          {range
+          {range && !season
             ? `${range}${days !== null ? ` · ${days} ${days === 1 ? "day" : "days"}` : ""}`
             : `${stops} ${stops === 1 ? "stop" : "stops"}`}
         </span>

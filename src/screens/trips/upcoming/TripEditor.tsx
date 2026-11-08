@@ -34,6 +34,8 @@ import StopList from "./StopList";
 import { dismissCandidate } from "./suggestions";
 import "./upcoming.css";
 import { useTripMoney } from "./money";
+import { SeasonCard } from "./season";
+import { seasonText } from "../../../lib/season";
 
 export interface TripEditorProps {
   /** Trip id from #/trips/plan/<tripId> (useMeridianStore.trips[].id). */
@@ -93,7 +95,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
   const name = displayTripName(trip.name);
   const suggested = trip.origin === "agent";
   const booked = bookedLegCount(trip, bookings);
-  const range = tripDateRange(trip);
+  const range = seasonText(trip) ?? tripDateRange(trip);
 
   const duplicate = () => {
     const s = useMeridianStore.getState();
@@ -207,6 +209,11 @@ export default function TripEditor({ tripId }: TripEditorProps) {
                 options={STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
               />
             </div>
+          </Card>
+
+          <Card className="trips-ed-card">
+            <h2 className="trips-up-h2">Season</h2>
+            <SeasonCard trip={trip} />
           </Card>
 
           <Card className="trips-ed-card">

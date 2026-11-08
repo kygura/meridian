@@ -1,4 +1,5 @@
 import type { Trip, TripNode } from "../types";
+import { isMonthSpan } from "./season";
 
 /** File format for moving trips between browsers: Settings › Trips › Export / Import. */
 export const TRIP_FILE_KIND = "meridian-trips";
@@ -21,7 +22,8 @@ function isNode(n: unknown): n is TripNode {
     typeof o.name === "string" &&
     typeof o.lat === "number" &&
     typeof o.lng === "number" &&
-    (o.iata === undefined || typeof o.iata === "string")
+    (o.iata === undefined || typeof o.iata === "string") &&
+    (o.months === undefined || isMonthSpan(o.months))
   );
 }
 
@@ -35,8 +37,12 @@ function toTrip(t: unknown): Trip | null {
     name: o.name,
     color: typeof o.color === "string" ? o.color : "#1d4ed8",
     status: STATUSES.includes(o.status as Trip["status"]) ? (o.status as Trip["status"]) : "draft",
-    nodes: (o.nodes as TripNode[]).map(({ cityId, name, iata, lat, lng }) => ({ cityId, name, iata, lat, lng })),
+    nodes: (o.nodes as TripNode[]).map(({ cityId, name, iata, lat, lng, months }) =>
+      months ? { cityId, name, iata, lat, lng, months: { start: months.start, end: months.end } } : { cityId, name, iata, lat, lng }
+    ),
     origin: "manual",
+    ...(isMonthSpan(o.season) ? { season: { start: o.season.start, end: o.season.end } } : {}),
+    ...(Number.isInteger(o.year) && (o.year as number) >= 2000 && (o.year as number) <= 2100 ? { year: o.year as number } : {}),
   };
 }
 
