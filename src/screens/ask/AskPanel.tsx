@@ -263,8 +263,10 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
 
   return (
     <div className="ask-docked">
-      <header className="ask-docked-head">
-        <h2>Ask</h2>
+      <header className="ui-sheet-header ask-docked-head">
+        <div className="ui-sheet-titles">
+          <h2 className="ui-sheet-title">Ask</h2>
+        </div>
         <div className="ask-docked-tools">
           {modelPicker}
           {newChatButton}

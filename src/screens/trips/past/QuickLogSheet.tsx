@@ -38,6 +38,7 @@ import {
   UnlockCard,
   toast,
   useJournalToken,
+  SectionHeader,
 } from "../../../ui";
 import { IconChevronDown, IconChevronUp, IconPlus, IconTrash } from "../../../ui/icons";
 import { CityPicker, FieldError, Group, MoneyField } from "./FormParts";
@@ -328,9 +329,7 @@ function QuickLog({ journeyId, prefillStops }: { journeyId?: string; prefillStop
               <p className="trips-ql-hint">Where you stayed, travel between stops, things you did, tags and costs.</p>
 
               <section className="trips-ql-section" aria-labelledby="ql-sec-about">
-                <h3 id="ql-sec-about" className="trips-ql-section-title">
-                  About the trip
-                </h3>
+                <SectionHeader level={3} id="ql-sec-about" title="About the trip" />
                 <div className="trips-ql-grid">
                   <Field label="Travellers">
                     <Select
@@ -346,9 +345,7 @@ function QuickLog({ journeyId, prefillStops }: { journeyId?: string; prefillStop
 
               {usedStops.length > 0 ? (
                 <section className="trips-ql-section" aria-labelledby="ql-sec-stays">
-                  <h3 id="ql-sec-stays" className="trips-ql-section-title">
-                    Stays
-                  </h3>
+                  <SectionHeader level={3} id="ql-sec-stays" title="Stays" />
                   {usedStops.map((s) => (
                     <StayEditor key={s.key} stop={s} city={cityIdx.get(s.cityId)} errors={errors} onChange={(p) => patchStop(s.key, p)} />
                   ))}
@@ -356,9 +353,7 @@ function QuickLog({ journeyId, prefillStops }: { journeyId?: string; prefillStop
               ) : null}
 
               <section className="trips-ql-section" aria-labelledby="ql-sec-segs">
-                <h3 id="ql-sec-segs" className="trips-ql-section-title">
-                  Travel between stops
-                </h3>
+                <SectionHeader level={3} id="ql-sec-segs" title="Travel between stops" />
                 {form.segments.length === 0 ? (
                   <p className="trips-ql-hint">Pick two or more cities and the legs between them appear here.</p>
                 ) : null}
@@ -380,9 +375,7 @@ function QuickLog({ journeyId, prefillStops }: { journeyId?: string; prefillStop
               </section>
 
               <section className="trips-ql-section" aria-labelledby="ql-sec-exp">
-                <h3 id="ql-sec-exp" className="trips-ql-section-title">
-                  Things you did
-                </h3>
+                <SectionHeader level={3} id="ql-sec-exp" title="Things you did" />
                 {form.experiences.map((x) => (
                   <ExperienceEditor
                     key={x.key}

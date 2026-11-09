@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { todayIsoDate, type Offer, type PassengerDraft, type PassengerErrors } from "../../../lib/bookingApi";
-import { Card, Field, Input, Select, cx } from "../../../ui";
+import { Card, Field, Input, Select, cx, SectionHeader } from "../../../ui";
 import { Countdown } from "./Countdown";
 import { ProvenanceBadge } from "./ProvenanceBadge";
 import { PASSENGER_TITLES, durationText, passengerErrorText, priceText, stopsText } from "./flightText";
@@ -52,7 +52,7 @@ export function PassengerForm({ offer, route, draft, errors, passengerCount, onC
     <div ref={root} className="plan-flights-pax">
       <SelectedOffer offer={offer} onExpire={onOfferExpire} route={route} />
       <div>
-        <h3 className="plan-flights-h3">Lead passenger</h3>
+        <SectionHeader level={3} title="Lead passenger" />
         <p className="plan-flights-sub muted">
           {passengerCount > 1
             ? `You're booking for ${passengerCount} adults. Only the lead passenger's details are needed here.`

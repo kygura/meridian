@@ -336,7 +336,7 @@ export default function BookingSheet() {
         {phase === "expired" ? (
           <div className="plan-flights-center" role="status">
             <Spinner size={24} />
-            <p className="plan-flights-h3">That price expired</p>
+            <p className="ui-section-title">That price expired</p>
             <p className="muted">Prices are only held for a few minutes. Finding fresh ones now. Your details are saved.</p>
           </div>
         ) : null}

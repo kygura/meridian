@@ -887,16 +887,6 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-.trips-ql-section-title {
-  margin: 0;
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  font-family: var(--font-mono);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-style: normal;
-}
 .trips-ql-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

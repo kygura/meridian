@@ -21,7 +21,7 @@ import {
   shiftMonthBy,
   tempLabel,
 } from "../../../lib/repeatCopy";
-import { Button, Chip, CitySearch, Field, Popover, Select, Sheet, cx, toast } from "../../../ui";
+import { Button, Chip, CitySearch, Field, Popover, Select, Sheet, cx, toast, SectionHeader } from "../../../ui";
 import { IconChevronDown, IconFilter } from "../../../ui/icons";
 import type { City, Fingerprint, ReplayResponse } from "../../../types";
 import { BendSlider } from "./BendSlider";
@@ -258,7 +258,7 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
       >
         <div className="plan-repeat-form">
           <section className="plan-repeat-section">
-            <h3>What matters most</h3>
+            <SectionHeader level={3} title="What matters most" />
             {WEIGHT_KEYS.map((k) => (
               <BendSlider
                 key={k}
@@ -276,7 +276,7 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
           </section>
 
           <section className="plan-repeat-section">
-            <h3>Limits</h3>
+            <SectionHeader level={3} title="Limits" />
             <label className="plan-repeat-check">
               <input type="checkbox" checked={controls.excludeVisited} onChange={(e) => set({ excludeVisited: e.target.checked })} />
               Only places I haven't been
@@ -313,7 +313,7 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
           </section>
 
           <section className="plan-repeat-section">
-            <h3>Regions</h3>
+            <SectionHeader level={3} title="Regions" />
             <div className="plan-repeat-chips">
               {REGIONS.map((r) => (
                 <Chip key={r.value} selected={controls.regions.includes(r.value)} onClick={() => set({ regions: toggle(controls.regions, r.value) })}>
@@ -324,7 +324,7 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
           </section>
 
           <section className="plan-repeat-section">
-            <h3>Happening while you're there</h3>
+            <SectionHeader level={3} title="Happening while you're there" />
             <div className="plan-repeat-chips">
               {EVENT_TAGS.map((t) => (
                 <Chip key={t.value} selected={controls.tags.includes(t.value)} onClick={() => set({ tags: toggle(controls.tags, t.value) })}>
