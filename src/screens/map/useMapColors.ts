@@ -32,7 +32,7 @@ export interface MapColors {
   ramp: string[];
   /** Seasons-layer ramps per climate mode (7 steps each). */
   ramps: Record<ClimateMode, string[]>;
-  /** Diverging ramp, poor (red) -> good (teal), 7 steps: city metric colours. */
+  /** Diverging ramp, poor (red) -> good (green), 7 steps: city metric colours. */
   diverging: string[];
   /** Anomalies: conflicts, seasonal hazards, live news alerts. */
   danger: string;
@@ -66,10 +66,10 @@ function read(theme: "light" | "dark"): MapColors {
     dot: t("--map-dot", ink),
     paper: t("--surface", dark ? "#161c2c" : "#fbf5e6"),
     accent: t("--accent", dark ? "#f59e0b" : "#c2680c"),
-    success: t("--success", dark ? "#2dd4bf" : "#0f766e"),
+    success: t("--success", dark ? "#7ccf6a" : "#2a722d"),
     ramp,
     ramps,
-    diverging: DIVERGING_VARS.map((v, i) => t(v, ["#b3261e", "#d9685f", "#ecbdb2", "#e6dbc0", "#a9d4cc", "#4fa497", "#0f766e"][i]!)),
+    diverging: DIVERGING_VARS.map((v, i) => t(v, ["#b3261e", "#d9685f", "#ecbdb2", "#e6dbc0", "#bcd8a8", "#6aa35a", "#2a722d"][i]!)),
     danger: t("--danger", dark ? "#ff5b5b" : "#b3261e"),
     warning: t("--warning", dark ? "#f59e0b" : "#c2680c"),
     info: t("--info", dark ? "#60a5fa" : "#1e40af"),

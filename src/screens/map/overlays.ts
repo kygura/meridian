@@ -498,7 +498,7 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
     "ov-cities": {
       // Lie flat on the sphere so dots foreshorten toward the horizon.
       "circle-pitch-alignment": "map",
-      // Coloured by the chosen metric (red = poor .. teal = good), else ink.
+      // Coloured by the chosen metric (red = poor .. green = good), else ink.
       "circle-color": [
         "case",
         [">=", ["get", "mv"], 0],
