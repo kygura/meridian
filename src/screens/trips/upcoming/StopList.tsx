@@ -10,8 +10,10 @@ import {
   formatFlightTime,
   formatKm,
   staysSearchUrl,
+  RETURN_LEG,
   stopKeys,
   type TripLeg,
+  type TripRoute,
 } from "../../../lib/tripPlan";
 import { Badge, Button, CitySearch, EmptyState, IconButton, toast, useIsDesktop } from "../../../ui";
 import { IconArrowLeft, IconChevronDown, IconChevronUp, IconDrag, IconExternal, IconPin, IconPlane, IconTrash } from "../../../ui/icons";
@@ -22,14 +24,16 @@ import { legDepartureHint } from "../../../lib/season";
 
 interface StopListProps {
   trip: Trip;
-  legs: TripLeg[];
+  /** The route from the departure (lib/tripPlan.tripRoute). */
+  route: TripRoute;
 }
 
 /**
  * Ordered stops with the leg to the next stop under each one.
  * Reorder: drag the handle (pointer), arrow keys on the handle, or the move buttons.
  */
-export default function StopList({ trip, legs }: StopListProps) {
+export default function StopList({ trip, route }: StopListProps) {
+  const legs = route.legs;
   const bookings = useMeridianStore((s) => s.bookings);
   const sz = useIsDesktop() ? "sm" : "md";
   const listRef = useRef<HTMLOListElement>(null);
@@ -133,6 +137,16 @@ export default function StopList({ trip, legs }: StopListProps) {
 
   return (
     <div className="trips-ed-stops">
+      <HomeRow node={route.departure} label="From" />
+      {route.outbound ? (
+        <LegRow
+          leg={route.outbound}
+          tripId={tripId}
+          size={sz}
+          booking={findLegBooking(bookings, tripId, route.outbound.index)}
+          departureDateHint={legDepartureHint(trip, route.outbound.index)}
+        />
+      ) : null}
       {count === 0 ? (
         <EmptyState icon={<IconPin />} title="No stops yet" description="Add a city below to start the route." />
       ) : (
@@ -198,6 +212,18 @@ export default function StopList({ trip, legs }: StopListProps) {
           })}
         </ol>
       )}
+      {route.inbound ? (
+        <>
+          <LegRow
+            leg={route.inbound}
+            tripId={tripId}
+            size={sz}
+            booking={findLegBooking(bookings, tripId, route.inbound.index)}
+            departureDateHint={legDepartureHint(trip, route.inbound.index)}
+          />
+          <HomeRow node={route.departure} label="Back to" />
+        </>
+      ) : null}
 
       <div className="trips-ed-add">
         <CitySearch
@@ -224,6 +250,25 @@ export default function StopList({ trip, legs }: StopListProps) {
       </div>
       <div className="sr-only" aria-live="polite">
         {announce}
+      </div>
+    </div>
+  );
+}
+
+/** The departure, shown above the first stop and again after the flight home. */
+function HomeRow({ node, label }: { node: TripRoute["departure"]; label: string }) {
+  return (
+    <div className="trips-ed-row trips-ed-home">
+      <span className="trips-ed-home-icon" aria-hidden="true">
+        <IconPin size={16} />
+      </span>
+      <div className="trips-ed-stop-text">
+        <span className="trips-ed-stop-name">
+          <span className="trips-ed-home-label">{label}</span> {node.name}
+        </span>
+        <span className="trips-ed-stop-sub">
+          {node.iata ? <span className="iata">{node.iata}</span> : <span>No airport</span>}
+        </span>
       </div>
     </div>
   );
@@ -278,11 +323,13 @@ function LegRow({
           <IconExternal size={12} />
           <span className="sr-only"> (opens in a new tab)</span>
         </a>
-        <a className="trips-ed-link" href={staysSearchUrl(leg.to)} target="_blank" rel="noreferrer">
-          Stays in {leg.to.name}
-          <IconExternal size={12} />
-          <span className="sr-only"> (opens in a new tab)</span>
-        </a>
+        {leg.index !== RETURN_LEG ? (
+          <a className="trips-ed-link" href={staysSearchUrl(leg.to)} target="_blank" rel="noreferrer">
+            Stays in {leg.to.name}
+            <IconExternal size={12} />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        ) : null}
         {live ? (
           <a className="trips-ed-booking" href={hrefFor({ view: "plan", tab: "flights" })} title="View in your bookings">
             <Badge tone="success">

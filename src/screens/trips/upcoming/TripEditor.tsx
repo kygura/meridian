@@ -10,7 +10,7 @@ import {
   formatKm,
   STATUS_LABEL,
   tripDateRange,
-  tripLegs,
+  tripRoute,
   tripTotals,
 } from "../../../lib/tripPlan";
 import {
@@ -36,6 +36,8 @@ import "./upcoming.css";
 import { useTripMoney } from "./money";
 import { SeasonCard } from "./season";
 import { seasonText } from "../../../lib/season";
+import { DepartureCard } from "./departure";
+import { RiskCard } from "./risk";
 
 export interface TripEditorProps {
   /** Trip id from #/trips/plan/<tripId> (useMeridianStore.trips[].id). */
@@ -65,6 +67,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
   const trip = useMeridianStore((s) => s.trips.find((t) => t.id === tripId));
   const bookings = useMeridianStore((s) => s.bookings);
   const hubs = useHubs();
+  const home = useMeridianStore((s) => s.homeDeparture);
   const isDesktop = useIsDesktop();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -74,10 +77,10 @@ export default function TripEditor({ tripId }: TripEditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId, Boolean(trip)]);
 
-  const legs = useMemo(() => (trip ? tripLegs(trip.nodes, hubs) : []), [trip, hubs]);
-  const totals = tripTotals(legs);
+  const route = useMemo(() => (trip ? tripRoute(trip, home, hubs) : null), [trip, home, hubs]);
+  const totals = tripTotals(route?.all ?? []);
 
-  if (!trip) {
+  if (!trip || !route) {
     return (
       <>
         <PageHeader title="Trip" back={{ label: "Trips", href: "#/trips" }} />
@@ -94,7 +97,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
 
   const name = displayTripName(trip.name);
   const suggested = trip.origin === "agent";
-  const booked = bookedLegCount(trip, bookings);
+  const booked = bookedLegCount(trip, bookings, route.all);
   const range = seasonText(trip) ?? tripDateRange(trip);
 
   const duplicate = () => {
@@ -185,7 +188,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
                 {trip.nodes.length} {trip.nodes.length === 1 ? "stop" : "stops"}
               </span>
             </div>
-            <StopList trip={trip} legs={legs} />
+            <StopList trip={trip} route={route} />
           </Card>
         </div>
 
@@ -212,6 +215,16 @@ export default function TripEditor({ tripId }: TripEditorProps) {
           </Card>
 
           <Card className="trips-ed-card">
+            <h2 className="trips-up-h2">Departing from</h2>
+            <DepartureCard trip={trip} />
+          </Card>
+
+          <Card className="trips-ed-card">
+            <h2 className="trips-up-h2">Risk</h2>
+            <RiskCard trip={trip} route={route} />
+          </Card>
+
+          <Card className="trips-ed-card">
             <h2 className="trips-up-h2">Season</h2>
             <SeasonCard trip={trip} />
           </Card>
@@ -219,7 +232,11 @@ export default function TripEditor({ tripId }: TripEditorProps) {
           <Card className="trips-ed-card">
             <h2 className="trips-up-h2">Estimates</h2>
             <div className="trips-ed-stats">
-              <Stat label="Flights" value={totals.legs > 0 ? money(totals.cost) : "—"} hint="Rough economy fares" />
+              <Stat
+                label="Flights"
+                value={totals.legs > 0 ? money(totals.cost) : "—"}
+                hint={`Rough economy fares from ${route.departure.iata ?? route.departure.name}${route.inbound ? ", return included" : ""}`}
+              />
               <Stat label="Time in the air" value={totals.legs > 0 ? formatFlightTime(totals.hours) : "—"} />
               <Stat label="Distance" value={totals.legs > 0 ? formatKm(totals.km) : "—"} />
               <Stat

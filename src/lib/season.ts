@@ -109,7 +109,11 @@ export function stopDates(trip: Pick<Trip, "nodes" | "season">, year: number): (
  */
 export function legDepartureHint(trip: Pick<Trip, "nodes" | "season" | "year">, legIndex: number): string | undefined {
   if (!trip.year) return undefined;
-  return stopDates(trip, trip.year)[legIndex + 1]?.start;
+  const dates = stopDates(trip, trip.year);
+  // -2 is the flight home (tripPlan.RETURN_LEG): leave on the last stop's last day.
+  if (legIndex === -2) return dates[dates.length - 1]?.end;
+  // -1 is the flight out from the departure: arrive for the first stop (same as i + 1 = 0).
+  return dates[legIndex + 1]?.start;
 }
 
 /**

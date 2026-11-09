@@ -44,6 +44,10 @@ export const tripInputSchema = z.object({
   nodes: z.array(nodeSchema).max(200),
   season: monthSpanSchema.optional(),
   year: z.number().int().min(2000).max(2100).optional(),
+  /** Home airport the route starts from; absent = the client's default (LPA). */
+  departure: nodeSchema.omit({ months: true }).optional(),
+  /** false = one-way, no flight back to the departure. */
+  returnHome: z.boolean().optional(),
 });
 
 export type TripInput = z.infer<typeof tripInputSchema>;
