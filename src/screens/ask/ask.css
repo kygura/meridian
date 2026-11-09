@@ -12,11 +12,6 @@
 .ask-docked-head {
   flex: none;
 }
-.ask-docked-tools {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
 /* Model picker in the panel header. */
 .ask-model {
   max-width: 168px;
@@ -24,21 +19,10 @@
 .ask-model .ui-input {
   font-size: var(--text-xs);
 }
-.ask-thread {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-5);
-}
-.ask-docked-foot {
-  padding: var(--space-3) var(--space-4) var(--space-4);
-  border-top: var(--border-width) solid var(--border);
-  background: var(--surface);
-}
 
 /* ── Sheet (phone) ──────────────────────────────────────── */
-.ask-sheet .ui-sheet-footer {
+.ask-sheet .ui-sheet-footer,
+.ask-footer {
   display: block;
 }
 
@@ -138,39 +122,15 @@
 }
 
 /* ── Intro ──────────────────────────────────────────────── */
+/* The intro is the shared EmptyState; the prompt chips are its action. */
 .ask-intro {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
   padding: var(--space-4) 0;
-}
-.ask-intro-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: var(--space-2);
-  border-radius: 0;
-  background: var(--surface);
-  color: var(--accent);
-  border: var(--border-width) solid var(--rule);
-}
-.ask-intro-title {
-  font-size: 28px;
-  font-weight: var(--weight-regular);
-  line-height: 1.1;
-  font-family: var(--font-display);
-  font-style: italic;
-}
-.ask-intro-desc {
-  color: var(--muted);
 }
 .ask-prompts {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-2);
-  margin-top: var(--space-3);
 }
 
 /* ── Rich bits ──────────────────────────────────────────── */
@@ -281,34 +241,19 @@
 }
 
 /* ── Trip ideas ─────────────────────────────────────────── */
+/* A section like any other: SectionHeader, then the ideas in one framed list. */
 .ask-ideas {
-  border: var(--border-width) solid var(--border);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  overflow: hidden;
-}
-.ask-ideas-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  border-bottom: var(--border-width) solid var(--border);
-  background: var(--surface-2);
-}
-.ask-ideas-head h3 {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  font-family: var(--font-mono);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-style: normal;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 .ask-ideas-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
 }
 .ask-idea {
   display: flex;
@@ -392,7 +337,7 @@
     font-size: var(--text-md);
   }
   .ask-idea-actions > .ui-btn,
-  .ask-ideas-head > .ui-btn {
+  .ask-ideas .ui-section-actions > .ui-btn {
     min-height: var(--touch);
   }
   .ask-idea-actions > .ui-btn {

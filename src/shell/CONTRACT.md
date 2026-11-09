@@ -122,7 +122,10 @@ title, description as the subtitle, close and `headerExtra` on the right), then 
 opened by `<SectionHeader level={3}>`. Inside a sheet the section heading carries a hairline
 rule, because sheet sections stack without cards. A heading *inside a card* (trip editor
 cards, booking review) is a plain `<h3 className="ui-section-title">`, with no rule. The
-docked Ask column reuses `.ui-sheet-header` / `.ui-sheet-title` so it matches.
+docked Ask column reuses the sheet's parts (`.ui-sheet-header`, `.ui-sheet-body`,
+`.ui-sheet-footer`) so it matches the phone sheet exactly: header extras then Close, the
+thread in the body, the composer in the footer. Its empty intro is the shared `EmptyState`
+(prompt chips as the action) and agent trip ideas open with a `SectionHeader`.
 
 **Map controls** float in fixed corners, each a framed panel (surface, ink rule, offset
 shadow):
