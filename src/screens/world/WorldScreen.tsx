@@ -15,7 +15,7 @@ import {
   regionLabel,
   type RegionKey,
 } from "../../lib/newsRegions";
-import { Badge, Button, Card, Chip, EmptyState, ErrorState, Page, PageHeader, Skeleton } from "../../ui";
+import { Badge, Button, Card, Chip, EmptyState, ErrorState, Page, PageHeader, Skeleton, SectionHeader } from "../../ui";
 import { IconExternal, IconMap, IconRefresh, IconWorld } from "../../ui/icons";
 import { useNews } from "./useNews";
 import { useCountryStats, type CountryStats } from "./useCountryStats";
@@ -96,17 +96,22 @@ export default function WorldScreen() {
 
       <div className="world-grid">
         <section className="world-news" aria-labelledby="world-news-h">
-          <div className="world-section-head">
-            <h2 id="world-news-h" className="world-h2">
-              {country ? `Headlines about ${countryName}` : region ? `Headlines from ${regionLabel(region)}` : "Headlines"}
-            </h2>
-            {mock ? <Badge tone="warning">Mock</Badge> : null}
-            {country ? (
-              <Chip onRemove={() => setCountry(null)} aria-label={`Clear ${countryName} filter`}>
-                {countryName}
-              </Chip>
-            ) : null}
-          </div>
+          <SectionHeader
+            id="world-news-h"
+            title={country ? `Headlines about ${countryName}` : region ? `Headlines from ${regionLabel(region)}` : "Headlines"}
+            actions={
+              mock || country ? (
+                <>
+                  {mock ? <Badge tone="warning">Mock</Badge> : null}
+                  {country ? (
+                    <Chip onRemove={() => setCountry(null)} aria-label={`Clear ${countryName} filter`}>
+                      {countryName}
+                    </Chip>
+                  ) : null}
+                </>
+              ) : null
+            }
+          />
           <NewsList
             status={status}
             items={shown}
@@ -131,11 +136,7 @@ export default function WorldScreen() {
         </section>
 
         <aside className="world-places" aria-labelledby="world-places-h">
-          <div className="world-section-head">
-            <h2 id="world-places-h" className="world-h2">
-              Places in the news
-            </h2>
-          </div>
+          <SectionHeader id="world-places-h" title="Places in the news" />
           <PlaceCards
             newsStatus={status}
             places={places}

@@ -55,19 +55,52 @@ export function PageHeader({ kicker, title, subtitle, back, tabs, actions, class
           </button>
         )
       ) : null}
-      <div className="ui-pagehead-row">
-        <div className="ui-pagehead-titles">
-          {kicker ? <p className="ui-pagehead-kicker kicker">{kicker}</p> : null}
+      <div className="ui-pagehead-titles">
+        {kicker ? <p className="ui-pagehead-kicker kicker">{kicker}</p> : null}
+        <div className="ui-pagehead-row">
           <h1 className="ui-pagehead-title">{title}</h1>
-          {subtitle ? <p className="ui-pagehead-sub">{subtitle}</p> : null}
+          <div className="ui-pagehead-actions">
+            {actions}
+            {ctx ? <span className="ui-pagehead-slot" ref={ctx.setTarget} /> : null}
+          </div>
         </div>
-        <div className="ui-pagehead-actions">
-          {actions}
-          {ctx ? <span className="ui-pagehead-slot" ref={ctx.setTarget} /> : null}
-        </div>
+        {subtitle ? <p className="ui-pagehead-sub">{subtitle}</p> : null}
       </div>
       {tabs ? <div className="ui-pagehead-tabs">{tabs}</div> : null}
     </header>
+  );
+}
+
+export interface SectionHeaderProps {
+  /** Id for the heading, so the section can use aria-labelledby. */
+  id?: string;
+  title: ReactNode;
+  /** Short muted line after the title: a count, a summary, a source. */
+  meta?: ReactNode;
+  /** Small controls on the right: ghost buttons, icon buttons, a badge. */
+  actions?: ReactNode;
+  /** Heading level. Sections inside a page are h2 (default); inside a sheet, h3. */
+  level?: 2 | 3;
+  className?: string;
+}
+
+/**
+ * The one section heading used across screens: mono uppercase label, optional
+ * muted meta after it, small actions pushed to the right. Page titles own the
+ * serif; sections never use it.
+ */
+export function SectionHeader({ id, title, meta, actions, level = 2, className }: SectionHeaderProps) {
+  const H = level === 3 ? "h3" : "h2";
+  return (
+    <div className={cx("ui-section-head", className)}>
+      <div className="ui-section-titles">
+        <H id={id} className="ui-section-title">
+          {title}
+        </H>
+        {meta ? <span className="ui-section-meta">{meta}</span> : null}
+      </div>
+      {actions ? <div className="ui-section-actions">{actions}</div> : null}
+    </div>
   );
 }
 

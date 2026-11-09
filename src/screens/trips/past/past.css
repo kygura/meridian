@@ -377,16 +377,6 @@
   top: 0;
 }
 
-.trips-jd-section-title {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  font-family: var(--font-mono);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-style: normal;
-}
 
 .trips-jd-stops {
   list-style: none;
@@ -985,4 +975,10 @@
   .trips-past-filters .ui-input {
     height: var(--touch);
   }
+}
+
+
+/* Section headings here sit in plain blocks, not gap columns. */
+.trips-jd-main > section > .ui-section-head {
+  margin-bottom: var(--space-3);
 }

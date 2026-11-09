@@ -14,22 +14,7 @@
   min-width: 0;
 }
 
-.plan-watches-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-height: var(--control-h);
-}
 
-.plan-watches-h2 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: var(--weight-regular);
-  line-height: 1.1;
-  font-family: var(--font-display);
-  font-style: italic;
-}
 
 .plan-watches-h3 {
   display: flex;

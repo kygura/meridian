@@ -4,7 +4,7 @@ import { openCity } from "../../../shell/uiStore";
 import { apiUrl } from "../../../lib/api";
 import { navigate } from "../../../lib/router";
 import { displayTripName, nextTripName, shortlistToNode } from "../../../lib/tripPlan";
-import { Button, Card, EmptyState, IconButton, Popover, toast, useIsDesktop } from "../../../ui";
+import { Button, Card, EmptyState, IconButton, Popover, toast, useIsDesktop, SectionHeader } from "../../../ui";
 import { IconClose, IconMap, IconPin, IconPlus, IconSparkle } from "../../../ui/icons";
 import type { ShortlistEntry } from "../../../types";
 import { TripDot } from "./parts";
@@ -16,18 +16,11 @@ export default function SavedPlaces() {
 
   return (
     <section className="trips-up-section" aria-labelledby="trips-up-saved">
-      <div className="trips-up-section-head">
-        <div className="trips-up-section-titles">
-          <h2 id="trips-up-saved" className="trips-up-h2">
-            Saved places
-          </h2>
-          {shortlist.length > 0 ? (
-            <p className="trips-up-section-sub">
-              {shortlist.length} {shortlist.length === 1 ? "place" : "places"} to plan around
-            </p>
-          ) : null}
-        </div>
-      </div>
+      <SectionHeader
+        id="trips-up-saved"
+        title="Saved places"
+        meta={shortlist.length > 0 ? `${shortlist.length} ${shortlist.length === 1 ? "place" : "places"} to plan around` : null}
+      />
       {shortlist.length === 0 ? (
         <Card padding="sm">
           <EmptyState

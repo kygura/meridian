@@ -98,10 +98,31 @@ These legacy hashes redirect: `#/journal`, `#/journal/<id>`, `#/journal/inbox`,
 `#/journal/replay/...`, `#/seasons` and `#/trips/<id>`. Use `<a href={hrefFor(...)}>` for
 navigation links and `navigate()` after an action.
 
-## 4. Page headers and primary actions
+## 4. Page anatomy, headers and primary actions
+
+Every content page stacks the same parts in the same order. Leave out what a page doesn't
+need, but don't reorder or restyle them:
+
+1. **Back link** (detail views only), top left.
+2. **Kicker**, one mono line.
+3. **Title row**: the serif title on the left, the page's header actions on the right,
+   centred on the title. At most one primary (filled) button, and it lives here.
+4. **Subtitle** (optional), one muted line.
+5. **Section tabs**: underline `Tabs` with `href`s (route tabs). Trips and Plan both use
+   them. `Segmented` is for switching a view *inside* a section (list/grid, your
+   cities/all countries, trip status), never for page sections.
+6. **Toolbar** (optional): search on the left, filters and sort on the right; wraps on phone.
+7. **Sections**, each opened by `<SectionHeader title meta? actions? />`: a mono label,
+   a muted meta (count or summary) and small ghost/icon actions on the right. Section
+   headings never use the serif; that belongs to page, sheet and empty-state titles.
+
+Global actions: "Log a trip" sits in the sidebar as a secondary button on desktop (so the
+page's own primary stays the only filled button), and as the Map's floating button on phones
+only.
+
 
 - **Trips list and Plan:** the foundation screen renders `<Page>`, `<PageHeader>` and the
-  Segmented control or Tabs, all inside `<PageActionsProvider>`. Your tab component renders
+  route Tabs, all inside `<PageActionsProvider>`. Your tab component renders
   only its content. To put your one primary action in the header, render it like this:
   ```tsx
   <PageActions><Button variant="primary" icon={<IconPlus />}>New trip</Button></PageActions>
@@ -220,6 +241,7 @@ every 15 minutes, and only while a token exists. In screens, read the counts wit
 | `Spinner` | `size?`, `label?`. `Skeleton`: `width?`, `height?`, `radius?`, `lines?` |
 | `PageHeader` | `kicker?` (small mono line above the title), `title` (Instrument Serif), `subtitle?`, `back?: {label, href?, onClick?}`, `tabs?`, `actions?` |
 | `PageActions` / `PageActionsProvider` | the header action slot (section 4) |
+| `SectionHeader` | `title`, `id?` (for `aria-labelledby`), `meta?`, `actions?`, `level?: 2\|3`. The only section heading (section 4). Inside a card, `className="ui-section-title"` on a plain heading gives the same label. |
 | `Page` | `width?: "default"\|"wide"`. The scroll container for content pages. |
 | `toast(msg, {tone?, action?, duration?})` | App mounts `<Toaster/>`. Don't mount another one. |
 | `CitySearch` | `onPick(city)`, `placeholder?`, `aria-label?`, `id?`, `autoFocus?`, `excludeIds?`, `cities?`, `clearOnPick?` (default true), `defaultValue?`, `size?`, `limit?`, `disabled?`, `inputRef?`. Airport cities rank first. Can go inside `<Field>`. `searchCities(cities, q, limit?, excludeSet?)` is the pure function behind it. |
@@ -235,7 +257,8 @@ open list inside a sheet, call `e.preventDefault()` on it.
 ## 9. CSS conventions
 
 - The look is the original Meridian "modern atlas": parchment `--bg`, paper `--surface`, ink
-  `--text`/`--ink`, burnt-orange `--accent`; dark is "night ops" navy with a teal offset shadow.
+  `--text`/`--ink`, burnt-orange `--accent`; dark is "night ops" navy with an ember (orange) offset shadow.
+  Orange is the only accent. Green is status only (success, best window, the good end of ramps).
   Ink hairline frames, square corners, hard offset shadows (no blur), a grain overlay
   (`body::after`, `--grain-op`).
 - Use tokens only: `var(--bg|--surface|--surface-2|--surface-3|--text|--ink|--ink-2|--muted|--subtle|--border|--border-strong|--rule|--accent|--accent-hover|--accent-soft|--accent-text|--on-accent|--success|--warning|--danger|--info|*-soft|--shadow|--shadow-sm|--shadow-lg|--scrim)`.
@@ -249,7 +272,7 @@ open list inside a sheet, call `e.preventDefault()` on it.
     `.kicker` / `.mono-label`, `.display`.
   - Radius: square. `--radius-control` / `--radius-card` (0), `--radius-sm` / `--radius-pill` (2).
   - Motion: `--dur-fast` and `--dur-sheet` with `--ease`.
-  - Ramps: `--ramp-0..6` (the original warm straw-to-sienna heat ramp; ember-to-gold in dark) with `--ramp-text-dark|light`, `--ramp-best`, `--div-neg-3..--div-pos-3` (red to teal).
+  - Ramps: `--ramp-0..6` (the original warm straw-to-sienna heat ramp; ember-to-gold in dark) with `--ramp-text-dark|light`, `--ramp-best`, `--div-neg-3..--div-pos-3` (red to green).
   - Map: `--map-land|water|border|label|arc|dot`, plus the original globe tokens `--land|--ocean|--grat|--equator|--border-country|--air-route|--trip-a|b|c`.
   - Layers: `--z-map-controls|nav|panel|sheet|popover|toast`.
   - Never hard-code a colour in screen CSS.

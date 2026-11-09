@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { cx } from "./cx";
 
 export interface TabItem<T extends string = string> {
@@ -25,7 +25,35 @@ export interface TabsProps<T extends string = string> {
  */
 export function Tabs<T extends string>({ items, value, onChange, label, className }: TabsProps<T>) {
   const refs = useRef<Array<HTMLElement | null>>([]);
+  const listRef = useRef<HTMLElement | null>(null);
   const asLinks = items.some((i) => i.href);
+  const activeIndex = items.findIndex((i) => i.value === value);
+
+  // On narrow screens the row scrolls: keep the active tab in view, and drop the
+  // edge fade once the user reaches the end.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const update = () => {
+      const atEnd = list.scrollLeft + list.clientWidth >= list.scrollWidth - 2;
+      if (atEnd) list.setAttribute("data-scrolled-end", "");
+      else list.removeAttribute("data-scrolled-end");
+    };
+    const tab = refs.current[activeIndex];
+    if (tab && list.scrollWidth > list.clientWidth) {
+      const left = tab.offsetLeft - list.offsetLeft;
+      if (left < list.scrollLeft || left + tab.offsetWidth > list.scrollLeft + list.clientWidth) {
+        list.scrollLeft = Math.max(0, left - 16);
+      }
+    }
+    update();
+    list.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      list.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [activeIndex, items.length]);
 
   const onKeyDown = (e: KeyboardEvent, index: number) => {
     let next = -1;
@@ -41,7 +69,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
 
   if (asLinks) {
     return (
-      <nav className={cx("ui-tabs", className)} aria-label={label}>
+      <nav ref={listRef} className={cx("ui-tabs", className)} aria-label={label}>
         {items.map((item, i) => {
           const active = item.value === value;
           return (
@@ -68,7 +96,7 @@ export function Tabs<T extends string>({ items, value, onChange, label, classNam
   }
 
   return (
-    <div className={cx("ui-tabs", className)} role="tablist" aria-label={label}>
+    <div ref={(el) => { listRef.current = el; }} className={cx("ui-tabs", className)} role="tablist" aria-label={label}>
       {items.map((item, i) => {
         const active = item.value === value;
         return (

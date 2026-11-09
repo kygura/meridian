@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cancelBooking, listBookings, type Booking } from "../../../lib/bookingApi";
 import { useMeridianStore } from "../../../store";
-import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Sheet, Skeleton, cx, toast } from "../../../ui";
+import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Sheet, Skeleton, cx, toast, SectionHeader } from "../../../ui";
 import { IconArrowRight, IconChevronRight, IconPlane } from "../../../ui/icons";
 import { BookingTicket } from "./BookingTicket";
 import { ProvenanceBadge } from "./ProvenanceBadge";
@@ -97,14 +97,11 @@ export function BookingsList() {
 
   return (
     <section className="plan-flights-section" aria-labelledby="plan-flights-bookings-h">
-      <div className="plan-flights-section-head">
-        <h2 id="plan-flights-bookings-h" className="plan-flights-h2">
-          Your bookings
-        </h2>
-        {status === "ready" && bookings.length ? (
-          <span className="muted num">{live === bookings.length ? live : `${live} active`}</span>
-        ) : null}
-      </div>
+      <SectionHeader
+        id="plan-flights-bookings-h"
+        title="Your bookings"
+        meta={status === "ready" && bookings.length ? (live === bookings.length ? String(live) : `${live} active`) : null}
+      />
 
       {status === "loading" ? (
         <ul className="plan-flights-booking-list" aria-busy="true">

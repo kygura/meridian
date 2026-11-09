@@ -518,6 +518,11 @@
 @media (max-width: 899.98px) {
   .ui-tabs {
     gap: 0;
+    /* Hint that more tabs sit off-screen. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+  .ui-tabs[data-scrolled-end] {
+    mask-image: none;
   }
   .ui-tab {
     height: var(--touch);
@@ -1104,17 +1109,21 @@ input[type="number"].ui-input {
   margin-bottom: 2px;
   overflow-wrap: anywhere;
 }
+/* Title and actions share one row, centred on the title, so a header action
+   sits in the same place on every page whether or not there is a subtitle. */
 .ui-pagehead-row {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-3);
   min-width: 0;
+  min-height: var(--control-h);
 }
 .ui-pagehead-titles {
-  flex: 1;
   min-width: 0;
 }
 .ui-pagehead-title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-display);
   font-style: italic;
   font-size: var(--text-xl);
@@ -1132,8 +1141,14 @@ input[type="number"].ui-input {
   gap: var(--space-2);
   flex: none;
 }
+.ui-pagehead-actions:empty {
+  display: none;
+}
 .ui-pagehead-slot {
   display: contents;
+}
+.ui-pagehead-tabs {
+  margin-top: var(--space-1);
 }
 @media (max-width: 899.98px) {
   .ui-pagehead {
@@ -1143,6 +1158,49 @@ input[type="number"].ui-input {
   .ui-pagehead-title {
     font-size: 28px;
   }
+}
+
+/* ── SectionHeader ──────────────────────────────────────── */
+.ui-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--control-h);
+}
+.ui-section-titles {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+}
+.ui-section-title {
+  margin: 0;
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-style: normal;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--label-tracking);
+  line-height: var(--leading-tight);
+  text-transform: uppercase;
+}
+.ui-section-meta {
+  min-width: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.ui-section-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-1) var(--space-2);
+  flex: none;
 }
 
 /* ── Toast ──────────────────────────────────────────────── */
@@ -1236,6 +1294,13 @@ input[type="number"].ui-input {
   border: var(--border-width) solid var(--rule);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-lg);
+}
+@media (max-width: 899.98px) {
+  .ui-unlock {
+    max-width: calc(100% - 6px);
+    margin: var(--space-4) 6px var(--space-4) 0;
+    padding: var(--space-5) var(--space-4);
+  }
 }
 .ui-unlock-icon {
   display: flex;

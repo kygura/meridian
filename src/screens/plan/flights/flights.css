@@ -7,14 +7,6 @@
   min-width: 0;
 }
 
-.plan-flights-h2 {
-  margin: 0;
-  font-size: 28px;
-  font-weight: var(--weight-regular);
-  line-height: 1.1;
-  font-family: var(--font-display);
-  font-style: italic;
-}
 
 .plan-flights-h3 {
   margin: 0;
@@ -40,18 +32,7 @@
   min-width: 0;
 }
 
-.plan-flights-section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
 
-.plan-flights-summary {
-  font-size: var(--text-sm);
-  min-width: 0;
-}
 
 .plan-flights-status {
   margin: 0;

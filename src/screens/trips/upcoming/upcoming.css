@@ -1,17 +1,6 @@
 /* Trips › Upcoming and the trip editor. Prefix .trips-up-* / .trips-ed-*. Tokens only. */
 
 /* ── Shared ─────────────────────────────────────────────── */
-.trips-up-h2 {
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-  font-family: var(--font-mono);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-style: normal;
-}
-
 .trips-up-dot {
   flex: none;
   border-radius: 0;
@@ -52,29 +41,6 @@
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-}
-.trips-up-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-height: 36px;
-}
-.trips-up-section-titles {
-  min-width: 0;
-}
-.trips-up-section-sub {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 11px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
-}
-.trips-up-section-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  flex: none;
 }
 
 /* ── Trip cards ─────────────────────────────────────────── */
