@@ -90,6 +90,21 @@
   background: var(--danger-hover);
   border-color: var(--danger-hover);
 }
+/* Outlined until hovered: a destructive action that opens a confirm dialog
+   shouldn't be the loudest thing on the page. */
+.ui-btn--danger-outline {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--ink-2);
+}
+.ui-btn--danger-outline:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.ui-btn--danger-outline:active:not(:disabled) {
+  background: var(--danger-soft);
+}
 .ui-btn:disabled,
 .ui-iconbtn:disabled {
   opacity: 0.45;

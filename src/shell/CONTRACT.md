@@ -221,7 +221,7 @@ every 15 minutes, and only while a token exists. In screens, read the counts wit
 
 | Primitive | Props |
 |---|---|
-| `Button` | `variant?: "primary"\|"secondary"\|"ghost"\|"danger"` (default secondary), `size?: "sm"\|"md"`, `icon?`, `iconRight?`, `loading?`, `block?`, plus button attrs. Use one primary per screen. |
+| `Button` | `variant?: "primary"\|"secondary"\|"ghost"\|"danger"\|"danger-outline"` (default secondary), `size?: "sm"\|"md"`, `icon?`, `iconRight?`, `loading?`, `block?`, plus button attrs. Use one primary per screen. A destructive action that opens a confirm uses `danger-outline`; the filled `danger` is for the confirm button itself. |
 | `IconButton` | `label` (required, aria-label + title), `icon`, `variant?: "ghost"\|"secondary"\|"primary"\|"danger"`, `size?`, `badge?` |
 | `Fab` | `icon?`, `children`, button attrs. Absolutely positioned at the bottom-right of the nearest positioned ancestor. |
 | `Card` | `interactive?`, `padding?: "none"\|"sm"\|"md"`, div attrs |

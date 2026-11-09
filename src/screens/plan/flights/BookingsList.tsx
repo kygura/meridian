@@ -136,7 +136,7 @@ export function BookingsList() {
         footer={
           active && active.status === "booked" ? (
             <div className="plan-flights-sheet-foot">
-              <Button variant="danger" onClick={() => setConfirm(true)}>
+              <Button variant="danger-outline" onClick={() => setConfirm(true)}>
                 Cancel booking
               </Button>
               <Button onClick={() => setOpenId(null)}>Close</Button>

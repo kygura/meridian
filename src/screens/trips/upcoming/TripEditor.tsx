@@ -128,7 +128,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
       <Button icon={<IconCopy size={16} />} onClick={duplicate}>
         Duplicate
       </Button>
-      <Button variant="danger" icon={<IconTrash size={16} />} onClick={() => setConfirmDelete(true)}>
+      <Button variant="danger-outline" icon={<IconTrash size={16} />} onClick={() => setConfirmDelete(true)}>
         Delete
       </Button>
     </>
@@ -136,7 +136,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
     <>
       <IconButton label="Show on map" icon={<IconMap />} onClick={showOnMap} />
       <IconButton label="Duplicate trip" icon={<IconCopy />} onClick={duplicate} />
-      <IconButton label="Delete trip" icon={<IconTrash />} variant="danger" onClick={() => setConfirmDelete(true)} />
+      <IconButton label="Delete trip" icon={<IconTrash />} variant="danger-outline" onClick={() => setConfirmDelete(true)} />
     </>
   );
 
