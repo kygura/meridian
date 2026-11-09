@@ -1,9 +1,15 @@
 /* Meridian design tokens — the original "modern atlas" identity.
    The only place colours are defined. Screen CSS reads these variables and
    never hard-codes a colour. Light (parchment, ink, burnt orange) is the default;
-   dark ("night ops": navy graphite, teal offset shadow) applies with
+   dark ("night ops": navy graphite, ember offset shadow) applies with
    html[data-theme="dark"], or with prefers-color-scheme when
    html[data-theme="system"]. The shell writes data-theme.
+
+   One accent: orange (burnt orange on paper, amber at night) carries every
+   interactive and brand role: buttons, focus, links, arcs, offset shadows at
+   night. Green is reserved for status (success, best window, "good" end of
+   diverging ramps). No cyan/teal in the chrome; teal survives only as a
+   categorical trip colour.
 
    Print language: ink hairline frames, square corners, hard offset shadows
    (no blur), Instrument Serif display, DM Sans body, JetBrains Mono labels. */
@@ -90,8 +96,8 @@
   --accent-soft: rgba(194, 104, 12, 0.12);
   --accent-text: #9a4f06;   /* accent as text on paper (AA) */
   --on-accent: #fbf5e6;
-  --success: #0f766e;
-  --success-soft: rgba(15, 118, 110, 0.12);
+  --success: #2a722d;
+  --success-soft: rgba(42, 114, 45, 0.12);
   --warning: #c2680c;
   --warning-soft: rgba(194, 104, 12, 0.12);
   --danger: #b3261e;
@@ -119,16 +125,16 @@
   --ramp-6: #8f4a0e;
   --ramp-text-dark: #3a2a0c;  /* label on ramp-0..3 */
   --ramp-text-light: #fbf5e6; /* label on ramp-4..6 */
-  --ramp-best: #0f766e;       /* teal best-window marker */
+  --ramp-best: #2a722d;       /* green best-window marker */
 
-  /* Diverging ramp for deltas: negative (warn red) -> zero -> positive (teal). */
+  /* Diverging ramp for deltas: negative (warn red) -> zero -> positive (green). */
   --div-neg-3: #b3261e;
   --div-neg-2: #d9685f;
   --div-neg-1: #ecbdb2;
   --div-0: #e6dbc0;
-  --div-pos-1: #a9d4cc;
-  --div-pos-2: #4fa497;
-  --div-pos-3: #0f766e;
+  --div-pos-1: #bcd8a8;
+  --div-pos-2: #6aa35a;
+  --div-pos-3: #2a722d;
 
   /* Map surfaces: the original atlas globe (read via src/ui/palette.ts). */
   --land: #d6c6a2;
@@ -192,8 +198,8 @@ html[data-theme="dark"] {
   --accent-soft: rgba(245, 158, 11, 0.16);
   --accent-text: #f5a524;
   --on-accent: #0b0f17;
-  --success: #2dd4bf;
-  --success-soft: rgba(45, 212, 191, 0.16);
+  --success: #7ccf6a;
+  --success-soft: rgba(124, 207, 106, 0.16);
   --warning: #f59e0b;
   --warning-soft: rgba(245, 158, 11, 0.16);
   --danger: #ff5b5b;
@@ -203,10 +209,10 @@ html[data-theme="dark"] {
   --info: #60a5fa;
   --info-soft: rgba(96, 165, 250, 0.16);
   --scrim: rgba(3, 5, 10, 0.6);
-  --shadow-color: #2dd4bf;
-  --shadow: 3px 3px 0 #2dd4bf;
-  --shadow-lg: 6px 6px 0 #2dd4bf;
-  --shadow-sm: 2px 2px 0 #2dd4bf;
+  --shadow-color: #b8620c;
+  --shadow: 3px 3px 0 #b8620c;
+  --shadow-lg: 6px 6px 0 #b8620c;
+  --shadow-sm: 2px 2px 0 #b8620c;
   --grain-op: 0.06;
 
   /* Warm ramp from the original seasons heatmap (dim ember -> bright gold). */
@@ -219,15 +225,15 @@ html[data-theme="dark"] {
   --ramp-6: #fbc55a;
   --ramp-text-dark: #f1dcb4;  /* label on ramp-0..3 */
   --ramp-text-light: #0b0f17; /* label on ramp-4..6 */
-  --ramp-best: #2dd4bf;
+  --ramp-best: #7ccf6a;
 
   --div-neg-3: #ff5b5b;
   --div-neg-2: #a8443f;
   --div-neg-1: #4a2626;
   --div-0: #1f2738;
-  --div-pos-1: #164a46;
-  --div-pos-2: #1f8f82;
-  --div-pos-3: #2dd4bf;
+  --div-pos-1: #24401f;
+  --div-pos-2: #4a8a3c;
+  --div-pos-3: #7ccf6a;
 
   /* Original "night ops" globe. */
   --land: #1f2738;
@@ -291,8 +297,8 @@ html[data-theme="dark"] {
     --accent-soft: rgba(245, 158, 11, 0.16);
     --accent-text: #f5a524;
     --on-accent: #0b0f17;
-    --success: #2dd4bf;
-    --success-soft: rgba(45, 212, 191, 0.16);
+    --success: #7ccf6a;
+    --success-soft: rgba(124, 207, 106, 0.16);
     --warning: #f59e0b;
     --warning-soft: rgba(245, 158, 11, 0.16);
     --danger: #ff5b5b;
@@ -302,10 +308,10 @@ html[data-theme="dark"] {
     --info: #60a5fa;
     --info-soft: rgba(96, 165, 250, 0.16);
     --scrim: rgba(3, 5, 10, 0.6);
-    --shadow-color: #2dd4bf;
-    --shadow: 3px 3px 0 #2dd4bf;
-    --shadow-lg: 6px 6px 0 #2dd4bf;
-    --shadow-sm: 2px 2px 0 #2dd4bf;
+    --shadow-color: #b8620c;
+    --shadow: 3px 3px 0 #b8620c;
+    --shadow-lg: 6px 6px 0 #b8620c;
+    --shadow-sm: 2px 2px 0 #b8620c;
     --grain-op: 0.06;
 
     /* Warm ramp from the original seasons heatmap (dim ember -> bright gold). */
@@ -318,15 +324,15 @@ html[data-theme="dark"] {
     --ramp-6: #fbc55a;
     --ramp-text-dark: #f1dcb4;  /* label on ramp-0..3 */
     --ramp-text-light: #0b0f17; /* label on ramp-4..6 */
-    --ramp-best: #2dd4bf;
+    --ramp-best: #7ccf6a;
 
     --div-neg-3: #ff5b5b;
     --div-neg-2: #a8443f;
     --div-neg-1: #4a2626;
     --div-0: #1f2738;
-    --div-pos-1: #164a46;
-    --div-pos-2: #1f8f82;
-    --div-pos-3: #2dd4bf;
+    --div-pos-1: #24401f;
+    --div-pos-2: #4a8a3c;
+    --div-pos-3: #7ccf6a;
 
     /* Original "night ops" globe. */
     --land: #1f2738;

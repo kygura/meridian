@@ -1,6 +1,6 @@
 import type { Route, TripsTab } from "../../lib/router";
-import { navigate } from "../../lib/router";
-import { Page, PageActionsProvider, PageHeader, Segmented } from "../../ui";
+import { hrefFor } from "../../lib/router";
+import { Page, PageActionsProvider, PageHeader, Tabs } from "../../ui";
 import UpcomingList from "./upcoming/UpcomingList";
 import TripEditor from "./upcoming/TripEditor";
 import PastTimeline from "./past/PastTimeline";
@@ -15,7 +15,7 @@ export interface TripsScreenProps {
  * Route #/trips, #/trips/past, #/trips/plan/<tripId>, #/trips/past/<journeyId>.
  *
  * List views: this screen renders the Page, the "Trips" PageHeader and the
- * Upcoming / Past Segmented. The tab component puts its primary action in the
+ * Upcoming / Past route tabs (the same underline tabs as Plan). The tab component puts its primary action in the
  * header with <PageActions> (UpcomingList: "New trip"; PastTimeline: "Log a trip").
  *
  * Detail views (tripId / journeyId): the detail component owns the whole page
@@ -44,13 +44,12 @@ export default function TripsScreen({ route }: TripsScreenProps) {
           kicker="Logbook · past and planned"
           title="Trips"
           tabs={
-            <Segmented<TripsTab>
-              label="Trips"
+            <Tabs<TripsTab>
+              label="Trips sections"
               value={route.tab}
-              onChange={(tab) => navigate({ view: "trips", tab })}
-              options={[
-                { value: "upcoming", label: "Upcoming" },
-                { value: "past", label: "Past" },
+              items={[
+                { value: "upcoming", label: "Upcoming", href: hrefFor({ view: "trips", tab: "upcoming" }) },
+                { value: "past", label: "Past", href: hrefFor({ view: "trips", tab: "past" }) },
               ]}
             />
           }

@@ -63,7 +63,7 @@ export function runFinder(input: FinderInput): FinderResult {
   return { filtering, pending, matches, ranked };
 }
 
-/** cityId -> 0-100 "goodness" for colouring (crowds inverted so teal is always good). */
+/** cityId -> 0-100 "goodness" for colouring (crowds inverted so green is always good). */
 export function metricColours(index: MetricIndex, id: MetricId | "none"): Map<string, number> | null {
   if (id === "none") return null;
   const values = index[id];

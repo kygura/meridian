@@ -68,7 +68,8 @@ export function Sidebar({ route, badges }: SidebarProps) {
         </button>
       </nav>
       <div className="shell-sidebar-cta">
-        <Button variant="primary" block icon={<IconPlus size={18} />} onClick={() => openQuickLog()}>
+        {/* Secondary, so the page's own primary action stays the only filled button on screen. */}
+        <Button block icon={<IconPlus size={18} />} onClick={() => openQuickLog()}>
           Log a trip
         </Button>
       </div>

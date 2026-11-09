@@ -2,7 +2,8 @@ import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { cx } from "./cx";
 import { Spinner } from "./Spinner";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+/** "danger" is filled and belongs in confirm dialogs; "danger-outline" opens one. */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-outline";
 export type ButtonSize = "sm" | "md";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -52,7 +53,7 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   /** Accessible name (required): "Close", "Delete stop". Also the tooltip. */
   label: string;
   icon: ReactNode;
-  variant?: "ghost" | "secondary" | "primary" | "danger";
+  variant?: "ghost" | "secondary" | "primary" | "danger" | "danger-outline";
   size?: ButtonSize;
   /** Small dot or count shown on the corner. */
   badge?: ReactNode;

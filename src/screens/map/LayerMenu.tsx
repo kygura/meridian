@@ -135,7 +135,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
             </Button>
           )
         ) : null}
-        <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in teal." />
+        <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in green." />
 
         <p className="map-layers-title map-layers-section map-kicker">Places and climate</p>
         <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in">

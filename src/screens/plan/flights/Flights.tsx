@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { searchOffers, type Offer, type OfferSource } from "../../../lib/bookingApi";
 import { useMeridianStore } from "../../../store";
 import type { TripNode } from "../../../types";
-import { Button, Card } from "../../../ui";
+import { Button, Card, SectionHeader } from "../../../ui";
 import { IconSearch } from "../../../ui/icons";
 import { BookingsList } from "./BookingsList";
 import { OfferList } from "./OfferList";
@@ -92,12 +92,7 @@ export default function Flights() {
 
       {status !== "idle" && searched ? (
         <section className="plan-flights-section" aria-labelledby="plan-flights-results-h" aria-live="polite">
-          <div className="plan-flights-section-head">
-            <h2 id="plan-flights-results-h" className="plan-flights-h2">
-              Flights
-            </h2>
-            <span className="muted plan-flights-summary">{searchSummary(searched)}</span>
-          </div>
+          <SectionHeader id="plan-flights-results-h" title="Flights" meta={searchSummary(searched)} />
           <OfferList
             status={status === "searching" ? "searching" : status === "error" ? "error" : "ready"}
             offers={offers}

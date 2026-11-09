@@ -571,9 +571,12 @@ export default function MapScreen({ active }: MapScreenProps) {
         />
       ) : null}
 
-      <Fab icon={<IconPlus />} className="map-fab" onClick={() => useMeridianStore.getState().openQuickLog()}>
-        Log a trip
-      </Fab>
+      {/* Desktop already has "Log a trip" in the sidebar; the floating button is the phone's way in. */}
+      {!isDesktop ? (
+        <Fab icon={<IconPlus />} className="map-fab" onClick={() => useMeridianStore.getState().openQuickLog()}>
+          Log a trip
+        </Fab>
+      ) : null}
     </div>
   );
 }

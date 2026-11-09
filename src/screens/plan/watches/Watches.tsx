@@ -19,6 +19,7 @@ import {
   cx,
   toast,
   useJournalToken,
+  SectionHeader,
 } from "../../../ui";
 import { IconBell, IconPlus, IconRefresh, IconTrash } from "../../../ui/icons";
 import WatchSheet from "./WatchSheet";
@@ -281,12 +282,7 @@ export default function Watches() {
       {addAction}
 
       <section className="plan-watches-section" aria-labelledby="plan-watches-alerts-h">
-        <div className="plan-watches-section-head">
-          <h2 id="plan-watches-alerts-h" className="plan-watches-h2">
-            Alerts
-          </h2>
-          {fresh.length ? <span className="muted num">{fresh.length} new</span> : null}
-        </div>
+        <SectionHeader id="plan-watches-alerts-h" title="Alerts" meta={fresh.length ? `${fresh.length} new` : null} />
         {fresh.length === 0 ? (
           <Card padding="none">
             <EmptyState
@@ -306,16 +302,17 @@ export default function Watches() {
       </section>
 
       <section className="plan-watches-section" aria-labelledby="plan-watches-list-h">
-        <div className="plan-watches-section-head">
-          <h2 id="plan-watches-list-h" className="plan-watches-h2">
-            Watches
-          </h2>
-          {watches.length ? (
-            <Button size="sm" variant="ghost" icon={<IconRefresh size={16} />} loading={running} onClick={() => void runNow()}>
-              Check now
-            </Button>
-          ) : null}
-        </div>
+        <SectionHeader
+          id="plan-watches-list-h"
+          title="Watches"
+          actions={
+            watches.length ? (
+              <Button size="sm" variant="ghost" icon={<IconRefresh size={16} />} loading={running} onClick={() => void runNow()}>
+                Check now
+              </Button>
+            ) : null
+          }
+        />
         {watches.length === 0 ? (
           <Card padding="none">
             <EmptyState

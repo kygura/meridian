@@ -11,7 +11,7 @@ import {
   tripRoute,
   tripTotals,
 } from "../../../lib/tripPlan";
-import { Button, Card, EmptyState, PageActions } from "../../../ui";
+import { Button, Card, EmptyState, PageActions, SectionHeader } from "../../../ui";
 import { IconPlane, IconPlus, IconTrips } from "../../../ui/icons";
 import type { Trip } from "../../../types";
 import type { FlightHub } from "../../../lib/geo";
@@ -52,18 +52,11 @@ export default function UpcomingList() {
         <Suggested />
 
         <section className="trips-up-section" aria-labelledby="trips-up-planned">
-          <div className="trips-up-section-head">
-            <div className="trips-up-section-titles">
-              <h2 id="trips-up-planned" className="trips-up-h2">
-                Planned trips
-              </h2>
-              {planned.length > 0 ? (
-                <p className="trips-up-section-sub">
-                  {planned.length} {planned.length === 1 ? "trip" : "trips"}
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <SectionHeader
+            id="trips-up-planned"
+            title="Planned trips"
+            meta={planned.length > 0 ? `${planned.length} ${planned.length === 1 ? "trip" : "trips"}` : null}
+          />
 
           {planned.length === 0 ? (
             <Card>

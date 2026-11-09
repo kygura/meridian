@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useMeridianStore } from "../../../store";
 import { useUIStore } from "../../../shell/uiStore";
-import { Button, Card, ErrorState, IconButton, Skeleton, toast, useIsDesktop } from "../../../ui";
+import { Button, Card, ErrorState, IconButton, Skeleton, toast, useIsDesktop, SectionHeader } from "../../../ui";
 import { IconCheck, IconRefresh, IconSparkle } from "../../../ui/icons";
 import { navigate } from "../../../lib/router";
 import { displayTripName, stopChain, tripDateRange, tripDays } from "../../../lib/tripPlan";
@@ -45,35 +45,34 @@ export default function Suggested() {
 
   return (
     <section className="trips-up-section" aria-labelledby="trips-up-suggested">
-      <div className="trips-up-section-head">
-        <div className="trips-up-section-titles">
-          <h2 id="trips-up-suggested" className="trips-up-h2">
-            Suggested
-          </h2>
-          {source ? <p className="trips-up-section-sub">Trip ideas starting from {source.name}</p> : null}
-        </div>
-        {candidates.length > 0 ? (
-          <div className="trips-up-section-actions">
-            {source ? (
-              <IconButton
-                label={`Suggest new trips from ${source.name}`}
-                icon={<IconRefresh />}
+      <SectionHeader
+        id="trips-up-suggested"
+        title="Suggested"
+        meta={source ? `Trip ideas starting from ${source.name}` : null}
+        actions={
+          candidates.length > 0 ? (
+            <>
+              {source ? (
+                <IconButton
+                  label={`Suggest new trips from ${source.name}`}
+                  icon={<IconRefresh />}
+                  size="md"
+                  disabled={loading}
+                  onClick={() => void request(source.id)}
+                />
+              ) : null}
+              <Button
+                variant="ghost"
                 size="md"
                 disabled={loading}
-                onClick={() => void request(source.id)}
-              />
-            ) : null}
-            <Button
-              variant="ghost"
-              size="md"
-              disabled={loading}
-              onClick={() => useMeridianStore.getState().discardAgentCandidates()}
-            >
-              Dismiss all
-            </Button>
-          </div>
-        ) : null}
-      </div>
+                onClick={() => useMeridianStore.getState().discardAgentCandidates()}
+              >
+                Dismiss all
+              </Button>
+            </>
+          ) : null
+        }
+      />
 
       {loading ? (
         <div className="trips-up-suggest-grid" aria-busy="true" aria-label="Loading suggestions">

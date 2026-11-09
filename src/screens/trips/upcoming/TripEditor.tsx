@@ -128,7 +128,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
       <Button icon={<IconCopy size={16} />} onClick={duplicate}>
         Duplicate
       </Button>
-      <Button variant="danger" icon={<IconTrash size={16} />} onClick={() => setConfirmDelete(true)}>
+      <Button variant="danger-outline" icon={<IconTrash size={16} />} onClick={() => setConfirmDelete(true)}>
         Delete
       </Button>
     </>
@@ -136,7 +136,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
     <>
       <IconButton label="Show on map" icon={<IconMap />} onClick={showOnMap} />
       <IconButton label="Duplicate trip" icon={<IconCopy />} onClick={duplicate} />
-      <IconButton label="Delete trip" icon={<IconTrash />} variant="danger" onClick={() => setConfirmDelete(true)} />
+      <IconButton label="Delete trip" icon={<IconTrash />} variant="danger-outline" onClick={() => setConfirmDelete(true)} />
     </>
   );
 
@@ -183,7 +183,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
         <div className="trips-ed-main">
           <Card className="trips-ed-card">
             <div className="trips-ed-card-head">
-              <h2 className="trips-up-h2">Route</h2>
+              <h2 className="ui-section-title">Route</h2>
               <span className="trips-ed-card-sub tabular">
                 {trip.nodes.length} {trip.nodes.length === 1 ? "stop" : "stops"}
               </span>
@@ -194,7 +194,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
 
         <div className="trips-ed-side">
           <Card className="trips-ed-card">
-            <h2 className="trips-up-h2">Details</h2>
+            <h2 className="ui-section-title">Details</h2>
             <NameField trip={trip} />
             <div className="trips-ed-field">
               <span className="trips-ed-label" id={`trips-ed-color-${trip.id}`}>
@@ -215,22 +215,22 @@ export default function TripEditor({ tripId }: TripEditorProps) {
           </Card>
 
           <Card className="trips-ed-card">
-            <h2 className="trips-up-h2">Departing from</h2>
+            <h2 className="ui-section-title">Departing from</h2>
             <DepartureCard trip={trip} />
           </Card>
 
           <Card className="trips-ed-card">
-            <h2 className="trips-up-h2">Risk</h2>
+            <h2 className="ui-section-title">Risk</h2>
             <RiskCard trip={trip} route={route} />
           </Card>
 
           <Card className="trips-ed-card">
-            <h2 className="trips-up-h2">Season</h2>
+            <h2 className="ui-section-title">Season</h2>
             <SeasonCard trip={trip} />
           </Card>
 
           <Card className="trips-ed-card">
-            <h2 className="trips-up-h2">Estimates</h2>
+            <h2 className="ui-section-title">Estimates</h2>
             <div className="trips-ed-stats">
               <Stat
                 label="Flights"

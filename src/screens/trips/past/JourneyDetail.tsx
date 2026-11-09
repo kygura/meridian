@@ -28,6 +28,7 @@ import {
   UnlockCard,
   toast,
   useJournalToken,
+  SectionHeader,
 } from "../../../ui";
 import { IconBell, IconCalendar, IconEdit, IconInfo, IconMore, IconRefresh, IconTrash, IconTrips } from "../../../ui/icons";
 import { Stars } from "./Rating";
@@ -307,9 +308,7 @@ function Detail({
       <div className="trips-jd-grid">
         <div className="trips-jd-main">
           <section aria-labelledby="trips-jd-stops-title">
-            <h2 id="trips-jd-stops-title" className="trips-jd-section-title">
-              {plural(j.stops.length, "stop")}
-            </h2>
+            <SectionHeader id="trips-jd-stops-title" title={plural(j.stops.length, "stop")} />
             <ol className="trips-jd-stops">
               {j.stops.map((s, i) => (
                 <StopCard
