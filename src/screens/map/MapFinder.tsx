@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Button, Chip, Disclosure, IconButton, Input, Spinner } from "../../ui";
+import { Button, Chip, Disclosure, IconButton, Input, SectionHeader, Spinner } from "../../ui";
 import { IconChevronDown, IconChevronLeft, IconChevronRight, IconChevronUp, IconSearch } from "../../ui/icons";
 import { useMapPrefs } from "../../shell/mapPrefs";
 import { openCity } from "../../shell/uiStore";
@@ -92,21 +92,24 @@ export default function MapFinder({ result, regionsStatus, climateStatus, onRetr
 
   return (
     <section className="map-legend map-finder" aria-label="Map finder" data-open={open || undefined}>
-      <div className="map-legend-head">
-        <IconButton label="Previous month" icon={<IconChevronLeft />} size="sm" onClick={() => stepMonth(-1)} />
-        <span className="map-legend-title map-kicker" aria-live="polite">
-          {title}
-        </span>
-        <IconButton label="Next month" icon={<IconChevronRight />} size="sm" onClick={() => stepMonth(1)} />
-        <IconButton
-          label={open ? "Collapse finder" : "Expand finder"}
-          icon={open ? <IconChevronDown /> : <IconChevronUp />}
-          size="sm"
-          aria-expanded={open}
-          aria-controls={bodyId}
-          onClick={() => setOpen(!open)}
-        />
-      </div>
+      <SectionHeader
+        className="map-legend-head"
+        title={<span aria-live="polite">{title}</span>}
+        actions={
+          <>
+            <IconButton label="Previous month" icon={<IconChevronLeft />} size="sm" onClick={() => stepMonth(-1)} />
+            <IconButton label="Next month" icon={<IconChevronRight />} size="sm" onClick={() => stepMonth(1)} />
+            <IconButton
+              label={open ? "Collapse finder" : "Expand finder"}
+              icon={open ? <IconChevronDown /> : <IconChevronUp />}
+              size="sm"
+              aria-expanded={open}
+              aria-controls={bodyId}
+              onClick={() => setOpen(!open)}
+            />
+          </>
+        }
+      />
 
       {seasons ? (
         regionsStatus === "error" ? (
@@ -217,7 +220,7 @@ export default function MapFinder({ result, regionsStatus, climateStatus, onRetr
                     </div>
                   ) : null}
                   <Disclosure
-                    summary={<span className="map-kicker">All conditions</span>}
+                    summary="All conditions"
                     className="map-finder-all"
                   >
                     {GROUPS.map((g) => (
@@ -250,16 +253,20 @@ export default function MapFinder({ result, regionsStatus, climateStatus, onRetr
 
           {result.filtering ? (
             <div className="map-finder-results">
-              <div className="map-finder-results-head">
-                <span className="map-kicker">
-                  {result.pending || (seasons && isFilterActive(climate) && climateStatus === "loading")
+              <SectionHeader
+                level={3}
+                title="Matches"
+                meta={
+                  result.pending || (seasons && isFilterActive(climate) && climateStatus === "loading")
                     ? "Matching…"
-                    : `${result.ranked.length} ${result.ranked.length === 1 ? "city matches" : "cities match"}`}
-                </span>
-                <Button size="sm" variant="ghost" onClick={clearFilters}>
-                  Clear
-                </Button>
-              </div>
+                    : `${result.ranked.length} ${result.ranked.length === 1 ? "city" : "cities"}`
+                }
+                actions={
+                  <Button size="sm" variant="ghost" onClick={clearFilters}>
+                    Clear
+                  </Button>
+                }
+              />
               {filterSummary.length ? <p className="map-finder-summary">{filterSummary.join(" · ")}</p> : null}
               {climateStatus === "error" ? (
                 <div className="map-legend-error">

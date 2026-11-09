@@ -18,7 +18,7 @@
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-/* Mono kicker shared by the readout, legend and layer menu. */
+/* Mono kicker for the coordinate readout. Panels use SectionHeader. */
 .map-kicker {
   font-family: var(--font-mono);
   font-size: var(--text-2xs);
@@ -82,13 +82,15 @@
   gap: var(--space-3);
 }
 
-.map-float-btn.ui-btn {
+.map-float-btn.ui-btn,
+.map-float-btn.ui-iconbtn {
   border: var(--border-width) solid var(--rule);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow);
 }
-.map-float-btn.ui-btn[aria-expanded="true"] {
+.map-float-btn.ui-btn[aria-expanded="true"],
+.map-float-btn.ui-iconbtn[aria-expanded="true"] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
@@ -189,16 +191,13 @@
   background: var(--surface);
   box-shadow: var(--shadow);
 }
+/* The finder's header is a SectionHeader; its icon buttons sit flush right. */
 .map-legend-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-  margin: 0 calc(-1 * var(--space-2)) var(--space-2);
+  margin: 0 calc(-1 * var(--space-2)) var(--space-2) 0;
 }
-.map-legend-title {
-  flex: 1;
-  text-align: center;
+.map-legend-head .ui-section-actions {
+  gap: 0;
+  flex-wrap: nowrap;
 }
 .map-legend-ramp {
   display: grid;
@@ -229,10 +228,6 @@
 .map-layers-pop {
   width: 304px;
   padding: var(--space-3) var(--space-3) var(--space-3);
-}
-.map-layers-title {
-  padding: 0 0 var(--space-2);
-  border-bottom: var(--border-width) solid var(--rule);
 }
 .map-layer + .map-layer,
 .map-unlock + .map-layer,
@@ -368,8 +363,10 @@
   max-height: min(78vh, 680px);
   overflow-y: auto;
 }
-.map-layers-section {
-  margin-top: var(--space-3);
+.map-layers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 .map-layer-seg {
   margin-bottom: var(--space-3);
@@ -444,10 +441,6 @@
   max-height: calc(100% - 2 * var(--space-4));
   overflow-y: auto;
 }
-.map-finder .map-legend-head .map-legend-title {
-  text-align: left;
-  padding-left: var(--space-1);
-}
 .map-legend-ramp--div {
   background: linear-gradient(to right, var(--div-neg-3), var(--div-neg-1), var(--div-0), var(--div-pos-1), var(--div-pos-3));
 }
@@ -508,11 +501,6 @@
   gap: var(--space-1);
   padding-top: var(--space-2);
   border-top: var(--border-width) solid var(--border);
-}
-.map-finder-results-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 .map-finder-summary,
 .map-finder-hint,
@@ -594,14 +582,18 @@
   .map-controls .ui-btn {
     min-height: var(--touch);
   }
+  /* Phone top row: finder on the left taking the room, the layers icon on the right. */
+  .map-float-btn.ui-iconbtn {
+    width: var(--touch);
+    height: var(--touch);
+  }
   .map-legend {
     top: var(--space-3);
     bottom: auto;
     left: var(--space-3);
-    width: min(232px, calc(100% - 160px));
+    width: calc(100% - 2 * var(--space-3) - var(--touch) - var(--space-3));
   }
   .map-finder {
-    width: min(300px, calc(100% - 150px));
     max-height: min(60%, calc(100% - 2 * var(--space-3) - 72px));
   }
   .map-notice {
@@ -612,9 +604,6 @@
   }
   .map-month {
     height: var(--touch);
-  }
-  .map-layers-pop {
-    width: min(320px, calc(100vw - 16px));
   }
 }
 

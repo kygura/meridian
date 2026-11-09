@@ -124,6 +124,22 @@ rule, because sheet sections stack without cards. A heading *inside a card* (tri
 cards, booking review) is a plain `<h3 className="ui-section-title">`, with no rule. The
 docked Ask column reuses `.ui-sheet-header` / `.ui-sheet-title` so it matches.
 
+**Map controls** float in fixed corners, each a framed panel (surface, ink rule, offset
+shadow):
+
+| Corner | Desktop | Phone |
+|---|---|---|
+| Top left | Coordinate readout | Finder (takes the row up to the layers button) |
+| Top right | Layers button, zoom below it | Layers icon button |
+| Bottom left | Finder (when a data layer is on), otherwise the drag hint | — |
+| Bottom right | — | "Log a trip" floating button |
+
+The finder's header is a `SectionHeader` (title, then the month and collapse icon buttons
+as its actions) and its match list opens with `<SectionHeader level={3} title="Matches">`.
+The layer menu groups its switches under `<SectionHeader level={3}>`; it opens as a
+popover on desktop and as a bottom `Sheet` titled "Map layers" on phones. Inside a popover
+the section heading carries the same hairline rule as in sheets.
+
 Global actions: "Log a trip" sits in the sidebar as a secondary button on desktop (so the
 page's own primary stays the only filled button), and as the Map's floating button on phones
 only.

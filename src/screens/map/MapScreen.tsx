@@ -507,6 +507,8 @@ export default function MapScreen({ active }: MapScreenProps) {
   const pastLoading = prefs.past && unlocked && journeys === null;
   const years = past && past.arcs.length + past.stops.length > 0 ? { min: past.minYear, max: past.maxYear } : null;
 
+  const showFinder = prefs.seasons || prefs.metrics || prefs.events || prefs.anomalies;
+
   return (
     <div className="map-screen" data-active={active || undefined}>
       <div ref={container} className="map-canvas" aria-label="Map of your trips" role="region" />
@@ -533,7 +535,8 @@ export default function MapScreen({ active }: MapScreenProps) {
           <dd>{center[1].toFixed(1)}°</dd>
         </dl>
       ) : null}
-      {isDesktop && !prefs.seasons && zoom < 3 ? <p className="map-hint">Drag to rotate · scroll to zoom</p> : null}
+      {/* The finder owns the bottom-left corner; the hint only shows when it is closed. */}
+      {isDesktop && !showFinder && zoom < 3 ? <p className="map-hint">Drag to rotate · scroll to zoom</p> : null}
 
       <div className="map-controls">
         <LayerMenu colors={colors} years={years} pastLoading={pastLoading} />
@@ -557,7 +560,7 @@ export default function MapScreen({ active }: MapScreenProps) {
         </div>
       ) : null}
 
-      {prefs.seasons || prefs.metrics || prefs.events || prefs.anomalies ? (
+      {showFinder ? (
         <MapFinder
           result={finder}
           regionsStatus={regionsError ? "error" : regions ? "ready" : "loading"}
