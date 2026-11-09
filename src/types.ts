@@ -116,6 +116,13 @@ export interface Trip {
   season?: MonthSpan;
   /** The year this season is planned for, once it gets concrete. Absent = any year. */
   year?: number;
+  /**
+   * Where the trip leaves from: the traveller's home airport. Absent = the default
+   * departure (store.homeDeparture, Las Palmas / LPA unless changed).
+   */
+  departure?: TripNode;
+  /** Fly back to the departure after the last stop. Absent = true. */
+  returnHome?: boolean;
 }
 
 export interface ShortlistEntry {

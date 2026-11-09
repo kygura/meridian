@@ -59,6 +59,14 @@ describe("pendingChanges", () => {
     expect(pendingChanges([{ ...a, season: { start: 7, end: 8 } }], baseOf(a)).put).toHaveLength(1);
   });
 
+  it("pushes departure and one-way edits", () => {
+    const a = t("a");
+    const dep = { cityId: "madrid-spain", name: "Madrid", iata: "MAD", lat: 40.42, lng: -3.7 };
+    expect(pendingChanges([{ ...a, departure: dep }], baseOf(a)).put).toHaveLength(1);
+    expect(pendingChanges([{ ...a, returnHome: false }], baseOf(a)).put).toHaveLength(1);
+    expect(pendingChanges([{ ...a, returnHome: true }], baseOf(a)).put).toHaveLength(0);
+  });
+
   it("ignores fields the server doesn't store", () => {
     const a = t("a");
     expect(pendingChanges([{ ...a, estimate: { priceEstimate: 1, currency: "USD", dateRange: { start: "", end: "" } } }], baseOf(a))).toEqual({ put: [], del: [] });

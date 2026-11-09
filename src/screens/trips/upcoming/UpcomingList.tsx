@@ -8,7 +8,7 @@ import {
   stopChain,
   tripDateRange,
   tripDays,
-  tripLegs,
+  tripRoute,
   tripTotals,
 } from "../../../lib/tripPlan";
 import { Button, Card, EmptyState, PageActions, SectionHeader } from "../../../ui";
@@ -91,10 +91,11 @@ export default function UpcomingList() {
 }
 
 function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; bookings: Booking[] }) {
-  const legs = useMemo(() => tripLegs(trip.nodes, hubs), [trip.nodes, hubs]);
-  const totals = tripTotals(legs);
+  const home = useMeridianStore((s) => s.homeDeparture);
+  const route = useMemo(() => tripRoute(trip, home, hubs), [trip, home, hubs]);
+  const totals = tripTotals(route.all);
   const money = useTripMoney();
-  const booked = bookedLegCount(trip, bookings);
+  const booked = bookedLegCount(trip, bookings, route.all);
   const range = tripDateRange(trip);
   const days = tripDays(trip);
   const season = seasonText(trip);
@@ -112,7 +113,9 @@ function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; boo
         </h3>
         <StatusBadge status={trip.status} />
       </div>
-      <p className="trips-up-chain">{stops > 0 ? stopChain(trip.nodes) : "No stops yet"}</p>
+      <p className="trips-up-chain">
+        {stops > 0 ? stopChain([route.departure, ...trip.nodes, ...(route.inbound ? [route.departure] : [])]) : "No stops yet"}
+      </p>
       <div className="trips-up-meta">
         {season ? <span className="trips-up-season">{season}</span> : null}
         <span className="tabular">

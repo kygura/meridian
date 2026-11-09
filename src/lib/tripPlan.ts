@@ -17,6 +17,70 @@ export interface TripLeg {
   bookable: boolean;
 }
 
+/** Leg index of the flight from the departure to the first stop (bookings key on it). */
+export const OUTBOUND_LEG = -1;
+/** Leg index of the flight from the last stop back to the departure. */
+export const RETURN_LEG = -2;
+
+/** Default departure for every trip until the user picks another: Las Palmas de Gran Canaria. */
+export const DEFAULT_DEPARTURE: TripNode = {
+  cityId: "las-palmas-spain",
+  name: "Las Palmas",
+  iata: "LPA",
+  lat: 28.1,
+  lng: -15.43,
+};
+
+/** The trip's own departure, else the user's home departure, else LPA. */
+export function tripDeparture(trip: Pick<Trip, "departure">, home?: TripNode | null): TripNode {
+  return trip.departure ?? home ?? DEFAULT_DEPARTURE;
+}
+
+export interface TripRoute {
+  departure: TripNode;
+  /** Departure → first stop; absent with no stops or when the trip starts at home. */
+  outbound?: TripLeg;
+  /** Stop-to-stop legs (index 0..n-2). */
+  legs: TripLeg[];
+  /** Last stop → departure; absent when returnHome is false or the trip already ends at home. */
+  inbound?: TripLeg;
+  /** Every leg in flying order: outbound, stop legs, return. */
+  all: TripLeg[];
+}
+
+function leg(index: number, from: TripNode, to: TripNode, hubs: FlightHub[]): TripLeg {
+  const path = flightPath([from.lng, from.lat], [to.lng, to.lat], hubs);
+  return {
+    index,
+    from,
+    to,
+    km: Math.round(path.distanceKm),
+    hours: estimateFlightHours(path.distanceKm),
+    cost: estimateLegCostUSD(path.distanceKm),
+    via: path.via,
+    bookable: Boolean(from.iata && to.iata),
+  };
+}
+
+/** The full route flown from the departure: out to the first stop, between stops, and home. */
+export function tripRoute(
+  trip: Pick<Trip, "nodes" | "departure" | "returnHome">,
+  home?: TripNode | null,
+  hubs: FlightHub[] = []
+): TripRoute {
+  const departure = tripDeparture(trip, home);
+  const nodes = trip.nodes;
+  const legs = tripLegs(nodes, hubs);
+  if (nodes.length === 0) return { departure, legs, all: legs };
+  const first = nodes[0];
+  const last = nodes[nodes.length - 1];
+  const outbound = first.cityId !== departure.cityId ? leg(OUTBOUND_LEG, departure, first, hubs) : undefined;
+  const inbound =
+    trip.returnHome !== false && last.cityId !== departure.cityId ? leg(RETURN_LEG, last, departure, hubs) : undefined;
+  const all = [...(outbound ? [outbound] : []), ...legs, ...(inbound ? [inbound] : [])];
+  return { departure, outbound, legs, inbound, all };
+}
+
 export interface TripTotals {
   km: number;
   hours: number;
@@ -34,21 +98,7 @@ export function hubsFromCities(cities: City[]): FlightHub[] {
 /** One leg per pair of consecutive stops, with time, distance and a cost estimate. */
 export function tripLegs(nodes: TripNode[], hubs: FlightHub[] = []): TripLeg[] {
   const out: TripLeg[] = [];
-  for (let i = 0; i < nodes.length - 1; i++) {
-    const from = nodes[i];
-    const to = nodes[i + 1];
-    const path = flightPath([from.lng, from.lat], [to.lng, to.lat], hubs);
-    out.push({
-      index: i,
-      from,
-      to,
-      km: Math.round(path.distanceKm),
-      hours: estimateFlightHours(path.distanceKm),
-      cost: estimateLegCostUSD(path.distanceKm),
-      via: path.via,
-      bookable: Boolean(from.iata && to.iata),
-    });
-  }
+  for (let i = 0; i < nodes.length - 1; i++) out.push(leg(i, nodes[i], nodes[i + 1], hubs));
   return out;
 }
 
@@ -61,10 +111,14 @@ export function tripTotals(legs: TripLeg[]): TripTotals {
   };
 }
 
-/** Legs of a trip that have a live (not cancelled) booking. */
-export function bookedLegCount(trip: Trip, bookings: Booking[]): number {
+/**
+ * Legs of a trip that have a live (not cancelled) booking. Pass the route's legs to count
+ * the flights to and from the departure too; without them only stop-to-stop legs count.
+ */
+export function bookedLegCount(trip: Trip, bookings: Booking[], legs?: Pick<TripLeg, "index">[]): number {
+  const indices = legs ? legs.map((l) => l.index) : trip.nodes.slice(1).map((_, i) => i);
   let n = 0;
-  for (let i = 0; i < trip.nodes.length - 1; i++) {
+  for (const i of indices) {
     const b = findLegBooking(bookings, trip.id, i);
     if (b && b.status === "booked") n++;
   }

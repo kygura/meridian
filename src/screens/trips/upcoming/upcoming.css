@@ -757,3 +757,110 @@
     padding-left: 0;
   }
 }
+
+/* Departure: the home airport above the first stop and after the flight back. */
+.trips-ed-home {
+  gap: var(--space-3);
+  padding-left: 9px;
+}
+.trips-ed-home-icon {
+  display: inline-flex;
+  color: var(--accent, var(--ink));
+}
+.trips-ed-home-label {
+  color: var(--muted);
+  font-weight: var(--weight-regular, 400);
+}
+
+.trips-dep {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trips-dep-current {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.trips-dep-name {
+  font-weight: var(--weight-semibold);
+}
+.trips-dep-hint {
+  color: var(--subtle);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.trips-dep-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm, 14px);
+  cursor: pointer;
+}
+.trips-dep-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+.trips-dep-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Risk */
+.trips-risk {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trips-risk-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.trips-risk-sum {
+  font-size: var(--text-sm, 14px);
+}
+.trips-risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.trips-risk-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.trips-risk-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.trips-risk-place {
+  font-weight: var(--weight-semibold);
+  min-width: 0;
+}
+.trips-risk-detail,
+.trips-risk-sub,
+.trips-risk-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.trips-risk-sub {
+  color: var(--subtle);
+}
+.trips-risk-note {
+  color: var(--subtle);
+}
