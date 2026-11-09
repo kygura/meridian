@@ -272,18 +272,24 @@ const LUSH_STEPS = [10, 25, 40, 55, 70, 85];
 
 const stepOf = (v: number, edges: number[]) => edges.filter((e) => v >= e).length;
 
-/** Ramp step 0-6 for a month in a tint mode. Comfort skips step 0 (too close to plain land). */
-export function modeStep(mode: ClimateMode, t: MonthTraits): number {
+/** Ramp step 0-6 for a raw value in a tint mode (comfort 0-100, °C, mm, lush 0-100). */
+export function valueStep(mode: ClimateMode, v: number): number {
   switch (mode) {
     case "comfort":
-      return 1 + Math.max(0, Math.min(5, Math.round((t.comfort / 100) * 5)));
+      return 1 + Math.max(0, Math.min(5, Math.round((v / 100) * 5)));
     case "temperature":
-      return stepOf(t.tempC, TEMP_STEPS);
+      return stepOf(v, TEMP_STEPS);
     case "rainfall":
-      return stepOf(t.precipMm, RAIN_STEPS);
+      return stepOf(v, RAIN_STEPS);
     case "greenery":
-      return stepOf(t.lush, LUSH_STEPS);
+      return stepOf(v, LUSH_STEPS);
   }
+}
+
+/** Ramp step 0-6 for a month in a tint mode. Comfort skips step 0 (too close to plain land). */
+export function modeStep(mode: ClimateMode, t: MonthTraits): number {
+  const v = mode === "comfort" ? t.comfort : mode === "temperature" ? t.tempC : mode === "rainfall" ? t.precipMm : t.lush;
+  return valueStep(mode, v);
 }
 
 /** Token names of the 7-step ramp a mode paints with. */

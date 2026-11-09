@@ -214,6 +214,86 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
 .plan-heat-s5 { background: var(--ramp-5); color: var(--ramp-text-light); }
 .plan-heat-s6 { background: var(--ramp-6); color: var(--ramp-text-light); }
 
+/* Other ramps: same step classes, different tokens. */
+.plan-heat-ramp-temp .plan-heat-s0 { background: var(--temp-0); }
+.plan-heat-ramp-temp .plan-heat-s1 { background: var(--temp-1); }
+.plan-heat-ramp-temp .plan-heat-s2 { background: var(--temp-2); }
+.plan-heat-ramp-temp .plan-heat-s3 { background: var(--temp-3); }
+.plan-heat-ramp-temp .plan-heat-s4 { background: var(--temp-4); }
+.plan-heat-ramp-temp .plan-heat-s5 { background: var(--temp-5); }
+.plan-heat-ramp-temp .plan-heat-s6 { background: var(--temp-6); }
+.plan-heat-ramp-wet .plan-heat-s0 { background: var(--wet-0); }
+.plan-heat-ramp-wet .plan-heat-s1 { background: var(--wet-1); }
+.plan-heat-ramp-wet .plan-heat-s2 { background: var(--wet-2); }
+.plan-heat-ramp-wet .plan-heat-s3 { background: var(--wet-3); }
+.plan-heat-ramp-wet .plan-heat-s4 { background: var(--wet-4); }
+.plan-heat-ramp-wet .plan-heat-s5 { background: var(--wet-5); }
+.plan-heat-ramp-wet .plan-heat-s6 { background: var(--wet-6); }
+.plan-heat-ramp-green .plan-heat-s0 { background: var(--green-0); }
+.plan-heat-ramp-green .plan-heat-s1 { background: var(--green-1); }
+.plan-heat-ramp-green .plan-heat-s2 { background: var(--green-2); }
+.plan-heat-ramp-green .plan-heat-s3 { background: var(--green-3); }
+.plan-heat-ramp-green .plan-heat-s4 { background: var(--green-4); }
+.plan-heat-ramp-green .plan-heat-s5 { background: var(--green-5); }
+.plan-heat-ramp-green .plan-heat-s6 { background: var(--green-6); }
+
+/* Value in the cell. */
+.plan-heat-cell.has-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.plan-heat-cell-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  pointer-events: none;
+}
+/* Ink picked per step from the ramp's own luminance (useLightInk), so it holds in both themes. */
+.plan-heat-cell.has-text .plan-heat-cell-text {
+  color: #1c1814;
+}
+.plan-heat-cell.has-text.is-ink-light .plan-heat-cell-text {
+  color: #fbf5e6;
+}
+/* With a number in it, the peak marker moves to a corner notch. */
+.plan-heat-cell.has-text.is-dot::after {
+  display: none;
+}
+
+/* Best window: a bracket in the best-window green, edges closed, peak notched. */
+.plan-heat-cell.is-best {
+  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best);
+}
+.plan-heat-cell.is-best.is-best-start {
+  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset 2px 0 0 var(--ramp-best);
+}
+.plan-heat-cell.is-best.is-best-end {
+  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset -2px 0 0 var(--ramp-best);
+}
+.plan-heat-cell.is-best.is-best-start.is-best-end {
+  box-shadow: inset 0 0 0 2px var(--ramp-best);
+}
+.plan-heat-cell.is-best-peak::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-left: 7px solid transparent;
+  border-top: 7px solid var(--ramp-best);
+}
+.plan-heat-cell.is-best:hover,
+.plan-heat-cell.is-best.is-active {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* Four columns (seasons) stay readable without the month-sized minimum width. */
+.plan-heat-cols-4 .plan-heat-table {
+  min-width: 480px;
+}
+
 .plan-heat-state {
   padding: 0 var(--space-2) !important;
   vertical-align: middle;
@@ -350,6 +430,18 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
   }
   .plan-heat-mh-short {
     display: inline;
+  }
+}
+
+@media (max-width: 899.98px) {
+  .plan-heat-cols-4 .plan-heat-table {
+    min-width: 440px;
+  }
+  .plan-heat-cols-4 .plan-heat-mh-long {
+    display: inline;
+  }
+  .plan-heat-cols-4 .plan-heat-mh-short {
+    display: none;
   }
 }
 

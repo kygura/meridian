@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Popover, Skeleton, cx } from "../../../ui";
-import { MONTH_NAMES, MONTH_SHORT, scoreStep } from "../../../lib/repeatCopy";
+import { scoreStep } from "../../../lib/repeatCopy";
+import { frameColumns, type FrameColumn } from "../../../lib/heatFrame";
+import { readToken, toRgba } from "../../../ui/palette";
+import { useResolvedTheme } from "../../../shell/theme";
 import "./heatgrid.css";
 
 // Months heatmap shared by When to go and Repeat a trip. A table with a sticky first
 // column; it scrolls sideways inside its own container on narrow screens. Cells are
-// painted from the sequential ramp tokens. Columns are 0-based (0 = January).
+// painted from the sequential ramp tokens. Columns default to the 12 months (0 = January);
+// pass `columns` for another timeframe.
 
 export interface HeatCell {
   /** 0-100. */
@@ -18,6 +22,12 @@ export interface HeatCell {
   ring?: boolean;
   /** Accessible name, e.g. "Lisbon, May: comfort 82, great". */
   label: string;
+  /** Ramp step 0-6; defaults to the score's step. */
+  step?: number;
+  /** Value printed in the cell, e.g. "82" or "24°". */
+  text?: string;
+  /** Part of the row's best window: bracketed, with the edges marked. */
+  best?: { start: boolean; end: boolean; peak: boolean };
 }
 
 export interface HeatRow {
@@ -28,7 +38,7 @@ export interface HeatRow {
   onOpen?: () => void;
   openLabel?: string;
   state: "ready" | "loading" | "none" | "unavailable";
-  /** Length 12 when ready. null = no score for that month. */
+  /** One per column when ready. null = no value for that column. */
   cells?: (HeatCell | null)[];
   /** Last column (best months, match). */
   trail?: ReactNode;
@@ -57,6 +67,41 @@ export interface HeatGridProps {
   renderPopover: (row: HeatRow, col: number) => ReactNode | null;
   onCellClick?: (row: HeatRow, col: number) => void;
   className?: string;
+  /** Column set; defaults to the 12 months. */
+  columns?: FrameColumn[];
+  /** Colour ramp the cells paint with. Default "ramp" (comfort/match). */
+  ramp?: "ramp" | "temp" | "wet" | "green";
+}
+
+const MONTHS = frameColumns("months");
+
+const RAMP_PREFIX = { ramp: "--ramp", temp: "--temp", wet: "--wet", green: "--green" } as const;
+
+/**
+ * Per step, whether the cell's number should be light. The climate ramps run dark at one
+ * or both ends and differ by theme, so this reads the tokens and checks luminance.
+ */
+function useLightInk(ramp: NonNullable<HeatGridProps["ramp"]>): boolean[] {
+  const theme = useResolvedTheme();
+  const [ink, setInk] = useState<boolean[]>([]);
+  useEffect(() => {
+    // The shell writes html[data-theme] in an effect after ours; read on the next frame.
+    const raf = requestAnimationFrame(() => {
+      setInk(
+        [0, 1, 2, 3, 4, 5, 6].map((i) => {
+          const c = readToken(`${RAMP_PREFIX[ramp]}-${i}`);
+          if (!c) return false;
+          const [r, g, b] = toRgba(c).map((x) => {
+            const v = x / 255;
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! < 0.22;
+        })
+      );
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [ramp, theme]);
+  return ink;
 }
 
 const NONE_TEXT: Record<Exclude<HeatRow["state"], "ready" | "loading">, string> = {
@@ -76,8 +121,13 @@ export function HeatGrid({
   renderPopover,
   onCellClick,
   className,
+  columns = MONTHS,
+  ramp = "ramp",
 }: HeatGridProps) {
-  const nowCol = new Date().getMonth();
+  const n = columns.length;
+  const lightInk = useLightInk(ramp);
+  const last = n - 1;
+  const nowCol = Math.max(0, columns.findIndex((c) => c.months.includes(new Date().getMonth())));
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups]);
   const readyIdx = useMemo(() => rows.map((r, i) => (r.state === "ready" ? i : -1)).filter((i) => i >= 0), [rows]);
   const rowByKey = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
@@ -107,7 +157,7 @@ export function HeatGrid({
   }, []);
 
   const move = (row: number, col: number) => {
-    const c = Math.max(0, Math.min(11, col));
+    const c = Math.max(0, Math.min(last, col));
     setFocus({ row, col: c });
     const el = cellEl(row, c);
     el?.focus();
@@ -134,7 +184,7 @@ export function HeatGrid({
         move(focusRow, 0);
         break;
       case "End":
-        move(focusRow, 11);
+        move(focusRow, last);
         break;
       default:
         return;
@@ -147,7 +197,7 @@ export function HeatGrid({
 
   let flat = -1;
   return (
-    <div className={cx("plan-heat", className)}>
+    <div className={cx("plan-heat", `plan-heat-cols-${n}`, ramp !== "ramp" && `plan-heat-ramp-${ramp}`, className)}>
       <div className="plan-heat-scroll">
         <table ref={tableRef} className="plan-heat-table" aria-label={label} onKeyDown={onKeyDown}>
           <thead>
@@ -155,21 +205,21 @@ export function HeatGrid({
               <th scope="col" className="plan-heat-corner">
                 {firstHeader}
               </th>
-              {MONTH_SHORT.map((m, col) => {
+              {columns.map((c, col) => {
                 const mark = markedCols?.find((x) => x.col === col);
                 return (
                   <th
-                    key={m}
+                    key={c.short}
                     scope="col"
                     className={cx("plan-heat-mh", showNow && col === nowCol && "is-now", mark && "is-marked")}
-                    aria-label={`${MONTH_NAMES[col]}${mark ? `, ${mark.label}` : ""}${showNow && col === nowCol ? ", this month" : ""}`}
+                    aria-label={`${c.name}${mark ? `, ${mark.label}` : ""}${showNow && col === nowCol ? ", this month" : ""}`}
                     title={mark?.label}
                   >
                     <span className="plan-heat-mh-long" aria-hidden="true">
-                      {m}
+                      {c.short}
                     </span>
                     <span className="plan-heat-mh-short" aria-hidden="true">
-                      {m[0]}
+                      {c.tiny}
                     </span>
                   </th>
                 );
@@ -188,7 +238,7 @@ export function HeatGrid({
                   <th scope="rowgroup" colSpan={1}>
                     {g.title}
                   </th>
-                  <td colSpan={12 + (trailHeader !== undefined ? 1 : 0)} aria-hidden="true" />
+                  <td colSpan={n + (trailHeader !== undefined ? 1 : 0)} aria-hidden="true" />
                 </tr>
               )}
               {g.rows.map((row) => {
@@ -219,7 +269,13 @@ export function HeatGrid({
                               tabIndex={rowIndex === focusRow && col === focus.col ? 0 : -1}
                               className={cx(
                                 "plan-heat-cell",
-                                `plan-heat-s${scoreStep(cell.score)}`,
+                                `plan-heat-s${cell.step ?? scoreStep(cell.score)}`,
+                                cell.text !== undefined && "has-text",
+                                cell.text !== undefined && lightInk[cell.step ?? scoreStep(cell.score)] && "is-ink-light",
+                                cell.best && "is-best",
+                                cell.best?.start && "is-best-start",
+                                cell.best?.end && "is-best-end",
+                                cell.best?.peak && "is-best-peak",
                                 cell.muted && "is-muted",
                                 cell.ring && "is-ring",
                                 cell.dot && "is-dot",
@@ -244,14 +300,20 @@ export function HeatGrid({
                                 else show(row.key, col, e.currentTarget, true);
                                 onCellClick?.(row, col);
                               }}
-                            />
+                            >
+                              {cell.text !== undefined && (
+                                <span className="plan-heat-cell-text" aria-hidden="true">
+                                  {cell.text}
+                                </span>
+                              )}
+                            </button>
                           ) : (
-                            <span className="plan-heat-cell is-empty" role="img" aria-label={`${MONTH_NAMES[col]}: no score`} />
+                            <span className="plan-heat-cell is-empty" role="img" aria-label={`${columns[col]?.name ?? ""}: no data`} />
                           )}
                         </td>
                       ))
                     ) : (
-                      <td colSpan={12} className="plan-heat-state">
+                      <td colSpan={n} className="plan-heat-state">
                         {row.state === "loading" ? (
                           <Skeleton height={20} radius={6} />
                         ) : (
@@ -282,7 +344,7 @@ export function HeatGrid({
           onClose={() => setTip(null)}
           anchorRef={anchorRef}
           placement="bottom-start"
-          label={`${tipRow?.label ?? ""}, ${MONTH_NAMES[tip.col]}`}
+          label={`${tipRow?.label ?? ""}, ${columns[tip.col]?.name ?? ""}`}
           role="group"
           autoFocus={false}
           className="plan-heat-pop"
@@ -295,9 +357,19 @@ export function HeatGrid({
 }
 
 /** Ramp key: "Low [7 swatches] High". */
-export function HeatLegend({ low, high, extra }: { low: string; high: string; extra?: ReactNode }) {
+export function HeatLegend({
+  low,
+  high,
+  extra,
+  ramp = "ramp",
+}: {
+  low: string;
+  high: string;
+  extra?: ReactNode;
+  ramp?: HeatGridProps["ramp"];
+}) {
   return (
-    <div className="plan-heat-legend" aria-hidden="true">
+    <div className={cx("plan-heat-legend", ramp !== "ramp" && `plan-heat-ramp-${ramp}`)} aria-hidden="true">
       <span>{low}</span>
       <span className="plan-heat-legend-ramp">
         {Array.from({ length: 7 }, (_, i) => (

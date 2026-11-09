@@ -3,8 +3,19 @@ import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
 import { apiUrl } from "../../../lib/api";
 import { assembleCityRows, bestWindow, climateWindowCaption, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
+import { CLIMATE_MODES, valueStep, type ClimateMode } from "../../../lib/climate";
+import {
+  bestRun,
+  bestRunLabel,
+  describeMetric,
+  formatMetric,
+  frameColumns,
+  frameValues,
+  type FrameMonth,
+  type Timeframe,
+} from "../../../lib/heatFrame";
 import { fetchRegions, fetchSeasonality, type SeasonMonth } from "../../../lib/seasonalityApi";
-import { MONTH_NAMES, MONTH_SHORT } from "../../../lib/repeatCopy";
+import { scoreStep } from "../../../lib/repeatCopy";
 import { WORLD_REGIONS, countryRegions, type WorldRegion } from "../../../lib/worldRegion";
 import {
   Button,
@@ -21,7 +32,7 @@ import {
 } from "../../../ui";
 import { IconCalendar, IconClose, IconPlus, IconSearch, IconWorld } from "../../../ui/icons";
 import type { City } from "../../../types";
-import { HeatGrid, HeatLegend, PopRow, type HeatCell, type HeatGroup, type HeatRow } from "./HeatGrid";
+import { HeatGrid, HeatLegend, PopRow, type HeatCell, type HeatGridProps, type HeatGroup, type HeatRow } from "./HeatGrid";
 import "./when.css";
 
 /** The server resolves a few uncovered cities per request, so nulls are asked for once more. */
@@ -40,20 +51,73 @@ function comfortWord(score: number): string {
 
 type View = "cities" | "countries";
 
+const RAMP: Record<ClimateMode, NonNullable<HeatGridProps["ramp"]>> = {
+  comfort: "ramp",
+  temperature: "temp",
+  rainfall: "wet",
+  greenery: "green",
+};
+
+const METRIC_NAMES: Record<ClimateMode, string> = {
+  comfort: "Comfort",
+  temperature: "Temperature",
+  rainfall: "Rain",
+  greenery: "Greenery",
+};
+
+const TIMEFRAMES: { value: Timeframe; label: string }[] = [
+  { value: "months", label: "Months" },
+  { value: "seasons", label: "Seasons" },
+];
+
+const PREFS_KEY = "meridian.when.frame";
+
+function readPrefs(): { metric: ClimateMode; timeframe: Timeframe } {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}");
+    const metric = CLIMATE_MODES.some((m) => m.value === raw.metric) ? (raw.metric as ClimateMode) : "comfort";
+    const timeframe = raw.timeframe === "seasons" ? "seasons" : "months";
+    return { metric, timeframe };
+  } catch {
+    return { metric: "comfort", timeframe: "months" };
+  }
+}
+
+/**
+ * Cells for one place: the chosen metric over the chosen timeframe, with the best window
+ * (always judged on comfort) bracketed. Returns the trail label too.
+ */
+function frameCells(
+  name: string,
+  months: FrameMonth[],
+  metric: ClimateMode,
+  tf: Timeframe
+): { cells: (HeatCell | null)[]; best: string } {
+  const cols = frameColumns(tf);
+  const comfort = frameValues(months, "comfort", tf);
+  const values = metric === "comfort" ? comfort : frameValues(months, metric, tf);
+  const run = bestRun(comfort);
+  const cells = values.map((v, col): HeatCell | null => {
+    if (v === null) return null;
+    const c = comfort[col] ?? 0;
+    const inRun = run?.cols.includes(col) ?? false;
+    const what = metric === "comfort" ? `${comfortWord(v).toLowerCase()}, comfort ${Math.round(v)}` : describeMetric(metric, v);
+    return {
+      score: c,
+      step: metric === "comfort" ? scoreStep(v) : valueStep(metric, v),
+      text: formatMetric(metric, v),
+      best: inRun ? { start: col === run!.start, end: col === run!.end, peak: col === run!.peak } : undefined,
+      label: `${name}, ${cols[col]!.name}: ${what}${inRun ? ", in its best window" : ""}`,
+    };
+  });
+  return { cells, best: bestRunLabel(run, tf) };
+}
+
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: "best", label: "Best time first" },
   { value: "peak", label: "Highest peak" },
   { value: "az", label: "A to Z" },
 ];
-
-/** "May–Sep", "All year", "Oct". */
-function bestSpan(scores: number[]): string {
-  const w = bestWindow(scores.map((score) => ({ score, tempC: 0, precipMm: 0 })));
-  if (!w) return "";
-  if (w.startMonth === 0 && w.endMonth === 11) return "All year";
-  if (w.startMonth === w.endMonth) return MONTH_SHORT[w.startMonth]!;
-  return `${MONTH_SHORT[w.startMonth]}–${MONTH_SHORT[w.endMonth]}`;
-}
 
 function matches(q: string, ...fields: (string | undefined)[]): boolean {
   const s = q.trim().toLowerCase();
@@ -81,6 +145,15 @@ export default function WhenToGo() {
   const [q, setQ] = useState("");
   const [region, setRegion] = useState<WorldRegion | "">("");
   const [sort, setSort] = useState<SortMode>("best");
+  const [metric, setMetric] = useState<ClimateMode>(() => readPrefs().metric);
+  const [timeframe, setTimeframe] = useState<Timeframe>(() => readPrefs().timeframe);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREFS_KEY, JSON.stringify({ metric, timeframe }));
+    } catch {
+      /* private mode: the choice just isn't remembered */
+    }
+  }, [metric, timeframe]);
   const [unavailable, setUnavailable] = useState(false);
   const [regionsError, setRegionsError] = useState(false);
   const [inflight, setInflight] = useState(0);
@@ -229,20 +302,14 @@ export default function WhenToGo() {
         ) : undefined,
       };
       if (Array.isArray(months) && months.length === 12) {
-        const scores = months.map((m: SeasonMonth) => m.score);
-        const w = bestWindow(months);
-        const cells: HeatCell[] = months.map((m, col) => ({
-          score: m.score,
-          dot: w?.peakMonth === col,
-          label: `${d.name}, ${MONTH_NAMES[col]}: ${comfortWord(m.score).toLowerCase()}, comfort ${m.score}`,
-        }));
-        return { ...base, state: "ready", cells, trail: <span className="plan-when-best">{bestSpan(scores)}</span> };
+        const { cells, best } = frameCells(d.name, months as SeasonMonth[], metric, timeframe);
+        return { ...base, state: "ready", cells, trail: <span className="plan-when-best">{best}</span> };
       }
       if (months === null) return { ...base, state: "none" };
       return { ...base, state: unavailable ? "unavailable" : "loading" };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry]);
+  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry, metric, timeframe]);
 
   const countryRows: HeatRow[] = useMemo(() => {
     if (!regions) return [];
@@ -259,22 +326,19 @@ export default function WhenToGo() {
       if (sort === "peak") return pb - pa || a.r.region.localeCompare(b.r.region);
       return (a.w?.startMonth ?? 12) - (b.w?.startMonth ?? 12) || pb - pa || a.r.region.localeCompare(b.r.region);
     });
-    return list.map(({ r, scores, w }) => {
+    return list.map(({ r }) => {
       const reg = regionOfCountry.get(r.region);
+      const { cells, best } = frameCells(r.region, r.months, metric, timeframe);
       return {
         key: `country:${r.region}`,
         label: r.region,
         sublabel: reg ? WORLD_REGIONS.find((x) => x.value === reg)?.label : undefined,
         state: "ready" as const,
-        cells: r.months.map((m, col) => ({
-          score: m.score,
-          dot: w?.peakMonth === col,
-          label: `${r.region}, ${MONTH_NAMES[col]}: ${comfortWord(m.score).toLowerCase()}, comfort ${m.score}`,
-        })),
-        trail: <span className="plan-when-best">{bestSpan(scores)}</span>,
+        cells,
+        trail: <span className="plan-when-best">{best}</span>,
       };
     });
-  }, [regions, q, region, sort, regionOfCountry]);
+  }, [regions, q, region, sort, regionOfCountry, metric, timeframe]);
 
   const suggestions = useMemo(
     () => (view === "cities" && q.trim().length >= 2 ? searchCities(cities, q, 5, rowIds) : []),
@@ -282,36 +346,61 @@ export default function WhenToGo() {
   );
 
   // ── Popover ──
+  const columns = frameColumns(timeframe);
   const renderPopover = (row: HeatRow, col: number) => {
     const cell = row.cells?.[col];
     if (!cell) return null;
-    const months = view === "cities" ? seasonality[row.key] : undefined;
-    const m = Array.isArray(months) ? months[col] : undefined;
-    const peak = cell.dot;
+    const months: FrameMonth[] | undefined =
+      view === "cities"
+        ? (Array.isArray(seasonality[row.key]) ? (seasonality[row.key] as SeasonMonth[]) : undefined)
+        : regions?.find((r) => `country:${r.region}` === row.key)?.months;
+    const at = (m: ClimateMode) => (months ? frameValues(months, m, timeframe)[col] : null);
+    const v = at(metric);
+    const others = CLIMATE_MODES.filter((m) => m.value !== metric);
     return (
       <div>
         <div className="plan-heat-pop-title">
-          {row.label}, {MONTH_NAMES[col]}
+          {row.label}, {columns[col]!.name}
         </div>
         {row.sublabel && <div className="plan-heat-pop-sub">{row.sublabel}</div>}
         <div className="plan-heat-pop-score">
-          <span className="plan-heat-pop-num">{cell.score}</span>
-          <span>{comfortWord(cell.score)}</span>
+          <span className="plan-heat-pop-num">{v === null ? "—" : formatMetric(metric, v)}</span>
+          <span>
+            {metric === "comfort"
+              ? comfortWord(v ?? 0)
+              : metric === "rainfall"
+                ? "mm a month"
+                : metric === "temperature"
+                  ? "mean °C"
+                  : "Greenery"}
+          </span>
         </div>
-        {m && (
-          <>
-            <PopRow k="Temperature" v={`${Math.round(m.tempC)}°C`} />
-            <PopRow k="Rain" v={`${Math.round(m.precipMm)} mm`} />
-          </>
-        )}
+        {others.map((m) => {
+          const x = at(m.value);
+          if (x === null) return null;
+          return (
+            <PopRow
+              key={m.value}
+              k={METRIC_NAMES[m.value]}
+              v={
+                m.value === "temperature"
+                  ? `${Math.round(x)}°C`
+                  : m.value === "rainfall"
+                    ? `${Math.round(x)} mm`
+                    : m.value === "comfort"
+                      ? `${Math.round(x)} · ${comfortWord(x)}`
+                      : String(Math.round(x))
+              }
+            />
+          );
+        })}
+        {timeframe === "seasons" && <PopRow k="Averaged over" v="Three months" />}
         {view === "countries" && <PopRow k="Average of" v="Cities in this country" />}
-        {(peak || view === "cities") && (
-          <div className="plan-heat-pop-hint">
-            {peak ? "Its most comfortable month." : null}
-            {peak && view === "cities" ? " " : null}
-            {view === "cities" ? "Tap the name to open the city." : null}
-          </div>
-        )}
+        <div className="plan-heat-pop-hint">
+          {cell.best?.peak ? "Its most comfortable stretch peaks here. " : cell.best ? "Inside its best window. " : ""}
+          {metric === "greenery" ? "Greenery is estimated from rain and warmth. " : ""}
+          {view === "cities" ? "Tap the name to open the city." : null}
+        </div>
       </div>
     );
   };
@@ -354,6 +443,20 @@ export default function WhenToGo() {
             onChange={(e) => setRegion(e.target.value as WorldRegion | "")}
             options={[{ value: "", label: "All regions" }, ...WORLD_REGIONS]}
           />
+          <Segmented<ClimateMode>
+            className="plan-when-seg"
+            label="Metric"
+            value={metric}
+            onChange={setMetric}
+            options={CLIMATE_MODES.map((m) => ({ value: m.value, label: m.label }))}
+          />
+          <Segmented<Timeframe>
+            className="plan-when-seg"
+            label="Timeframe"
+            value={timeframe}
+            onChange={setTimeframe}
+            options={TIMEFRAMES}
+          />
           <Select
             className="plan-when-select"
             aria-label="Sort"
@@ -384,7 +487,12 @@ export default function WhenToGo() {
       )}
 
       <div className="plan-when-meta">
-        <HeatLegend low="Less comfortable" high="More comfortable" />
+        <HeatLegend
+          low={CLIMATE_MODES.find((m) => m.value === metric)!.low}
+          high={CLIMATE_MODES.find((m) => m.value === metric)!.high}
+          ramp={RAMP[metric]}
+          extra={<span className="plan-when-legend-best">Best window</span>}
+        />
         <span className="plan-when-note" role="status">
           {loading ? (
             <>
@@ -423,6 +531,7 @@ export default function WhenToGo() {
               },
             ]}
             label="Loading"
+            columns={columns}
             firstHeader="Country"
             trailHeader="Best time"
             renderPopover={() => null}
@@ -449,10 +558,12 @@ export default function WhenToGo() {
       ) : (
         <HeatGrid
           groups={groups}
-          label={view === "cities" ? "Best months for your cities" : "Best months by country"}
+          label={`${METRIC_NAMES[metric]} by ${timeframe === "months" ? "month" : "season"}, ${view === "cities" ? "your cities" : "every country"}`}
           firstHeader={view === "cities" ? "City" : "Country"}
           trailHeader="Best time"
           renderPopover={renderPopover}
+          columns={columns}
+          ramp={RAMP[metric]}
         />
       )}
     </div>
