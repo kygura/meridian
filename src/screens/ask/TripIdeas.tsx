@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Badge, Button, ErrorState } from "../../ui";
+import { Badge, Button, ErrorState, SectionHeader } from "../../ui";
 import { IconCheck, IconClose } from "../../ui/icons";
 import { useMeridianStore } from "../../store";
 import { resolveTripColor } from "../../lib/tripColors";
@@ -40,12 +40,16 @@ export default function TripIdeas({ onKeep }: { onKeep: (tripId: string, name: s
 
   return (
     <section className="ask-ideas" aria-label="Trip ideas">
-      <header className="ask-ideas-head">
-        <h3>{cityName ? `Trip ideas around ${cityName}` : "Trip ideas"}</h3>
-        <Button size="sm" variant="ghost" onClick={() => useMeridianStore.getState().discardAgentCandidates()}>
-          Dismiss all
-        </Button>
-      </header>
+      <SectionHeader
+        level={3}
+        title={cityName ? `Trip ideas around ${cityName}` : "Trip ideas"}
+        meta={`${ideas.length} ${ideas.length === 1 ? "idea" : "ideas"}`}
+        actions={
+          <Button size="sm" variant="ghost" onClick={() => useMeridianStore.getState().discardAgentCandidates()}>
+            Dismiss all
+          </Button>
+        }
+      />
       <ul className="ask-ideas-list">
         {ideas.map((t) => {
           const d = days(t);

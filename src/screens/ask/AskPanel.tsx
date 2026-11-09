@@ -1,7 +1,7 @@
 import "./ask.css";
 import { useChat } from "ai/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, type FormEvent, type KeyboardEvent } from "react";
-import { Chip, ErrorState, IconButton, Select, Sheet, Textarea, toast, useJournalToken } from "../../ui";
+import { Chip, EmptyState, ErrorState, IconButton, Select, Sheet, Textarea, toast, useJournalToken } from "../../ui";
 import { IconAsk, IconClose, IconEdit, IconSend, IconSparkle } from "../../ui/icons";
 import { apiUrl } from "../../lib/api";
 import { bearerHeaders } from "../../lib/replayMatch";
@@ -86,7 +86,7 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
 
   // Keep the newest turn in view while it streams.
   const last = messages[messages.length - 1];
-  const scroller = () => endRef.current?.closest<HTMLElement>(".ask-thread, .ui-sheet-body") ?? null;
+  const scroller = () => endRef.current?.closest<HTMLElement>(".ui-sheet-body") ?? null;
   const stick = useRef(true);
   useEffect(() => {
     const el = scroller();
@@ -143,22 +143,23 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
   const thread = (
     <div className="ask-thread-inner">
       {messages.length === 0 ? (
-        <div className="ask-intro">
-          <span className="ask-intro-icon" aria-hidden="true">
-            <IconAsk size={24} />
-          </span>
-          <p className="ask-intro-title">Ask about places, seasons and prices</p>
-          <p className="ask-intro-desc">
-            {unlocked ? "Ask can also look through your past trips to find places like them." : "Unlock your journal in Settings and Ask can compare places with your past trips."}
-          </p>
-          <div className="ask-prompts" aria-label="Suggested questions">
-            {PROMPTS.map((p) => (
-              <Chip key={p} icon={<IconSparkle size={14} />} onClick={() => send(p)}>
-                {p}
-              </Chip>
-            ))}
-          </div>
-        </div>
+        <EmptyState
+          className="ask-intro"
+          icon={<IconAsk />}
+          title="Ask about places, seasons and prices"
+          description={
+            unlocked ? "Ask can also look through your past trips to find places like them." : "Unlock your journal in Settings and Ask can compare places with your past trips."
+          }
+          action={
+            <div className="ask-prompts" role="group" aria-label="Suggested questions">
+              {PROMPTS.map((p) => (
+                <Chip key={p} icon={<IconSparkle size={14} />} onClick={() => send(p)}>
+                  {p}
+                </Chip>
+              ))}
+            </div>
+          }
+        />
       ) : (
         <ol className="ask-thread-list" aria-label="Conversation">
           {messages.map((m) => (
@@ -267,16 +268,13 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
         <div className="ui-sheet-titles">
           <h2 className="ui-sheet-title">Ask</h2>
         </div>
-        <div className="ask-docked-tools">
-          {modelPicker}
-          {newChatButton}
-          <IconButton label="Close" icon={<IconClose />} onClick={onClose} />
-        </div>
+        {modelPicker}
+        {newChatButton}
+        <IconButton label="Close" icon={<IconClose />} onClick={onClose} />
       </header>
-      <div className="ask-thread">
-        {thread}
-      </div>
-      <div className="ask-docked-foot">{composer}</div>
+      {/* Same body and footer as <Sheet>, so the docked column and the phone sheet match. */}
+      <div className="ui-sheet-body">{thread}</div>
+      <footer className="ui-sheet-footer ask-footer">{composer}</footer>
     </div>
   );
 }
