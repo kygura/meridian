@@ -21,6 +21,7 @@ import {
   UnlockCard,
   toast,
   useJournalToken,
+  SectionHeader,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
 import { CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
@@ -284,9 +285,7 @@ function BestMonths({ cityId }: { cityId: string }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${cityId}-months`}>
-      <h3 className="map-city-h" id={`${cityId}-months`}>
-        When to go {summary ? <small>{summary}</small> : null}
-      </h3>
+      <SectionHeader level={3} id={`${cityId}-months`} title="When to go" meta={summary || null} />
       {body}
     </section>
   );
@@ -301,9 +300,7 @@ function AtAGlance({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-glance`}>
-      <h3 className="map-city-h" id={`${city.id}-glance`}>
-        At a glance
-      </h3>
+      <SectionHeader level={3} id={`${city.id}-glance`} title="At a glance" />
       <div className="map-facts">
         {city.population ? (
           <span>
@@ -415,9 +412,7 @@ function Visits({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-visits`}>
-      <h3 className="map-city-h" id={`${city.id}-visits`}>
-        Your visits {unlocked && visits.length ? <small className="num">{visits.length}</small> : null}
-      </h3>
+      <SectionHeader level={3} id={`${city.id}-visits`} title="Your visits" meta={unlocked && visits.length ? String(visits.length) : null} />
       {body}
     </section>
   );
@@ -448,9 +443,7 @@ function Briefing({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-brief`}>
-      <h3 className="map-city-h" id={`${city.id}-brief`}>
-        What’s happening in {country}
-      </h3>
+      <SectionHeader level={3} id={`${city.id}-brief`} title={`What’s happening in ${country}`} />
       {advisories.length ? (
         <ul className="map-watch">
           {advisories.map((a) => (
@@ -575,9 +568,7 @@ function WorldNews({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-news`}>
-      <h3 className="map-city-h" id={`${city.id}-news`}>
-        {local.length || !region || !shown.length ? `News from ${country}` : `News from ${regionLabel(region)}`}
-      </h3>
+      <SectionHeader level={3} id={`${city.id}-news`} title={local.length || !region || !shown.length ? `News from ${country}` : `News from ${regionLabel(region)}`} />
       {body}
     </section>
   );

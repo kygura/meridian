@@ -20,7 +20,7 @@ export function BookingReview({ offer, draft, search, onOfferExpire }: { offer: 
     <div className="plan-flights-review">
       <ProvenanceNote source={offer.source} kind="booking" />
       <Card padding="md">
-        <h3 className="plan-flights-h3">Flight</h3>
+        <h3 className="ui-section-title">Flight</h3>
         <dl className="plan-flights-dl">
           <Row label="Route">
             {search.origin?.name} <span className="iata muted">{search.origin?.iata}</span> to {search.dest?.name}{" "}
@@ -45,7 +45,7 @@ export function BookingReview({ offer, draft, search, onOfferExpire }: { offer: 
         </dl>
       </Card>
       <Card padding="md">
-        <h3 className="plan-flights-h3">Lead passenger</h3>
+        <h3 className="ui-section-title">Lead passenger</h3>
         <dl className="plan-flights-dl">
           <Row label="Name">{passengerName(draft)}</Row>
           <Row label="Born">

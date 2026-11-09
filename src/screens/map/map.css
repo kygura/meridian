@@ -636,29 +636,6 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-.map-city-h {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding-bottom: var(--space-2);
-  border-bottom: var(--border-width) solid var(--rule);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--text);
-}
-.map-city-h small {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-regular);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--muted);
-}
 .map-city-note {
   font-size: var(--text-sm);
   color: var(--muted);

@@ -40,6 +40,12 @@
   display: flex;
   width: 100%;
 }
+/* A full-width button with an offset shadow leaves room for the shadow, so it
+   lines up with the right edge of the controls above it. */
+.ui-btn--block.ui-btn--primary,
+.ui-btn--block.ui-btn--danger {
+  width: calc(100% - 3px);
+}
 .ui-btn-label {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1182,6 +1188,13 @@ input[type="number"].ui-input {
   justify-content: space-between;
   gap: var(--space-3);
   min-height: var(--control-h);
+}
+/* In sheets and side panels sections stack without cards, so the heading
+   carries a hairline rule to separate them. */
+.ui-sheet-body .ui-section-head {
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--rule);
+  min-height: 0;
 }
 .ui-section-titles {
   display: flex;

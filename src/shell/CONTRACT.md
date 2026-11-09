@@ -116,6 +116,14 @@ need, but don't reorder or restyle them:
    a muted meta (count or summary) and small ghost/icon actions on the right. Section
    headings never use the serif; that belongs to page, sheet and empty-state titles.
 
+**Sheets and side panels** (city panel, quick log, booking, watches, filters, the docked
+Ask column) follow the same order inside `<Sheet>`: the sheet header is the title row (serif
+title, description as the subtitle, close and `headerExtra` on the right), then sections
+opened by `<SectionHeader level={3}>`. Inside a sheet the section heading carries a hairline
+rule, because sheet sections stack without cards. A heading *inside a card* (trip editor
+cards, booking review) is a plain `<h3 className="ui-section-title">`, with no rule. The
+docked Ask column reuses `.ui-sheet-header` / `.ui-sheet-title` so it matches.
+
 Global actions: "Log a trip" sits in the sidebar as a secondary button on desktop (so the
 page's own primary stays the only filled button), and as the Map's floating button on phones
 only.

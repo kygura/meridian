@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { fetchLivability, livabilityFacts, type LivabilityDetail } from "../../lib/livability";
 import { hrefFor } from "../../lib/router";
-import { Skeleton } from "../../ui";
+import { SectionHeader, Skeleton } from "../../ui";
 import type { City } from "../../types";
 
 function Meter({ label, value, hint }: { label: string; value: number | null; hint?: string }) {
@@ -41,9 +41,7 @@ export default function CityLiveLove({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-live`}>
-      <h3 className="map-city-h" id={`${city.id}-live`}>
-        Live &amp; love
-      </h3>
+      <SectionHeader level={3} id={`${city.id}-live`} title="Live & love" />
       {!data ? (
         <Skeleton height={120} />
       ) : (

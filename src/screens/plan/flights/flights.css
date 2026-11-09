@@ -8,20 +8,9 @@
 }
 
 
-.plan-flights-h3 {
-  margin: 0;
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-semibold);
-  line-height: var(--leading-tight);
-  font-family: var(--font-mono);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-  font-style: normal;
-}
 
 .plan-flights-sub {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
 }
 
