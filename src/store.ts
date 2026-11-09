@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { TRIP_COLORS, randomTripColor } from "./lib/tripColors";
 import { mergeTrips } from "./lib/tripTransfer";
 import { withMonths } from "./lib/season";
+import { DEFAULT_DEPARTURE } from "./lib/tripPlan";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -64,6 +65,13 @@ export interface MeridianState {
   setTripSeason: (tripId: string, season: MonthSpan | undefined) => void;
   /** Plan the season for a year, or back to any year with undefined. */
   setTripYear: (tripId: string, year: number | undefined) => void;
+  /** Where trips leave from unless a trip sets its own (persisted; default LPA). */
+  homeDeparture: TripNode;
+  setHomeDeparture: (node: TripNode) => void;
+  /** The trip's own departure, or undefined to follow homeDeparture. */
+  setTripDeparture: (tripId: string, node: TripNode | undefined) => void;
+  /** Fly back to the departure after the last stop (default true). */
+  setTripReturnHome: (tripId: string, returnHome: boolean) => void;
   reorderTripNodes: (tripId: string, fromIndex: number, toIndex: number) => void;
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
@@ -153,7 +161,16 @@ export function modernTripName(name: string): string {
   return name;
 }
 
-export function migratePersisted(persisted: unknown, _version: number): Pick<MeridianState, "trips" | "activeTripId"> {
+function isNode(n: unknown): n is TripNode {
+  if (!n || typeof n !== "object") return false;
+  const o = n as Record<string, unknown>;
+  return typeof o.cityId === "string" && typeof o.name === "string" && Number.isFinite(o.lat) && Number.isFinite(o.lng);
+}
+
+export function migratePersisted(
+  persisted: unknown,
+  _version: number
+): Pick<MeridianState, "trips" | "activeTripId"> & Partial<Pick<MeridianState, "homeDeparture">> {
   const p = (persisted && typeof persisted === "object" ? persisted : {}) as Record<string, unknown>;
   const trips = Array.isArray(p.trips)
     ? (p.trips as Trip[])
@@ -161,7 +178,7 @@ export function migratePersisted(persisted: unknown, _version: number): Pick<Mer
         .map((t) => ({ ...t, name: typeof t.name === "string" ? modernTripName(t.name) : "Trip" }))
     : [];
   const activeTripId = typeof p.activeTripId === "string" && trips.some((t) => t.id === p.activeTripId) ? p.activeTripId : null;
-  return { trips, activeTripId };
+  return isNode(p.homeDeparture) ? { trips, activeTripId, homeDeparture: p.homeDeparture } : { trips, activeTripId };
 }
 
 export const useMeridianStore = create<MeridianState>()(
@@ -224,6 +241,24 @@ export const useMeridianStore = create<MeridianState>()(
             if (t.id !== tripId) return t;
             const { year: _old, ...rest } = t;
             return year ? { ...rest, year } : rest;
+          }),
+        })),
+      homeDeparture: DEFAULT_DEPARTURE,
+      setHomeDeparture: (node) => set({ homeDeparture: node }),
+      setTripDeparture: (tripId, node) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            const { departure: _old, ...rest } = t;
+            return node ? { ...rest, departure: node } : rest;
+          }),
+        })),
+      setTripReturnHome: (tripId, returnHome) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            const { returnHome: _old, ...rest } = t;
+            return returnHome ? rest : { ...rest, returnHome: false };
           }),
         })),
       addCityToTrip: (tripId, node) =>
@@ -461,6 +496,7 @@ export const useMeridianStore = create<MeridianState>()(
       partialize: (state) => ({
         trips: state.trips.filter((t) => t.origin !== "agent"),
         activeTripId: state.activeTripId,
+        homeDeparture: state.homeDeparture,
       }),
     }
   )

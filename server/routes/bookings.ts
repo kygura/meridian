@@ -74,7 +74,8 @@ const snapshotSchema = z.object({
 const createSchema = z.object({
   offerId: z.string().min(1),
   tripId: z.string().optional(),
-  legIndex: z.number().int().min(0).optional(),
+  // 0.. = stop-to-stop legs; -1 = departure → first stop, -2 = last stop → departure.
+  legIndex: z.number().int().min(-2).optional(),
   passengers: z.array(passengerSchema).min(1),
   // Offers aren't persisted server-side; the client hands the chosen offer back.
   searchSnapshot: snapshotSchema,

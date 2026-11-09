@@ -89,6 +89,13 @@ describe.each(backends)("trips routes ($name backend)", ({ url }) => {
     expect((await req("PUT", "/api/trips/bad-year", { ...trip(), year: 27 })).status).toBe(400);
   });
 
+  it("stores a trip's departure and one-way flag", async () => {
+    const departure = { cityId: "madrid-spain", name: "Madrid", iata: "MAD", lat: 40.42, lng: -3.7 };
+    const { trip: stored } = await (await req("PUT", "/api/trips/from-mad", { ...trip(), departure, returnHome: false })).json();
+    expect(stored).toMatchObject({ departure, returnHome: false });
+    expect((await req("PUT", "/api/trips/bad-dep", { ...trip(), departure: { name: "x" } })).status).toBe(400);
+  });
+
   it("rejects bad ids and bodies", async () => {
     expect((await req("PUT", "/api/trips/bad%20id", trip())).status).toBe(400);
     expect((await req("PUT", "/api/trips/ok", { ...trip(), status: "nope" })).status).toBe(400);
