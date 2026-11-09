@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { Button, Popover, Segmented, Select, UnlockCard, useJournalToken } from "../../ui";
+import { Button, IconButton, Popover, SectionHeader, Segmented, Select, Sheet, UnlockCard, useIsDesktop, useJournalToken } from "../../ui";
 import { IconLayers } from "../../ui/icons";
 import { useMapPrefs, type CityNames, type MapLayer } from "../../shell/mapPrefs";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
@@ -79,6 +79,7 @@ export function MonthPicker({ value, onChange }: { value: number; onChange: (m: 
 export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps) {
   const [open, setOpen] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const isDesktop = useIsDesktop();
   const anchor = useRef<HTMLButtonElement>(null);
   const { unlocked } = useJournalToken();
   const month = useMapPrefs((s) => s.month);
@@ -108,21 +109,10 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
     "No logged trips yet"
   );
 
-  return (
-    <>
-      <Button
-        ref={anchor}
-        variant="secondary"
-        icon={<IconLayers />}
-        className="map-float-btn"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        Layers
-      </Button>
-      <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchor} placement="bottom-end" label="Map layers" className="map-layers-pop">
-        <p className="map-layers-title map-kicker">Trips</p>
+  const content = (
+    <div className="map-layers">
+      <section className="map-layers-group" aria-label="Trips">
+        <SectionHeader level={3} title="Trips" />
         <SwitchRow layer="past" name="Past trips" hint={pastHint} disabled={!unlocked}>
           {null}
         </SwitchRow>
@@ -136,8 +126,9 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
           )
         ) : null}
         <SwitchRow layer="planned" name="Planned trips" hint="Dashed until confirmed. Booked flights in green." />
-
-        <p className="map-layers-title map-layers-section map-kicker">Places and climate</p>
+      </section>
+      <section className="map-layers-group" aria-label="Places and climate">
+        <SectionHeader level={3} title="Places and climate" />
         <SwitchRow layer="cities" name="Cities" hint="More appear as you zoom in">
           <Segmented<CityNames>
             label="City names"
@@ -165,8 +156,9 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
             options={CLIMATE_MODES.map((m) => ({ value: m.value, label: m.label }))}
           />
         </SwitchRow>
-
-        <p className="map-layers-title map-layers-section map-kicker">Conditions</p>
+      </section>
+      <section className="map-layers-group" aria-label="Conditions">
+        <SectionHeader level={3} title="Conditions" />
         <SwitchRow layer="metrics" name="City metrics" hint="Safety, social, infrastructure, cost, crowds">
           <MetricControls />
         </SwitchRow>
@@ -177,7 +169,47 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
             <span>Leave conflict countries out of matches</span>
           </label>
         </SwitchRow>
-      </Popover>
+      </section>
+    </div>
+  );
+
+  return (
+    <>
+      {isDesktop ? (
+        <Button
+          ref={anchor}
+          variant="secondary"
+          icon={<IconLayers />}
+          className="map-float-btn"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          Layers
+        </Button>
+      ) : (
+        // Phone: icon only, so the finder gets the rest of the top row.
+        <IconButton
+          ref={anchor}
+          label="Map layers"
+          variant="secondary"
+          icon={<IconLayers />}
+          className="map-float-btn"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        />
+      )}
+      {isDesktop ? (
+        <Popover open={open} onClose={() => setOpen(false)} anchorRef={anchor} placement="bottom-end" label="Map layers" className="map-layers-pop">
+          {content}
+        </Popover>
+      ) : (
+        // Phone: a bottom sheet, like every other panel on phones.
+        <Sheet open={open} onClose={() => setOpen(false)} title="Map layers">
+          {content}
+        </Sheet>
+      )}
     </>
   );
 }

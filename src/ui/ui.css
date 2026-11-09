@@ -1191,7 +1191,8 @@ input[type="number"].ui-input {
 }
 /* In sheets and side panels sections stack without cards, so the heading
    carries a hairline rule to separate them. */
-.ui-sheet-body .ui-section-head {
+.ui-sheet-body .ui-section-head,
+.ui-popover .ui-section-head {
   padding-bottom: var(--space-2);
   border-bottom: var(--border-width) solid var(--rule);
   min-height: 0;
