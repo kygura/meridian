@@ -20,6 +20,7 @@ import livabilityRoutes from "./routes/livability.js";
 import overlaysRoutes from "./routes/overlays.js";
 import sharedRoutes from "./routes/shared.js";
 import rotationRoutes from "./routes/rotation.js";
+import notionRoutes from "./routes/notion.js";
 import { gateRoutes } from "./middleware/auth.js";
 import { installGuards } from "./middleware/guards.js";
 import authRoutes from "./routes/auth.js";
@@ -57,6 +58,8 @@ app.route("/api/livability", livabilityRoutes);
 app.route("/api/auth", authRoutes);
 // Owner-only; gated inside the router (ADR 0011).
 app.route("/api/rotation", rotationRoutes);
+// Owner-only; gated inside the router (ADR 0017).
+app.route("/api/notion", notionRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).
 app.route("/api/shared", sharedRoutes);
 

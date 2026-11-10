@@ -4,6 +4,7 @@ import { IconLock, IconMonitor, IconMoon, IconSettings, IconSun, IconUnlock, Ico
 import { useMeridianStore } from "../store";
 import { parseTripFile, serializeTrips } from "../lib/tripTransfer";
 import { useThemeStore, type ThemePref } from "./theme";
+import { NotionSection } from "./NotionSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -75,6 +76,7 @@ export function SettingsPanel() {
         />
       </section>
       <TripTransferSection />
+      {unlocked && <NotionSection />}
       <section className="shell-settings-section">
         <h3 className="shell-settings-heading">Account</h3>
         {unlocked ? (
