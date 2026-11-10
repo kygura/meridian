@@ -180,14 +180,18 @@ export function climateText(r: Pick<ReplayResult, "dims">): string {
   return parts.join(", ");
 }
 
-/** Crowds line: "Quieter (48 vs 62)". Empty when crowds were not scored. */
+/**
+ * Crowds line: "Quieter (48 vs 62)", plus where the place's figure comes from when known:
+ * measured visitor nights, or a guess from its climate. Empty when crowds were not scored.
+ */
 export function crowdText(r: Pick<ReplayResult, "dims">): string {
   const c = r.dims.find((d) => d.name === "crowdProxy");
   if (!c) return "";
   const v = Math.round(c.value);
   const t = Math.round(c.templateValue);
   const word = v < t - 3 ? "Quieter" : v > t + 3 ? "Busier" : "About the same";
-  return `${word} (${v} vs ${t})`;
+  const basis = c.basis === "nights" ? ", from visitor nights" : c.basis === "comfort" ? ", guessed from climate" : "";
+  return `${word} (${v} vs ${t})${basis}`;
 }
 
 /** Signed percent change of a price against its baseline, or undefined. */

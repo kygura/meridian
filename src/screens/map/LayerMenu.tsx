@@ -159,7 +159,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
       </section>
       <section className="map-layers-group" aria-label="Conditions">
         <SectionHeader level={3} title="Conditions" />
-        <SwitchRow layer="metrics" name="City metrics" hint="Safety, social, infrastructure, cost, crowds">
+        <SwitchRow layer="metrics" name="City metrics" hint="Safety, quality of life, internet, cost, crowds, healthcare">
           <MetricControls />
         </SwitchRow>
         <SwitchRow layer="events" name="Events" hint={`Eclipses, festivals and fixtures in ${MONTH_NAMES[month - 1]}`} />
@@ -260,7 +260,11 @@ function MetricControls() {
           </label>
         );
       })}
-      <p className="map-lm-note">Indicative scores, partly modelled. Higher affordability means cheaper.</p>
+      {colorBy !== "none" ? <p className="map-lm-note">{METRICS.find((m) => m.id === colorBy)?.basis}</p> : null}
+      <p className="map-lm-note">
+        Scores run 0 to 100 and come from measured data; affordability is an estimate, and higher means cheaper. Cities with no data for a
+        measure aren’t coloured and don’t match its filter.
+      </p>
     </div>
   );
 }

@@ -41,6 +41,13 @@ _Avoid_: week data
 A 0.25 degree grid square holding the monthly and weekly normals shared by every city inside it
 (`data/climate-normals.json`). The unit the climate backfill fetches and dedupes by.
 
+**Granularity**:
+How local a measured value is: city, region (a NUTS 2 area) or country. Shown beside every figure from place data, with its source and year. A value the sources lack is a gap, shown as "no data", never filled in.
+_Avoid_: accuracy
+
+**Place data**:
+The measured figures behind cost, rent, internet, healthcare, stability and visitors (`data/country-data.json`, `data/city-data.json`, ADR 0013).
+
 **Seasonality**:
 The 12-month Comfort Index profile of a city or region, rendered as a heatmap calendar.
 

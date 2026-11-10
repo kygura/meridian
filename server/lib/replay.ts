@@ -375,6 +375,7 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
           templateValue: template.crowdProxy,
           similarity: dimSimilarity("crowdProxy", crowd.value, template.crowdProxy),
           weight: w.crowd,
+          basis: crowd.basis,
         });
       }
     }

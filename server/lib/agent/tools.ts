@@ -13,6 +13,7 @@ import { join } from "path";
 import { z } from "zod";
 import { getCities, getCityById } from "../cities.js";
 import { computeFullScore } from "../scoring.js";
+import { placeDataInfo, placeFacts, type Fact, type FactGranularity, type PlaceFacts } from "../placeData.js";
 import { ensureDataDir } from "../paths.js";
 import {
   getFlightEstimate as getRealFlightEstimate,
@@ -48,21 +49,30 @@ export const REGION_COUNTRIES: Record<string, string[]> = {
   equator: ["Indonesia", "Kenya", "Ecuador", "Colombia", "Brazil", "Uganda", "Singapore", "Malaysia"],
 };
 
-function budgetTierFromEconomics(economics: number): "budget" | "mid" | "premium" {
-  if (economics >= 65) return "budget";
-  if (economics >= 35) return "mid";
+/** Monthly cost for one person, EUR: below this is "budget", at or above BUDGET_PREMIUM_EUR is "premium". */
+export const BUDGET_MID_EUR = 1300;
+export const BUDGET_PREMIUM_EUR = 2300;
+
+/** Budget tier from the estimated monthly cost (ADR 0013); null when there is no cost data. */
+export function budgetTier(monthlyEur: number | null | undefined): "budget" | "mid" | "premium" | null {
+  if (typeof monthlyEur !== "number") return null;
+  if (monthlyEur < BUDGET_MID_EUR) return "budget";
+  if (monthlyEur < BUDGET_PREMIUM_EUR) return "mid";
   return "premium";
 }
 
-function tierLabel(tier: "budget" | "mid" | "premium"): string {
-  if (tier === "budget") return "Budget-friendly";
-  if (tier === "premium") return "Premium cost";
-  return "Mid-range cost";
-}
+const GRAIN_WORDS: Record<FactGranularity, string> = { city: "city figure", region: "regional figure", country: "country figure" };
 
-function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>): PlaceResult {
-  const tier = budgetTierFromEconomics(score.economics);
+function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>, facts: PlaceFacts): PlaceResult {
   const popLabel = city.population > 0 ? `${city.population.toLocaleString()} people` : "population unknown";
+  const cost = facts.cost.monthlyEur;
+  const net = facts.internet.fixed ?? facts.internet.mobile;
+  const bits = [
+    popLabel,
+    score.overall === null ? "not enough data for a score" : `score ${score.overall} of 100 (${score.parts} of 6 measures)`,
+    cost ? `about €${cost.value.toLocaleString("en-US")} a month (estimate, ${GRAIN_WORDS[cost.granularity]})` : "no cost data",
+    net ? `${net.downMbps} Mbps${facts.internet.fixed ? "" : " mobile"}` : "no internet data",
+  ];
   return {
     cityId: city.id,
     name: city.name,
@@ -72,7 +82,7 @@ function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>): 
     lng: city.lng,
     population: city.population,
     score: score.overall,
-    summaryLine: `${popLabel} · score ${score.overall} of 100 · ${tierLabel(tier)}`,
+    summaryLine: bits.join(" · "),
   };
 }
 
@@ -107,23 +117,132 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<PlaceRes
       if (countries) pool = pool.filter((c) => countries.includes(c.country));
     }
 
-    let scored = pool.map((c) => ({ city: c, score: computeFullScore(c) }));
+    let scored = pool.map((c) => ({ city: c, score: computeFullScore(c), facts: placeFacts(c) }));
 
+    // Cities without the data a filter needs are left out of that filter, not guessed into it.
     if (params.budgetTier) {
-      scored = scored.filter((e) => budgetTierFromEconomics(e.score.economics) === params.budgetTier);
+      scored = scored.filter((e) => budgetTier(e.facts.cost.monthlyEur?.value) === params.budgetTier);
     }
     if (typeof params.minScore === "number") {
       const minScore = params.minScore;
-      scored = scored.filter((e) => e.score.overall >= minScore);
+      scored = scored.filter((e) => e.score.overall !== null && e.score.overall >= minScore);
     }
 
-    scored.sort((a, b) => b.score.overall - a.score.overall || a.city.name.localeCompare(b.city.name));
+    // Scored cities first (best first); cities with too little data for a score go last, by name.
+    scored.sort((a, b) => (b.score.overall ?? -1) - (a.score.overall ?? -1) || a.city.name.localeCompare(b.city.name));
 
-    return scored.slice(0, limit).map((e) => toPlaceResult(e.city, e.score));
+    return scored.slice(0, limit).map((e) => toPlaceResult(e.city, e.score, e.facts));
   } catch (err) {
     console.error("[agent/tools] searchPlaces error:", err instanceof Error ? err.message : String(err));
     return [];
   }
+}
+
+// ── get_place_facts ──────────────────────────────────────────────────
+
+export const getPlaceFactsParams = z.object({ cityId: z.string() });
+export type GetPlaceFactsParams = z.infer<typeof getPlaceFactsParams>;
+
+export interface PlaceFactLine {
+  /** What the figure is ("Monthly cost for one person"). */
+  label: string;
+  /** The figure in words, or "No data". */
+  value: string;
+  /** "city", "region" or "country": how local the figure is. Absent when there is no data. */
+  granularity?: FactGranularity;
+  /** The named source and year. Absent when there is no data. */
+  source?: string;
+  estimate?: boolean;
+}
+
+export interface PlaceFactsResult {
+  available: boolean;
+  cityId?: string;
+  name?: string;
+  country?: string;
+  facts?: PlaceFactLine[];
+  /** Labels of the figures there is no data for. */
+  gaps?: string[];
+  note?: string;
+}
+
+/**
+ * Measured cost, rent, internet, healthcare, stability and visitor figures for a city, each with
+ * its source, year and how local it is. Figures the sources don't have come back as "No data".
+ */
+export async function getPlaceFacts(params: GetPlaceFactsParams): Promise<PlaceFactsResult> {
+  try {
+    const city = getCityById(params.cityId);
+    if (!city) return { available: false };
+    const f = placeFacts(city, (id) => getCityById(id)?.name);
+    const { sources, anchor } = placeDataInfo();
+    const src = (key: string, year?: number) => `${sources[key]?.name ?? key}${year ? `, ${year}` : ""}`;
+    const lines: PlaceFactLine[] = [];
+    const add = (label: string, fact: Fact | null, text: (f: Fact) => string) =>
+      lines.push(
+        fact
+          ? { label, value: text(fact), granularity: fact.granularity, source: src(fact.source, fact.year || undefined), ...(fact.estimate ? { estimate: true } : {}) }
+          : { label, value: "No data" }
+      );
+    const eur = (n: number) => `€${n.toLocaleString("en-US")}`;
+    add("Monthly cost for one person", f.cost.monthlyEur, (x) => `about ${eur(x.value)} a month, housing included`);
+    add("Price level", f.cost.index, (x) => `${x.value} (${x.granularity === "city" ? "Brussels" : "Belgium"} = 100)`);
+    add("Rent, 1-bedroom flat", f.cost.rent1br, (x) => `${eur(x.value)} a month on average`);
+    if (!f.cost.rent1br && f.cost.rentReference)
+      add(`Rent, 1-bedroom flat in ${f.cost.rentReference.place}`, f.cost.rentReference, (x) => `${eur(x.value)} a month on average (the capital, not this city)`);
+    for (const [label, s] of [["Fixed internet", f.internet.fixed], ["Mobile internet", f.internet.mobile]] as const)
+      lines.push(
+        s
+          ? {
+              label,
+              value: `${s.downMbps} Mbps down, ${s.upMbps} up, ${s.latencyMs} ms latency (${s.tests.toLocaleString("en-US")} tests within ${s.radiusKm} km)`,
+              granularity: "city",
+              source: src("internet"),
+            }
+          : { label, value: "No data" }
+      );
+    add("Healthcare coverage", f.health.uhc, (x) => `${x.value} of 100 on the WHO service coverage index`);
+    add("Physicians", f.health.physicians, (x) => `${x.value} per 1,000 people`);
+    add("Hospital beds", f.health.beds, (x) => `${x.value} per 1,000 people`);
+    add("Political stability", f.stability.estimate, (x) => `${x.value} on a scale from about -2.5 (worst) to 2.5 (best)`);
+    add("Homicides", f.stability.homicides, (x) => `${x.value} per 100,000 people a year`);
+    add("Visitors from abroad", f.crowds.arrivalsPerResident, (x) => `${x.value} arrivals per resident a year`);
+    add("Tourist nights", f.crowds.nightsPerResident, (x) => `${x.value} nights per resident a year in ${x.place}`);
+    const m = f.crowds.months;
+    lines.push(
+      m
+        ? {
+            label: "Busiest months",
+            value: busiestMonths(m.index),
+            granularity: m.granularity,
+            source: src(m.source),
+          }
+        : { label: "Busiest months", value: "No data" }
+    );
+    return {
+      available: true,
+      cityId: city.id,
+      name: city.name,
+      country: city.country,
+      facts: lines,
+      gaps: lines.filter((l) => l.value === "No data").map((l) => l.label),
+      note: anchor
+        ? `Monthly cost is an estimate: what a resident of ${anchor.place} spends a month (€${anchor.monthlyEur.toLocaleString("en-US")}, Eurostat ${anchor.y}) repriced at local prices. Country figures apply to every city in the country.`
+        : undefined,
+    };
+  } catch (err) {
+    console.error("[agent/tools] getPlaceFacts error:", err instanceof Error ? err.message : String(err));
+    return { available: false };
+  }
+}
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Jul, Aug, Jun (Jul is 2.1x an average month)". */
+export function busiestMonths(index: number[]): string {
+  const ranked = index.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+  const top = ranked.slice(0, 3);
+  return `${top.map((t) => MONTH_SHORT[t.i]).join(", ")} (${MONTH_SHORT[top[0]!.i]} is ${(top[0]!.v / 100).toFixed(1)}x an average month)`;
 }
 
 // ── get_place_images ─────────────────────────────────────────────────

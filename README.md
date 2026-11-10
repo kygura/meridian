@@ -65,6 +65,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest. Set `TEST_DATABASE_URL` to also run the Postgres tests against a scratch database |
 | `npm run build:data` | Rebuild `data/airports.json` (needs Bun) |
+| `npm run build:place-data` | Rebuild `data/country-data.json` and `data/city-data.json` from Eurostat, World Bank, Ookla and Wikipedia (hours; `PAGEVIEW_MAX`, `OOKLA_QUARTER` limit it; cached in `data/cache/realdata`) |
 | `npm run build:seasonality` | Rebuild `data/seasonality.json` from Open-Meteo (needs Bun) |
 | `npm run backfill:climate` | Fill `data/climate-normals.json` (monthly PM2.5, weekly normals) cell by cell within Open-Meteo's free-tier limits; resumable. `-- --wait` sleeps through limits, `-- --dry-run` prints the plan |
 
@@ -117,7 +118,8 @@ Open decisions carried over from the old wiki:
 
 - **Rate limits are per server process.** On Vercel each warm instance counts on its own and forgets on a cold start, so the limits on Ask, news and flight search slow abuse down but are not a hard budget (ADR 0009). The sign-in lockout is stored and does not have this gap.
 - **Climate coverage is partial and fills in slowly.** Open-Meteo's free tier allows about 80 climate cells a day, so the committed `data/climate-normals.json` holds the first 39 of 5,463 cells (49 cities with weekly normals, 48 with air quality; 134 of 5,878 cities have any monthly figure, counting the 120-city seed and on-demand fetches). The nightly job and `npm run backfill:climate` close the rest, about 70 days of quota. Cities without air or weekly data show "no data yet" and fall back to months; the air penalty is not applied to them.
-- **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
+- **Crowds are real only in part.** Country arrivals per resident cover most cities; monthly busyness is measured only in Europe (Eurostat nights) and for 920 big cities (Wikipedia views, a weak signal). Elsewhere it falls back to the labelled comfort-curve proxy (ADR 0013).
+- **Cost and rent are mostly country-level.** City-level cost exists for 181 cities and rent for 41 (Eurostat); the rest use the World Bank price level, marked as a country figure and an estimate. Cities in countries with no price level show no cost.
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.

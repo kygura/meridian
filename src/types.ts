@@ -31,7 +31,8 @@ export type MetricCategory =
   | "cost"
   | "connectivity"
   | "events"
-  | "beauty";
+  | "beauty"
+  | "health";
 
 export type Granularity =
   | "city"
@@ -51,6 +52,16 @@ export interface MetricValue {
   unit: string;
   normalized: number; // 0-100
   label?: string;
+  /** How local this value is (ADR 0013). A country value is shared by every city in the country. */
+  granularity?: "city" | "region" | "country";
+  /** Year the figure describes, when the source gives one. */
+  year?: number;
+  /** Key of the source in GET /api/metrics/facts/:cityId `sources`. */
+  source?: string;
+  /** True when worked out from measured inputs rather than measured directly. */
+  estimate?: boolean;
+  /** The figure in plain words ("About €1,450 a month for one person"). */
+  note?: string;
 }
 
 export interface MetricSurface {
@@ -64,13 +75,18 @@ export interface MetricSurface {
   values: MetricValue[];
 }
 
+/** Each part is null when there is no data for the city (ADR 0013); nothing is filled in. */
 export interface MeridianScore {
-  overall: number;
-  economics: number;
-  quality: number;
-  climate: number;
-  stability: number;
-  nomadInfra: number;
+  /** Weighted mean of the parts that exist; null with fewer than three. */
+  overall: number | null;
+  economics: number | null;
+  quality: number | null;
+  climate: number | null;
+  stability: number | null;
+  nomadInfra: number | null;
+  health: number | null;
+  /** How many of the six parts have data. */
+  parts: number;
 }
 
 /**
@@ -147,7 +163,7 @@ export interface ShortlistEntry {
   lng: number;
   iata?: string;
   addedAt: string;
-  score?: number;
+  score?: number | null;
 }
 
 export interface AgentBrief {
@@ -257,7 +273,8 @@ export interface PlaceResult {
   lat: number;
   lng: number;
   population: number;
-  score: number;
+  /** Null when there is too little data for a score (ADR 0013). */
+  score: number | null;
   summaryLine: string;
   /** Set when the place came from a journal replay (find_similar_windows): the matched month + breakdown. */
   replayMatch?: { match: number; month: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] };
@@ -512,8 +529,11 @@ export interface ReplayDimScore {
   name: ReplayDim;
   value: number;
   templateValue: number;
-  /** "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder). */
-  basis?: "dealRating";
+  /**
+   * "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder).
+   * On crowds: "nights" when the month's busyness is measured visitor nights, "comfort" when it is the climate fallback.
+   */
+  basis?: "dealRating" | "nights" | "comfort";
   /** Share of the final match this dimension contributed (0-1, sums to 1 over scoredOn). */
   contribution: number;
 }
