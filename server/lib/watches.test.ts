@@ -129,6 +129,17 @@ describe("runWatches", () => {
     expect((await listWatches())[0]!.lastRunAt).toBe(NOW2.toISOString());
   });
 
+  it("at week resolution, alerts each week once, judged by the week's own priced day", async () => {
+    await createWatch({ label: "weekly", query: { ...QUERY, resolution: "week" } });
+    // NOW1 window: 11 Dec .. 5 Feb. Weeks 1 and 4 are both January (4 Jan, 25 Jan), both inside.
+    // Week 49 is priced on 6 Dec, outside, although 15 Dec (its month's 15th) is inside.
+    const wk = (cityId: string, month: number, week: number) => ({ ...res(cityId, month, cheap), week });
+    const r = await runWatches(deps([wk("lisbon-portugal", 1, 1), wk("lisbon-portugal", 1, 4), wk("lisbon-portugal", 12, 49)]));
+    expect(r.alerts.map((a) => a.week).sort()).toEqual([1, 4]);
+    expect(new Set(r.alerts.map((a) => a.id)).size).toBe(2);
+    expect(await listAlerts()).toHaveLength(2);
+  });
+
   it("filters results to the lead window and narrows the replay query to those months", async () => {
     await createWatch({ label: "w", query: { ...QUERY, constraints: { months: [3, 12, 1], regions: ["europe"] } } });
     const d = deps([res("a", 12, cheap), res("b", 3, cheap), res("c", 7, cheap)]);
@@ -262,6 +273,14 @@ describe("alertNotice / notifyAlert", () => {
     const n = alertNotice({ ...alert, source: "mock", baselineEur: 300 }, { ...watch, priceRule: { maxEur: 300 } });
     expect(n.body).toContain("at or under your 300 EUR limit");
     expect(n.body).toContain("mock price");
+    // The title is what a lock screen or chat preview shows: it says mock up front.
+    expect(n.title).toMatch(/^Mock price, not a fare: /);
+    expect(n.body).toMatch(/^This is a mock price, not a real fare/);
+  });
+
+  it("names the week for a weekly alert", () => {
+    const n = alertNotice({ ...alert, month: 1, week: 4 }, watch);
+    expect(n.title).toBe("nowhere-x in the week of 25 Jan at 80 EUR");
   });
 
   const cheap = { priceEur: 80, baselineEur: 150 };

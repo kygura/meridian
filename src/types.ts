@@ -651,6 +651,8 @@ export interface Alert {
   watchId: string;
   cityId: string;
   month: number;
+  /** Week of the year (1-52) for an alert on a weekly result; its price is for that week's middle day. */
+  week?: number;
   priceEur: number;
   baselineEur: number;
   source: string;
