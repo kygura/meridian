@@ -11,7 +11,8 @@ export type Route =
   | { view: "trips"; tab: TripsTab; tripId?: string; journeyId?: string }
   | { view: "plan"; tab: PlanTab; journeyId?: string; stopIndex?: number }
   | { view: "inbox" }
-  | { view: "world" };
+  | { view: "world" }
+  | { view: "rotation" };
 
 export type View = Route["view"];
 
@@ -42,6 +43,7 @@ export function parseHash(hash: string): Route {
   if (path === "/") return { view: "map" };
   if (path === "/inbox") return { view: "inbox" };
   if (path === "/world") return { view: "world" };
+  if (path === "/rotation") return { view: "rotation" };
 
   // Trips
   if (path === "/trips" || path === "/trips/upcoming" || path === "/trips/plan") {
@@ -79,6 +81,8 @@ export function routePath(route: Route): string {
       return "/inbox";
     case "world":
       return "/world";
+    case "rotation":
+      return "/rotation";
     case "trips":
       if (route.tab === "upcoming") return route.tripId ? `/trips/plan/${enc(route.tripId)}` : "/trips";
       return route.journeyId ? `/trips/past/${enc(route.journeyId)}` : "/trips/past";
