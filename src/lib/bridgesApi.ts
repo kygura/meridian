@@ -71,7 +71,7 @@ export interface GmailStatus {
   /** The Google account's address as Google reported it, shown so the owner knows which account is linked. */
   account?: string;
   connectedAt?: string;
-  lastSync: { at: string; messages: number; candidates: number; added: number; duplicates: number; mode: "backfill" | "incremental"; error?: string } | null;
+  lastSync: { at: string; mode: "backfill" | "incremental"; messages: number; unstructured: number; candidates: number; added: number; duplicates: number; cancelled: number; complete: boolean; error?: string } | null;
   redirectUri: string;
 }
 

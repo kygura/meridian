@@ -1,5 +1,7 @@
 import "./bridges.css";
+import { nudgeLayout } from "./layoutNudge";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { create } from "zustand";
 import { Badge, Button, CitySearch, Disclosure, Field, Input, Sheet, toast } from "../ui";
 import {
   applyNotion,
@@ -23,11 +25,27 @@ const REASON: Record<string, string> = { "no-match": "No match", ambiguous: "Amb
 
 const readText = (f: File) => f.text();
 
+/** The sheet lives outside Settings: the Settings popover closes on any click outside itself, which would unmount a sheet rendered inside it. */
+const useNotionSheet = create<{ open: boolean; show: () => void; hide: () => void }>((set) => ({ open: false, show: () => set({ open: true }), hide: () => set({ open: false }) }));
+
+/** Mounted once by the app shell. */
+export function NotionSheetHost() {
+  const open = useNotionSheet((s) => s.open);
+  const hide = useNotionSheet((s) => s.hide);
+  const [status, setStatus] = useState<NotionStatus | null>(null);
+  const load = useCallback(() => getNotionStatus().then(setStatus).catch(() => setStatus(null)), []);
+  useEffect(() => {
+    if (open) void load();
+  }, [open, load]);
+  if (!open || !status) return null;
+  return <NotionSheet status={status} onClose={hide} onChanged={load} />;
+}
+
 /** Settings section: pull the owner's seasons and place research from Notion into the rotation, after a preview. */
 export function NotionSection() {
   const [status, setStatus] = useState<NotionStatus | null>(null);
-  const [open, setOpen] = useState(false);
-  const load = useCallback(() => getNotionStatus().then(setStatus).catch(() => setStatus(null)), []);
+  const show = useNotionSheet((s) => s.show);
+  const load = useCallback(() => getNotionStatus().then((v) => (setStatus(v), nudgeLayout())).catch(() => setStatus(null)), []);
   useEffect(() => {
     void load();
   }, [load]);
@@ -46,11 +64,10 @@ export function NotionSection() {
       </p>
       {status.review.length > 0 && <Badge tone="warning">{status.review.length} to review</Badge>}
       <div className="shell-settings-row">
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={show}>
           Import from Notion
         </Button>
       </div>
-      {open && <NotionSheet status={status} onClose={() => setOpen(false)} onChanged={load} />}
     </section>
   );
 }
@@ -115,7 +132,7 @@ function ReviewList({ items, onResolve }: { items: NotionPlan["review"]; onResol
               <strong>{r.label}</strong>
               <Badge tone="warning">{REASON[r.reason]}</Badge>
               <span className="bridge-muted">
-                {r.count} {r.db === "seasons" ? "rows" : "entries"}
+                {r.count} {r.db === "seasons" ? (r.count === 1 ? "row" : "rows") : r.count === 1 ? "entry" : "entries"}
               </span>
             </div>
             <p className="bridge-muted">{r.detail}</p>

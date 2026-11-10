@@ -19,6 +19,8 @@ Live: https://meridian-mocha-iota.vercel.app
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
 | **Rotation** | Where you live next, separate from trips: a 12–18 month calendar of bases and pass-throughs with no trip home. A timeline coloured by fit (your own peak, shoulder and avoid months for a place first, otherwise the comfort index), gaps and overlaps flagged, the route on the globe, moves between stays with flight or ground time and cost estimates, totals (months covered, cost per month, moves per year), what's next (days left here, next move), and book-by dates from lead times you can set per place, with Flatio, Airbnb monthly and Booking.com searches filled in. Add stays from a planned trip or a past journey's stop. Owner only. |
+| **Settings › Inbox** | Connect Gmail (read-only, Google sign-in) so flights, stays, trains and tickets in your mail arrive in the **Inbox** on their own, daily. Only dates, places and prices are kept, never the messages. Bookings dated in the future can be added to an upcoming trip as a stay or a booked leg. Without Google credentials it says what to set, and uploading an `.eml` or `.mbox` file in the Inbox works the same way (ADR 0017). |
+| **Settings › Notion** | Import your own Travel Seasons as personal windows in the Rotation, and your Location Research as a pool of candidate places, from the Notion API or from an uploaded export. You see a diff first; places Meridian cannot match to a city wait for your choice. Re-importing updates, never duplicates (ADR 0017). |
 | **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
@@ -85,6 +87,11 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
 | `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
 | `ALERT_WEBHOOK_URL` | Where watch alerts are POSTed |
+| `NOTION_TOKEN` | Notion internal integration token for the Notion import. Share your databases with that integration. Without it, upload a Notion export instead |
+| `NOTION_SEASONS_DB`, `NOTION_RESEARCH_DB`, `NOTION_RESEARCH_PAGE` | The Travel Seasons database, and the Location Research database or page. Ids or links; Settings › Notion can override them |
+| `NOTION_WRITE_BACK`, `NOTION_WRITE_BACK_DB` | `NOTION_WRITE_BACK=1` allows writing the rotation back to a Notion database (also switched on in Settings). Off by default |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GMAIL_TOKEN_KEY` | In-app Gmail import: a Google OAuth web client with the Gmail API enabled, and a secret of 32+ characters that encrypts the saved refresh token (`openssl rand -hex 32`). Register `<your address>/api/gmail/callback` as the redirect URI |
+| `GOOGLE_REDIRECT_URI`, `GMAIL_BACKFILL_FROM_YEAR` | Set the redirect URI when a proxy hides the public address; how far back the first sync reads (default three years) |
 | `VITE_API_BASE_URL` | Only if the frontend is served separately from the API |
 
 ## Deploying
@@ -119,4 +126,5 @@ Open decisions carried over from the old wiki:
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
-- **Rotation reminders are computed, not sent.** `GET /api/rotation/reminders` and `rotationRemindersDue()` say which stays are due for booking; nothing sends them yet, and nothing proposes a rotation for you (ADR 0011 lists the hooks for a notifier, a solver, visa day counting and a Notion import of your windows).
+- **Rotation reminders are computed, not sent.** `GET /api/rotation/reminders` and `rotationRemindersDue()` say which stays are due for booking; nothing sends them yet, and nothing proposes a rotation for you (ADR 0011 lists the hooks for a notifier, a solver and visa day counting).
+- **The Notion and Gmail bridges are tested against mocked HTTP only.** Neither the Notion API nor a live Google consent was reachable where they were built (ADR 0017). Mail without schema.org markup is counted and skipped, not read by a model; the stored prompt in `docs/ingest/gmail-import-task.md` still covers that.

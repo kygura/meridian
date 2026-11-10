@@ -45,7 +45,7 @@ export function matchPlace(label: string, country: string | undefined, aliases: 
     // "Da Nang / Hoi An" names an area or several places; which one is the owner's call.
     const parts = label.split(/\s\/\s|\s&\s|\sand\s|\s[—–]\s|\(|\)|\+/).map((p) => p.trim()).filter(Boolean);
     const sugg = parts.flatMap((p) => suggest(p).slice(0, 2));
-    return { ok: false, reason: "compound", detail: "This names more than one place or an area. Pick the city (or cities) it stands for.", suggestions: dedupe(sugg) };
+    return { ok: false, reason: "compound", detail: "This name covers more than one place, or an area. Pick the city (or cities) it stands for.", suggestions: dedupe(sugg) };
   }
   const { hit, ambiguous } = byName(label, country);
   if (hit) return { ok: true, cities: [hit], via: "name" };
