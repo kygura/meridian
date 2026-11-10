@@ -5,6 +5,7 @@ import { useMeridianStore } from "../store";
 import { parseTripFile, serializeTrips } from "../lib/tripTransfer";
 import { useThemeStore, type ThemePref } from "./theme";
 import { AlertSettingsSection } from "./AlertSettings";
+import { ReplanSettingsSection } from "./ReplanSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -93,6 +94,7 @@ export function SettingsPanel() {
         )}
       </section>
       <AlertSettingsSection />
+      <ReplanSettingsSection />
     </div>
   );
 }

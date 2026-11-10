@@ -73,9 +73,13 @@ export function Popover({
     place();
     window.addEventListener("resize", place);
     window.addEventListener("scroll", place, true);
+    // Content that loads after opening (settings sections) changes the height: place again.
+    const ro = typeof ResizeObserver !== "undefined" && ref.current ? new ResizeObserver(place) : null;
+    if (ro && ref.current) ro.observe(ref.current);
     return () => {
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
+      ro?.disconnect();
     };
   }, [open, placement, anchorRef]);
 

@@ -85,7 +85,7 @@ export function noticeAge(createdAt: string, now: Date = new Date()): string {
   return new Date(createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const KIND_LABELS: Record<string, string> = { "watch-alert": "Watch", test: "Test" };
+const KIND_LABELS: Record<string, string> = { "watch-alert": "Watch", test: "Test", replan: "Re-plan" };
 /** "watch-alert" → "Watch"; unknown kinds read as their own words ("book-by" → "Book by"). */
 export function noticeKindLabel(kind: string): string {
   if (KIND_LABELS[kind]) return KIND_LABELS[kind];

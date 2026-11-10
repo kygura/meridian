@@ -509,3 +509,9 @@
 .rotation-mode {
   margin-top: var(--space-4);
 }
+
+@media (max-width: 899px) {
+  .replan-impact .ui-stat-value {
+    font-size: var(--text-md);
+  }
+}

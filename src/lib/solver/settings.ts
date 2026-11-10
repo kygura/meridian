@@ -59,7 +59,7 @@ export const DEFAULT_CONSTRAINTS: Constraints = {
 export const DEFAULT_REPLAN: ReplanSettings = {
   enabled: true,
   watchAhead: 3,
-  newsMinLevel: "incident",
+  newsMinLevel: "systemic",
   flightChangePct: 30,
   pm25Over: 25,
   tempDeltaC: 5,
@@ -152,4 +152,6 @@ export interface SolverDoc {
   proposals: Proposal[];
   shifts: Record<string, ShiftMemory>;
   lastReplan?: { at: string; shifts: number; proposals: number; notes: string[] };
+  /** First fare seen per move (origin-destination-date), the baseline for fare shifts. */
+  fareBaselines?: Record<string, number>;
 }

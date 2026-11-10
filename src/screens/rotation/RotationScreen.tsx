@@ -52,6 +52,7 @@ import { ConvertSheet } from "./ConvertSheet";
 import { KIND_LABEL, STATUS_LABEL, WINDOW_LABEL, costText, daysText, stayDatesText } from "./format";
 import { spanLabel } from "../../lib/season";
 import { SolvePanel } from "./solve/SolvePanel";
+import { ReplanProposals } from "./solve/ReplanProposals";
 import "./rotation.css";
 
 type SheetState =
@@ -185,6 +186,7 @@ export default function RotationScreen() {
           { value: "solve", label: "Solve" },
         ]}
       />
+      {mode === "calendar" && <ReplanProposals onChanged={() => void load()} />}
 
       {mode === "solve" ? (
         <SolvePanel

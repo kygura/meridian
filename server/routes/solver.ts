@@ -16,6 +16,9 @@ import { requireToken } from "../middleware/auth.js";
 import { isoDateSchema } from "../lib/journalSchemas.js";
 import { getSolverSettings, putSolverSettings, solverSettingsSchema } from "../lib/solverStore.js";
 import { acceptPlan, runEvaluate, runSolve } from "../lib/solverService.js";
+// Importing replan also registers its daily job on every host (ADR 0016).
+import { decideProposal, listProposals, runReplan } from "../lib/replan.js";
+import { todayIso } from "../../src/lib/rotation.js";
 
 const solver = new Hono();
 solver.use("*", requireToken);
@@ -79,5 +82,20 @@ solver.post("/accept", async (c) => {
   if (!body.success) return c.json({ error: "invalid_request", details: body.error.issues }, 400);
   return c.json(await acceptPlan(body.data.plan, body.data.runId));
 });
+
+solver.get("/proposals", async (c) => c.json({ proposals: await listProposals(todayIso()) }));
+
+solver.post("/proposals/:id/:action", async (c) => {
+  const action = z.enum(["accept", "dismiss", "snooze"]).safeParse(c.req.param("action"));
+  const id = z.string().regex(/^[A-Za-z0-9_-]{1,80}$/).safeParse(c.req.param("id"));
+  if (!action.success || !id.success) return c.json({ error: "invalid_request" }, 400);
+  const body = z.object({ days: z.number().int().min(1).max(60).optional() }).safeParse((await c.req.json().catch(() => ({}))) ?? {});
+  const r = await decideProposal(id.data, action.data, { days: body.success ? body.data.days : undefined });
+  if ("error" in r) return c.json(r, r.error === "not_found" ? 404 : 409);
+  return c.json(r);
+});
+
+/** Run the re-plan check now (it also runs as the daily job "replan"). */
+solver.post("/replan", async (c) => c.json(await runReplan({ force: true })));
 
 export default solver;
