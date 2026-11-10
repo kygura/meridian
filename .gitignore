@@ -19,3 +19,7 @@ data/push-subscriptions.json
 data/daily-jobs.json
 data/notion.json
 data/gmail.json
+data/solver.json
+data/auth.json
+.env
+.env.local
