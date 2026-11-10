@@ -4,7 +4,7 @@ import { IconPlus, IconTrash } from "../../ui/icons";
 import { WINDOW_KINDS, type PersonalWindow, type PlaceProfile, type RotationPlace, type WindowKind } from "../../lib/rotation";
 import { WINDOW_LABEL } from "./format";
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const monthOptions = MONTHS.map((m, i) => ({ value: String(i + 1), label: m }));
 
 interface Row {

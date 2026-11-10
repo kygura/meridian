@@ -40,15 +40,16 @@
 }
 
 /* ── Fit colours: the diverging ramp, red (avoid) to green (great) ── */
-.rotation-fit--great { background: var(--div-pos-3); }
-.rotation-fit--good { background: var(--div-pos-1); }
-.rotation-fit--fair { background: var(--div-0); }
-.rotation-fit--poor { background: var(--div-neg-1); }
-.rotation-fit--avoid {
+/* Doubled class: wins over the timeline bar's `all: unset`, wherever it sits in the file. */
+.rotation-fit--great.rotation-fit--great { background: var(--div-pos-3); }
+.rotation-fit--good.rotation-fit--good { background: var(--div-pos-1); }
+.rotation-fit--fair.rotation-fit--fair { background: var(--div-0); }
+.rotation-fit--poor.rotation-fit--poor { background: var(--div-neg-1); }
+.rotation-fit--avoid.rotation-fit--avoid {
   background: repeating-linear-gradient(135deg, var(--div-neg-3) 0 6px, var(--div-neg-2) 6px 10px);
 }
-.rotation-fit--unknown {
-  background: repeating-linear-gradient(135deg, var(--surface-3) 0 4px, var(--surface-2) 4px 8px);
+.rotation-fit--unknown.rotation-fit--unknown {
+  background: repeating-linear-gradient(135deg, var(--surface-3) 0 3px, var(--border-strong) 3px 4px);
 }
 
 .rotation-swatch {
@@ -528,6 +529,14 @@
   }
   .rotation-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+  .rotation-stats .ui-stat {
+    padding: var(--space-2) var(--space-3);
+  }
+  .rotation-stats .ui-stat-value {
+    font-size: var(--text-lg);
+    overflow-wrap: anywhere;
   }
   .rotation-form-row {
     grid-template-columns: minmax(0, 1fr);

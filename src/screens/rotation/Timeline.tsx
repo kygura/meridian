@@ -52,7 +52,12 @@ export function Timeline({ from, to, today, stays, fits, deadlines, issues, onOp
                   <div key={m.ym} className={cx("rotation-tl-month", mm === 1 && "rotation-tl-month--year")} style={{ left: pct(m.left), width: pct(m.width) }}>
                     <span className="rotation-tl-month-long">{MS[mm - 1]}</span>
                     <span className="rotation-tl-month-short">{M[mm - 1]}</span>
-                    {(mm === 1 || m.ym === months[0].ym) && <span className="rotation-tl-year">{m.ym.slice(0, 4)}</span>}
+                    {(mm === 1 || m.ym === months[0].ym) && (
+                      <span className="rotation-tl-year">
+                        <span className="rotation-tl-month-long">{m.ym.slice(0, 4)}</span>
+                        <span className="rotation-tl-month-short">’{m.ym.slice(2, 4)}</span>
+                      </span>
+                    )}
                   </div>
                 );
               })}
