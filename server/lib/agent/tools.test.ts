@@ -19,7 +19,7 @@ describe("searchPlaces", () => {
     expect(a).toEqual(b);
     expect(a.length).toBeGreaterThan(0);
     for (let i = 1; i < a.length; i++) {
-      expect(a[i - 1].score).toBeGreaterThanOrEqual(a[i].score);
+      expect(a[i - 1].score ?? -1).toBeGreaterThanOrEqual(a[i].score ?? -1);
     }
   });
 

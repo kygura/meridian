@@ -1,7 +1,9 @@
-// Crowd proxy (spec-journal §5): there is no free, reliable, global crowd
-// dataset, so v1 combines
-//   (a) a month-relative peak index from the city's own comfort curve
-//       (tourist seasons track comfort seasons in most leisure destinations), and
+// Crowd proxy (spec-journal §5, ADR 0013): how busy a city is in a month next to its own year.
+//   (a) a month-relative peak index, from measured nights in tourist accommodation by month
+//       where Eurostat publishes them (the city's NUTS 2 region, else its country; `basis:
+//       "nights"`). Everywhere else there is no free monthly visitor data, so the fallback is
+//       the city's own comfort curve (tourist seasons track comfort seasons in most leisure
+//       destinations; `basis: "comfort"`), which is a guess and is labelled as one.
 //   (b) public-holiday overlap in the top source markets (Nager.Date, keyless).
 // value = 0.7 a + 0.3 b, 0-100. Always a labeled proxy; a stop's
 // crowdOverride wins over it (handled by the fingerprint).
@@ -14,6 +16,13 @@ import { join } from "path";
 import { peekCitySeasonality, type MonthSeasonality } from "./seasonality.js";
 import { getDataPath, ensureDataDir } from "./paths.js";
 import { daysInMonth, eachDay } from "./stayDates.js";
+import { measuredBusyness } from "./placeData.js";
+
+/** Where the peak index came from: measured visitor nights, or the comfort-curve fallback. */
+export type CrowdBasis = "nights" | "comfort";
+
+/** Measured month-relative busyness (0-100) for a city, when there is any. Injectable for tests. */
+export type MeasuredPeak = (cityId: string, month: number) => number | undefined;
 
 /**
  * Top outbound-tourism source markets (UNWTO international tourism
@@ -33,6 +42,8 @@ const MIN_PEAK_RANGE = 20;
 export interface CrowdProxy {
   value: number;
   peak: number;
+  /** "nights": the peak index is measured. "comfort": it is the climate fallback. */
+  basis: CrowdBasis;
   /** 0-100 holiday index; absent when no holiday data was available. */
   holiday?: number;
   flags: ("holidays_unavailable" | "holidays_partial")[];
@@ -118,16 +129,23 @@ export function crowdProxyForMonth(
   cityId: string,
   month: number,
   holidayIndex?: HolidayIndex,
-  seasonality: (cityId: string) => MonthSeasonality[] | undefined = peekMonths
+  seasonality: (cityId: string) => MonthSeasonality[] | undefined = peekMonths,
+  measured: MeasuredPeak = measuredBusyness
 ): CrowdProxy | undefined {
-  const months = seasonality(cityId);
-  if (!months || months.length !== 12) return undefined;
-  const peak = peakIndex(months, month);
+  const real = measured(cityId, month);
+  let peak: number;
+  if (real !== undefined) peak = real;
+  else {
+    const months = seasonality(cityId);
+    if (!months || months.length !== 12) return undefined;
+    peak = peakIndex(months, month);
+  }
   const share = holidayIndex?.[month - 1];
   const holiday = share === undefined ? undefined : holidayShareToIndex(share);
   return {
     value: combineCrowd(peak, holiday),
     peak,
+    basis: real !== undefined ? "nights" : "comfort",
     holiday,
     flags: holiday === undefined ? ["holidays_unavailable"] : [],
   };
@@ -214,11 +232,17 @@ export async function getYearHolidays(year: number, deps: HolidayDeps): Promise<
  */
 export async function computeCrowdProxy(
   input: { cityId: string; month: number; year: number; dateRange?: { from: string; to: string } },
-  deps: HolidayDeps & { seasonality: (cityId: string) => MonthSeasonality[] | undefined }
+  deps: HolidayDeps & { seasonality: (cityId: string) => MonthSeasonality[] | undefined; measured?: MeasuredPeak }
 ): Promise<CrowdProxy | undefined> {
-  const months = deps.seasonality(input.cityId);
-  if (!months || months.length !== 12) return undefined;
-  const peak = peakIndex(months, input.month);
+  const real = (deps.measured ?? measuredBusyness)(input.cityId, input.month);
+  let peak: number;
+  if (real !== undefined) peak = real;
+  else {
+    const months = deps.seasonality(input.cityId);
+    if (!months || months.length !== 12) return undefined;
+    peak = peakIndex(months, input.month);
+  }
+  const basis: CrowdBasis = real !== undefined ? "nights" : "comfort";
 
   const mm = String(input.month).padStart(2, "0");
   const days = input.dateRange
@@ -238,7 +262,7 @@ export async function computeCrowdProxy(
   const flags: CrowdProxy["flags"] = [];
   if (holiday === undefined) flags.push("holidays_unavailable");
   else if (failed > 0) flags.push("holidays_partial");
-  return { value: combineCrowd(peak, holiday), peak, holiday, flags };
+  return { value: combineCrowd(peak, holiday), peak, basis, holiday, flags };
 }
 
 /** Cache-only: builds the replay holiday index from whatever years are on disk. Never fetches. */

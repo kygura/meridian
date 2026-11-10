@@ -15,8 +15,11 @@ import {
   getSeasonalityParams,
   getFlightEstimate as getFlightEstimateTool,
   getFlightEstimateParams,
+  getPlaceFacts,
+  getPlaceFactsParams,
   REGION_COUNTRIES,
 } from "../lib/agent/tools.js";
+import { factResearch, factSentences, nearbyReason } from "../lib/agent/researchFacts.js";
 import {
   createJournalTools,
   searchJournalParams,
@@ -76,23 +79,14 @@ function findNearbyDestinations(city: City, maxCount = 6): NearbyDestination[] {
     })
     .filter((e) => e.dist < 4000 && e.dist > 100)
     .sort((a, b) => {
-      // Blend proximity with score quality
-      const aRank = a.score.overall * 0.6 + (1 - a.dist / 4000) * 40;
-      const bRank = b.score.overall * 0.6 + (1 - b.dist / 4000) * 40;
+      // Blend proximity with the score; a city with too little data for a score ranks on proximity alone.
+      const aRank = (a.score.overall ?? 0) * 0.6 + (1 - a.dist / 4000) * 40;
+      const bRank = (b.score.overall ?? 0) * 0.6 + (1 - b.dist / 4000) * 40;
       return bRank - aRank;
     })
     .slice(0, maxCount);
 
-  const reasons = [
-    "Strong nomad infrastructure",
-    "Affordable cost of living",
-    "Excellent connectivity",
-    "High safety rating",
-    "Great seasonal timing",
-    "Vibrant coworking scene",
-  ];
-
-  return all.map((e, i) => ({
+  return all.map((e) => ({
     cityId: e.city.id,
     name: e.city.name,
     country: e.city.country,
@@ -100,7 +94,8 @@ function findNearbyDestinations(city: City, maxCount = 6): NearbyDestination[] {
     lat: e.city.lat,
     lng: e.city.lng,
     distance: formatDistance(e.dist),
-    reason: e.score.overall >= 70 ? reasons[i % reasons.length] : "Good overall score",
+    // The reason is read from measured figures (ADR 0013); with none that stand out, it is the distance.
+    reason: nearbyReason(e.city) ?? (e.score.overall !== null ? `Score ${e.score.overall} of 100` : `${formatDistance(e.dist)} away`),
   }));
 }
 
@@ -255,77 +250,15 @@ async function generateTripOptions(city: City, originIata: string): Promise<Trip
 // ── Fallback research (no AI key) ───────────────────────────────────
 
 function buildFallbackResearch(city: City): CityResearch {
-  const score = computeFullScore(city);
-  const nearby = findNearbyDestinations(city);
-
-  const country = city.country;
-  const name = city.name;
-
-  // Use score ranges to generate realistic-ish defaults
-  const isAffordable = score.economics >= 60;
-  const isSafe = score.stability >= 65;
-  const hasGoodInternet = score.nomadInfra >= 55;
-
-  return {
-    cityId: city.id,
-    generatedAt: new Date().toISOString(),
-    summary: `${name}, ${country} — Population ${city.population.toLocaleString()}. Meridian score ${score.overall}/100. ${
-      isAffordable ? "Affordable cost of living relative to global averages." : "Cost of living is above global average."
-    } ${isSafe ? "Generally stable and safe for travelers." : "Exercise caution and research current conditions before visiting."} ${
-      hasGoodInternet ? "Good digital infrastructure for remote work." : "Internet infrastructure may be limited for remote work needs."
-    }`,
-    livingConditions: {
-      title: "Living Conditions",
-      items: [
-        isAffordable
-          ? `Rental prices in ${name} are below the global median — expect to pay significantly less than Western European or North American cities for comparable accommodation.`
-          : `${name} commands premium rental prices typical of major urban centers. Central districts carry a significant premium over suburban areas.`,
-        isSafe
-          ? `${country} ranks well on global peace indices. Standard urban precautions apply as in any major city.`
-          : `Research current safety conditions for ${country} before committing. Some areas may require extra caution.`,
-        `Healthcare availability in ${name} is ${score.quality >= 60 ? "generally adequate with both public and private options" : "varied — private healthcare is recommended for visitors"}.`,
-        `Air quality in ${name} is ${score.climate >= 60 ? "typically good" : "can be a concern in certain seasons"}. ${Math.abs(city.lat) < 30 ? "Tropical climate zone with high humidity." : Math.abs(city.lat) < 50 ? "Temperate climate with seasonal variation." : "Northern climate with cold winters."}`,
-      ],
-    },
-    costBreakdown: {
-      rent: isAffordable ? "$300–$800/mo (1BR city center)" : "$800–$2,000/mo (1BR city center)",
-      food: isAffordable ? "$200–$400/mo (local diet)" : "$400–$800/mo (mixed diet)",
-      transport: "$40–$120/mo (public transit)",
-      coworking: hasGoodInternet ? "$80–$200/mo (hot desk)" : "$50–$150/mo (limited availability)",
-      healthcare: "$30–$100/mo (basic insurance)",
-      totalBudget: isAffordable ? "$700–$1,600/mo" : "$1,400–$3,200/mo",
-      currency: city.currency || "Local currency (verify)",
-    },
-    visa: {
-      touristVisa: `Check ${country} entry requirements for your nationality — many countries offer 30–90 day tourist visas.`,
-      visaOnArrival: `Research whether ${country} offers visa-on-arrival for your passport.`,
-      eVisa: `Many countries now offer e-visa applications — check ${country}'s official immigration portal.`,
-      digitalNomadVisa: score.nomadInfra >= 55
-        ? `${country} may offer or be developing a digital nomad visa program — check current status.`
-        : `Digital nomad visa programs may not yet be available in ${country}.`,
-      commonPassportNotes: "Visa requirements vary significantly by nationality. EU/US/UK/AU/CA passport holders generally have the most options.",
-    },
-    connectivity: {
-      avgDownloadMbps: hasGoodInternet ? "40–100 Mbps (fixed)" : "5–30 Mbps (fixed)",
-      mobileCoverage: hasGoodInternet ? "4G/5G widely available in urban areas" : "4G in urban core, limited outside",
-      coworkingSpaces: hasGoodInternet ? "5–15 spaces in city center area" : "1–3 spaces, may be limited",
-      cafeWifi: hasGoodInternet ? "Reliable in most central cafes and restaurants" : "Available but inconsistent outside central areas",
-    },
-    safetyNotes: [
-      isSafe ? "Low violent crime rate by global standards" : "Research current safety conditions thoroughly",
-      "Standard urban precautions: guard valuables, avoid poorly lit areas at night",
-      "Register with your embassy and keep copies of important documents",
-      "Check travel advisories from your government before departure",
-    ],
-    seasonalAdvice: `Best visiting months depend on latitude. ${Math.abs(city.lat) < 23 ? "Tropical zone: December–March typically drier." : Math.abs(city.lat) < 45 ? "Temperate: April–June and September–November offer pleasant weather." : "Northern: June–August for longest daylight; December–February for winter activities."} Current month: consider seasonal tourism pricing and weather patterns.`,
-    nearbyDestinations: nearby,
-  };
+  // Measured figures only, each with its source; "No data" where there are none (ADR 0013).
+  return factResearch(city, findNearbyDestinations(city));
 }
 
 // ── AI-powered research ──────────────────────────────────────────────
 
 async function buildAIResearch(city: City): Promise<CityResearch> {
   const score = computeFullScore(city);
+  const na = (v: number | null) => (v === null ? "n/a" : String(v));
   const nearby = findNearbyDestinations(city);
   const nearbyNames = nearby.slice(0, 4).map((n) => `${n.name}, ${n.country}`).join("; ");
 
@@ -334,8 +267,11 @@ async function buildAIResearch(city: City): Promise<CityResearch> {
 City data:
 - Population: ${city.population.toLocaleString()}
 - Coordinates: ${city.lat}, ${city.lng}
-- Meridian Score: ${score.overall}/100 (economics: ${score.economics}, quality: ${score.quality}, climate: ${score.climate}, stability: ${score.stability}, nomadInfra: ${score.nomadInfra})
+- Meridian Score: ${score.overall === null ? "not enough data" : `${score.overall}/100`} (0-100 each, "n/a" = no data; affordability: ${na(score.economics)}, quality of life: ${na(score.quality)}, climate: ${na(score.climate)}, safety: ${na(score.stability)}, internet: ${na(score.nomadInfra)}, healthcare: ${na(score.health)})
 - Nearby destinations worth considering: ${nearbyNames}
+
+Measured figures (use these as given, with their source; do not replace them with your own numbers):
+${factSentences(city).map((l) => `- ${l}`).join("\n")}
 
 Return a JSON object with exactly these fields (no markdown, no code fences, just raw JSON):
 
@@ -372,7 +308,7 @@ Return a JSON object with exactly these fields (no markdown, no code fences, jus
   "nearbyDestinations": []
 }
 
-Be specific to ${city.name}, ${city.country}. Use real price ranges and real information. Do not give generic advice. If you're uncertain about a specific number, give your best estimate with a range.`;
+Be specific to ${city.name}, ${city.country}. Do not give generic advice. Where a measured figure is given above, quote it and name its source. Any other number is your own estimate: write "roughly" before it and "(estimate)" after it. Where you don't know, write "No data" rather than guessing.`;
 
   const text = await completeText({
     system: "You are Meridian, a nomadic intelligence analyst. You provide detailed, specific, and actionable intelligence about cities for digital nomads and remote workers. Always return valid JSON with no markdown formatting.",
@@ -585,9 +521,27 @@ async function streamMockChatWithTools(messages: Array<{ role: string; content: 
         dataStream.write(formatDataStreamPart("tool_result", { toolCallId: seasonCallId, result: seasonality }));
       }
 
+      // 3b. get_place_facts for the top result: measured figures with their sources, gaps stated.
+      let factLines: string[] = [];
+      if (top) {
+        const factArgs = getPlaceFactsParams.parse({ cityId: top.cityId });
+        const factCallId = nextId();
+        dataStream.write(formatDataStreamPart("tool_call", { toolCallId: factCallId, toolName: "get_place_facts", args: factArgs }));
+        const facts = await getPlaceFacts(factArgs);
+        dataStream.write(formatDataStreamPart("tool_result", { toolCallId: factCallId, result: facts }));
+        const wanted = ["Monthly cost for one person", "Rent, 1-bedroom flat", "Fixed internet", "Healthcare coverage"];
+        factLines = (facts.facts ?? [])
+          .filter((l) => wanted.includes(l.label))
+          .map((l) =>
+            l.source
+              ? `• ${l.label}: ${l.value} (${l.estimate ? "estimate, " : ""}${l.granularity} figure; ${l.source})`
+              : `• ${l.label}: no data`
+          );
+      }
+
       // 4. Streamed text summary, built from the real tool results above.
       const angle = cheap
-        ? "cheapest first"
+        ? "budget places, best score first"
         : safe
           ? "best overall, with a safety floor"
           : "best overall first";
@@ -598,6 +552,7 @@ async function streamMockChatWithTools(messages: Array<{ role: string; content: 
       const text =
         `Here are the best places ${regionLabel} right now, ${angle}:\n\n` +
         (lines.length ? lines.join("\n") : "Nothing matched that. Try a broader region.") +
+        (top && factLines.length ? `\n\n${top.name} in figures:\n${factLines.join("\n")}` : "") +
         `\n\n${(imageNote + seasonNote).trim()}`.trimEnd() +
         `\n\nTap a city below to open it. ` +
         `(Live AI replies are off on this server, so these picks come from Meridian's own scoring.)`;
@@ -739,16 +694,19 @@ agent.post("/profile", async (c) => {
     news: research.summary,
     costEstimates: `${research.costBreakdown.totalBudget} monthly budget (${research.costBreakdown.currency})`,
     recommendations: research.livingConditions.items.slice(0, 2).join(" "),
-    score: computeFullScore(city).overall,
+    score: computeFullScore(city).overall ?? undefined,
   };
   return c.json(brief);
 });
 
 const CHAT_SYSTEM = `You are Meridian, a travel research analyst. Help users discover cities for remote work and travel by
-actively using your tools: search_places to find and rank candidate cities, get_place_images to pull a
+actively using your tools: search_places to find and rank candidate cities, get_place_facts for a city's measured
+cost, rent, internet, healthcare, stability and visitor figures, get_place_images to pull a
 representative photo, get_seasonality to check the best months to visit, and get_flight_estimate to price a route.
 Call the relevant tools before making specific claims about scores, images, timing, or prices — don't guess numbers
-you could look up. Be concise, specific, and actionable.
+you could look up. When you quote a figure from get_place_facts, say where it comes from and whether it is a city, regional
+or country figure, and say when a cost is an estimate. When a figure comes back as "No data", say there is no data: never
+fill the gap with a number of your own. Be concise, specific, and actionable.
 For the user's own travel history use the journal tools: search_journal to find a past journey, get_fingerprint for the
 conditions it had, find_similar_windows to rank other destination/month windows like it (bend with tempC/spendPct/crowd),
 and draft_journey to propose a journey for the user to review in the inbox (you cannot confirm it). If a journal tool
@@ -795,6 +753,12 @@ agent.post("/chat", async (c) => {
         "Get up to 4 representative photos for a city (by cityId) or a free-text place title, sourced from Wikipedia/Wikimedia Commons with attribution.",
       parameters: getPlaceImagesParams,
       execute: getPlaceImages as AgentTool["execute"],
+    },
+    get_place_facts: {
+      description:
+        "Get the measured figures for a city (by cityId): monthly cost, rent, internet speed, healthcare, stability, visitors and busiest months. Each has its source, year and granularity (city, region or country); figures with no data come back as 'No data'.",
+      parameters: getPlaceFactsParams,
+      execute: getPlaceFacts as AgentTool["execute"],
     },
     get_seasonality: {
       description: "Get monthly climate/comfort seasonality for a city, when available.",
