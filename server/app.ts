@@ -19,6 +19,7 @@ import watchesRoutes from "./routes/watches.js";
 import tripsRoutes from "./routes/trips.js";
 import livabilityRoutes from "./routes/livability.js";
 import overlaysRoutes from "./routes/overlays.js";
+import sharedRoutes from "./routes/shared.js";
 import { gateRoutes } from "./middleware/auth.js";
 
 // Load city data on startup
@@ -58,6 +59,8 @@ app.route("/api/watches", watchesRoutes);
 app.route("/api/trips", tripsRoutes);
 app.route("/api/overlays", overlaysRoutes);
 app.route("/api/livability", livabilityRoutes);
+// Public by design: share and calendar links carry their own token (ADR 0010).
+app.route("/api/shared", sharedRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

@@ -7,6 +7,7 @@ import { IconSearch } from "../../../ui/icons";
 import { BookingsList } from "./BookingsList";
 import { OfferList } from "./OfferList";
 import { SearchForm } from "./SearchForm";
+import { TestModeBanner, searchLinks } from "./HandOff";
 import { emptySearch, searchParams, searchReady, searchSummary, useCheckoutHandoff, type RouteEnd, type SearchDraft } from "./search";
 import "./flights.css";
 
@@ -74,6 +75,7 @@ export default function Flights() {
 
   return (
     <div className="plan-flights">
+      <TestModeBanner />
       <Card padding="md" className="plan-flights-search">
         <SearchForm
           idPrefix="fl"
@@ -97,6 +99,7 @@ export default function Flights() {
             status={status === "searching" ? "searching" : status === "error" ? "error" : "ready"}
             offers={offers}
             source={source}
+            realLinks={searchLinks(searched)}
             onSelect={choose}
             onRetry={() => void run(searched)}
           />

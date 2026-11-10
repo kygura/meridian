@@ -68,10 +68,62 @@ The months a trip or a stop happens in, with no year: a MonthSpan such as Februa
 wrapping the new year when it starts after it ends. Each stop can carry its own months; the
 trip's season runs from the first placed stop to the last.
 _Avoid_: dates, trip dates (those exist only once a year is chosen)
-_Avoid_: itinerary
+_Avoid_: itinerary (that is the dated plan a trip gets once it has a year)
 
 **Leg**:
 The segment between two consecutive trip nodes, identified by `tripId` + `legIndex`.
+
+**Itinerary**:
+The concrete side of a Trip once it has a year (ADR 0010): arrival and departure dates on
+each stop, a Stay, Activities, notes, and Recorded Bookings on legs. A trip with no year has
+none; it is still a Season.
+_Avoid_: schedule, plan (a Trip is the plan)
+
+**Nights**:
+How long a trip stop lasts, derived from its arrival and departure dates. Never stored.
+
+**Stay**:
+Where you sleep at a trip stop: name, address, check-in and check-out, price, booking
+reference, link. The planned counterpart of a Journey's lodging.
+_Avoid_: accommodation, hotel (it may be a flat or a friend's)
+
+**Activity**:
+Something planned at a trip stop, with an optional day, time and cost. Becomes an
+Experience once it has happened.
+_Avoid_: event (that's a Meridian Event), experience (that's the journal's)
+
+**Mode**:
+How a Leg is travelled: flight, train, bus, ferry or drive. Defaults from distance and
+Landmass; the traveller can change it. Only flight legs reach flight search.
+_Avoid_: transport type
+
+**Landmass**:
+The piece of land a City sits on (`data/city-geo.json`, from Natural Earth). Two cities with
+the same landmass can be reached over land; different ones have the sea between them.
+
+**Leg Plan**:
+The Mode and Recorded Booking of one Leg, stored on the stop it arrives at (the trip's
+`homeLeg` for the way back) and stamped with the city it leaves from. Ignored when the route
+is reordered and the stamp no longer matches.
+
+**Recorded Booking**:
+A booking made on another site and written down on a Leg by hand: carrier, number,
+reference, price, local times. What makes a leg "booked". Not a Booking, which is a test
+order made inside Meridian.
+_Avoid_: booking (alone), ticket
+
+**Hand-off**:
+A "Book on…" link that opens another site's real search with the route, date and travellers
+prefilled as far as that site allows. Meridian never takes payment.
+_Avoid_: checkout, affiliate link
+
+**Share Link**:
+A revocable, unguessable URL to a read-only page of one trip's itinerary. Shows no booking
+references, prices, notes or traveller details.
+
+**Calendar Feed**:
+A revocable, unguessable URL a calendar app subscribes to for one trip (ICS). Same privacy
+as a Share Link. The downloaded calendar file is the owner's own and includes references.
 
 **Offer**:
 A priced, bookable flight quote from a provider (Duffel) or the mock generator.

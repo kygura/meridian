@@ -24,6 +24,7 @@ import { OfferList } from "./OfferList";
 import { PassengerForm } from "./PassengerForm";
 import { ProvenanceBadge } from "./ProvenanceBadge";
 import { SearchForm } from "./SearchForm";
+import { TestModeBanner, searchLinks } from "./HandOff";
 import { priceText } from "./flightText";
 import { emptySearch, searchFromTarget, searchParams, searchReady, useCheckoutHandoff, type SearchDraft } from "./search";
 import "./flights.css";
@@ -39,7 +40,7 @@ const STEP: Record<Phase, string> = {
   review: "Step 4 of 4 · Review and book",
   submitting: "Step 4 of 4 · Review and book",
   error: "Something went wrong",
-  booked: "You're booked",
+  booked: "Test booking made · no ticket issued",
 };
 
 /**
@@ -180,7 +181,7 @@ export default function BookingSheet() {
       });
       setBooking(b);
       setPhase("booked");
-      toast("Flight booked", { tone: "success" });
+      toast("Test booking made. No ticket was issued.", { tone: "success" });
       void refreshBookings();
     } catch (err) {
       if (err instanceof OfferExpiredApiError) onExpired();
@@ -263,7 +264,7 @@ export default function BookingSheet() {
             Back
           </Button>
           <Button variant="primary" loading={phase === "submitting"} onClick={() => void submit()} data-autofocus>
-            {phase === "submitting" ? "Booking…" : selected ? `Book for ${priceText(selected.priceAmount, selected.currency)}` : "Book"}
+            {phase === "submitting" ? "Booking…" : selected ? `Make test booking (${priceText(selected.priceAmount, selected.currency)}, not charged)` : "Make test booking"}
           </Button>
         </>
       );
@@ -299,7 +300,7 @@ export default function BookingSheet() {
       <Sheet
         open={open}
         onClose={requestClose}
-        title="Book a flight"
+        title="Test booking"
         description={STEP[phase]}
         headerExtra={source ? <ProvenanceBadge source={source} /> : undefined}
         size="lg"
@@ -307,6 +308,7 @@ export default function BookingSheet() {
         footer={footer ? <div className="plan-flights-sheet-foot">{footer}</div> : undefined}
         className="plan-flights-sheet"
       >
+        {phase !== "booked" ? <TestModeBanner context="sheet" /> : null}
         {phase === "configuring" ? (
           <SearchForm
             idPrefix="bk"
@@ -327,6 +329,7 @@ export default function BookingSheet() {
             source={source}
             selectedId={selected?.id}
             recovered={recovered}
+            realLinks={searchLinks(search)}
             onSelect={choose}
             onRetry={() => void runSearch(false)}
             onChangeSearch={back("configuring")}
@@ -384,7 +387,7 @@ export default function BookingSheet() {
         open={discardOpen}
         onClose={() => setDiscardOpen(false)}
         role="alertdialog"
-        title="Discard this booking?"
+        title="Discard this test booking?"
         description="The passenger details you entered will be lost."
         footer={
           <>

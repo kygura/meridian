@@ -9,12 +9,12 @@ Live: https://meridian-mocha-iota.vercel.app
 | Screen | What it does |
 |---|---|
 | **Map** | Flat map of ~5,900 cities matched to their airports, labelled in English, in each city's own language and script (東京, Москва, القاهرة), or both (Layers › Cities). Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
-| **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. Plus past journeys from the journal. |
+| **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. With a year, a trip takes an itinerary: dates and nights per stop, where you're staying, activities, a day-by-day view with date conflicts flagged, and legs by flight, train, bus, ferry or road. "Book on…" opens the real search on Google Flights, Skyscanner, Kayak, Rome2Rio, Booking.com, Airbnb or Flatio with the route, dates and travellers filled in; you record the booking back on the trip. Export the trip to your calendar (.ics file or a private feed) and send a read-only share link. Plus past journeys from the journal. |
 | **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
 | **Plan › Live & love** | Every city by quality of life (human development, life satisfaction, safety, air) against beauty (natural setting and built character), with a "best of both" ranking. The city panel shows each score's parts and the facts behind them. |
 | **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
 | **Plan › Watches** | Saved Repeat-a-trip searches, checked daily, that alert when a match comes into booking range at a good price. |
-| **Plan › Flights** | Flight search and booking in Duffel's test mode (mock offers without a key). Nothing is really ticketed. |
+| **Plan › Flights** | Flight search and test bookings in Duffel's test mode (mock offers without a key), labelled as test throughout. Nothing is ticketed or charged; results link out to the same search on real booking sites. |
 | **Inbox** | Review queue for imports (past bookings, photo locations, Google location history, booking emails) before they become journal entries. Photos never leave the device; only time, place and a hash are sent. |
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
@@ -36,6 +36,8 @@ Live: https://meridian-mocha-iota.vercel.app
 - Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
 - Quality of life: [UNDP Human Development Index](https://hdr.undp.org/), [World Happiness Report](https://worldhappiness.report/) via [Our World in Data](https://ourworldindata.org/), [World Bank](https://data.worldbank.org/) homicide and PM2.5 data, and [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) for major cities.
 - Beauty: [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), [Natural Earth](https://www.naturalearthdata.com/) lakes, UNESCO World Heritage sites from Wikidata, [Wikimedia Commons](https://commons.wikimedia.org/) and English Wikipedia geotags. Built with `scripts/build-livability.ts`; method in ADR 0008.
+- Time zones and landmasses per city (`data/city-geo.json`): [Natural Earth](https://www.naturalearthdata.com/) 1:10m land (public domain) and [@photostructure/tz-lookup](https://github.com/photostructure/tz-lookup) (CC0, from timezone-boundary-builder). Rebuilt with `npx tsx scripts/build-city-geo.ts`; method in ADR 0010.
+- Trip cost estimates: transport figures are stated formulas (distance × a rate per km), never fares. A stay is estimated only from your own journal's past stays, otherwise it reads "not estimated".
 - Map label fonts: Instrument Serif and Noto (SIL OFL 1.1), see `public/fonts/LICENSE.md`.
 
 ## Run it locally
@@ -69,7 +71,7 @@ To unlock the journal, trips sync, Repeat a trip and Watches, set `MERIDIAN_TOKE
 |---|---|
 | `DATABASE_URL` | Postgres for personal data. Required on hosts without a persistent disk (Vercel) |
 | `DATA_DIR` | Where JSON files and caches go when there's no database. Default `./data` |
-| `MERIDIAN_TOKEN` | Password for the journal, trips sync, Repeat a trip, imports and watches. Unset means those stay locked |
+| `MERIDIAN_TOKEN` | Password for the journal, trips sync, Repeat a trip, imports and watches, and for creating a trip's share link and calendar feed. Unset means those stay locked. The links themselves open without it: each carries its own token and can be turned off from the trip |
 | `CRON_SECRET` | Vercel only. Same value as `MERIDIAN_TOKEN`, so the daily watch run passes the gate |
 | `ANTHROPIC_API_KEY` | Claude for Ask, city research and the news briefing, instead of the mock and rule-based paths |
 | `AGENT_MODEL` | Default Claude model for Ask and research (`claude-opus-5-5`, `claude-sonnet-5-5` or `claude-haiku-5-5`). Default `claude-opus-5-5` |
@@ -107,3 +109,6 @@ Open decisions carried over from the old wiki:
 - **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
 - **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
 - **Repeat a trip works by month**, not by week.
+- **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
+- **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
+- **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
