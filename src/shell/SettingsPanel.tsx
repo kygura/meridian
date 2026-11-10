@@ -4,6 +4,7 @@ import { IconLock, IconMonitor, IconMoon, IconSettings, IconSun, IconUnlock, Ico
 import { useMeridianStore } from "../store";
 import { parseTripFile, serializeTrips } from "../lib/tripTransfer";
 import { useThemeStore, type ThemePref } from "./theme";
+import { AlertSettingsSection } from "./AlertSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -91,6 +92,7 @@ export function SettingsPanel() {
           <UnlockCard compact title="Sign in" />
         )}
       </section>
+      <AlertSettingsSection />
     </div>
   );
 }

@@ -369,3 +369,20 @@ two weeks before it.
 **Stay Template**:
 A Rotation Stay made from a past Journey's stop: place, type and length, and its real cost
 scaled to a month, with no dates.
+**Notice**:
+A message Meridian raises for the owner (a watch Alert, a test, later a booking reminder),
+written to the notice log first and then sent through every Channel that is set up. The
+in-app Alerts list is the log. The same dedupe key is the same Notice and is sent once.
+_Avoid_: notification (an Alert is the Watch's own record; a Notice carries one)
+
+**Channel**:
+One way a Notice leaves the server: email, Telegram, ntfy, Web Push or the webhook. Each is
+optional and fails on its own.
+
+**Daily job**:
+Work registered with `registerDailyJob` that runs once per UTC day, from the in-process
+scheduler on a long-running server or from Vercel Cron.
+
+**Private cache**:
+What the service worker keeps of the owner's data for offline reading. Emptied on sign-out
+and on any 401, and never holds sign-in state or share links.

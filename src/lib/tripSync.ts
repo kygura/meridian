@@ -230,6 +230,8 @@ export function startTripSync(onTokenChange: (cb: () => void) => () => void): ()
     if (active) void push().then(pull);
   };
   window.addEventListener("focus", onFocus);
+  // Back online: send what was edited offline now, not at the next retry.
+  window.addEventListener("online", onFocus);
   if (getToken()) void pull();
   return () => {
     stop();
@@ -237,5 +239,6 @@ export function startTripSync(onTokenChange: (cb: () => void) => () => void): ()
     unsubStore();
     unsubToken();
     window.removeEventListener("focus", onFocus);
+    window.removeEventListener("online", onFocus);
   };
 }

@@ -3,7 +3,7 @@
 //   functions/api.func  the Hono server bundled into one Node function, plus the
 //                    read-only datasets it loads at startup
 //   config.json      routes (/api/* → function, everything else → the SPA), the security
-//                    headers for static files, and the daily watch run (Vercel Cron)
+//                    headers for static files, and the daily jobs run (Vercel Cron)
 //
 // Usage: npm run build:vercel   (Vercel's build command; see docs/DEPLOY.md)
 
@@ -93,13 +93,17 @@ writeFileSync(
       routes: [
         { src: "^/(.*)$", headers: staticSecurityHeaders, continue: true },
         { src: "^/assets/(.*)$", headers: { "cache-control": "public, max-age=31536000, immutable" }, continue: true },
+        // The service worker must be revalidated on every load, or an update could sit behind the HTTP cache.
+        { src: "^/sw\\.js$", headers: { "cache-control": "no-cache", "service-worker-allowed": "/" }, continue: true },
+        { src: "^/manifest\\.webmanifest$", headers: { "content-type": "application/manifest+json" }, continue: true },
         { handle: "filesystem" },
         { src: "^/api(?:/.*)?$", dest: "/api" },
         { src: "^/(.*)$", dest: "/index.html" },
       ],
-      // Daily watch run (spec-journal §10). Needs CRON_SECRET: its own value (accepted for
-      // this route only) or the same value as MERIDIAN_TOKEN.
-      crons: [{ path: "/api/watches/run", schedule: "17 6 * * *" }],
+      // Daily jobs: the watch run and anything registered with registerDailyJob (ADR 0016).
+      // Needs CRON_SECRET: its own value (accepted for this route only) or the same value as
+      // MERIDIAN_TOKEN.
+      crons: [{ path: "/api/jobs/daily", schedule: "17 6 * * *" }],
     },
     null,
     2

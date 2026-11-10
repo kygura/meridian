@@ -3,7 +3,7 @@
 // Two ways in:
 //   - the session cookie set by POST /api/auth/login (the browser), or
 //   - "Authorization: Bearer $MERIDIAN_TOKEN" (automation: the import task, cron).
-//     CRON_SECRET, when it differs from the token, is accepted for GET /api/watches/run only.
+//     CRON_SECRET, when it differs from the token, is accepted for GET /api/watches/run and GET /api/jobs/daily only.
 //
 // Fail closed: with MERIDIAN_TOKEN unset (or empty) every gated route is 401
 // `journal_locked`. The env var is read per request so tests (and a restart-free
@@ -96,7 +96,7 @@ async function resolve(c: Context): Promise<AuthResult> {
     if (presented) {
       if (tokenMatches(presented, expected)) return { ok: true, identity: { userId: OWNER_ID, method: "bearer" } };
       const cron = process.env.CRON_SECRET;
-      if (cron && c.req.method === "GET" && c.req.path === "/api/watches/run" && tokenMatches(presented, cron)) {
+      if (cron && c.req.method === "GET" && (c.req.path === "/api/watches/run" || c.req.path === "/api/jobs/daily") && tokenMatches(presented, cron)) {
         return { ok: true, identity: { userId: OWNER_ID, method: "cron" } };
       }
     }
