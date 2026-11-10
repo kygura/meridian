@@ -1,7 +1,7 @@
 // Plain-language copy for Plan › Repeat a trip and When to go. Pure: no React, no fetch.
 // Months are 1-based (1 = January) everywhere in this file.
 
-import type { FingerprintDim, ReplayQuery, ReplayResult } from "../types";
+import type { ReplayDim, ReplayQuery, ReplayResult } from "../types";
 
 export const MONTH_NAMES = [
   "January",
@@ -23,6 +23,27 @@ export const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Au
 /** 1-based month -> "October". */
 export function monthName(m: number | undefined): string {
   return m && m >= 1 && m <= 12 ? MONTH_NAMES[m - 1]! : "";
+}
+
+/** Days from 1 January to the end of each month on a 365-day calendar. */
+const MONTH_STARTS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365];
+
+/** Week of the year (1-52) -> "May 11–17" (the last week runs to 31 December). */
+export function weekRangeLabel(week: number): string {
+  const first = (week - 1) * 7 + 1;
+  const last = week >= 52 ? 365 : first + 6;
+  const at = (doy: number) => {
+    const m = MONTH_STARTS.findIndex((s, i) => doy > s && doy <= MONTH_STARTS[i + 1]!);
+    return { m, d: doy - MONTH_STARTS[m]! };
+  };
+  const a = at(first);
+  const b = at(last);
+  return a.m === b.m ? `${MONTH_SHORT[a.m]} ${a.d}–${b.d}` : `${MONTH_SHORT[a.m]} ${a.d} – ${MONTH_SHORT[b.m]} ${b.d}`;
+}
+
+/** When a result is: "May" at month resolution, "Week 19 · May 11–17" at week resolution. */
+export function resultWhen(r: Pick<ReplayResult, "month" | "week">): string {
+  return r.week !== undefined ? `Week ${r.week} · ${weekRangeLabel(r.week)}` : monthName(r.month);
 }
 
 /** 1-based month -> "Oct". */
@@ -118,8 +139,9 @@ export function scoreStep(score: number): number {
   return Math.max(0, Math.min(6, Math.round((score / 100) * 6)));
 }
 
-export const DIM_WORDS: Record<FingerprintDim, string> = {
+export const DIM_WORDS: Record<ReplayDim, string> = {
   month: "Season",
+  weekOfYear: "Season",
   comfort: "Comfort",
   tempC: "Temperature",
   precipMm: "Rain",
@@ -128,7 +150,7 @@ export const DIM_WORDS: Record<FingerprintDim, string> = {
   crowdProxy: "Crowds",
 };
 
-const CLIMATE_DIMS: FingerprintDim[] = ["month", "comfort", "tempC", "precipMm"];
+const CLIMATE_DIMS: ReplayDim[] = ["month", "weekOfYear", "comfort", "tempC", "precipMm"];
 
 /** "Mostly climate and budget": the two strongest contributors, grouped. */
 export function whyText(r: Pick<ReplayResult, "dims">): string {

@@ -3,18 +3,19 @@
 // apart from the injected deps; no LLM, no synthesized scoring surfaces.
 
 import { haversineKm, estimateFlightHours } from "../../src/lib/geo.js";
-import { comfortScore, peekCitySeasonality, loadSeasonality, type MonthSeasonality } from "./seasonality.js";
+import { WEEKS_PER_MONTH, monthOfWeek, weekOfDayOfYear } from "../../src/lib/comfort.js";
+import { comfortScore, getAllCityWeeks, peekCitySeasonality, loadSeasonality, type MonthSeasonality, type WeekSeasonality } from "./seasonality.js";
 import { getCities, getCityById } from "./cities.js";
 import { getFlightEstimate, REGION_COUNTRIES } from "./agent/tools.js";
 import { crowdProxyForMonth, loadHolidayIndexFromCache, type HolidayIndex } from "./crowd.js";
 import type {
   City,
-  FingerprintDim,
   FlightEstimateResult,
   Fingerprint,
   JournalSettings,
   Journey,
   MeridianEvent,
+  ReplayDim,
   ReplayDimScore,
   ReplayQuery,
   ReplayResponse,
@@ -28,6 +29,8 @@ export interface ReplayDeps {
   settings: JournalSettings;
   /** cityId → 12 monthly normals (Jan..Dec). Its key count is the universe. */
   seasonality: Record<string, MonthSeasonality[]>;
+  /** cityId -> 52 week-of-year normals (precip per 7 days). Used only at week resolution; cities without it are matched by month. */
+  weekly?: Record<string, WeekSeasonality[]>;
   getCity: (cityId: string) => City | undefined;
   flightEstimate: (p: { originIata: string; destinationIata: string; departureDate: string }) => Promise<FlightEstimateResult>;
   /** EUR value of an amount at `date` (YYYY-MM-DD); undefined when no rate. */
@@ -49,9 +52,12 @@ export const STAGE2_PRICED = 20;
 export const DEFAULT_LIMIT = 30;
 
 /** Distance normalizers: a gap this large (or larger) means similarity 0. */
-export const NORMALIZERS = { tempC: 15, precipMm: 150, comfort: 50, crowdProxy: 50, month: 6 } as const;
+export const NORMALIZERS = { tempC: 15, precipMm: 150, comfort: 50, crowdProxy: 50, month: 6, weekOfYear: 26 } as const;
 
-const CLIMATE_DIMS = ["comfort", "tempC", "precipMm", "month"] as const;
+/** At week resolution a city keeps at most this many weeks, at least MIN_WEEK_GAP weeks apart, so one city's adjacent weeks don't crowd out every other city. */
+export const MAX_WEEKS_PER_CITY = 3;
+export const MIN_WEEK_GAP = 4;
+
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 // ── template ───────────────────────────────────────────────────────────
@@ -140,8 +146,14 @@ export function monthDistance(a: number, b: number): number {
   return Math.min(d, 12 - d);
 }
 
+/** Circular distance between two weeks of the year (1-52). */
+export function weekDistance(a: number, b: number): number {
+  const d = Math.abs(a - b) % 52;
+  return Math.min(d, 52 - d);
+}
+
 export function dimSimilarity(dim: keyof typeof NORMALIZERS, value: number, template: number): number {
-  const d = dim === "month" ? monthDistance(value, template) : Math.abs(value - template);
+  const d = dim === "month" ? monthDistance(value, template) : dim === "weekOfYear" ? weekDistance(value, template) : Math.abs(value - template);
   return 1 - Math.min(1, d / NORMALIZERS[dim]);
 }
 
@@ -159,7 +171,7 @@ export function priceSimilarity(priceEur: number, baselineEur: number): number {
 export const DEAL_SIMILARITY = { low: 1, typical: 0.6, high: 0.2 } as const;
 
 interface DimInput {
-  name: FingerprintDim;
+  name: ReplayDim;
   value: number;
   templateValue: number;
   similarity: number;
@@ -172,7 +184,7 @@ interface DimInput {
  * `equalIfAllZero`: no positive-weight dim → equal weights (stage-1 pre-ranking only);
  * otherwise such a cell scores 0 on nothing, never on dims the user turned off.
  */
-export function scoreDims(dims: DimInput[], equalIfAllZero = true): { match: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] } {
+export function scoreDims(dims: DimInput[], equalIfAllZero = true): { match: number; dims: ReplayDimScore[]; scoredOn: ReplayDim[] } {
   let use = dims.filter((d) => d.weight > 0);
   if (use.length === 0 && equalIfAllZero) use = dims.map((d) => ({ ...d, weight: 1 })); // all weights 0 → equal
   const wSum = use.reduce((a, d) => a + d.weight, 0);
@@ -236,6 +248,42 @@ export function cityInRegions(city: City, regions: string[]): boolean {
   });
 }
 
+/**
+ * The week of the year (1-52) a template sits in at week resolution: its own week of the year
+ * (53 folds into 52), else the middle of its month; shifted by the month bend (a month is ~4.33
+ * weeks); undefined when the bend says "any month" or the template has neither.
+ */
+export function templateWeek(template: Partial<Fingerprint>, bend: ReplayQuery["bend"]): number | undefined {
+  if (bend.monthShift === null) return undefined;
+  let week: number | undefined;
+  if (typeof template.weekOfYear === "number") week = Math.min(52, Math.max(1, template.weekOfYear));
+  else if (typeof template.month === "number") week = weekOfDayOfYear(MONTH_MID_DOY[template.month - 1] ?? 183);
+  if (week === undefined) return undefined;
+  if (bend.monthShift) week = ((((week - 1 + Math.round((bend.monthShift * 52) / 12)) % 52) + 52) % 52) + 1;
+  return week;
+}
+
+const MONTH_MID_DOY = [15, 46, 74, 105, 135, 166, 196, 227, 258, 288, 319, 349];
+
+/** The middle day of `week` in the next occurrence strictly after now. */
+export function representativeDateOfWeek(week: number, now: Date): string {
+  const doy = (week - 1) * 7 + 4;
+  const at = (y: number) => new Date(Date.UTC(y, 0, doy)).toISOString().slice(0, 10);
+  const y = now.getUTCFullYear();
+  return at(y) > now.toISOString().slice(0, 10) ? at(y) : at(y + 1);
+}
+
+/** Keeps a city's best weeks, at least MIN_WEEK_GAP apart (deterministic: ties go to the earlier week). */
+export function thinWeeks<T extends { week?: number; stage1: number }>(cands: T[]): T[] {
+  const sorted = [...cands].sort((a, b) => b.stage1 - a.stage1 || (a.week ?? 0) - (b.week ?? 0));
+  const kept: T[] = [];
+  for (const c of sorted) {
+    if (kept.length >= MAX_WEEKS_PER_CITY) break;
+    if (kept.every((k) => weekDistance(k.week!, c.week!) >= MIN_WEEK_GAP)) kept.push(c);
+  }
+  return kept;
+}
+
 /** 15th of the next occurrence of `month` strictly after now. */
 export function representativeDate(month: number, now: Date): string {
   const y = now.getUTCFullYear();
@@ -249,8 +297,19 @@ export function representativeDate(month: number, now: Date): string {
 interface Cell {
   city: City;
   month: number;
+  /** Week of the year (1-52) for a weekly cell. */
+  week?: number;
   base: DimInput[];
   stage1: number;
+}
+
+/** What stage 1 reads off one month or one week of a city's normals. precipMm is always a monthly-equivalent total, to compare with the template. */
+interface Slot {
+  month: number;
+  week?: number;
+  score: number;
+  tempC: number;
+  precipMm: number;
 }
 
 export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<ReplayResponse> {
@@ -270,25 +329,45 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
   }
   const tagFilter = c.tags?.map((t) => t.toLowerCase()) ?? [];
 
-  const climateDims = CLIMATE_DIMS.filter((d) => typeof template[d] === "number");
-  const climateEach = climateDims.length ? w.climate / climateDims.length : 0;
+  const weekMode = query.resolution === "week";
+  const tWeek = weekMode ? templateWeek(filled.template, query.bend ?? {}) : undefined;
+  const weekFilter = c.weeks?.length ? new Set(c.weeks) : undefined;
+  /** A month-resolution fallback cell is kept when the weeks constraint reaches into its month. */
+  const weekMonths = weekFilter ? new Set([...weekFilter].map(monthOfWeek)) : undefined;
+
+  // The climate dims a cell is scored on: the template's comfort/temperature/rain, plus when in the year
+  // (the month, or the week of the year for a weekly cell). Weight is shared equally among them.
+  const climateBase = (["comfort", "tempC", "precipMm"] as const).filter((d) => typeof template[d] === "number");
+  const timeTemplate = (weekly: boolean) => (weekly ? tWeek : typeof template.month === "number" ? template.month : undefined);
+  const climateCount = (weekly: boolean) => climateBase.length + (timeTemplate(weekly) !== undefined ? 1 : 0);
+  const climateEach = (weekly: boolean) => (climateCount(weekly) ? w.climate / climateCount(weekly) : 0);
 
   const universe = Object.keys(deps.seasonality);
   const cells: Cell[] = [];
   /** Stage-1 match for all 12 months per city (ignores month/tag filters) → ReplayResponse.grid. */
   const gridRows = new Map<string, Array<number | null>>();
+  /** Week resolution: stage-1 match for all 52 weeks of each city that has weekly normals. */
+  const weekGridRows = new Map<string, Array<number | null>>();
 
-  const stage1Dims = (city: City, month: number, m: MonthSeasonality): DimInput[] => {
-    const values: Record<(typeof CLIMATE_DIMS)[number], number> = { comfort: m.score, tempC: m.tempC, precipMm: m.precipMm, month };
-    const base: DimInput[] = climateDims.map((d) => ({
-      name: d as FingerprintDim,
+  const stage1Dims = (city: City, slot: Slot): DimInput[] => {
+    const weekly = slot.week !== undefined;
+    const each = climateEach(weekly);
+    const values = { comfort: slot.score, tempC: slot.tempC, precipMm: slot.precipMm } as const;
+    const base: DimInput[] = climateBase.map((d) => ({
+      name: d as ReplayDim,
       value: values[d],
       templateValue: template[d] as number,
       similarity: dimSimilarity(d, values[d], template[d] as number),
-      weight: climateEach,
+      weight: each,
     }));
+    const when = timeTemplate(weekly);
+    if (when !== undefined) {
+      const dim = weekly ? "weekOfYear" : "month";
+      const value = weekly ? slot.week! : slot.month;
+      base.push({ name: dim, value, templateValue: when, similarity: dimSimilarity(dim, value, when), weight: each });
+    }
     if (typeof template.crowdProxy === "number") {
-      const crowd = crowdProxyForMonth(city.id, month, deps.holidayIndex, (id) => deps.seasonality[id]);
+      const crowd = crowdProxyForMonth(city.id, slot.month, deps.holidayIndex, (id) => deps.seasonality[id]);
       if (crowd) {
         base.push({
           name: "crowdProxy",
@@ -315,21 +394,47 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
       if (estimateFlightHours(km) > c.maxFlightHours) continue;
     }
 
+    const tagsOk = (month: number) =>
+      !tagFilter.length || eventsFor(deps.events, city.id, month).some((e) => e.tags.some((t) => tagFilter.includes(t.toLowerCase())));
+    const weeks = weekMode ? deps.weekly?.[city.id] : undefined;
+    const useWeeks = !!weeks && weeks.length === 52;
+
     const row: Array<number | null> = [];
     for (let month = 1; month <= 12; month++) {
-      const base = stage1Dims(city, month, months[month - 1]!);
+      const m = months[month - 1]!;
+      const base = stage1Dims(city, { month, score: m.score, tempC: m.tempC, precipMm: m.precipMm });
       const stage1 = base.length ? scoreDims(base).match : null;
       row.push(stage1);
-      if (stage1 === null) continue;
+      if (stage1 === null || useWeeks) continue; // a city with weekly normals is matched by its weeks instead
       if (c.months?.length && !c.months.includes(month)) continue;
-      if (tagFilter.length && !eventsFor(deps.events, city.id, month).some((e) => e.tags.some((t) => tagFilter.includes(t.toLowerCase())))) continue;
+      if (weekMonths && !weekMonths.has(month)) continue;
+      if (!tagsOk(month)) continue;
       cells.push({ city, month, base, stage1 });
     }
     gridRows.set(city.id, row);
+
+    if (useWeeks) {
+      const wrow: Array<number | null> = [];
+      const cands: Cell[] = [];
+      for (let week = 1; week <= 52; week++) {
+        const wk = weeks![week - 1]!;
+        const month = monthOfWeek(week);
+        const base = stage1Dims(city, { month, week, score: wk.score, tempC: wk.tempC, precipMm: wk.precipMm * WEEKS_PER_MONTH });
+        const stage1 = base.length ? scoreDims(base).match : null;
+        wrow.push(stage1);
+        if (stage1 === null) continue;
+        if (c.months?.length && !c.months.includes(month)) continue;
+        if (weekFilter && !weekFilter.has(week)) continue;
+        if (!tagsOk(month)) continue;
+        cands.push({ city, month, week, base, stage1 });
+      }
+      cells.push(...thinWeeks(cands));
+      weekGridRows.set(city.id, wrow);
+    }
   }
 
   // Stage 1: cheap climate/season ranking (ties broken by cityId, month for determinism).
-  cells.sort((a, b) => b.stage1 - a.stage1 || a.city.id.localeCompare(b.city.id) || a.month - b.month);
+  cells.sort((a, b) => b.stage1 - a.stage1 || a.city.id.localeCompare(b.city.id) || a.month - b.month || (a.week ?? 0) - (b.week ?? 0));
   const survivors = cells.slice(0, STAGE1_KEEP);
 
   const today = deps.now().toISOString().slice(0, 10);
@@ -351,7 +456,11 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
         const distanceKm = Math.round(haversineKm([fromCity.lng, fromCity.lat], [cell.city.lng, cell.city.lat]));
         let est: FlightEstimateResult | undefined;
         try {
-          est = await deps.flightEstimate({ originIata: fromCity.iata, destinationIata: cell.city.iata, departureDate: representativeDate(cell.month, deps.now()) });
+          est = await deps.flightEstimate({
+            originIata: fromCity.iata,
+            destinationIata: cell.city.iata,
+            departureDate: cell.week !== undefined ? representativeDateOfWeek(cell.week, deps.now()) : representativeDate(cell.month, deps.now()),
+          });
         } catch {
           est = undefined;
         }
@@ -382,6 +491,7 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
       const result: ReplayResult = {
         cityId: cell.city.id,
         month: cell.month,
+        ...(cell.week !== undefined ? { week: cell.week } : {}),
         match: scored.match,
         dims: scored.dims,
         scoredOn: scored.scoredOn,
@@ -398,11 +508,33 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
   // climate alone (an absent-by-cutoff dim is not the same basis as a poor price).
   const tiered = ranked.some((r) => r.result.scoredOn.includes("flightCostEurPer1000km"));
   const tier = (r: (typeof ranked)[number]) => (tiered && !r.priceBand ? 1 : 0);
-  ranked.sort((x, y) => tier(x) - tier(y) || y.result.match - x.result.match || x.result.cityId.localeCompare(y.result.cityId) || x.result.month - y.result.month);
+  ranked.sort(
+    (x, y) =>
+      tier(x) - tier(y) ||
+      y.result.match - x.result.match ||
+      x.result.cityId.localeCompare(y.result.cityId) ||
+      x.result.month - y.result.month ||
+      (x.result.week ?? 0) - (y.result.week ?? 0)
+  );
   const results = ranked.map((r) => r.result);
   const top = results.slice(0, limit);
   const grid = [...new Set(top.map((r) => r.cityId))].map((cityId) => ({ cityId, months: gridRows.get(cityId)! }));
-  return { results: top, universeSize: universe.length, template, fromCityId, grid, templateClimate: filled.templateClimate };
+  const resultIds = [...new Set(top.map((r) => r.cityId))];
+  return {
+    results: top,
+    universeSize: universe.length,
+    template,
+    fromCityId,
+    grid,
+    templateClimate: filled.templateClimate,
+    ...(weekMode
+      ? {
+          resolution: "week" as const,
+          weekGrid: resultIds.filter((id) => weekGridRows.has(id)).map((cityId) => ({ cityId, weeks: weekGridRows.get(cityId)! })),
+          weeklyUniverseSize: Object.keys(deps.weekly ?? {}).length,
+        }
+      : {}),
+  };
 }
 
 function eventsFor(events: MeridianEvent[] | undefined, cityId: string, month: number): MeridianEvent[] {
@@ -471,6 +603,7 @@ export function defaultReplayDeps(p: {
     eurOf: p.eurOf,
     events: p.events,
     seasonality: seasonalityUniverse(),
+    weekly: getAllCityWeeks(),
     getCity: getCityById,
     flightEstimate: sharedFlightEstimate,
     now: p.now ?? (() => new Date()),

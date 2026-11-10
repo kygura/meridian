@@ -13,6 +13,8 @@ export { Field, Input, Textarea, Select, Disclosure } from "./Field";
 export type { FieldProps, InputProps, TextareaProps, SelectProps, SelectOption, DisclosureProps } from "./Field";
 export { EmptyState, ErrorState } from "./EmptyState";
 export type { EmptyStateProps, ErrorStateProps } from "./EmptyState";
+export { ComfortBreakdown } from "./ComfortBreakdown";
+export type { ComfortBreakdownProps } from "./ComfortBreakdown";
 export { Spinner, Skeleton } from "./Spinner";
 export type { SkeletonProps } from "./Spinner";
 export { PageHeader, PageActions, PageActionsProvider, Page, SectionHeader } from "./PageHeader";

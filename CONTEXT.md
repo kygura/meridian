@@ -22,9 +22,24 @@ A continent or subregion grouping of cities, used for aggregate views.
 
 **Comfort Index**:
 The 0–100 monthly seasonality score for a city, derived from multi-year climate
-normals (temperature comfort band minus precipitation penalty). Deliberately labeled an
-index, not "best time" truth.
+normals (temperature comfort band minus precipitation penalty minus air penalty, ADR 0014).
+Deliberately labeled an index, not "best time" truth. Shown as three terms wherever it is explained.
 _Avoid_: weather score, climate score
+
+**Air penalty**:
+Points taken off the Comfort Index for a month's mean PM2.5 (CAMS via Open-Meteo): nothing at 10 µg/m³
+or less, 40 at 75 or more. A place with no air figure yet loses nothing and says so; it is never read as clean.
+_Avoid_: pollution score
+
+**Weekly normals**:
+The 52 week-of-year climate normals of a city (temperature, rain per 7 days, PM2.5), averaged over the
+climate window from daily data and lightly smoothed. Where a city has them, Repeat a trip and When to go can
+work by week; where it doesn't they fall back to months, labelled. Not interpolated from months.
+_Avoid_: week data
+
+**Climate cell**:
+A 0.25 degree grid square holding the monthly and weekly normals shared by every city inside it
+(`data/climate-normals.json`). The unit the climate backfill fetches and dedupes by.
 
 **Seasonality**:
 The 12-month Comfort Index profile of a city or region, rendered as a heatmap calendar.

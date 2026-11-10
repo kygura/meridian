@@ -1,0 +1,44 @@
+/* Comfort Index breakdown: temperature, rain, air, total. Tokens only. */
+.ui-comfort-bd {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+.ui-comfort-bd-row {
+  display: grid;
+  grid-template-columns: 6.5rem 3rem 1fr;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+.ui-comfort-bd dt {
+  color: var(--muted);
+}
+.ui-comfort-bd dd {
+  margin: 0;
+}
+.ui-comfort-bd-pts {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+}
+.ui-comfort-bd-note {
+  color: var(--muted);
+  font-size: var(--text-xs, var(--text-sm));
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-comfort-bd-row.is-unknown .ui-comfort-bd-pts {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+.ui-comfort-bd-row.is-total {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px dotted var(--border-strong);
+}
+.ui-comfort-bd-row.is-total dt {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
