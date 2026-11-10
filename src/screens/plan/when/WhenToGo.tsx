@@ -2,15 +2,17 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
 import { apiUrl } from "../../../lib/api";
-import { assembleCityRows, bestWindow, climateWindowCaption, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
+import { assembleCityRows, climateWindowCaption } from "../../../lib/seasonality";
 import { CLIMATE_MODES, valueStep, type ClimateMode } from "../../../lib/climate";
 import {
-  bestRun,
-  bestRunLabel,
+  columnsInWindow,
   describeMetric,
   formatMetric,
   frameColumns,
   frameValues,
+  monthsInRange,
+  windowLabel,
+  windowScore,
   type FrameMonth,
   type Timeframe,
 } from "../../../lib/heatFrame";
@@ -83,41 +85,58 @@ function readPrefs(): { metric: ClimateMode; timeframe: Timeframe } {
   }
 }
 
-/**
- * Cells for one place: the chosen metric over the chosen timeframe, with the best window
- * (always judged on comfort) bracketed. Returns the trail label too.
- */
-function frameCells(
-  name: string,
-  months: FrameMonth[],
-  metric: ClimateMode,
-  tf: Timeframe
-): { cells: (HeatCell | null)[]; best: string } {
+/** Cells for one place: the chosen metric over the chosen timeframe. */
+function frameCells(name: string, months: FrameMonth[], metric: ClimateMode, tf: Timeframe): (HeatCell | null)[] {
   const cols = frameColumns(tf);
   const comfort = frameValues(months, "comfort", tf);
   const values = metric === "comfort" ? comfort : frameValues(months, metric, tf);
-  const run = bestRun(comfort);
-  const cells = values.map((v, col): HeatCell | null => {
+  return values.map((v, col): HeatCell | null => {
     if (v === null) return null;
-    const c = comfort[col] ?? 0;
-    const inRun = run?.cols.includes(col) ?? false;
     const what = metric === "comfort" ? `${comfortWord(v).toLowerCase()}, comfort ${Math.round(v)}` : describeMetric(metric, v);
     return {
-      score: c,
+      score: comfort[col] ?? 0,
       step: metric === "comfort" ? scoreStep(v) : valueStep(metric, v),
       text: formatMetric(metric, v),
-      best: inRun ? { start: col === run!.start, end: col === run!.end, peak: col === run!.peak } : undefined,
-      label: `${name}, ${cols[col]!.name}: ${what}${inRun ? ", in its best window" : ""}`,
+      label: `${name}, ${cols[col]!.name}: ${what}`,
     };
   });
-  return { cells, best: bestRunLabel(run, tf) };
 }
 
-const SORT_OPTIONS: { value: SortMode; label: string }[] = [
-  { value: "best", label: "Best time first" },
-  { value: "peak", label: "Highest peak" },
+type When = "now" | "dates";
+type Sort = "fit" | "az";
+
+const SORT_OPTIONS: { value: Sort; label: string }[] = [
+  { value: "fit", label: "Best first" },
   { value: "az", label: "A to Z" },
 ];
+
+/** Local "YYYY-MM-DD", `days` from today. */
+function isoDay(days = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Best first (places without a score last), then A to Z. */
+function byFit<T>(items: T[], score: (x: T) => number | null, name: (x: T) => string, sort: Sort): T[] {
+  return [...items].sort((a, b) => {
+    if (sort === "az") return name(a).localeCompare(name(b));
+    const sa = score(a);
+    const sb = score(b);
+    if (sa === null || sb === null) return sa === sb ? name(a).localeCompare(name(b)) : sa === null ? 1 : -1;
+    return sb - sa || name(a).localeCompare(name(b));
+  });
+}
+
+function FitTrail({ score }: { score: number | null }) {
+  if (score === null) return <span className="plan-when-fit is-none">—</span>;
+  return (
+    <span className="plan-when-fit">
+      <span className="plan-when-fit-num">{Math.round(score)}</span> {comfortWord(score)}
+    </span>
+  );
+}
 
 function matches(q: string, ...fields: (string | undefined)[]): boolean {
   const s = q.trim().toLowerCase();
@@ -144,7 +163,19 @@ export default function WhenToGo() {
   const view: View = showRegions ? "countries" : "cities";
   const [q, setQ] = useState("");
   const [region, setRegion] = useState<WorldRegion | "">("");
-  const [sort, setSort] = useState<SortMode>("best");
+  const [sort, setSort] = useState<Sort>("fit");
+  const [when, setWhen] = useState<When>("now");
+  const [from, setFrom] = useState(() => isoDay());
+  const [to, setTo] = useState(() => isoDay(14));
+  const nowMonth = new Date().getMonth();
+  const rangeMonths = useMemo(() => monthsInRange(from, to), [from, to]);
+  const rangeInvalid = when === "dates" && rangeMonths === null;
+  // The window everything is ranked on: this month, or the months the dates touch.
+  const span = useMemo(
+    () => (when === "dates" && rangeMonths ? rangeMonths : [nowMonth]),
+    [when, rangeMonths, nowMonth]
+  );
+  const windowKey = span.join(",");
   const [metric, setMetric] = useState<ClimateMode>(() => readPrefs().metric);
   const [timeframe, setTimeframe] = useState<Timeframe>(() => readPrefs().timeframe);
   useEffect(() => {
@@ -280,7 +311,11 @@ export default function WhenToGo() {
     const visible = rowDefs.filter(
       (d) => matches(q, d.name, d.country, d.iata) && (!region || regionOfCity(d.cityId) === region)
     );
-    return sortRows(visible, seasonality, sort).map((d: HeatRowDef) => {
+    const scoreOf = (id: string) => {
+      const m = seasonality[id];
+      return Array.isArray(m) && m.length === 12 ? windowScore(m, span) : null;
+    };
+    return byFit(visible, (d) => scoreOf(d.cityId), (d) => d.name, sort).map((d) => {
       const months = seasonality[d.cityId];
       const saved = d.badge === "SHORTLIST";
       const sub = [d.country, d.badge === "TRIP" ? "In a trip" : null].filter(Boolean).join(" · ");
@@ -302,43 +337,32 @@ export default function WhenToGo() {
         ) : undefined,
       };
       if (Array.isArray(months) && months.length === 12) {
-        const { cells, best } = frameCells(d.name, months as SeasonMonth[], metric, timeframe);
-        return { ...base, state: "ready", cells, trail: <span className="plan-when-best">{best}</span> };
+        const cells = frameCells(d.name, months as SeasonMonth[], metric, timeframe);
+        return { ...base, state: "ready", cells, trail: <FitTrail score={scoreOf(d.cityId)} /> };
       }
       if (months === null) return { ...base, state: "none" };
       return { ...base, state: unavailable ? "unavailable" : "loading" };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry, metric, timeframe]);
+  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry, metric, timeframe, windowKey]);
 
   const countryRows: HeatRow[] = useMemo(() => {
     if (!regions) return [];
     const list = regions
       .filter((r) => matches(q, r.region) && (!region || regionOfCountry.get(r.region) === region))
-      .map((r) => {
-        const scores = r.months.map((m) => m.score);
-        return { r, scores, w: bestWindow(r.months.map((m) => ({ score: m.score, tempC: 0, precipMm: 0 }))) };
-      });
-    list.sort((a, b) => {
-      if (sort === "az") return a.r.region.localeCompare(b.r.region);
-      const pa = Math.max(...a.scores);
-      const pb = Math.max(...b.scores);
-      if (sort === "peak") return pb - pa || a.r.region.localeCompare(b.r.region);
-      return (a.w?.startMonth ?? 12) - (b.w?.startMonth ?? 12) || pb - pa || a.r.region.localeCompare(b.r.region);
-    });
-    return list.map(({ r }) => {
+      .map((r) => ({ r, score: windowScore(r.months, span) }));
+    return byFit(list, (x) => x.score, (x) => x.r.region, sort).map(({ r, score }) => {
       const reg = regionOfCountry.get(r.region);
-      const { cells, best } = frameCells(r.region, r.months, metric, timeframe);
       return {
         key: `country:${r.region}`,
         label: r.region,
         sublabel: reg ? WORLD_REGIONS.find((x) => x.value === reg)?.label : undefined,
         state: "ready" as const,
-        cells,
-        trail: <span className="plan-when-best">{best}</span>,
+        cells: frameCells(r.region, r.months, metric, timeframe),
+        trail: <FitTrail score={score} />,
       };
     });
-  }, [regions, q, region, sort, regionOfCountry, metric, timeframe]);
+  }, [regions, q, region, sort, regionOfCountry, metric, timeframe, windowKey]);
 
   const suggestions = useMemo(
     () => (view === "cities" && q.trim().length >= 2 ? searchCities(cities, q, 5, rowIds) : []),
@@ -347,6 +371,8 @@ export default function WhenToGo() {
 
   // ── Popover ──
   const columns = frameColumns(timeframe);
+  const windowCols = columnsInWindow(timeframe, span);
+  const fitHeader = when === "now" ? "This month" : "Your dates";
   const renderPopover = (row: HeatRow, col: number) => {
     const cell = row.cells?.[col];
     if (!cell) return null;
@@ -397,7 +423,7 @@ export default function WhenToGo() {
         {timeframe === "seasons" && <PopRow k="Averaged over" v="Three months" />}
         {view === "countries" && <PopRow k="Average of" v="Cities in this country" />}
         <div className="plan-heat-pop-hint">
-          {cell.best?.peak ? "Its most comfortable stretch peaks here. " : cell.best ? "Inside its best window. " : ""}
+          {windowCols.includes(col) ? (when === "now" ? "This month. " : "Inside your dates. ") : ""}
           {metric === "greenery" ? "Greenery is estimated from rain and warmth. " : ""}
           {view === "cities" ? "Tap the name to open the city." : null}
         </div>
@@ -461,10 +487,46 @@ export default function WhenToGo() {
             className="plan-when-select"
             aria-label="Sort"
             value={sort}
-            onChange={(e) => setSort(e.target.value as SortMode)}
+            onChange={(e) => setSort(e.target.value as Sort)}
             options={SORT_OPTIONS}
           />
         </div>
+      </div>
+
+      <div className="plan-when-time" role="group" aria-label="Time to rank by">
+        <Segmented<When>
+          className="plan-when-seg"
+          label="When"
+          value={when}
+          onChange={setWhen}
+          options={[
+            { value: "now", label: "Right now" },
+            { value: "dates", label: "Pick dates" },
+          ]}
+        />
+        {when === "dates" && (
+          <div className="plan-when-dates">
+            <Input
+              type="date"
+              aria-label="Start date"
+              value={from}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFrom(v);
+                if (v && to && v > to) setTo(v);
+              }}
+            />
+            <span className="plan-when-dates-sep" aria-hidden="true">
+              to
+            </span>
+            <Input type="date" aria-label="End date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        )}
+        <span className={rangeInvalid ? "plan-when-time-note is-error" : "plan-when-time-note"} role="status">
+          {rangeInvalid
+            ? "Pick a start and an end date."
+            : `Ranked by comfort in ${windowLabel(span)}${when === "now" ? ", this month" : ""}`}
+        </span>
       </div>
 
       {suggestions.length > 0 && (
@@ -491,7 +553,6 @@ export default function WhenToGo() {
           low={CLIMATE_MODES.find((m) => m.value === metric)!.low}
           high={CLIMATE_MODES.find((m) => m.value === metric)!.high}
           ramp={RAMP[metric]}
-          extra={<span className="plan-when-legend-best">Best window</span>}
         />
         <span className="plan-when-note" role="status">
           {loading ? (
@@ -511,7 +572,7 @@ export default function WhenToGo() {
           size="inline"
           icon={<IconCalendar />}
           title="No cities to compare yet"
-          description="Add a city to see its best months, or browse every country."
+          description="Add a city to see how it fares through the year, or browse every country."
           action={
             <div className="plan-when-empty-actions">
               <CitySearch onPick={addCity} placeholder="Add a city" aria-label="Add a city" />
@@ -533,7 +594,7 @@ export default function WhenToGo() {
             label="Loading"
             columns={columns}
             firstHeader="Country"
-            trailHeader="Best time"
+            trailHeader={fitHeader}
             renderPopover={() => null}
           />
         </div>
@@ -560,9 +621,11 @@ export default function WhenToGo() {
           groups={groups}
           label={`${METRIC_NAMES[metric]} by ${timeframe === "months" ? "month" : "season"}, ${view === "cities" ? "your cities" : "every country"}`}
           firstHeader={view === "cities" ? "City" : "Country"}
-          trailHeader="Best time"
+          trailHeader={fitHeader}
           renderPopover={renderPopover}
           columns={columns}
+          windowCols={windowCols}
+          markedCols={windowCols.map((col) => ({ col, label: when === "now" ? "this month" : "in your dates" }))}
           ramp={RAMP[metric]}
         />
       )}

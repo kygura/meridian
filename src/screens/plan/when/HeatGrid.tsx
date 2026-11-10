@@ -26,8 +26,6 @@ export interface HeatCell {
   step?: number;
   /** Value printed in the cell, e.g. "82" or "24°". */
   text?: string;
-  /** Part of the row's best window: bracketed, with the edges marked. */
-  best?: { start: boolean; end: boolean; peak: boolean };
 }
 
 export interface HeatRow {
@@ -69,6 +67,8 @@ export interface HeatGridProps {
   className?: string;
   /** Column set; defaults to the 12 months. */
   columns?: FrameColumn[];
+  /** Columns inside the chosen time window: shaded behind the cells. */
+  windowCols?: number[];
   /** Colour ramp the cells paint with. Default "ramp" (comfort/match). */
   ramp?: "ramp" | "temp" | "wet" | "green";
 }
@@ -122,6 +122,7 @@ export function HeatGrid({
   onCellClick,
   className,
   columns = MONTHS,
+  windowCols,
   ramp = "ramp",
 }: HeatGridProps) {
   const n = columns.length;
@@ -261,7 +262,7 @@ export function HeatGrid({
                     </th>
                     {row.state === "ready" && row.cells ? (
                       row.cells.map((cell, col) => (
-                        <td key={col} className="plan-heat-td">
+                        <td key={col} className={cx("plan-heat-td", windowCols?.includes(col) && "is-window")}>
                           {cell ? (
                             <button
                               type="button"
@@ -272,10 +273,6 @@ export function HeatGrid({
                                 `plan-heat-s${cell.step ?? scoreStep(cell.score)}`,
                                 cell.text !== undefined && "has-text",
                                 cell.text !== undefined && lightInk[cell.step ?? scoreStep(cell.score)] && "is-ink-light",
-                                cell.best && "is-best",
-                                cell.best?.start && "is-best-start",
-                                cell.best?.end && "is-best-end",
-                                cell.best?.peak && "is-best-peak",
                                 cell.muted && "is-muted",
                                 cell.ring && "is-ring",
                                 cell.dot && "is-dot",

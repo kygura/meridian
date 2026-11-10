@@ -1,4 +1,4 @@
-// Plan › Live & love: every city by how good it is to live in (x) and how beautiful it is (y).
+// Plan › Places to live: every city by how good it is to live in (x) and how beautiful it is (y).
 // Data: GET /api/livability (scripts/build-livability.ts). Click a dot or a row to open the city.
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
@@ -44,7 +44,7 @@ function useWidth<T extends HTMLElement>() {
   return [ref, w] as const;
 }
 
-export default function LiveLove() {
+export default function PlacesToLive() {
   const cities = useMeridianStore((s) => s.cities);
   const trips = useMeridianStore((s) => s.trips);
   const [rows, setRows] = useState<LivabilityRow[] | null>(null);

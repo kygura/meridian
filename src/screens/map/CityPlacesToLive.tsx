@@ -22,7 +22,7 @@ function Meter({ label, value, hint }: { label: string; value: number | null; hi
   );
 }
 
-export default function CityLiveLove({ city }: { city: City }) {
+export default function CityPlacesToLive({ city }: { city: City }) {
   const [data, setData] = useState<LivabilityDetail | null | undefined>(undefined);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function CityLiveLove({ city }: { city: City }) {
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-live`}>
-      <SectionHeader level={3} id={`${city.id}-live`} title="Live & love" />
+      <SectionHeader level={3} id={`${city.id}-live`} title="Quality of life and beauty" />
       {!data ? (
         <Skeleton height={120} />
       ) : (
@@ -76,7 +76,7 @@ export default function CityLiveLove({ city }: { city: City }) {
             <p className="map-live-facts">{[...facts!.setting, ...facts!.character].join(" · ")}</p>
           ) : null}
           <a className="map-live-link" href={hrefFor({ view: "plan", tab: "live" })}>
-            Compare every city on Live &amp; love →
+            Compare every city in Places to live →
           </a>
         </div>
       )}

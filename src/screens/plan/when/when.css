@@ -99,15 +99,38 @@
   }
 }
 
-.plan-when-legend-best {
-  display: inline-flex;
+.plan-when-time {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-left: var(--space-2);
+  gap: var(--space-2) var(--space-3);
 }
-.plan-when-legend-best::before {
-  content: "";
-  width: 18px;
-  height: 12px;
-  box-shadow: inset 0 0 0 2px var(--ramp-best);
+.plan-when-dates {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.plan-when-dates input {
+  min-width: 0;
+}
+.plan-when-dates-sep,
+.plan-when-time-note {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.plan-when-time-note.is-error {
+  color: var(--danger);
+}
+
+.plan-when-fit {
+  color: var(--text);
+}
+.plan-when-fit-num {
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+.plan-when-fit.is-none {
+  color: var(--muted);
 }

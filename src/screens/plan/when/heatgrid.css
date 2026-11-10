@@ -263,30 +263,9 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
   display: none;
 }
 
-/* Best window: a bracket in the best-window green, edges closed, peak notched. */
-.plan-heat-cell.is-best {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best);
-}
-.plan-heat-cell.is-best.is-best-start {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset 2px 0 0 var(--ramp-best);
-}
-.plan-heat-cell.is-best.is-best-end {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset -2px 0 0 var(--ramp-best);
-}
-.plan-heat-cell.is-best.is-best-start.is-best-end {
-  box-shadow: inset 0 0 0 2px var(--ramp-best);
-}
-.plan-heat-cell.is-best-peak::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  border-left: 7px solid transparent;
-  border-top: 7px solid var(--ramp-best);
-}
-.plan-heat-cell.is-best:hover,
-.plan-heat-cell.is-best.is-active {
-  box-shadow: inset 0 0 0 2px var(--ink);
+/* Columns inside the chosen time window: an accent wash shows in the gaps between cells. */
+.plan-heat-td.is-window {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* Four columns (seasons) stay readable without the month-sized minimum width. */

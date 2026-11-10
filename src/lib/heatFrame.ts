@@ -94,57 +94,53 @@ export function describeMetric(metric: ClimateMode, v: number): string {
   }
 }
 
-export interface BestRun {
-  start: number;
-  end: number;
-  peak: number;
-  /** Column indices inside the run, in order. */
-  cols: number[];
-}
+// ── Time window ────────────────────────────────────────────────────────
 
-const MARGIN = 8;
+/** "2026-11-10" -> Date at local midnight, or null. */
+function parseDay(iso: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 /**
- * Longest wrap-around run of columns within 8 points of the best comfort score. Ties go
- * to the run holding the peak, then the earliest start. Null when any column is missing.
+ * 0-based months a date range touches, in calendar order from the start date
+ * ("2026-12-20".."2027-01-05" -> [11, 0]). A year or more gives all 12. Null when either
+ * date is invalid or the range runs backwards.
  */
-export function bestRun(scores: (number | null)[]): BestRun | null {
-  const n = scores.length;
-  if (n === 0 || scores.some((s) => s === null)) return null;
-  const s = scores as number[];
-  const max = Math.max(...s);
-  const ok = s.map((x) => x >= max - MARGIN);
-  const peak = s.indexOf(max);
-  const span = (start: number, len: number) => Array.from({ length: len }, (_, k) => (start + k) % n);
-
-  if (ok.every(Boolean)) return { start: 0, end: n - 1, peak, cols: span(0, n) };
-
-  const runs: { start: number; len: number }[] = [];
-  for (let i = 0; i < n; i++) {
-    if (ok[i] && !ok[(i + n - 1) % n]) {
-      let len = 0;
-      while (len < n && ok[(i + len) % n]) len++;
-      runs.push({ start: i, len });
-    }
-  }
-  const has = (r: { start: number; len: number }) => (peak - r.start + n) % n < r.len;
-  runs.sort((a, b) => b.len - a.len || Number(has(b)) - Number(has(a)) || a.start - b.start);
-  const r = runs[0]!;
-  const cols = span(r.start, r.len);
-  const runPeak = cols.reduce((p, c) => (s[c]! > s[p]! ? c : p), cols[0]!);
-  return { start: r.start, end: cols[cols.length - 1]!, peak: runPeak, cols };
+export function monthsInRange(from: string, to: string): number[] | null {
+  const a = parseDay(from);
+  const b = parseDay(to);
+  if (!a || !b || b < a) return null;
+  const span = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + 1;
+  if (span >= 12) return Array.from({ length: 12 }, (_, i) => (a.getMonth() + i) % 12);
+  return Array.from({ length: span }, (_, i) => (a.getMonth() + i) % 12);
 }
 
-/** "May–Sep", "Jun–Aug", "All year". */
-export function bestRunLabel(run: BestRun | null, tf: Timeframe): string {
-  if (!run) return "";
-  const cols = frameColumns(tf);
-  if (run.cols.length === cols.length) return "All year";
-  if (tf === "seasons") {
-    const first = cols[run.start]!.months[0]!;
-    const last = cols[run.end]!.months[2]!;
-    return `${MONTH_SHORT[first]}–${MONTH_SHORT[last]}`;
+/** Mean comfort over the window's months; null when any of them has no score. */
+export function windowScore(months: FrameMonth[], window: number[]): number | null {
+  if (window.length === 0) return null;
+  let sum = 0;
+  for (const m of window) {
+    const v = months[m]?.score;
+    if (!finite(v)) return null;
+    sum += v;
   }
-  if (run.start === run.end) return MONTH_SHORT[run.start]!;
-  return `${MONTH_SHORT[run.start]}–${MONTH_SHORT[run.end]}`;
+  return sum / window.length;
+}
+
+/** Columns of a timeframe that overlap the window's months. */
+export function columnsInWindow(tf: Timeframe, window: number[]): number[] {
+  return frameColumns(tf)
+    .map((c, i) => (c.months.some((m) => window.includes(m)) ? i : -1))
+    .filter((i) => i >= 0);
+}
+
+/** "Nov", "Dec–Jan", "All year". */
+export function windowLabel(window: number[]): string {
+  if (window.length === 0) return "";
+  if (window.length >= 12) return "All year";
+  const first = MONTH_SHORT[window[0]!]!;
+  return window.length === 1 ? first : `${first}–${MONTH_SHORT[window[window.length - 1]!]}`;
 }
