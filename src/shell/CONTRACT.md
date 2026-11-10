@@ -52,6 +52,7 @@ props as listed.
 | `screens/plan/repeat/RepeatTrip` | `{ journeyId?: string; stopIndex?: number }` | PlanScreen, `#/plan/repeat[/<journeyId>[/<stopIndex>]]`, keyed by seed. `stopIndex` is 0-based. |
 | `screens/plan/watches/Watches` | none | PlanScreen, `#/plan/watches`. |
 | `screens/plan/flights/Flights` | none | PlanScreen, `#/plan/flights`. |
+| `screens/plan/days/DaysPage` | none | PlanScreen, `#/plan/days`. Owner only. Visa display parts shared with trips and the rotation live in `screens/visa/`. |
 | `screens/plan/flights/BookingSheet` | none | App, always mounted. Reads `useMeridianStore.bookingModal`. |
 | `screens/inbox/InboxScreen` | none | App on `#/inbox`. |
 | `screens/world/WorldScreen` | none | App on `#/world`. |
@@ -67,7 +68,7 @@ padding.
 type Route =
   | { view: "map" }
   | { view: "trips"; tab: "upcoming" | "past"; tripId?: string; journeyId?: string }
-  | { view: "plan"; tab: "when" | "repeat" | "watches" | "flights"; journeyId?: string; stopIndex?: number }
+  | { view: "plan"; tab: "when" | "live" | "repeat" | "watches" | "flights" | "days"; journeyId?: string; stopIndex?: number }
   | { view: "inbox" }
   | { view: "world" };
 parseHash(hash): Route          // legacy hashes map to their new route
@@ -91,6 +92,7 @@ Canonical hashes:
 | `#/plan/repeat/<journeyId>[/<stopIndex>]` | Repeat a trip, seeded from a journey |
 | `#/plan/watches` | Watches |
 | `#/plan/flights` | Flights |
+| `#/plan/days` | Days: Schengen window, country and tax-day counters (ADR 0012) |
 | `#/inbox` | inbox |
 | `#/world` | world |
 

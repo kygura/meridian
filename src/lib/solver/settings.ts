@@ -47,9 +47,9 @@ export interface SolverSettings {
 }
 
 export const DEFAULT_CONSTRAINTS: Constraints = {
-  // On by default: wrongly on costs some options, wrongly off risks an overstay. The Rules
-  // panel says to turn it off with an EU, EEA or Swiss passport, and every plan states that
-  // past days not in the rotation or journal are counted as zero (SCHENGEN_PRIOR_NOTE).
+  // Used only while no passport is set: on by default, since wrongly on costs some options and
+  // wrongly off risks an overstay. With a passport in Settings › Visas, Schengen follows the
+  // passport (ADR 0012). Every plan states that past days not in the rotation or journal count as zero.
   schengen: true,
   countryRules: [],
   allowBorderRuns: false,

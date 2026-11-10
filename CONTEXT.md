@@ -419,11 +419,13 @@ _Avoid_: constraint (those are hard)
 
 **Schengen Buffer**:
 A stay outside the Schengen Area placed after Schengen stays because another Schengen stay
-there would break 90 days in any 180.
+there would break 90 days in any 180. The visa module (ADR 0012) suggests them, ranked by
+distance and comfort, and the solver adds the best two to the Pool when it has none in reach.
 
 **Border Run**:
 Two nights in another country that restart a per-entry limit, inserted only when the owner
-allows them.
+allows them, and only to a country the passport enters on arrival. Useless against a rolling
+window, and said so.
 
 **Shift**:
 A measured change about the current or an upcoming stay (fresh news, a new advisory, air or
@@ -445,6 +447,51 @@ Fixed Stay kept.
 The margin a continuous Shift must clear past its threshold to fire, and fall below it to
 clear, so a reading near the line neither fires nor flaps. With the cooldown (a week by default),
 one Shift raises at most one Proposal per cooldown.
+
+### Visas and day counting (ADR 0012)
+
+**Passport**:
+A passport the Owner holds, by issuing country, with an optional expiry (Settings › Visas). With
+several, each check uses the one with the easiest entry and names it.
+
+**Entry Requirement**:
+What a passport needs to enter a country: none (visa free), a visa on arrival, an ETA, an
+e-visa, a visa before travel, or no entry; "free movement" inside the EU, EEA and Switzerland.
+From Passport Index Data, with curated rows where they are newer or more specific.
+_Avoid_: visa status
+
+**Day Limit**:
+How long the Entry Requirement allows and how the days count: per entry, in a rolling window
+(90 in any 180), or per calendar year. Entry and exit days both count.
+_Avoid_: allowance, quota
+
+**Schengen 90/180**:
+The 29 Schengen countries share one rolling count: 90 days in any 180. Cyprus and Ireland are
+in the EU but outside it. Does not apply with an EU, EEA or Swiss passport.
+
+**Curated Rule**:
+A hand-written row in `data/visa-curated.json` (a zone, a regime, a nomad visa, a yellow-fever
+requirement, a tax test, a border-run note), each with a source link and the date it was checked.
+
+**Verdict**:
+One stay checked: within limit, close to it, over it (with the first day over), visa first, no
+entry, free, or no data; with passport validity and yellow fever flags.
+
+**Violation**:
+A Day Limit the whole plan breaks, from the first day over; past breaches before today are history.
+
+**Passport Validity**:
+How long a passport must outlast the arrival or the departure (FCDO's wording per destination,
+kept word for word, read into months or days where plain).
+
+**Tax Days**:
+Days present in a country per period (calendar year, tax year or any 12 months), counted against
+that country's sourced test or the general 183-day rule of thumb. Not tax advice.
+_Avoid_: residency days (the test decides residency; days are only one input)
+
+**Legal Residency**:
+The country the Owner is tax-resident in and wants to keep. Its counter is shown apart; the
+others warn as they near their test.
 
 ## Bridges (ADR 0017)
 
