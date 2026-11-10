@@ -22,6 +22,7 @@ import notificationsRoutes from "./routes/notifications.js";
 import jobsRoutes from "./routes/jobs.js";
 import sharedRoutes from "./routes/shared.js";
 import rotationRoutes from "./routes/rotation.js";
+import solverRoutes from "./routes/solver.js";
 import { gateRoutes } from "./middleware/auth.js";
 import { installGuards } from "./middleware/guards.js";
 import authRoutes from "./routes/auth.js";
@@ -61,6 +62,8 @@ app.route("/api/jobs", jobsRoutes);
 app.route("/api/auth", authRoutes);
 // Owner-only; gated inside the router (ADR 0011).
 app.route("/api/rotation", rotationRoutes);
+// Owner-only; gated inside the router (ADR 0015).
+app.route("/api/solver", solverRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).
 app.route("/api/shared", sharedRoutes);
 
