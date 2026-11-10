@@ -1,7 +1,7 @@
 // Plain-language copy for Plan › Repeat a trip and When to go. Pure: no React, no fetch.
 // Months are 1-based (1 = January) everywhere in this file.
 
-import type { FingerprintDim, ReplayQuery, ReplayResult } from "../types";
+import type { ReplayDim, ReplayQuery, ReplayResult } from "../types";
 
 export const MONTH_NAMES = [
   "January",
@@ -118,8 +118,9 @@ export function scoreStep(score: number): number {
   return Math.max(0, Math.min(6, Math.round((score / 100) * 6)));
 }
 
-export const DIM_WORDS: Record<FingerprintDim, string> = {
+export const DIM_WORDS: Record<ReplayDim, string> = {
   month: "Season",
+  weekOfYear: "Season",
   comfort: "Comfort",
   tempC: "Temperature",
   precipMm: "Rain",
@@ -128,7 +129,7 @@ export const DIM_WORDS: Record<FingerprintDim, string> = {
   crowdProxy: "Crowds",
 };
 
-const CLIMATE_DIMS: FingerprintDim[] = ["month", "comfort", "tempC", "precipMm"];
+const CLIMATE_DIMS: ReplayDim[] = ["month", "weekOfYear", "comfort", "tempC", "precipMm"];
 
 /** "Mostly climate and budget": the two strongest contributors, grouped. */
 export function whyText(r: Pick<ReplayResult, "dims">): string {

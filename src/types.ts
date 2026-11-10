@@ -407,6 +407,9 @@ export type FingerprintDim =
   | "flightCostEurPer1000km"
   | "crowdProxy";
 
+/** A dimension a replay match can be scored on: the fingerprint's, plus the week of the year at week resolution. */
+export type ReplayDim = FingerprintDim | "weekOfYear";
+
 /** ok = computed from real data; pending = fetch failed/quota, will retry; absent = no input data. */
 export type FingerprintDimStatus = "ok" | "pending" | "absent";
 
@@ -494,12 +497,19 @@ export interface ReplayQuery {
     tags?: string[]; // event tags, e.g. ["eclipse"]
     /** Restrict to these cities (row-level watches). */
     cityIds?: string[];
+    /** Week resolution only: restrict to these weeks of the year (1-52). */
+    weeks?: number[];
   };
   limit?: number; // default 30
+  /**
+   * "week" matches destination x week-of-year cells for cities with weekly normals and falls back
+   * to months for the rest (ADR 0014). Default "month" (ADR 0005).
+   */
+  resolution?: "month" | "week";
 }
 
 export interface ReplayDimScore {
-  name: FingerprintDim;
+  name: ReplayDim;
   value: number;
   templateValue: number;
   /** "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder). */
@@ -510,10 +520,12 @@ export interface ReplayDimScore {
 
 export interface ReplayResult {
   cityId: string;
-  month: number; // 1-12
+  month: number; // 1-12 (the month the week mostly falls in, for a weekly cell)
+  /** Week of the year (1-52) when this result is a weekly cell; absent for a monthly one. */
+  week?: number;
   match: number; // 0-100
   dims: ReplayDimScore[];
-  scoredOn: FingerprintDim[];
+  scoredOn: ReplayDim[];
   price?: FlightEstimateResult & { priceEur?: number; baselineEur?: number; distanceKm?: number };
   visitedBefore: boolean;
   events?: MeridianEvent[];
@@ -528,6 +540,11 @@ export interface ReplayResponse {
   fromCityId?: string;
   /** Stage-1 match (0-100) for all 12 months of every result city, index 0 = Jan; null = not scorable. */
   grid?: Array<{ cityId: string; months: Array<number | null> }>;
+  /** Week resolution: the requested resolution, and stage-1 match for all 52 weeks of each result city that has weekly normals. */
+  resolution?: "month" | "week";
+  weekGrid?: Array<{ cityId: string; weeks: Array<number | null> }>;
+  /** Cities with weekly normals (a subset of universeSize); the rest were matched by month. */
+  weeklyUniverseSize?: number;
   /**
    * Where the template's comfort/tempC/precipMm came from: "observed" = the stay's
    * real weather (or values given in a partial fingerprint), "normal" = the city's
