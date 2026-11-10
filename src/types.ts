@@ -17,6 +17,8 @@ export interface City {
   currency?: string;
   /** The city's name in its own language and script ("東京", "Москва"), when it differs. */
   nativeName?: string;
+  /** Which piece of land the city is on (data/city-geo.json); equal ids are joined by land. */
+  landmass?: number;
 }
 
 export type MetricCategory =
@@ -90,6 +92,14 @@ export interface TripNode {
   lng: number;
   /** When in the season this stop happens. Absent = not placed yet. */
   months?: MonthSpan;
+  /** Itinerary (ADR 0010), used once the trip has a year. YYYY-MM-DD. */
+  arrive?: string;
+  depart?: string;
+  lodging?: TripLodging;
+  activities?: TripActivity[];
+  notes?: string;
+  /** How you get to this stop: transport mode and a booking recorded by hand. */
+  travel?: LegPlan;
 }
 
 export interface TripEstimate {
@@ -123,6 +133,10 @@ export interface Trip {
   departure?: TripNode;
   /** Fly back to the departure after the last stop. Absent = true. */
   returnHome?: boolean;
+  /** How many people travel, for search links. Absent = 1. */
+  travellers?: number;
+  /** The leg home from the last stop (the other legs live on the stop they arrive at). */
+  homeLeg?: LegPlan;
 }
 
 export interface ShortlistEntry {
@@ -660,4 +674,57 @@ export interface MeridianEvent {
   date?: string;
   recurring: boolean;
   tags: string[];
+}
+
+// ── Itinerary (ADR 0010) ────────────────────────────────────────────
+// Concrete plans on a Trip once it has a year. Costs are kept as entered
+// (MoneyInput: amount + currency); nothing here is converted or booked by Meridian.
+
+export type LegMode = "flight" | "train" | "bus" | "ferry" | "drive";
+
+/** Where you sleep at a trip stop. Mirrors the journal's Lodging, plus what a plan needs. */
+export interface TripLodging {
+  name: string;
+  kind?: Lodging["kind"];
+  address?: string;
+  /** YYYY-MM-DD; default to the stop's arrival and departure. */
+  checkIn?: string;
+  checkOut?: string;
+  /** Total for the stay. */
+  cost?: MoneyInput;
+  bookingRef?: string;
+  link?: string;
+}
+
+/** Something planned at a trip stop. Becomes an Experience once it has happened. */
+export interface TripActivity {
+  id: string;
+  title: string;
+  date?: string; // YYYY-MM-DD
+  time?: string; // HH:MM, local to the stop
+  cost?: MoneyInput;
+  link?: string;
+  note?: string;
+}
+
+/** A booking made somewhere else and written down on a leg. Times are local: YYYY-MM-DDTHH:MM. */
+export interface LegRecord {
+  carrier?: string;
+  number?: string;
+  reference?: string;
+  cost?: MoneyInput;
+  departAt?: string;
+  arriveAt?: string;
+}
+
+/**
+ * The plan for one leg, stored on the stop it arrives at (Trip.homeLeg for the way home).
+ * `fromCityId` is the city it left from when it was written: reorder the route and the
+ * plan no longer matches, so it is ignored.
+ */
+export interface LegPlan {
+  fromCityId: string;
+  /** Absent = the default for the distance and geography. */
+  mode?: LegMode;
+  booked?: LegRecord;
 }

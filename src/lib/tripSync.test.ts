@@ -72,3 +72,50 @@ describe("pendingChanges", () => {
     expect(pendingChanges([{ ...a, estimate: { priceEstimate: 1, currency: "USD", dateRange: { start: "", end: "" } } }], baseOf(a))).toEqual({ put: [], del: [] });
   });
 });
+
+describe("tripFingerprint and itineraries (ADR 0010)", () => {
+  it("is unchanged for a trip saved before itineraries existed", () => {
+    const old = t("a", "Old", { nodes: [{ cityId: "lima-peru", name: "Lima", iata: "LIM", lat: -12, lng: -77, months: { start: 2, end: 3 } }], year: 2027 });
+    expect(JSON.parse(tripFingerprint(old))).toEqual({
+      name: "Old",
+      color: "#0f766e",
+      status: "draft",
+      nodes: [{ cityId: "lima-peru", name: "Lima", iata: "LIM", lat: -12, lng: -77, months: { start: 2, end: 3 } }],
+      year: 2027,
+    });
+    // Empty leftovers of editing don't count as a change either.
+    const touched = { ...old, travellers: 1, nodes: [{ ...old.nodes[0], activities: [], notes: "" }] };
+    expect(tripFingerprint(touched)).toBe(tripFingerprint(old));
+  });
+
+  it("changes when the itinerary does, and carries it to the server", () => {
+    const base = t("a");
+    const dated = t("a", "a", {
+      travellers: 2,
+      homeLeg: { fromCityId: "lima-peru", mode: "flight" },
+      nodes: [
+        {
+          ...node("lima-peru"),
+          arrive: "2027-03-01",
+          depart: "2027-03-05",
+          lodging: { name: "Casa", bookingRef: "R1" },
+          activities: [{ id: "x", title: "Tour" }],
+          notes: "n",
+          travel: { fromCityId: "home", booked: { reference: "PNR" } },
+        },
+      ],
+    });
+    expect(tripFingerprint(dated)).not.toBe(tripFingerprint(base));
+    expect(pendingChanges([dated], baseOf(base)).put).toEqual([dated]);
+    const body = JSON.parse(tripFingerprint(dated));
+    expect(body.travellers).toBe(2);
+    expect(body.homeLeg).toEqual({ fromCityId: "lima-peru", mode: "flight" });
+    expect(body.nodes[0]).toMatchObject({ arrive: "2027-03-01", lodging: { name: "Casa", bookingRef: "R1" }, travel: { booked: { reference: "PNR" } } });
+  });
+
+  it("ignores the key order the server sends nested objects back in", () => {
+    const local = t("a", "a", { nodes: [{ ...node("lima-peru"), lodging: { name: "Casa", address: "Rua A", bookingRef: "R1" } }] });
+    const remote = t("a", "a", { nodes: [{ ...node("lima-peru"), lodging: { bookingRef: "R1", address: "Rua A", name: "Casa" } }] });
+    expect(tripFingerprint(local)).toBe(tripFingerprint(remote));
+  });
+});

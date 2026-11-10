@@ -1,9 +1,10 @@
 import type maplibregl from "maplibre-gl";
 import { buildJourneyArcs } from "../../lib/journeyArcs";
-import { flightPath, type FlightHub, type LngLat } from "../../lib/geo";
+import { flightPath, greatCirclePoints, type FlightHub, type LngLat } from "../../lib/geo";
+import { MODE_LABEL, tripLegs } from "../../lib/legs";
 import { resolveTripColor } from "../../lib/tripColors";
 import type { Booking } from "../../lib/bookingApi";
-import type { City, Journey, Trip } from "../../types";
+import type { City, Journey, LegMode, Trip } from "../../types";
 import { cssColor, mixRgba, type MapColors, type RGBA } from "./useMapColors";
 
 // Trip overlays on the globe (DESIGN-v3.md §6): past journey arcs coloured by year,
@@ -39,6 +40,8 @@ export interface RouteDatum {
   color: string;
   confirmed: boolean;
   suggested: boolean;
+  /** How the leg is travelled: flights are arcs, everything else is a dotted line. */
+  mode: LegMode;
 }
 
 export interface NodeDatum {
@@ -177,17 +180,25 @@ export function buildPast(journeys: Journey[], cities: City[]) {
 
 export function buildPlanned(trips: Trip[], cities: City[]) {
   const hubs = hubsOf(cities);
+  const landmass = new Map<string, number>();
+  for (const c of cities) if (c.landmass !== undefined) landmass.set(c.id, c.landmass);
+  const landmassOf = (id: string) => landmass.get(id);
   const routes: RouteDatum[] = [];
   const nodes: NodeDatum[] = [];
   for (const trip of trips) {
     const color = resolveTripColor(trip.color);
     const confirmed = trip.status === "confirmed" && trip.origin !== "agent";
     const suggested = trip.origin === "agent";
-    for (let i = 0; i < trip.nodes.length - 1; i++) {
-      const a = trip.nodes[i];
-      const b = trip.nodes[i + 1];
-      for (const path of flightPath([a.lng, a.lat], [b.lng, b.lat], hubs).segments)
-        routes.push({ kind: "route", path, tripId: trip.id, name: trip.name, color, confirmed, suggested });
+    for (const leg of tripLegs(trip.nodes, hubs, landmassOf)) {
+      const a = leg.from;
+      const b = leg.to;
+      // Train, bus, ferry and road legs go point to point; only flights route through a hub.
+      const paths =
+        leg.mode === "flight"
+          ? flightPath([a.lng, a.lat], [b.lng, b.lat], hubs).segments
+          : [greatCirclePoints([a.lng, a.lat], [b.lng, b.lat], 16)];
+      for (const path of paths)
+        routes.push({ kind: "route", path, tripId: trip.id, name: trip.name, color, confirmed, suggested, mode: leg.mode });
     }
     for (const n of trip.nodes)
       nodes.push({ kind: "node", coord: [n.lng, n.lat], tripId: trip.id, name: n.name, tripName: trip.name, color });
@@ -369,7 +380,7 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
     src["ov-routes"] = {
       type: "FeatureCollection",
       features: planned.routes.map((r, i) =>
-        line(r.path, { i, hid: r.tripId, color: r.color, dashed: !r.confirmed, suggested: r.suggested })
+        line(r.path, { i, hid: r.tripId, color: r.color, dashed: !r.confirmed, suggested: r.suggested, ground: r.mode !== "flight" })
       ),
     };
     src["ov-nodes"] = {
@@ -401,6 +412,7 @@ export const PICK_LAYERS: [string, keyof OverlayData["pick"]][] = [
   ["ov-bookings", "bookings"],
   ["ov-routes-solid", "routes"],
   ["ov-routes-dashed", "routes"],
+  ["ov-routes-ground", "routes"],
   ["ov-arcs", "arcs"],
   ["ov-cities", "cities"],
 ];
@@ -441,7 +453,7 @@ export function overlayLayers(
       type: "line",
       source: "ov-routes",
       layout: lineLayout,
-      filter: ["!", ["get", "dashed"]],
+      filter: ["all", ["!", ["get", "dashed"]], ["!", ["get", "ground"]]],
       paint: paint["ov-routes-casing"],
     },
     {
@@ -449,7 +461,7 @@ export function overlayLayers(
       type: "line",
       source: "ov-routes",
       layout: lineLayout,
-      filter: ["!", ["get", "dashed"]],
+      filter: ["all", ["!", ["get", "dashed"]], ["!", ["get", "ground"]]],
       paint: paint["ov-routes-solid"],
     },
     {
@@ -457,8 +469,17 @@ export function overlayLayers(
       type: "line",
       source: "ov-routes",
       layout: { "line-cap": "butt", "line-join": "round" },
-      filter: ["get", "dashed"],
+      filter: ["all", ["get", "dashed"], ["!", ["get", "ground"]]],
       paint: { ...paint["ov-routes-dashed"], "line-dasharray": [2.2, 1.6] },
+    },
+    {
+      // Train, bus, ferry and road legs: a dotted line, so they never read as flight arcs.
+      id: "ov-routes-ground",
+      type: "line",
+      source: "ov-routes",
+      layout: lineLayout,
+      filter: ["get", "ground"],
+      paint: { ...paint["ov-routes-ground"], "line-dasharray": [0.1, 1.9] },
     },
     { id: "ov-stops", type: "circle", source: "ov-stops", paint: paint["ov-stops"] },
     { id: "ov-nodes", type: "circle", source: "ov-nodes", paint: paint["ov-nodes"] },
@@ -552,6 +573,11 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
       "line-opacity": ["case", ["get", "suggested"], 0.55, 1],
       "line-width": ["case", h, 4, 2.6],
     },
+    "ov-routes-ground": {
+      "line-color": ["get", "color"],
+      "line-opacity": ["case", ["get", "suggested"], 0.55, 1],
+      "line-width": ["case", h, 4.6, 3.4],
+    },
     "ov-stops": {
       "circle-color": ["get", "color"],
       "circle-radius": ["case", h, 5, 3.6],
@@ -616,7 +642,10 @@ export function describe(d: PickDatum, fmtDate: (iso: string) => string): { titl
     case "stop":
       return d.name ? { title: d.name, sub: `Visited in ${d.year}` } : null;
     case "route":
-      return { title: d.name, sub: d.suggested ? "Suggested trip" : d.confirmed ? "Planned trip · Confirmed" : "Planned trip" };
+      return {
+        title: d.name,
+        sub: `${d.suggested ? "Suggested trip" : d.confirmed ? "Planned trip · Confirmed" : "Planned trip"}${d.mode !== "flight" ? ` · ${MODE_LABEL[d.mode]}` : ""}`,
+      };
     case "node":
       return { title: d.name, sub: d.tripName };
     case "booking":
