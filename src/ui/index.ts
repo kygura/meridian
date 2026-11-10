@@ -25,7 +25,7 @@ export type { CitySearchProps } from "./CitySearch";
 export { searchCities } from "./citySearch";
 export { UnlockCard } from "./UnlockCard";
 export type { UnlockCardProps } from "./UnlockCard";
-export { useJournalToken, onJournalTokenChange, applyJournalToken, clearJournalToken } from "./journalToken";
+export { useJournalToken, onJournalTokenChange, signInOwner, clearJournalToken } from "./journalToken";
 export type { JournalTokenState } from "./journalToken";
 export { useLayer, useFocusTrap, hasOpenLayer } from "./layers";
 export { useMediaQuery, useIsDesktop, DESKTOP_QUERY } from "./useMediaQuery";

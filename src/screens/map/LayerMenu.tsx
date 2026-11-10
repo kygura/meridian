@@ -92,7 +92,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
   const setAvoidConflicts = useMapPrefs((s) => s.setAvoidConflicts);
 
   const pastHint = !unlocked ? (
-    "Unlock your journal to show them"
+    "Sign in to show them"
   ) : pastLoading ? (
     "Loading your trips…"
   ) : years ? (

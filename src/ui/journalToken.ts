@@ -1,86 +1,87 @@
 import { useSyncExternalStore } from "react";
 import { useMeridianStore } from "../store";
-import {
-  getToken,
-  setToken as storeToken,
-  clearToken,
-  refreshBadges,
-  TOKEN_KEY,
-} from "../lib/journalApi";
+import { getToken, TOKEN_KEY } from "../lib/journalApi";
+import { checkSession, isSignedIn, onSessionChange, sessionEnded, signIn, signOut, syncSessionFromStorage } from "../lib/session";
 
-// Journal token state for React. The token itself lives in lib/journalApi
-// (localStorage "meridian.token", with an in-memory fallback). This module adds
-// change notification so gated screens refetch the moment it changes.
-
-const listeners = new Set<() => void>();
-
-function emit() {
-  for (const l of listeners) l();
-}
+// Owner session state for React (ADR 0009). The session itself is an HttpOnly cookie
+// the browser keeps; lib/session tracks whether this browser is signed in. This module
+// adds change notification so gated screens refetch the moment that changes. The names
+// say "token" because screens were written against the old bearer token; no token is
+// stored in the browser any more.
 
 function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
+  const off = onSessionChange(cb);
+  // Another tab signed in or out.
   const onStorage = (e: StorageEvent) => {
-    if (e.key === TOKEN_KEY || e.key === null) cb();
+    if (e.key === TOKEN_KEY || e.key === null) syncSessionFromStorage();
   };
   window.addEventListener("storage", onStorage);
   return () => {
-    listeners.delete(cb);
+    off();
     window.removeEventListener("storage", onStorage);
   };
 }
 
-/** Subscribe to token changes outside React. Returns an unsubscribe function. */
+if (typeof window !== "undefined") {
+  // Bookings are owner-only: load them whenever a session starts (the nav badges follow the hook).
+  onSessionChange(() => {
+    if (isSignedIn()) void useMeridianStore.getState().fetchBookings();
+  });
+  // Confirm the cookie with the server once per page load.
+  void checkSession();
+}
+
+/** Subscribe to sign-in / sign-out outside React. Returns an unsubscribe function. */
 export function onJournalTokenChange(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => listeners.delete(cb);
+  return onSessionChange(cb);
 }
 
-/** Save a token that has already been verified, unlock, and refresh the nav badges. */
-export function applyJournalToken(token: string): boolean {
-  const persisted = storeToken(token);
-  useMeridianStore.getState().setJournalLocked(false);
-  emit();
-  void refreshBadges();
-  return persisted;
+/** Sign in with the owner password. Rejects with the errors of lib/session. */
+export function signInOwner(password: string): Promise<void> {
+  return signIn(password);
 }
 
-/** Forget the token and clear journal data held in memory. */
+/** Sign out and clear the personal data held in memory. */
 export function clearJournalToken(): void {
-  clearToken();
   const s = useMeridianStore.getState();
-  s.setJournalLocked(false);
   s.setJourneys(null);
   s.setImportPending(0);
   s.setAlerts([]);
   s.setWatches([]);
-  emit();
+  s.setBookings([]);
+  void signOut();
 }
 
 export interface JournalTokenState {
+  /** Changes with every sign-in; null when signed out. An effect dependency, not a credential. */
   token: string | null;
-  /** A token is saved and the server has not rejected it. Gate journal UI on this. */
+  /** Signed in and the server has not answered 401. Gate personal-data UI on this. */
   unlocked: boolean;
-  /** "token_not_configured" when the server has no token set at all. */
+  /** "token_not_configured" when the server has no password set at all. */
   lockReason: "token_not_configured" | null;
-  setToken: (token: string) => boolean;
+  /** The server ended the session (it expired, or was signed out elsewhere). */
+  sessionEnded: boolean;
+  signIn: (password: string) => Promise<void>;
+  /** Sign out. */
   clear: () => void;
 }
 
 /**
- * Journal token for gated screens. Re-renders on unlock, lock and 401s. Refetch with
+ * Owner session for gated screens. Re-renders on sign-in, sign-out and 401s. Refetch with
  *   const { token, unlocked } = useJournalToken();
  *   useEffect(() => { if (unlocked) load(); }, [token, unlocked]);
  */
 export function useJournalToken(): JournalTokenState {
   const token = useSyncExternalStore(subscribe, getToken, () => null);
+  const ended = useSyncExternalStore(subscribe, sessionEnded, () => false);
   const locked = useMeridianStore((s) => s.journalLocked);
   const lockReason = useMeridianStore((s) => s.journalLockReason);
   return {
     token,
     unlocked: !!token && !locked,
     lockReason,
-    setToken: applyJournalToken,
+    sessionEnded: ended,
+    signIn: signInOwner,
     clear: clearJournalToken,
   };
 }

@@ -4,6 +4,7 @@ import { TRIP_COLORS, randomTripColor } from "./lib/tripColors";
 import { mergeTrips } from "./lib/tripTransfer";
 import { withMonths } from "./lib/season";
 import { DEFAULT_DEPARTURE } from "./lib/tripPlan";
+import { planOnlyNode, type NodeItinerary } from "./lib/itinerary";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -15,6 +16,7 @@ import type {
   Trip,
   TripNode,
   MonthSpan,
+  LegPlan,
   TripOption,
   ShortlistEntry,
   TickerItem,
@@ -73,6 +75,12 @@ export interface MeridianState {
   /** Fly back to the departure after the last stop (default true). */
   setTripReturnHome: (tripId: string, returnHome: boolean) => void;
   reorderTripNodes: (tripId: string, fromIndex: number, toIndex: number) => void;
+  /** Itinerary (ADR 0010): set or clear (undefined) a stop's dates, stay, activities, notes. */
+  patchStop: (tripId: string, index: number, patch: Partial<NodeItinerary>) => void;
+  /** The plan for the leg arriving at stop `slot`, or "home" for the leg back. undefined clears it. */
+  setLegPlan: (tripId: string, slot: number | "home", plan: LegPlan | undefined) => void;
+  /** How many people travel (1-9), for search links. */
+  setTripTravellers: (tripId: string, travellers: number) => void;
   duplicateTrip: (tripId: string) => string;
   removeTrip: (id: string) => void;
   /** Add trips from a file; same-id trips are replaced. Returns counts for the toast. */
@@ -314,6 +322,37 @@ export const useMeridianStore = create<MeridianState>()(
             return { ...t, nodes };
           }),
         })),
+      patchStop: (tripId, index, patch) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId || !t.nodes[index]) return t;
+            const next = { ...t.nodes[index], ...patch };
+            for (const k of Object.keys(patch) as (keyof NodeItinerary)[]) if (patch[k] === undefined) delete next[k];
+            return { ...t, nodes: t.nodes.map((n, i) => (i === index ? next : n)) };
+          }),
+        })),
+      setLegPlan: (tripId, slot, plan) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            if (slot === "home") {
+              const { homeLeg: _old, ...rest } = t;
+              return plan ? { ...rest, homeLeg: plan } : rest;
+            }
+            if (!t.nodes[slot]) return t;
+            const { travel: _old, ...node } = t.nodes[slot];
+            return { ...t, nodes: t.nodes.map((n, i) => (i === slot ? (plan ? { ...node, travel: plan } : node) : n)) };
+          }),
+        })),
+      setTripTravellers: (tripId, travellers) =>
+        set((state) => ({
+          trips: state.trips.map((t) => {
+            if (t.id !== tripId) return t;
+            const { travellers: _old, ...rest } = t;
+            const n = Math.max(1, Math.min(9, Math.round(travellers)));
+            return n > 1 ? { ...rest, travellers: n } : rest;
+          }),
+        })),
       duplicateTrip: (tripId) => {
         const id = `trip-${Date.now()}`;
         const state = get();
@@ -324,7 +363,8 @@ export const useMeridianStore = create<MeridianState>()(
               name: `${source.name} (copy)`,
               color: randomTripColor(state.trips.map((t) => t.color)),
               status: "draft",
-              nodes: [...source.nodes],
+              // A copy is a plan to reuse: places, months and transport modes, not one year's dates and bookings.
+              nodes: source.nodes.map(planOnlyNode),
             }
           : {
               id,

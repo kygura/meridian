@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { formatOfferTimes, sortOffers, type Offer, type OfferSortKey, type OfferSource } from "../../../lib/bookingApi";
-import { Button, Card, EmptyState, ErrorState, Segmented, Skeleton, cx } from "../../../ui";
+import { Button, Card, EmptyState, ErrorState, Segmented, Skeleton, UnlockCard, cx } from "../../../ui";
 import { IconArrowRight, IconPlane } from "../../../ui/icons";
 import { Countdown } from "./Countdown";
 import { ProvenanceBadge, ProvenanceNote } from "./ProvenanceBadge";
 import { durationText, priceText, stopsText } from "./flightText";
+import { RealBookingLinks } from "./HandOff";
+import type { BookLink } from "../../../lib/bookLinks";
 
 const SORTS: { value: OfferSortKey; label: string }[] = [
   { value: "price", label: "Cheapest" },
@@ -57,7 +59,8 @@ export function OfferRow({ offer, selected, onSelect }: { offer: Offer; selected
 }
 
 export interface OfferListProps {
-  status: "searching" | "ready" | "error";
+  /** "locked": the server wants the owner signed in before it searches (it would spend a provider key). */
+  status: "searching" | "ready" | "error" | "locked";
   offers: Offer[];
   source: OfferSource | null;
   selectedId?: string | null;
@@ -66,10 +69,12 @@ export interface OfferListProps {
   onChangeSearch?: () => void;
   /** Shown after an expired offer was re-searched. */
   recovered?: boolean;
+  /** The same search on real booking sites (lib/bookLinks). */
+  realLinks?: BookLink[];
 }
 
 /** Offers with sorting, plus loading, empty and error states. */
-export function OfferList({ status, offers, source, selectedId, onSelect, onRetry, onChangeSearch, recovered }: OfferListProps) {
+export function OfferList({ status, offers, source, selectedId, onSelect, onRetry, onChangeSearch, recovered, realLinks }: OfferListProps) {
   const [sort, setSort] = useState<OfferSortKey>("price");
   const sorted = useMemo(() => sortOffers(offers, sort), [offers, sort]);
 
@@ -94,17 +99,23 @@ export function OfferList({ status, offers, source, selectedId, onSelect, onRetr
       </div>
     );
   }
+  if (status === "locked") {
+    return <UnlockCard title="Sign in to search flights" onUnlocked={onRetry} />;
+  }
   if (status === "error") {
     return <ErrorState message="Couldn't search for flights. Check your connection and try again." onRetry={onRetry} />;
   }
   if (offers.length === 0) {
     return (
-      <EmptyState
-        icon={<IconPlane />}
-        title="No flights for this route and date"
-        description="Try another date or a nearby airport."
-        action={onChangeSearch ? <Button onClick={onChangeSearch}>Change search</Button> : <Button onClick={onRetry}>Search again</Button>}
-      />
+      <div className="plan-flights-offers">
+        <EmptyState
+          icon={<IconPlane />}
+          title="No flights for this route and date"
+          description="Try another date or a nearby airport."
+          action={onChangeSearch ? <Button onClick={onChangeSearch}>Change search</Button> : <Button onClick={onRetry}>Search again</Button>}
+        />
+        {realLinks ? <RealBookingLinks links={realLinks} /> : null}
+      </div>
     );
   }
   return (
@@ -116,6 +127,7 @@ export function OfferList({ status, offers, source, selectedId, onSelect, onRetr
         <Segmented<OfferSortKey> label="Sort flights" size="sm" options={SORTS} value={sort} onChange={setSort} />
       </div>
       {source ? <ProvenanceNote source={source} /> : null}
+      {realLinks ? <RealBookingLinks links={realLinks} /> : null}
       {recovered ? <p className="plan-flights-status">That price expired, so here are fresh ones. Your details are saved.</p> : null}
       <ul className="plan-flights-offer-list">
         {sorted.map((o) => (

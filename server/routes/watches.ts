@@ -3,7 +3,7 @@
 
 import { Hono, type Context } from "hono";
 import { ZodError } from "zod";
-import { requireToken } from "../middleware/auth.js";
+import { ownerIdentity, requireToken } from "../middleware/auth.js";
 import { executeReplay } from "../lib/replayService.js";
 import {
   WatchLimitError,
@@ -49,9 +49,14 @@ const runHandler = async (c: Context) => {
   }
 };
 watches.post("/run", runHandler);
-// Vercel Cron calls GET with "Authorization: Bearer $CRON_SECRET"; set CRON_SECRET to the
-// same value as MERIDIAN_TOKEN and the token gate above accepts it.
-watches.get("/run", runHandler);
+// Vercel Cron calls GET with "Authorization: Bearer $CRON_SECRET". The gate accepts
+// CRON_SECRET for this route alone, or MERIDIAN_TOKEN. A GET that changes state must not
+// ride on the session cookie (a link from another site would carry it), so the cookie is refused here.
+watches.get("/run", async (c) => {
+  const who = await ownerIdentity(c);
+  if (who?.method === "session") return c.json({ error: "bearer_required", message: "Run watches with POST, or with the Bearer token." }, 403);
+  return runHandler(c);
+});
 
 watches.get("/alerts", async (c) => c.json({ alerts: await listAlerts({ unseen: c.req.query("unseen") === "1" }) }));
 
