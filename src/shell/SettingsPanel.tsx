@@ -6,6 +6,8 @@ import { parseTripFile, serializeTrips } from "../lib/tripTransfer";
 import { useThemeStore, type ThemePref } from "./theme";
 import { AlertSettingsSection } from "./AlertSettings";
 import { ReplanSettingsSection } from "./ReplanSettings";
+import { NotionSection } from "./NotionSettings";
+import { GmailSection } from "./GmailSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -77,6 +79,8 @@ export function SettingsPanel() {
         />
       </section>
       <TripTransferSection />
+      {unlocked && <GmailSection />}
+      {unlocked && <NotionSection />}
       <section className="shell-settings-section">
         <h3 className="shell-settings-heading">Account</h3>
         {unlocked ? (

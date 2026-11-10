@@ -445,3 +445,33 @@ Fixed Stay kept.
 The margin a continuous Shift must clear past its threshold to fire, and fall below it to
 clear, so a reading near the line neither fires nor flaps. With the cooldown (a week by default),
 one Shift raises at most one Proposal per cooldown.
+
+## Bridges (ADR 0017)
+
+**Bridge**:
+A read-only connection to a service the Owner already uses (Notion, Gmail) that lands what it
+finds where the Owner already reviews it: Notion in Personal Windows and the Candidate Pool,
+Gmail in the Inbox.
+
+**Candidate Pool**:
+The Owner's Location Research entries from Notion, matched to cities: the notes, monthly budget
+range, stay range and the Owner's own scores. The places a Rotation could use; they are not
+stays and carry no dates.
+_Avoid_: shortlist (that's the saved places on the map)
+
+**Import Preview**:
+The diff an import would make (Personal Windows added, changed, removed; pool entries; review
+items), shown before anything is written. Applying it is refused if the source changed since.
+
+**Review Item** (Notion):
+A Notion place name Meridian could not match to one city. The Owner picks the city once; the
+answer is remembered as an alias for that name.
+
+**Gmail Sync**:
+Finding travel confirmations in Gmail with the stored queries, reading each in memory with the
+JSON-LD parser, and landing the fields as Inbox candidates. Backfills year by year, then follows
+Gmail's history id. Message content is never stored.
+
+**Future Booking**:
+A pending Inbox stay or transport candidate dated today or later. Besides the journal it can
+be added to a Trip as a stay or a booking on a Leg.

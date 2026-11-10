@@ -7,6 +7,7 @@ import { TabBar } from "./TabBar";
 import { useApplyTheme } from "./theme";
 import { useUIStore } from "./uiStore";
 import { useGlobalKeys } from "./useGlobalKeys";
+import { NotionSheetHost } from "./NotionSettings";
 import { useNavBadges } from "./useNavBadges";
 
 export interface AppShellProps {
@@ -50,6 +51,7 @@ export function AppShell({ route, children }: AppShellProps) {
       ) : null}
       {!desktop ? <TabBar route={route} badges={badges} /> : null}
       {!desktop && askOpen ? <AskPanel mode="sheet" onClose={closeAsk} /> : null}
+      <NotionSheetHost />
     </div>
   );
 }
