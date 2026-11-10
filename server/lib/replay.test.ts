@@ -63,8 +63,8 @@ describe("primitives", () => {
     expect(applyBend({ month: 11 }, { monthShift: 3 }).month).toBe(2);
     expect(applyBend({ month: 2 }, { monthShift: -3 }).month).toBe(11);
     expect("month" in applyBend({ month: 5 }, { monthShift: null })).toBe(false);
-    const t = applyBend({ tempC: 30, precipMm: 10, comfort: 71, dailySpendEur: 100, crowdProxy: 90 }, { tempC: -8, spendPct: -50, crowd: 30 });
-    expect(t).toMatchObject({ tempC: 22, comfort: 100, dailySpendEur: 50, crowdProxy: 100 });
+    const t = applyBend({ tempC: 26, precipMm: 10, comfort: 45, dailySpendEur: 100, crowdProxy: 90 }, { tempC: -8, spendPct: -50, crowd: 30 });
+    expect(t).toMatchObject({ tempC: 18, comfort: 100, dailySpendEur: 50, crowdProxy: 100 });
   });
   it("representative date is the 15th of the next occurrence after now", () => {
     expect(representativeDate(11, NOW)).toBe("2026-11-15");

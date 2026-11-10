@@ -67,6 +67,8 @@ export interface HeatGridProps {
   className?: string;
   /** Column set; defaults to the 12 months. */
   columns?: FrameColumn[];
+  /** Compact rows: thin cells, name and sublabel on one line. */
+  dense?: boolean;
   /** Columns inside the chosen time window: shaded behind the cells. */
   windowCols?: number[];
   /** Colour ramp the cells paint with. Default "ramp" (comfort/match). */
@@ -123,6 +125,7 @@ export function HeatGrid({
   className,
   columns = MONTHS,
   windowCols,
+  dense = false,
   ramp = "ramp",
 }: HeatGridProps) {
   const n = columns.length;
@@ -198,7 +201,7 @@ export function HeatGrid({
 
   let flat = -1;
   return (
-    <div className={cx("plan-heat", `plan-heat-cols-${n}`, ramp !== "ramp" && `plan-heat-ramp-${ramp}`, className)}>
+    <div className={cx("plan-heat", `plan-heat-cols-${n}`, dense && "plan-heat-dense", ramp !== "ramp" && `plan-heat-ramp-${ramp}`, className)}>
       <div className="plan-heat-scroll">
         <table ref={tableRef} className="plan-heat-table" aria-label={label} onKeyDown={onKeyDown}>
           <thead>

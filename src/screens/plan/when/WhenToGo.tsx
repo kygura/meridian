@@ -96,7 +96,6 @@ function frameCells(name: string, months: FrameMonth[], metric: ClimateMode, tf:
     return {
       score: comfort[col] ?? 0,
       step: metric === "comfort" ? scoreStep(v) : valueStep(metric, v),
-      text: formatMetric(metric, v),
       label: `${name}, ${cols[col]!.name}: ${what}`,
     };
   });
@@ -625,6 +624,7 @@ export default function WhenToGo() {
           renderPopover={renderPopover}
           columns={columns}
           windowCols={windowCols}
+          dense
           markedCols={windowCols.map((col) => ({ col, label: when === "now" ? "this month" : "in your dates" }))}
           ramp={RAMP[metric]}
         />

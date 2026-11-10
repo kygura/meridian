@@ -263,6 +263,40 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
   display: none;
 }
 
+/* Dense: a wall of colour, values on hover. */
+.plan-heat-dense .plan-heat-table thead th {
+  height: 30px;
+}
+.plan-heat-dense .plan-heat-td {
+  padding: 0.5px !important;
+}
+.plan-heat-dense .plan-heat-cell {
+  height: 20px;
+}
+.plan-heat-dense .plan-heat-row > * {
+  border-bottom-color: transparent;
+}
+.plan-heat-dense .plan-heat-name-btn {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  min-height: 21px;
+  padding: 0 var(--space-3);
+}
+.plan-heat-dense .plan-heat-name-main {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+.plan-heat-dense .plan-heat-name-sub {
+  flex: 0 10 auto;
+  min-width: 0;
+}
+.plan-heat-dense .plan-heat-trail {
+  font-size: 11px;
+}
+
 /* Columns inside the chosen time window: an accent wash shows in the gaps between cells. */
 .plan-heat-td.is-window {
   background: color-mix(in srgb, var(--accent) 45%, transparent);
@@ -413,6 +447,15 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
 }
 
 @media (max-width: 899.98px) {
+  .plan-heat-dense .plan-heat-cell {
+    height: 24px;
+  }
+  .plan-heat-dense .plan-heat-td {
+    padding: 0 0.5px !important;
+  }
+  .plan-heat-dense .plan-heat-name-sub {
+    display: none;
+  }
   .plan-heat-cols-4 .plan-heat-table {
     min-width: 440px;
   }

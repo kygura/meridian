@@ -27,42 +27,78 @@ export interface RegionAggregate {
 }
 
 // ── Comfort score formula ───────────────────────────────────────────────
-// Pure, deterministic, unit-tested. Temperature contributes 100 within the
-// 18-26C comfort band, falling off linearly to 0 at <=-5C and >=40C.
-// Precipitation subtracts a penalty: 0 at <=30mm/month, scaling linearly to
-// -35 at >=250mm/month. Final score is clamped to 0-100.
+// Pure, deterministic, unit-tested. Input is the month's MEAN daily temperature
+// (average of day high and night low) and its total rain.
+//
+// A mean of 16-20C is the sweet spot for being out all day: afternoons around
+// 21-27C. Above that it falls away fast, because the afternoon runs 6-8C over the
+// mean (more in deserts): a 26C mean is a ~33C afternoon, a 30C mean is ~37C. Below
+// it falls away more gently: cold can be dressed for. Points in between are linear.
+// Rain then subtracts up to 35: nothing at <=30mm a month, the full 35 at >=250mm.
 
-const TEMP_COMFORT_MIN = 18;
-const TEMP_COMFORT_MAX = 26;
-const TEMP_FLOOR = -5;
-const TEMP_CEILING = 40;
+const TEMP_CURVE: Array<[tempC: number, score: number]> = [
+  [-10, 0],
+  [-2, 8],
+  [4, 25],
+  [9, 50],
+  [13, 78],
+  [16, 100],
+  [20, 100],
+  [22, 85],
+  [24, 65],
+  [26, 45],
+  [28, 28],
+  [30, 15],
+  [32, 6],
+  [34, 0],
+];
 
 const PRECIP_FREE_MM = 30;
 const PRECIP_MAX_MM = 250;
 const PRECIP_MAX_PENALTY = 35;
 
-export function comfortScore(tempC: number, precipMm: number): number {
-  let tempScore: number;
-  if (tempC >= TEMP_COMFORT_MIN && tempC <= TEMP_COMFORT_MAX) {
-    tempScore = 100;
-  } else if (tempC < TEMP_COMFORT_MIN) {
-    tempScore = (100 * (tempC - TEMP_FLOOR)) / (TEMP_COMFORT_MIN - TEMP_FLOOR);
-  } else {
-    tempScore = (100 * (TEMP_CEILING - tempC)) / (TEMP_CEILING - TEMP_COMFORT_MAX);
+function tempScore(tempC: number): number {
+  const first = TEMP_CURVE[0]!;
+  const last = TEMP_CURVE[TEMP_CURVE.length - 1]!;
+  if (tempC <= first[0]) return first[1];
+  if (tempC >= last[0]) return last[1];
+  for (let i = 1; i < TEMP_CURVE.length; i++) {
+    const [x1, y1] = TEMP_CURVE[i]!;
+    if (tempC <= x1) {
+      const [x0, y0] = TEMP_CURVE[i - 1]!;
+      return y0 + ((y1 - y0) * (tempC - x0)) / (x1 - x0);
+    }
   }
-  tempScore = Math.min(100, Math.max(0, tempScore));
+  return last[1];
+}
 
+export function comfortScore(tempC: number, precipMm: number): number {
   let penalty: number;
   if (precipMm <= PRECIP_FREE_MM) {
     penalty = 0;
   } else if (precipMm >= PRECIP_MAX_MM) {
     penalty = PRECIP_MAX_PENALTY;
   } else {
-    penalty =
-      (PRECIP_MAX_PENALTY * (precipMm - PRECIP_FREE_MM)) / (PRECIP_MAX_MM - PRECIP_FREE_MM);
+    penalty = (PRECIP_MAX_PENALTY * (precipMm - PRECIP_FREE_MM)) / (PRECIP_MAX_MM - PRECIP_FREE_MM);
   }
+  return Math.round(Math.min(100, Math.max(0, tempScore(tempC) - penalty)));
+}
 
-  return Math.round(Math.min(100, Math.max(0, tempScore - penalty)));
+/**
+ * Re-derives each month's score from its temperature and rain, so stored datasets
+ * (the seed and the runtime cache) always follow the current formula.
+ */
+export function rescoreMonths(months: MonthSeasonality[]): MonthSeasonality[] {
+  return months.map((m) =>
+    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm) } : m
+  );
+}
+
+function rescoreDataset(d: SeasonalityDataset): SeasonalityDataset {
+  for (const entry of Object.values(d.cities ?? {})) {
+    if (Array.isArray(entry?.months)) entry.months = rescoreMonths(entry.months);
+  }
+  return d;
 }
 
 // ── Daily → monthly aggregation ─────────────────────────────────────────
@@ -135,7 +171,7 @@ export function loadSeasonality(): SeasonalityDataset {
   const candidates = new Set([getDataPath("seasonality.json"), join(process.cwd(), "data", "seasonality.json")]);
   for (const path of candidates) {
     try {
-      cache = JSON.parse(readFileSync(path, "utf-8")) as SeasonalityDataset;
+      cache = rescoreDataset(JSON.parse(readFileSync(path, "utf-8")) as SeasonalityDataset);
       return cache;
     } catch {
       // try the next location
@@ -159,7 +195,7 @@ function loadRuntimeCache(): SeasonalityDataset {
   if (runtimeCache) return runtimeCache;
   try {
     const raw = readFileSync(getDataPath(...RUNTIME_CACHE_FILE), "utf-8");
-    runtimeCache = JSON.parse(raw) as SeasonalityDataset;
+    runtimeCache = rescoreDataset(JSON.parse(raw) as SeasonalityDataset);
   } catch {
     runtimeCache = { version: 1, generatedAt: new Date(0).toISOString(), window: WINDOW, cities: {} };
   }

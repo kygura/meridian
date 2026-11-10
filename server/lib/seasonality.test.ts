@@ -4,52 +4,71 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { comfortScore, aggregateDailyToMonthly } from "./seasonality";
 
-describe("comfortScore — temperature band", () => {
-  it("scores 100 at the low edge of the comfort band (18C, no rain)", () => {
+describe("comfortScore — temperature curve (monthly mean)", () => {
+  it("scores 100 across the 16-20C sweet spot", () => {
+    expect(comfortScore(16, 0)).toBe(100);
     expect(comfortScore(18, 0)).toBe(100);
+    expect(comfortScore(20, 0)).toBe(100);
   });
-  it("scores 100 at the high edge of the comfort band (26C, no rain)", () => {
-    expect(comfortScore(26, 0)).toBe(100);
+  it("falls away fast above it: a 26C mean is a ~33C afternoon", () => {
+    expect(comfortScore(22, 0)).toBe(85);
+    expect(comfortScore(24, 0)).toBe(65);
+    expect(comfortScore(26, 0)).toBe(45);
+    expect(comfortScore(30, 0)).toBe(15);
   });
-  it("scores 100 anywhere inside the band (22C, no rain)", () => {
-    expect(comfortScore(22, 0)).toBe(100);
+  it("interpolates between curve points", () => {
+    // 22C -> 85, 24C -> 65: 23C sits halfway
+    expect(comfortScore(23, 0)).toBe(75);
+    // 9C -> 50, 13C -> 78: 11C sits halfway
+    expect(comfortScore(11, 0)).toBe(64);
   });
-  it("falls off linearly below the band (12C, no rain)", () => {
-    // 100 * (12 - (-5)) / (18 - (-5)) = 100 * 17/23 = 73.913... -> 74
-    expect(comfortScore(12, 0)).toBe(74);
+  it("falls away more gently below it", () => {
+    expect(comfortScore(13, 0)).toBe(78);
+    expect(comfortScore(4, 0)).toBe(25);
   });
-  it("falls off linearly above the band (33C, no rain)", () => {
-    // 100 * (40 - 33) / (40 - 26) = 100 * 7/14 = 50
-    expect(comfortScore(33, 0)).toBe(50);
+  it("is 0 at a 34C mean and at -10C, and clamps beyond", () => {
+    expect(comfortScore(34, 0)).toBe(0);
+    expect(comfortScore(45, 0)).toBe(0);
+    expect(comfortScore(-10, 0)).toBe(0);
+    expect(comfortScore(-30, 0)).toBe(0);
   });
-  it("is exactly 0 at the low floor (-5C)", () => {
-    expect(comfortScore(-5, 0)).toBe(0);
+});
+
+describe("comfortScore — calibrated against real climates (2015-2024 means)", () => {
+  // [mean C, rain mm] from data/seasonality.json
+  it("puts Cairo's spring and summer where a visitor would", () => {
+    expect(comfortScore(18.5, 9)).toBe(100); // March
+    expect(comfortScore(22.4, 2)).toBeLessThan(85); // April: ~30C afternoons
+    expect(comfortScore(26.5, 0)).toBeLessThan(45); // May
+    expect(comfortScore(30.7, 0)).toBeLessThan(15); // July
   });
-  it("is exactly 0 at the high ceiling (40C)", () => {
-    expect(comfortScore(40, 0)).toBe(0);
+  it("does not call the Gulf pleasant from April on", () => {
+    expect(comfortScore(25.9, 5)).toBeLessThan(50); // Manama, April
+    expect(comfortScore(35.2, 0)).toBe(0); // Manama, July
   });
-  it("clamps to 0 below the floor (-20C)", () => {
-    expect(comfortScore(-20, 0)).toBe(0);
+  it("marks Madrid's July down and its May up", () => {
+    expect(comfortScore(27.4, 7)).toBeLessThan(40);
+    expect(comfortScore(18.1, 31)).toBeGreaterThan(95);
   });
-  it("clamps to 0 above the ceiling (60C)", () => {
-    expect(comfortScore(60, 0)).toBe(0);
+  it("still tells a tropical dry season from the monsoon", () => {
+    expect(comfortScore(26.6, 24)).toBeGreaterThan(comfortScore(28.6, 195) + 30); // Bangkok Dec vs Jul
   });
 });
 
 describe("comfortScore — precipitation penalty", () => {
   it("applies no penalty at or below 30mm", () => {
-    expect(comfortScore(22, 0)).toBe(100);
-    expect(comfortScore(22, 30)).toBe(100);
+    expect(comfortScore(18, 0)).toBe(100);
+    expect(comfortScore(18, 30)).toBe(100);
   });
   it("applies the full -35 penalty at or above 250mm", () => {
-    expect(comfortScore(22, 250)).toBe(65);
+    expect(comfortScore(18, 250)).toBe(65);
   });
   it("does not apply more than -35 penalty beyond 250mm", () => {
-    expect(comfortScore(22, 1000)).toBe(65);
+    expect(comfortScore(18, 1000)).toBe(65);
   });
   it("scales linearly between the free and max thresholds (140mm)", () => {
-    // penalty = 35 * (140-30)/(250-30) = 35 * 110/220 = 17.5 -> 100-17.5 = 82.5 -> 83
-    expect(comfortScore(22, 140)).toBe(83);
+    // penalty = 35 * (140-30)/(250-30) = 17.5 -> 100-17.5 = 82.5 -> 83
+    expect(comfortScore(18, 140)).toBe(83);
   });
 });
 
@@ -59,7 +78,7 @@ describe("comfortScore — clamp and determinism", () => {
     expect(comfortScore(55, 500)).toBe(0);
   });
   it("never returns above 100", () => {
-    expect(comfortScore(22, -10)).toBeLessThanOrEqual(100);
+    expect(comfortScore(18, -10)).toBeLessThanOrEqual(100);
   });
   it("is a pure function — same inputs always produce the same output", () => {
     const a = comfortScore(21.3, 87);
@@ -208,7 +227,8 @@ describe("on-demand fetching", () => {
     const result = await mod.resolveCitySeasonality("paris-france");
     expect(result.kind).toBe("hit");
     if (result.kind === "hit") {
-      expect(result.months[0]).toEqual({ score: 50, tempC: 10, precipMm: 40 });
+      // Stored scores are re-derived from temperature and rain on load.
+      expect(result.months[0]).toEqual({ score: comfortScore(10, 40), tempC: 10, precipMm: 40 });
     }
     expect(fetchSpy).not.toHaveBeenCalled();
   });
