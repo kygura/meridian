@@ -28,6 +28,7 @@ import {
   draftJourneyParams,
   parseJournalIntent,
 } from "../lib/agent/journal-tools.js";
+import { createSolverTools, solveRotationParams } from "../lib/agent/solver-tools.js";
 import { ownerIdentity } from "../middleware/auth.js";
 import { CLAUDE_MODELS, DEFAULT_MODEL, completeText, hasAnthropicKey, parseJsonReply, resolveModel, runClaudeChat, type AgentTool } from "../lib/agent/claude.js";
 import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
@@ -704,6 +705,9 @@ For the user's own travel history use the journal tools: search_journal to find 
 conditions it had, find_similar_windows to rank other destination/month windows like it (bend with tempC/spendPct/crowd),
 and draft_journey to propose a journey for the user to review in the inbox (you cannot confirm it). If a journal tool
 returns journal_locked, tell the user to sign in under Settings.
+For where the owner should live over the next 12-18 months use solve_rotation: it proposes whole rotations from their
+pool of places and explains each score (fit, cost, travel, visa margin, risk, preferences) and each stay's alternatives.
+Relay its reasons and say which figures are estimates; it changes nothing, and the owner picks an option on the Rotation screen.
 Write for a traveller in plain words: never mention tool names, field names, ids or error codes. Say "crowds" not
 "crowdProxy", "temperature" not "tempC", "rainfall" not "precipMm", "daily spend" not "dailySpendEur", "flight cost" not
 "flightCostEurPer1000km", "best months" not "seasonality", and "similar places" not "windows". Mention city names in full
@@ -734,6 +738,7 @@ agent.post("/chat", async (c) => {
     return streamMockChatWithTools(parsed.data.messages, unlocked);
   }
   const journal = createJournalTools({ unlocked });
+  const solverTools = createSolverTools({ unlocked });
   const model = resolveModel(parsed.data.model);
   const tools: Record<string, AgentTool> = {
     search_places: {
@@ -784,6 +789,12 @@ agent.post("/chat", async (c) => {
       description: "Draft a journey (stops with cityId or cityHint, dates, optional segments) into the user's review inbox. Cannot confirm it.",
       parameters: draftJourneyParams,
       execute: journal.draftJourney as AgentTool["execute"],
+    },
+    solve_rotation: {
+      description:
+        "Run the rotation solver on the owner's saved pool, budget, rules and preferences (optionally overriding budget, months, or adding/excluding cityIds). Returns up to 5 ranked rotations, each with its score components and reasons, stays with dates, costs and sources, next-best alternatives per stay, moves and visa day counts. Read-only.",
+      parameters: solveRotationParams,
+      execute: solverTools.solveRotation as AgentTool["execute"],
     },
   };
 

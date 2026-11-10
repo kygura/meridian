@@ -8,6 +8,7 @@ import {
   Page,
   PageHeader,
   SectionHeader,
+  Segmented,
   Select,
   Spinner,
   Stat,
@@ -50,6 +51,7 @@ import { PlaceSheet } from "./PlaceSheet";
 import { ConvertSheet } from "./ConvertSheet";
 import { KIND_LABEL, STATUS_LABEL, WINDOW_LABEL, costText, daysText, stayDatesText } from "./format";
 import { spanLabel } from "../../lib/season";
+import { SolvePanel } from "./solve/SolvePanel";
 import "./rotation.css";
 
 type SheetState =
@@ -71,6 +73,7 @@ export default function RotationScreen() {
   const mergeSeasonality = useMeridianStore((s) => s.mergeSeasonality);
   const isDesktop = useIsDesktop();
   const [sheet, setSheet] = useState<SheetState>(null);
+  const [mode, setMode] = useState<"calendar" | "solve">("calendar");
   const today = todayIso();
 
   useEffect(() => {
@@ -159,6 +162,7 @@ export default function RotationScreen() {
   }
 
   const openStay = sheet?.kind === "stay" ? stays.find((s) => s.id === sheet.id) : undefined;
+  const hasStart = !!data.settings.home || stays.some((s) => s.status !== "idea" && s.start && s.start <= today);
 
   return (
     <Page width="wide">
@@ -171,7 +175,29 @@ export default function RotationScreen() {
         </div>
       )}
 
-      {stays.length === 0 ? (
+      <Segmented
+        className="rotation-mode"
+        label="Calendar or solver"
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "calendar", label: "Calendar" },
+          { value: "solve", label: "Solve" },
+        ]}
+      />
+
+      {mode === "solve" ? (
+        <SolvePanel
+          stays={stays}
+          places={data.places}
+          today={today}
+          hasStart={hasStart}
+          onAccepted={() => {
+            void load();
+            setMode("calendar");
+          }}
+        />
+      ) : stays.length === 0 ? (
         <EmptyState
           icon={<IconCalendar />}
           title="No stays yet"
