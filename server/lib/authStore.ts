@@ -2,7 +2,8 @@
 // restart and is shared between serverless instances when DATABASE_URL is set:
 //
 //   revoked   session ids signed out before they expired
-//   failures  failed password attempts, per client and overall, for the login lockout
+//   failures  failed password attempts, per client and overall, for the login lockout;
+//             and, counted apart, wrong "Authorization: Bearer" tokens (the same secret)
 //
 // Client addresses are stored as a keyed hash, never as the address itself. If the
 // store cannot be read or written, the same logic runs on an in-memory copy, so a
@@ -92,13 +93,21 @@ export const LOCKOUT = {
   lockMs: 15 * 60 * 1000,
 } as const;
 
-const OVERALL = "*";
+/**
+ * Which way in the guesses came: the sign-in form, or an Authorization header. Both test the
+ * same secret, so both are counted in the store and capped overall; they are counted apart so
+ * a browser lockout does not also stop the owner's automation (and the reverse).
+ */
+export type LockoutScope = "login" | "bearer";
+
+const OVERALL_KEY: Record<LockoutScope, string> = { login: "*", bearer: "bearer:*" };
 const MAX_FAILURE_KEYS = 2000;
 
 /** Keyed hash of the client address; the raw address is never stored. */
-function clientKey(ip: string): string {
+function clientKey(ip: string, scope: LockoutScope): string {
   const key = signingKey() ?? Buffer.from("meridian");
-  return createHmac("sha256", key).update(`login-client:${ip}`).digest("base64url").slice(0, 22);
+  const h = createHmac("sha256", key).update(`login-client:${ip}`).digest("base64url").slice(0, 22);
+  return scope === "login" ? h : `bearer:${h}`;
 }
 
 export interface LockoutState {
@@ -126,9 +135,9 @@ function worst(a: LockoutState, b: LockoutState): LockoutState {
 }
 
 /** Is this client (or password login as a whole) locked out right now? */
-export async function lockoutState(ip: string, nowMs: number = Date.now()): Promise<LockoutState> {
+export async function lockoutState(ip: string, nowMs: number = Date.now(), scope: LockoutScope = "login"): Promise<LockoutState> {
   const doc = await load();
-  return worst(stateOf(doc, clientKey(ip), LOCKOUT.maxFailures, nowMs), stateOf(doc, OVERALL, LOCKOUT.maxFailuresOverall, nowMs));
+  return worst(stateOf(doc, clientKey(ip, scope), LOCKOUT.maxFailures, nowMs), stateOf(doc, OVERALL_KEY[scope], LOCKOUT.maxFailuresOverall, nowMs));
 }
 
 function bump(doc: AuthDoc, key: string, max: number, nowMs: number): void {
@@ -143,23 +152,24 @@ function bump(doc: AuthDoc, key: string, max: number, nowMs: number): void {
 }
 
 /** Count one wrong password. Returns the state after it. */
-export async function recordLoginFailure(ip: string, nowMs: number = Date.now()): Promise<LockoutState> {
-  const key = clientKey(ip);
+export async function recordLoginFailure(ip: string, nowMs: number = Date.now(), scope: LockoutScope = "login"): Promise<LockoutState> {
+  const key = clientKey(ip, scope);
+  const overall = OVERALL_KEY[scope];
   return mutate((doc) => {
     for (const [k, e] of Object.entries(doc.failures)) {
       if (Math.max(e.since + LOCKOUT.windowMs, e.lockedUntil) <= nowMs) delete doc.failures[k];
     }
     const keys = Object.keys(doc.failures);
-    if (keys.length >= MAX_FAILURE_KEYS) for (const k of keys.slice(0, keys.length - MAX_FAILURE_KEYS + 1)) if (k !== OVERALL) delete doc.failures[k];
+    if (keys.length >= MAX_FAILURE_KEYS) for (const k of keys.slice(0, keys.length - MAX_FAILURE_KEYS + 1)) if (!Object.values(OVERALL_KEY).includes(k)) delete doc.failures[k];
     bump(doc, key, LOCKOUT.maxFailures, nowMs);
-    bump(doc, OVERALL, LOCKOUT.maxFailuresOverall, nowMs);
-    return worst(stateOf(doc, key, LOCKOUT.maxFailures, nowMs), stateOf(doc, OVERALL, LOCKOUT.maxFailuresOverall, nowMs));
+    bump(doc, overall, LOCKOUT.maxFailuresOverall, nowMs);
+    return worst(stateOf(doc, key, LOCKOUT.maxFailures, nowMs), stateOf(doc, overall, LOCKOUT.maxFailuresOverall, nowMs));
   });
 }
 
 /** A correct password clears this client's count (not the overall one). */
-export async function clearLoginFailures(ip: string): Promise<void> {
-  const key = clientKey(ip);
+export async function clearLoginFailures(ip: string, scope: LockoutScope = "login"): Promise<void> {
+  const key = clientKey(ip, scope);
   const doc = await load();
   if (!doc.failures[key]) return;
   await mutate((d) => {

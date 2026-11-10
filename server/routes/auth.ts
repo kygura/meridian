@@ -5,8 +5,10 @@
 //   GET  /session                → { configured, signedIn, user, expiresAt }; never 401.
 //
 // Wrong passwords are counted per client and overall (server/lib/authStore.ts): after
-// too many, sign-in answers 429 with Retry-After until the lock runs out. The Bearer
-// token for automation is not affected by a lockout.
+// too many, sign-in answers 429 with Retry-After until the lock runs out. Wrong Bearer
+// tokens (the same secret) are counted the same way but apart (middleware/auth.ts), so a
+// sign-in lockout does not stop the owner's automation, and guessing through the header
+// is capped overall too.
 
 import { Hono } from "hono";
 import { z } from "zod";

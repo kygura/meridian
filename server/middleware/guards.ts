@@ -5,13 +5,13 @@
 //   2. CORS for the origins allowed to call the API with the session cookie
 //   3. CSRF: state-changing requests must come from one of those origins
 //   4. owner gates and rate limits for routes that are not gated wholesale by
-//      GATED_PREFIXES (bookings, shortlist writes, the agent, news, flight search)
+//      GATED_PREFIXES (bookings, the shortlist, the agent, news, flight search)
 
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { isProduction } from "../lib/session.js";
 import { originOf, securityHeaders } from "../lib/securityHeaders.js";
-import { readSessionCookie, requireOwner, requireOwnerForWrites, requireOwnerWhen } from "./auth.js";
+import { readSessionCookie, requireOwner, requireOwnerWhen } from "./auth.js";
 import { agentLimiter, flightSearchLimiter, newsLimiter } from "./rateLimit.js";
 
 // ── Origins ──────────────────────────────────────────────────────────
@@ -86,7 +86,9 @@ export function installGuards(app: Hono): void {
   app.use("*", async (c, next) => {
     await next();
     const headers = securityHeaders({ production: isProduction(), apiOrigin: originOf(process.env.VITE_API_BASE_URL) });
-    for (const [name, value] of Object.entries(headers)) c.header(name, value);
+    // App-wide defaults only: a route that set a stricter policy itself (the public share
+    // pages: CSP default-src 'none', no-referrer) keeps it.
+    for (const [name, value] of Object.entries(headers)) if (!c.res.headers.has(name)) c.header(name, value);
   });
 
   app.use(
@@ -104,8 +106,9 @@ export function installGuards(app: Hono): void {
   app.use("/api/bookings/search", flightSearchLimiter.middleware);
   app.use("/api/bookings", bookingsGate);
   app.use("/api/bookings/*", bookingsGate);
-  app.use("/api/shortlist", requireOwnerForWrites);
-  app.use("/api/shortlist/*", requireOwnerForWrites);
+  // The shortlist is the owner's saved places: personal data, reads included.
+  app.use("/api/shortlist", requireOwner);
+  app.use("/api/shortlist/*", requireOwner);
   // The agent: rate-limited always; owner only once it spends the Anthropic key.
   // GET /api/agent/models makes no model call and stays open.
   app.use("/api/agent/*", onWrites(agentLimiter.middleware));

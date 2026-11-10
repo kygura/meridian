@@ -86,6 +86,8 @@ const GATED_REQUESTS: Array<[string, string]> = [
   ["GET", "/api/bookings/bk_1"],
   ["POST", "/api/bookings"],
   ["DELETE", "/api/bookings/bk_1"],
+  // The shortlist is the owner's saved places: reads are gated too.
+  ["GET", "/api/shortlist"],
   ["POST", "/api/shortlist"],
   ["DELETE", "/api/shortlist/lisbon"],
 ];
@@ -120,14 +122,14 @@ describe("gated routes", () => {
 
   it("opens every gated read to the session cookie and to the Bearer token", async () => {
     const cookie = await sessionCookie();
-    for (const path of ["/api/journal", "/api/watches", "/api/trips", "/api/bookings", "/api/import/queue"]) {
+    for (const path of ["/api/journal", "/api/watches", "/api/trips", "/api/bookings", "/api/import/queue", "/api/shortlist"]) {
       expect((await app.request(path, { headers: { Cookie: cookie } })).status, `cookie ${path}`).toBe(200);
       expect((await app.request(path, { headers: { Authorization: `Bearer ${TOKEN}` } })).status, `bearer ${path}`).toBe(200);
     }
   });
 
   it("leaves public reads open", async () => {
-    for (const path of ["/api/health", "/api/shortlist", "/api/agent/models", "/api/cities?limit=1", "/api/auth/session"]) {
+    for (const path of ["/api/health", "/api/agent/models", "/api/cities?limit=1", "/api/auth/session"]) {
       expect((await app.request(path)).status, path).toBe(200);
     }
   });
@@ -232,6 +234,25 @@ describe("sign-in", () => {
     expect(res.status).toBe(429);
   });
 
+  it("counts wrong Bearer tokens in the store-backed lockout, per client and overall, across instances", async () => {
+    process.env.TRUST_PROXY = "1";
+    const bearer = (t: string, ip: string) => app.request("/api/journal", { headers: { Authorization: `Bearer ${t}`, "X-Forwarded-For": ip } });
+    for (let i = 0; i < LOCKOUT.maxFailures - 1; i++) expect((await bearer("guess", "203.0.113.9")).status).toBe(401);
+    // A cold start (fresh process memory and in-process limiter) does not reset the count.
+    resetAuthMemory();
+    resetRateLimits();
+    expect((await bearer("guess", "203.0.113.9")).status).toBe(429);
+    // Locked out: even the right token is refused, so the lock gives no oracle.
+    expect((await bearer(TOKEN, "203.0.113.9")).status).toBe(429);
+    expect((await bearer(TOKEN, "198.51.100.7")).status).toBe(200);
+
+    // Spread across many addresses, the overall cap still stops header guessing.
+    for (let i = 0; i < LOCKOUT.maxFailuresOverall; i++) await bearer("guess", `10.1.0.${i}`);
+    expect((await bearer(TOKEN, "192.0.2.201")).status).toBe(429);
+    // Counted apart from sign-in: the browser's password form is not paused by header guessing.
+    expect((await login(TOKEN, { "X-Forwarded-For": "192.0.2.201" })).status).toBe(200);
+  });
+
   it("expires a session", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
@@ -307,7 +328,8 @@ describe("automation", () => {
   it("slows a client that keeps presenting wrong Bearer tokens", async () => {
     process.env.RATE_LIMIT = "on";
     const bad = { headers: { Authorization: "Bearer guess" } };
-    for (let i = 0; i < 20; i++) expect((await app.request("/api/journal", bad)).status).toBe(401);
+    // The store-backed lockout (five per client) bites before the in-process brake of twenty.
+    for (let i = 0; i < LOCKOUT.maxFailures - 1; i++) expect((await app.request("/api/journal", bad)).status).toBe(401);
     const res = await app.request("/api/journal", bad);
     expect(res.status).toBe(429);
     expect(Number(res.headers.get("retry-after"))).toBeGreaterThan(0);
@@ -445,6 +467,14 @@ describe("security headers", () => {
       expect(res.headers.get("content-security-policy"), path).toContain("frame-ancestors 'none'");
       expect(res.headers.get("x-frame-options"), path).toBe("DENY");
     }
+  });
+
+  it("keep a route's stricter policy (the public share page) instead of overwriting it", async () => {
+    const res = await app.request("/api/shared/trip/no-such-token");
+    expect(res.headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+    expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+    // Headers the route did not set still get the app-wide value.
+    expect(res.headers.get("x-frame-options")).toBe("DENY");
   });
 
   it("adds HSTS in production only", async () => {

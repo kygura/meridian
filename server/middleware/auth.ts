@@ -16,7 +16,7 @@ import { createHash, timingSafeEqual } from "crypto";
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { clientIp } from "../lib/clientIp.js";
-import { isRevoked } from "../lib/authStore.js";
+import { isRevoked, lockoutState, recordLoginFailure } from "../lib/authStore.js";
 import {
   OWNER_ID,
   SECURE_SESSION_COOKIE,
@@ -48,7 +48,11 @@ export interface Identity {
 type AuthFailure = { status: 401; body: { error: string; reason?: string } } | { status: 429; retryAfterSeconds: number };
 export type AuthResult = { ok: true; identity: Identity } | ({ ok: false } & AuthFailure);
 
-/** Wrong bearer tokens from one client before it has to wait. The token doubles as the password. */
+/**
+ * Wrong bearer tokens from one client before it has to wait: an in-process first brake. The
+ * token doubles as the password, so wrong ones are also counted in the store-backed lockout
+ * (authStore, scope "bearer"): per client and overall, shared across instances and restarts.
+ */
 export const bearerFailureLimiter = createRateLimiter({ name: "auth", limit: 20, windowMs: 15 * 60 * 1000 });
 
 // ── Session cookie ───────────────────────────────────────────────────
@@ -92,6 +96,9 @@ async function resolve(c: Context): Promise<AuthResult> {
     const ip = clientIp(c);
     const wait = bearerFailureLimiter.blocked(ip);
     if (!wait.ok) return { ok: false, status: 429, retryAfterSeconds: wait.retryAfterSeconds };
+    // Checked before the comparison, so a locked-out guesser learns nothing, right or wrong.
+    const lock = await lockoutState(ip, Date.now(), "bearer");
+    if (lock.locked) return { ok: false, status: 429, retryAfterSeconds: lock.retryAfterSeconds };
     const presented = /^Bearer\s+(.+)$/i.exec(header)?.[1].trim();
     if (presented) {
       if (tokenMatches(presented, expected)) return { ok: true, identity: { userId: OWNER_ID, method: "bearer" } };
@@ -101,6 +108,8 @@ async function resolve(c: Context): Promise<AuthResult> {
       }
     }
     bearerFailureLimiter.take(ip);
+    const after = await recordLoginFailure(ip, Date.now(), "bearer");
+    if (after.locked) return { ok: false, status: 429, retryAfterSeconds: after.retryAfterSeconds };
     return { ok: false, status: 401, body: { error: "unauthorized" } };
   }
 

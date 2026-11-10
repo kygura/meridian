@@ -1,5 +1,10 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { Hono } from "hono";
+import { resetAuthMemory } from "../lib/authStore";
+import { resetRateLimits } from "./rateLimit";
 import { gateRoutes, ownerIdentity, requireOwner, requireOwnerForWrites, requireOwnerWhen, requireToken, tokenMatches } from "./auth";
 import { SESSION_COOKIE, issueSession } from "../lib/session";
 
@@ -15,8 +20,18 @@ function appWithGates() {
 
 const auth = (t: string) => ({ headers: { Authorization: `Bearer ${t}` } });
 
+// Wrong tokens are counted in the store-backed lockout: keep that state in a temp dir.
+let TMP = "";
+beforeEach(() => {
+  TMP = mkdtempSync(join(tmpdir(), "meridian-auth-"));
+  process.env.DATA_DIR = TMP;
+  resetAuthMemory();
+  resetRateLimits();
+});
 afterEach(() => {
   delete process.env.MERIDIAN_TOKEN;
+  delete process.env.DATA_DIR;
+  rmSync(TMP, { recursive: true, force: true });
 });
 
 describe("requireToken", () => {
