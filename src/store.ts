@@ -5,6 +5,7 @@ import { mergeTrips } from "./lib/tripTransfer";
 import { withMonths } from "./lib/season";
 import { DEFAULT_DEPARTURE } from "./lib/tripPlan";
 import { planOnlyNode, type NodeItinerary } from "./lib/itinerary";
+import { apiCredentials, apiUrl } from "./lib/api";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -100,6 +101,8 @@ export interface MeridianState {
   // Shortlist
   shortlist: ShortlistEntry[];
   setShortlist: (entries: ShortlistEntry[]) => void;
+  /** Load the owner's shortlist (owner-only, ADR 0009); signed out it is empty. */
+  fetchShortlist: () => Promise<void>;
   addToShortlist: (entry: ShortlistEntry) => void;
   removeFromShortlist: (cityId: string) => void;
 
@@ -439,6 +442,19 @@ export const useMeridianStore = create<MeridianState>()(
       // Shortlist
       shortlist: [],
       setShortlist: (entries) => set({ shortlist: entries }),
+      fetchShortlist: async () => {
+        try {
+          const r = await fetch(apiUrl("/api/shortlist"), { credentials: apiCredentials });
+          if (r.status === 401) {
+            set({ shortlist: [] });
+            return;
+          }
+          const data = await r.json();
+          if (Array.isArray(data)) set({ shortlist: data });
+        } catch {
+          // Server unreachable: keep what is there.
+        }
+      },
       addToShortlist: (entry) =>
         set((state) => ({ shortlist: [...state.shortlist, entry] })),
       removeFromShortlist: (cityId) =>

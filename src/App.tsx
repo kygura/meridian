@@ -33,13 +33,8 @@ export default function App() {
       })
       .catch(() => {});
 
-    fetch(apiUrl("/api/shortlist"))
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) useMeridianStore.getState().setShortlist(data);
-      })
-      .catch(() => {});
-
+    // The shortlist is owner-only; journalToken reloads it on sign-in.
+    void useMeridianStore.getState().fetchShortlist();
     void useMeridianStore.getState().fetchBookings();
   }, []);
 

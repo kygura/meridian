@@ -23,9 +23,12 @@ function subscribe(cb: () => void): () => void {
 }
 
 if (typeof window !== "undefined") {
-  // Bookings are owner-only: load them whenever a session starts (the nav badges follow the hook).
+  // Bookings and the shortlist are owner-only: load them whenever a session starts (the nav badges follow the hook).
   onSessionChange(() => {
-    if (isSignedIn()) void useMeridianStore.getState().fetchBookings();
+    if (isSignedIn()) {
+      void useMeridianStore.getState().fetchBookings();
+      void useMeridianStore.getState().fetchShortlist();
+    }
   });
   // Confirm the cookie with the server once per page load.
   void checkSession();
@@ -49,6 +52,7 @@ export function clearJournalToken(): void {
   s.setAlerts([]);
   s.setWatches([]);
   s.setBookings([]);
+  s.setShortlist([]);
   void signOut();
 }
 
