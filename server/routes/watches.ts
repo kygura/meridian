@@ -15,6 +15,7 @@ import {
   runWatches,
   type WatchRunDeps,
 } from "../lib/watches.js";
+import { runBridgesJob } from "../lib/bridgesJob.js";
 
 let depsFactory: () => WatchRunDeps = () => ({ now: () => new Date(), replay: executeReplay });
 
@@ -42,7 +43,9 @@ watches.get("/", async (c) => c.json({ watches: await listWatches() }));
 
 const runHandler = async (c: Context) => {
   try {
-    return c.json(await runWatches(depsFactory()));
+    const result = await runWatches(depsFactory());
+    // The Notion and Gmail bridges ride on the same daily call (ADR 0017); their outcome is reported beside the watches.
+    return c.json({ ...result, bridges: await runBridgesJob() });
   } catch (err) {
     console.error("[watches] run failed:", err);
     return c.json({ error: "run_failed", message: "Could not run watches." }, 500);

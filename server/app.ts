@@ -21,6 +21,7 @@ import overlaysRoutes from "./routes/overlays.js";
 import sharedRoutes from "./routes/shared.js";
 import rotationRoutes from "./routes/rotation.js";
 import notionRoutes from "./routes/notion.js";
+import gmailRoutes from "./routes/gmail.js";
 import { gateRoutes } from "./middleware/auth.js";
 import { installGuards } from "./middleware/guards.js";
 import authRoutes from "./routes/auth.js";
@@ -60,6 +61,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/rotation", rotationRoutes);
 // Owner-only; gated inside the router (ADR 0017).
 app.route("/api/notion", notionRoutes);
+app.route("/api/gmail", gmailRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).
 app.route("/api/shared", sharedRoutes);
 
