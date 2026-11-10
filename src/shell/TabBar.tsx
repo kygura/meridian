@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Route } from "../lib/router";
 import { Sheet, cx } from "../ui";
-import { IconAsk, IconMore, IconPlus } from "../ui/icons";
+import { IconAsk, IconBell, IconMore, IconPlus } from "../ui/icons";
+import { openNotices, useNotices } from "../lib/notices";
 import { useMeridianStore } from "../store";
 import { NAV_ITEMS, isActive } from "./nav";
 import { SettingsPanel } from "./SettingsPanel";
@@ -19,6 +20,7 @@ const TAB_VIEWS = new Set(["map", "trips", "plan", "inbox"]);
 export function TabBar({ route, badges }: TabBarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = route.view === "world";
+  const noticesUnseen = useNotices((s) => s.unseen);
 
   return (
     <>
@@ -55,6 +57,12 @@ export function TabBar({ route, badges }: TabBarProps) {
         >
           <span className="shell-tab-icon">
             <IconMore />
+            {noticesUnseen ? (
+              <span className="shell-tab-badge">
+                {badgeLabel(noticesUnseen)}
+                <span className="sr-only"> new alerts</span>
+              </span>
+            ) : null}
           </span>
           <span className="shell-tab-label">More</span>
         </button>
@@ -69,6 +77,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const openAsk = useUIStore((s) => s.openAsk);
   const openQuickLog = useMeridianStore((s) => s.openQuickLog);
   const world = NAV_ITEMS.find((i) => i.view === "world")!;
+  const noticesUnseen = useNotices((s) => s.unseen);
   return (
     <Sheet open={open} onClose={onClose} title="More" size="sm">
       <div className="shell-more-list">
@@ -97,6 +106,23 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
         >
           <IconPlus />
           <span>Log a trip</span>
+        </button>
+        <button
+          type="button"
+          className="shell-more-link"
+          onClick={() => {
+            onClose();
+            openNotices();
+          }}
+        >
+          <IconBell />
+          <span>Alerts</span>
+          {noticesUnseen ? (
+            <span className="shell-nav-badge">
+              {badgeLabel(noticesUnseen)}
+              <span className="sr-only"> new</span>
+            </span>
+          ) : null}
         </button>
       </div>
       <hr className="shell-more-rule" />

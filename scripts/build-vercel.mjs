@@ -76,6 +76,9 @@ writeFileSync(
       version: 3,
       routes: [
         { src: "^/assets/(.*)$", headers: { "cache-control": "public, max-age=31536000, immutable" }, continue: true },
+        // The service worker must be revalidated on every load, or an update could sit behind the HTTP cache.
+        { src: "^/sw\\.js$", headers: { "cache-control": "no-cache", "service-worker-allowed": "/" }, continue: true },
+        { src: "^/manifest\\.webmanifest$", headers: { "content-type": "application/manifest+json" }, continue: true },
         { handle: "filesystem" },
         { src: "^/api(?:/.*)?$", dest: "/api" },
         { src: "^/(.*)$", dest: "/index.html" },
