@@ -9,6 +9,7 @@ import jobs from "./jobs";
 import { notify } from "../lib/notifier";
 import { listPushSubscriptions } from "../lib/notify/webPush";
 import { registerDailyJob, unregisterDailyJob } from "../lib/dailyJobs";
+import { resetAuthMemory } from "../lib/authStore";
 
 const TOKEN = "test-token";
 let TMP: string;
@@ -17,6 +18,12 @@ const app = new Hono();
 app.route("/api/notifications", notifications);
 app.route("/api/jobs", jobs);
 
+
+/** Wrong tokens count toward the store-backed lockout (ADR 0009); clear it between checks. */
+function forgetWrongTokens() {
+  rmSync(join(TMP, "auth.json"), { force: true });
+  resetAuthMemory();
+}
 function req(method: string, path: string, body?: unknown, token: string | null = TOKEN) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -63,6 +70,7 @@ describe("/api/notifications", () => {
     ] as const) {
       expect((await req(m, p, undefined, null)).status, p).toBe(401);
       expect((await req(m, p, undefined, "wrong")).status, p).toBe(401);
+      forgetWrongTokens(); // each route is checked on its own, not after a lockout
     }
   });
 
