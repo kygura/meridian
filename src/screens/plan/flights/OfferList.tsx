@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { formatOfferTimes, sortOffers, type Offer, type OfferSortKey, type OfferSource } from "../../../lib/bookingApi";
-import { Button, Card, EmptyState, ErrorState, Segmented, Skeleton, cx } from "../../../ui";
+import { Button, Card, EmptyState, ErrorState, Segmented, Skeleton, UnlockCard, cx } from "../../../ui";
 import { IconArrowRight, IconPlane } from "../../../ui/icons";
 import { Countdown } from "./Countdown";
 import { ProvenanceBadge, ProvenanceNote } from "./ProvenanceBadge";
@@ -57,7 +57,8 @@ export function OfferRow({ offer, selected, onSelect }: { offer: Offer; selected
 }
 
 export interface OfferListProps {
-  status: "searching" | "ready" | "error";
+  /** "locked": the server wants the owner signed in before it searches (it would spend a provider key). */
+  status: "searching" | "ready" | "error" | "locked";
   offers: Offer[];
   source: OfferSource | null;
   selectedId?: string | null;
@@ -93,6 +94,9 @@ export function OfferList({ status, offers, source, selectedId, onSelect, onRetr
         </ul>
       </div>
     );
+  }
+  if (status === "locked") {
+    return <UnlockCard title="Sign in to search flights" onUnlocked={onRetry} />;
   }
   if (status === "error") {
     return <ErrorState message="Couldn't search for flights. Check your connection and try again." onRetry={onRetry} />;

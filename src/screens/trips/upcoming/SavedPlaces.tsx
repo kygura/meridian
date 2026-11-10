@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
-import { apiUrl } from "../../../lib/api";
+import { apiCredentials, apiUrl } from "../../../lib/api";
 import { navigate } from "../../../lib/router";
 import { displayTripName, nextTripName, shortlistToNode } from "../../../lib/tripPlan";
 import { Button, Card, EmptyState, IconButton, Popover, toast, useIsDesktop, SectionHeader } from "../../../ui";
@@ -76,14 +76,16 @@ function PlaceRow({ entry }: { entry: ShortlistEntry }) {
     const store = useMeridianStore.getState();
     const prev = store.shortlist;
     store.removeFromShortlist(entry.cityId);
-    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(entry.cityId)}`), { method: "DELETE" })
+    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(entry.cityId)}`), { method: "DELETE", credentials: apiCredentials })
       .then((r) => {
         if (!r.ok && r.status !== 404) throw new Error(String(r.status));
         toast(`Removed ${entry.name} from saved places`);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         useMeridianStore.getState().setShortlist(prev);
-        toast(`Couldn't remove ${entry.name}`, { tone: "danger" });
+        // Saved places are owner-only to change (ADR 0009).
+        const signedOut = err instanceof Error && err.message === "401";
+        toast(signedOut ? "Sign in to change saved places. You'll find it in Settings." : `Couldn't remove ${entry.name}`, { tone: signedOut ? "warning" : "danger" });
       });
   };
 

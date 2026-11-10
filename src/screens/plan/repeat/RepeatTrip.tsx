@@ -76,7 +76,7 @@ export default function RepeatTrip(props: RepeatTripProps) {
   if (!unlocked) {
     return (
       <div className="plan-repeat">
-        <UnlockCard title="Unlock your journal to repeat a trip" />
+        <UnlockCard title="Sign in to repeat a trip" />
       </div>
     );
   }

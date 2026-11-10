@@ -804,3 +804,8 @@
     flex: 1;
   }
 }
+
+/* The booking flow inside the sheet; hidden while the unlock card is shown. */
+.plan-flights-sheet-flow:not([hidden]) {
+  display: contents;
+}

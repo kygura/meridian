@@ -16,6 +16,10 @@ services:
         value: /var/data
       - key: MERIDIAN_TOKEN
         sync: false
+      # One proxy hop in front of the service: rate limits and the sign-in lockout
+      # then count per visitor (ADR 0009).
+      - key: TRUST_PROXY
+        value: 1
       - key: ALERT_WEBHOOK_URL
         sync: false
       - key: DUFFEL_API_KEY

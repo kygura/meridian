@@ -2,8 +2,8 @@
 //   static/          the Vite build (dist/)
 //   functions/api.func  the Hono server bundled into one Node function, plus the
 //                    read-only datasets it loads at startup
-//   config.json      routes (/api/* → function, everything else → the SPA) and the
-//                    daily watch run (Vercel Cron)
+//   config.json      routes (/api/* → function, everything else → the SPA), the security
+//                    headers for static files, and the daily watch run (Vercel Cron)
 //
 // Usage: npm run build:vercel   (Vercel's build command; see docs/DEPLOY.md)
 
@@ -69,18 +69,36 @@ writeFileSync(
   )
 );
 
+// The same security headers the Hono app sends (server/lib/securityHeaders.ts), for the
+// static files Vercel serves without going through the function.
+const bundledHeaders = await build({
+  entryPoints: [join(root, "server/lib/securityHeaders.ts")],
+  bundle: true,
+  write: false,
+  platform: "node",
+  format: "esm",
+  logLevel: "warning",
+});
+const headersModule = await import(`data:text/javascript;base64,${Buffer.from(bundledHeaders.outputFiles[0].contents).toString("base64")}`);
+const staticSecurityHeaders = headersModule.securityHeaders({
+  production: true,
+  apiOrigin: headersModule.originOf(process.env.VITE_API_BASE_URL),
+});
+
 writeFileSync(
   join(out, "config.json"),
   JSON.stringify(
     {
       version: 3,
       routes: [
+        { src: "^/(.*)$", headers: staticSecurityHeaders, continue: true },
         { src: "^/assets/(.*)$", headers: { "cache-control": "public, max-age=31536000, immutable" }, continue: true },
         { handle: "filesystem" },
         { src: "^/api(?:/.*)?$", dest: "/api" },
         { src: "^/(.*)$", dest: "/index.html" },
       ],
-      // Daily watch run (spec-journal §10). Needs CRON_SECRET = MERIDIAN_TOKEN.
+      // Daily watch run (spec-journal §10). Needs CRON_SECRET: its own value (accepted for
+      // this route only) or the same value as MERIDIAN_TOKEN.
       crons: [{ path: "/api/watches/run", schedule: "17 6 * * *" }],
     },
     null,

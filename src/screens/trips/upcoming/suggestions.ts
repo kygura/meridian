@@ -3,7 +3,7 @@
 // tracks the request: which city they came from, loading and error.
 
 import { create } from "zustand";
-import { apiUrl } from "../../../lib/api";
+import { apiCredentials, apiUrl } from "../../../lib/api";
 import { useMeridianStore } from "../../../store";
 import type { TripOption } from "../../../types";
 
@@ -28,6 +28,7 @@ export const useSuggestStore = create<SuggestState>((set) => ({
       const res = await fetch(apiUrl("/api/agent/trip-options"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: apiCredentials,
         body: JSON.stringify({ cityId }),
       });
       if (!res.ok) throw new Error(String(res.status));

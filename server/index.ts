@@ -5,7 +5,9 @@ import { createServer } from "net";
 import { execSync } from "child_process";
 import app from "./app.js";
 
-// Serve static files from dist/ in production
+// Serve static files from dist/ in production. The security headers (CSP, nosniff,
+// frame-ancestors, referrer policy) are added to these too: installGuards in app.ts
+// registers them on "*", ahead of this handler.
 app.use("/*", serveStatic({ root: "./dist" }));
 
 const port = Number(process.env.PORT ?? 3001);

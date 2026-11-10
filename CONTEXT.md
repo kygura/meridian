@@ -198,3 +198,43 @@ _Avoid_: import (imports are Import candidates)
 **Repeat**:
 Creating a Trip from a Journey or a Replay result so the existing booking flow applies.
 _Avoid_: rebook, clone
+
+### Access (ADR 0009)
+
+**Owner**:
+The one person a Meridian deployment belongs to. Everything personal (Journeys, Trips sync,
+Bookings, Watches, the Inbox) and everything that spends a provider key is the Owner's alone.
+_Avoid_: user, admin, account
+
+**Sign-in**:
+Entering the password (the server's `MERIDIAN_TOKEN`) once per browser. The UI still says a
+screen is "locked" or "private" until then.
+_Avoid_: unlock with a token, paste the token
+
+**Session**:
+What Sign-in gives the browser: a signed cookie the browser sends by itself and scripts
+cannot read. It carries a user id (always "owner"), expires, and ends on sign-out.
+_Avoid_: token (the browser no longer holds one)
+
+**Bearer token**:
+`MERIDIAN_TOKEN` sent in an `Authorization` header by automation (the import task, cron).
+Never used by the browser.
+
+**Lockout**:
+The pause on Sign-in after too many wrong passwords, per client and overall.
+_Avoid_: ban, block
+
+**Gate**:
+The check that a request comes from the Owner (Session or Bearer token). A gated route
+answers 401 without one.
+
+**Paid route**:
+A route that calls a provider billed or metered per call (Claude, Duffel, SerpAPI,
+Open-Meteo on demand). Paid routes are rate-limited; with the provider's key set they are
+also gated, and without it they serve the Mock Path.
+
+**Rate limit**:
+The per-client (and overall) cap on calls to a Paid route. Over it, the answer is 429 with
+the seconds to wait.
+_Avoid_: throttle, quota (quota is the provider's)
+

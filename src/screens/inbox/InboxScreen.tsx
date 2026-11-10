@@ -35,7 +35,7 @@ export default function InboxScreen() {
     return (
       <Page>
         <PageHeader kicker="Imports · review queue" title="Inbox" subtitle="Imports wait here until you review them." />
-        <UnlockCard title="Unlock your journal to review imports" />
+        <UnlockCard title="Sign in to review imports" />
       </Page>
     );
   }
