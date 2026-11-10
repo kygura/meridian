@@ -47,6 +47,7 @@ import { useRotation } from "./useRotation";
 import { Timeline } from "./Timeline";
 import { RotationMap } from "./RotationMap";
 import { StaySheet } from "./StaySheet";
+import { RotationVisaPanel, StayVisaBadge, useRotationVisa } from "./RotationVisa";
 import { PlaceSheet } from "./PlaceSheet";
 import { ConvertSheet } from "./ConvertSheet";
 import { KIND_LABEL, STATUS_LABEL, WINDOW_LABEL, costText, daysText, stayDatesText } from "./format";
@@ -110,6 +111,7 @@ export default function RotationScreen() {
   const deadlines = useMemo(() => (state ? bookingDeadlines(state, today) : []), [state, today]);
   const deadlineMap = useMemo(() => new Map(deadlines.map((d) => [d.stayId, d])), [deadlines]);
   const issues = useMemo(() => rotationIssues(stays), [stays]);
+  const visa = useRotationVisa(stays, today);
   const next = useMemo(() => whatsNext(stays, today), [stays, today]);
   const totals = useMemo(() => (state ? rotationTotals(state, today, legs) : null), [state, today, legs]);
   const current = currentStay(stays, today);
@@ -266,6 +268,13 @@ export default function RotationScreen() {
             )}
           </section>
 
+          {visa && (
+            <section className="rotation-section" aria-labelledby="rot-visa-plan">
+              <SectionHeader id="rot-visa-plan" title="Visas and days" meta={visa.passports.length ? "Checked for your passport" : "No passport set"} />
+              <RotationVisaPanel stays={stays} visa={visa} />
+            </section>
+          )}
+
           {totals && (
             <section className="rotation-section" aria-labelledby="rot-totals">
               <SectionHeader id="rot-totals" title="Totals" meta={`Next ${totals.horizonMonths} months`} />
@@ -375,6 +384,7 @@ export default function RotationScreen() {
                         </span>
                       </span>
                       <span className="rotation-stay-badges">
+                        <StayVisaBadge verdict={visa?.verdicts.get(s.id)} rule={visa?.rules.get(s.id)} />
                         <Badge>{KIND_LABEL[s.kind]}</Badge>
                         <Badge tone={st === "booked" || st === "current" ? "success" : st === "idea" ? "neutral" : "accent"}>{STATUS_LABEL[st]}</Badge>
                       </span>
@@ -413,6 +423,8 @@ export default function RotationScreen() {
           stay={openStay}
           profile={profiles.get(openStay.place.cityId)}
           fit={fits.get(openStay.id)}
+          visaVerdict={visa?.verdicts.get(openStay.id)}
+          visaRule={visa?.rules.get(openStay.id)}
           onClose={() => setSheet(null)}
           onSave={putStay}
           onDelete={async (id) => {

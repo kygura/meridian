@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Chip, Field, IconButton, Input, Select, toast, useJournalToken } from "../ui";
 import { IconPlus, IconTrash } from "../ui/icons";
 import { getVisaData, saveVisaSettings } from "../lib/visaApi";
+import { refreshVisa } from "../lib/useVisa";
 import { VISA_DISCLAIMER, type VisaData } from "../lib/visa/data";
 import type { VisaSettings } from "../lib/visa/settings";
 import "./visa.css";
@@ -40,6 +41,7 @@ export function VisaSettingsSection() {
     setBusy(true);
     try {
       setSettings(await saveVisaSettings(settings));
+      void refreshVisa();
       toast("Visa settings saved", { tone: "success" });
     } catch (e) {
       toast(e instanceof Error ? e.message : "Couldn't save", { tone: "danger" });

@@ -1,0 +1,229 @@
+/* Plan › Days (ADR 0012). Tokens only. */
+.plan-days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.plan-days section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.plan-days-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.plan-days-schengen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.plan-days-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.plan-days-chart {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.plan-days-chart svg {
+  width: 100%;
+  height: 140px;
+  display: block;
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+}
+.plan-days-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.plan-days-limit {
+  stroke: var(--danger);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.plan-days-today {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+.plan-days-present {
+  fill: var(--ink-2);
+  opacity: 0.45;
+}
+.plan-days-over {
+  fill: var(--danger);
+  opacity: 0.35;
+}
+.plan-days-axis {
+  position: relative;
+  height: 16px;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  overflow: hidden;
+}
+.plan-days-axis span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+.plan-days-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.plan-days-key {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--accent);
+}
+.plan-days-key--limit {
+  border-top: 1px dashed var(--danger);
+}
+.plan-days-key--present {
+  height: 6px;
+  border: 0;
+  background: var(--ink-2);
+  opacity: 0.45;
+}
+.plan-days-key--today {
+  width: 0;
+  height: 12px;
+  border-top: 0;
+  border-left: 1px solid var(--ink);
+}
+.plan-days-check {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-3);
+}
+.plan-days-alert {
+  border-color: var(--danger);
+}
+.plan-days-alert--warn {
+  border-color: var(--warning);
+}
+.plan-days-warn {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.plan-days-table {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--border-width) solid var(--border);
+}
+.plan-days-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 0.6fr) minmax(0, 1.2fr);
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--border);
+  font-size: var(--text-sm);
+}
+.plan-days-row > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+.plan-days-row--head {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.plan-days-mlabel {
+  display: none;
+}
+.plan-days-tax {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+.plan-days-taxcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.plan-days-taxcard--home {
+  border-color: var(--accent);
+}
+.plan-days-taxhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.plan-days-bar {
+  height: 6px;
+  background: var(--surface-3);
+}
+.plan-days-fill {
+  display: block;
+  height: 100%;
+  background: var(--success);
+}
+.plan-days-fill--near {
+  background: var(--warning);
+}
+.plan-days-fill--over {
+  background: var(--danger);
+}
+.plan-days-fill--home {
+  background: var(--accent);
+}
+.plan-days-taxline {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.plan-days-stays {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 899.98px) {
+  .plan-days-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .plan-days-check {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .plan-days-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .plan-days-row--head {
+    display: none;
+  }
+  .plan-days-mlabel {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--label-tracking);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .plan-days-minor {
+    display: none;
+  }
+}

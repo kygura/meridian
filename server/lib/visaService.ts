@@ -8,6 +8,7 @@ import { listTrips } from "./trips.js";
 import { readRotation, stateOf } from "./rotation.js";
 import { getAllCitySeasonality } from "./seasonality.js";
 import { getVisaData } from "./visaData.js";
+import { advisoriesForCountry } from "./phenomena.js";
 import { getVisaSettings } from "./visaStore.js";
 import { stayPresence, todayIso } from "../../src/lib/rotation.js";
 import { borderRunOptions, checkStays, schengenBuffers, type Place, type StayInput } from "../../src/lib/visa/engine.js";
@@ -58,7 +59,8 @@ let placeCache: Place[] | null = null;
 
 /**
  * Places to suggest: the three largest cities with an airport in each country, with their
- * Comfort Index by month where the seasonality data has it.
+ * Comfort Index by month where the seasonality data has it and the country's standing
+ * advisories from data/phenomena.json (a severity-3 one keeps the place out).
  */
 export function suggestionPlaces(): Place[] {
   if (placeCache) return placeCache;
@@ -74,7 +76,8 @@ export function suggestionPlaces(): Place[] {
   for (const list of byCountry.values()) {
     for (const c of list.sort((a, b) => b.population - a.population).slice(0, 3)) {
       const m = comfort[c.id];
-      out.push({ cityId: c.id, name: c.name, country: c.country, lat: c.lat, lng: c.lng, iata: c.iata, comfort: m ? m.map((x) => (typeof x?.score === "number" ? Math.round(x.score) : null)) : null });
+      const advisories = advisoriesForCountry(c.country).map((a) => ({ label: a.label, severity: a.severity, source: "Meridian's curated advisory list, not an official advisory" }));
+      out.push({ cityId: c.id, name: c.name, country: c.country, lat: c.lat, lng: c.lng, iata: c.iata, comfort: m ? m.map((x) => (typeof x?.score === "number" ? Math.round(x.score) : null)) : null, advisories });
     }
   }
   placeCache = out;

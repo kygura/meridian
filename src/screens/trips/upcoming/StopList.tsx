@@ -11,6 +11,7 @@ import { legDepartureHint } from "../../../lib/season";
 import { StopPlan } from "./itinerary";
 import { LegRow } from "./legRow";
 import { useCityIndex } from "./parts";
+import { StopEntryBadge, useTripEntry } from "./entry";
 
 interface StopListProps {
   trip: Trip;
@@ -34,6 +35,7 @@ export default function StopList({ trip, route }: StopListProps) {
   const seasonData = useTripSeasonData(trip);
   const dates = useStopDates(trip);
   const cityIdx = useCityIndex();
+  const entry = useTripEntry(trip);
   const count = trip.nodes.length;
   const tripId = trip.id;
 
@@ -167,6 +169,7 @@ export default function StopList({ trip, route }: StopListProps) {
                     <span className="trips-ed-stop-name">{node.name}</span>
                     <span className="trips-ed-stop-sub">
                       {node.iata ? <span className="iata">{node.iata}</span> : <span>No airport</span>}
+                      <StopEntryBadge entry={entry.result?.stops[i]} />
                     </span>
                   </div>
                   <div className="trips-ed-row-actions">

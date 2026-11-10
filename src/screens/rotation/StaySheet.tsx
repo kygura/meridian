@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { StayVisaSection } from "./RotationVisa";
+import type { StayVerdict } from "../../lib/visa/engine";
+import type { EntryRule } from "../../lib/visa/rules";
 import { Badge, Button, CitySearch, Disclosure, Field, Input, Segmented, Select, Sheet, Textarea, cx } from "../../ui";
 import { IconExternal, IconTrash } from "../../ui/icons";
 import { useMeridianStore } from "../../store";
@@ -139,13 +142,16 @@ export interface StaySheetProps {
   template?: RotationStay | null;
   profile?: PlaceProfile;
   fit?: StayFit;
+  /** Entry verdict for a planned stay, or the requirement for an idea (ADR 0012). */
+  visaVerdict?: StayVerdict;
+  visaRule?: EntryRule;
   onClose: () => void;
   onSave: (stay: RotationStay) => Promise<boolean>;
   onDelete?: (id: string) => void;
   onEditPlace?: (place: RotationPlace) => void;
 }
 
-export function StaySheet({ open, stay, template, profile, fit, onClose, onSave, onDelete, onEditPlace }: StaySheetProps) {
+export function StaySheet({ open, stay, template, profile, fit, visaVerdict, visaRule, onClose, onSave, onDelete, onEditPlace }: StaySheetProps) {
   const cities = useMeridianStore((s) => s.cities);
   const [d, setD] = useState<Draft>(() => toDraft(stay ?? template ?? null));
   const base = stay ?? template ?? null;
@@ -337,6 +343,8 @@ export function StaySheet({ open, stay, template, profile, fit, onClose, onSave,
             </ul>
           )}
         </section>
+
+        {stay && <StayVisaSection verdict={visaVerdict} rule={visaRule} />}
 
         {stay && fit && (
           <section className="rotation-sheet-section" aria-labelledby="rot-fit">

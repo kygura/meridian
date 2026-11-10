@@ -246,6 +246,54 @@ export function countLimits(p: Presence[], limits: CountLimit[], from = -Infinit
   return out.sort((a, b) => a.firstOver.localeCompare(b.firstOver) || a.key.localeCompare(b.key));
 }
 
+export interface LimitUsage {
+  limit: CountLimit;
+  /** Most days counted from `from` on (window, entry or year), and the day it peaks. */
+  peak: number;
+  peakOn: string | null;
+  /** Days counted on `from` itself (window ending then, the entry under way, the year so far). */
+  now: number;
+  over: boolean;
+}
+
+/** How close each limit comes, from a day on: for the Days page counters. */
+export function limitUsage(p: Presence[], limits: CountLimit[], from: number): LimitUsage[] {
+  return limits.map((L) => {
+    const r = rangesOf(p, L.countries);
+    let peak = 0;
+    let peakOn: number | null = null;
+    let now = 0;
+    if (L.limit.kind === "rolling") {
+      const pk = peakUse(r, L.limit.windowDays, from, Infinity);
+      const live = usedOn(r, from, L.limit.windowDays);
+      peak = Math.max(pk.day !== null && pk.day >= from ? pk.used : 0, live);
+      peakOn = pk.day !== null && pk.day >= from && pk.used >= live ? pk.day : from;
+      now = live;
+    } else if (L.limit.kind === "per-entry") {
+      for (const e of entriesOf(p, L.countries)) {
+        if (e.end < from) continue;
+        const days = e.end - e.start + 1;
+        if (days > peak) {
+          peak = days;
+          peakOn = e.end;
+        }
+        if (e.start <= from && from <= e.end) now = from - e.start + 1;
+      }
+    } else {
+      const y0 = yearOf(from);
+      for (const y of [y0, y0 + 1]) {
+        const days = daysWithin(r, dayNum(`${y}-01-01`), dayNum(`${y}-12-31`));
+        if (days > peak) {
+          peak = days;
+          peakOn = dayNum(`${y}-12-31`);
+        }
+      }
+      now = daysWithin(r, dayNum(`${y0}-01-01`), from);
+    }
+    return { limit: L, peak, peakOn: peakOn !== null ? dayIso(peakOn) : null, now, over: peak > L.limit.days };
+  });
+}
+
 /** A limit from an owner-typed rule (the solver's country rules, ADR 0015). */
 export function ownerLimits(data: VisaData | null, rules: OwnerRule[]): CountLimit[] {
   const out: CountLimit[] = [];
@@ -574,7 +622,9 @@ export function taxDays(data: VisaData | null, presence: Presence[], opts: TaxOp
             bestEnd = e;
           }
         }
-        if (!best && !countries.has(c)) continue;
+        // The same 12 months can be the most for two years running: list it once.
+        const prev = out[out.length - 1];
+        if (prev && prev.country === c && prev.periodEnd === dayIso(bestEnd)) continue;
         out.push({ ...base, period: `Any 12 months touching ${y}`, periodStart: dayIso(bestEnd - len + 1), periodEnd: dayIso(bestEnd), days: best, status: verdict(best, threshold, atLeast) });
       } else if (period.kind === "tax-year") {
         const sm = String(period.startMonth ?? 1).padStart(2, "0");
@@ -617,6 +667,14 @@ export interface Place {
   iata?: string;
   /** Twelve Comfort Index values, January first; null where unknown. */
   comfort?: (number | null)[] | null;
+  /** Standing advisories or conflicts for the country (Meridian's curated list); severity 3 = avoid. */
+  advisories?: { label: string; severity: number; source: string }[];
+}
+
+/** Places under a severity-3 advisory are never suggested; lesser ones are named. */
+function advisoryNotes(p: Place): string[] | null {
+  if (p.advisories?.some((a) => a.severity >= 3)) return null;
+  return (p.advisories ?? []).map((a) => `Advisory: ${a.label} (${a.source}).`);
 }
 
 export interface BorderRunOption {
@@ -658,11 +716,13 @@ export function borderRunOptions(data: VisaData, passports: string[], from: { co
     if (inSchengenIso(origin) && inSchengenIso(c)) continue;
     const rule = entryRule(data, passports, c, from.date);
     if (!ARRIVE_OK.has(rule.status)) continue;
+    const adv = advisoryNotes(p);
+    if (!adv) continue;
     const km = Math.round(haversineKm([from.lng, from.lat], [p.lng, p.lat]));
     const prev = best.get(c);
     if (prev && prev.km <= km) continue;
     const h = roughHours(km);
-    const optNotes = [...CURATED.borderRunNotes.filter((x) => x.destination === c).map((x) => x.note)];
+    const optNotes = [...CURATED.borderRunNotes.filter((x) => x.destination === c).map((x) => x.note), ...adv];
     if (rule.status === "eta") optNotes.push("Needs a travel authorisation (ETA) applied for online.");
     if (inSchengenIso(c)) optNotes.push("Days there count towards Schengen 90/180.");
     best.set(c, { place: p, countryName: rule.destinationName, km, rule, estimate: `about ${h < 1 ? "1" : Math.round(h)} h each way (${km} km)`, notes: optNotes });
@@ -692,6 +752,13 @@ export interface BufferOption {
 export const BUFFER_MAX_KM = 4000;
 
 /**
+ * Microstates surrounded by the Schengen Area: there are no border checks into Monaco, San
+ * Marino and the Vatican, and Andorra is reached only through Spain or France. Meridian does
+ * not suggest them as a place to wait out 90/180 (a judgement, stated in ADR 0012).
+ */
+export const ENCLAVED_BY_SCHENGEN = ["AD", "MC", "SM", "VA"];
+
+/**
  * Places outside the Schengen Area to wait out the 90/180 count: one per country, that these
  * passports can enter for `nights`, ranked by distance from `from` and by comfort in the
  * months of the stay. Cyprus and Ireland are EU members outside Schengen and qualify.
@@ -705,11 +772,13 @@ export function schengenBuffers(data: VisaData, passports: string[], from: { lat
   const best = new Map<string, Omit<BufferOption, "distanceRank" | "comfortRank" | "score">>();
   for (const p of places) {
     const c = isoOf(data, p.country);
-    if (!c || inSchengenIso(c)) continue;
+    if (!c || inSchengenIso(c) || ENCLAVED_BY_SCHENGEN.includes(c)) continue;
     const rule = entryRule(data, passports, c, start);
     if (!ARRIVE_OK.has(rule.status)) continue;
     const allowed = rule.limit ? rule.limit.days : null;
     if (allowed !== null && allowed < nights + 1) continue;
+    const adv = advisoryNotes(p);
+    if (!adv) continue;
     const km = Math.round(haversineKm([from.lng, from.lat], [p.lng, p.lat]));
     if (km > BUFFER_MAX_KM) continue;
     const vals = months.map((m) => p.comfort?.[m - 1]).filter((v): v is number => typeof v === "number");
@@ -717,7 +786,7 @@ export function schengenBuffers(data: VisaData, passports: string[], from: { lat
     const prev = best.get(c);
     // Keep the better place per country: higher comfort, then nearer.
     if (prev && ((prev.comfort ?? -1) > (comfort ?? -1) || ((prev.comfort ?? -1) === (comfort ?? -1) && prev.km <= km))) continue;
-    const notes: string[] = [];
+    const notes: string[] = [...adv];
     if (SCHENGEN.outside[c]) notes.push(SCHENGEN.outside[c]);
     if (rule.limit) notes.push(`Allows ${limitLabel(rule.limit)}.`);
     if (rule.status === "eta") notes.push("Needs a travel authorisation (ETA) applied for online.");

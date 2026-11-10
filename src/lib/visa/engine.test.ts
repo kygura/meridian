@@ -8,6 +8,9 @@ import {
   countLimits,
   earliestEntry,
   entriesOf,
+  limitUsage,
+  limitsFor,
+  firstArrivals,
   maxStayFrom,
   passportValidity,
   schengenBuffers,
@@ -24,7 +27,7 @@ import {
 } from "./engine";
 
 // A small hand-made data file: test inputs, not the real dataset (which has its own tests).
-const DEST = ["US", "GB", "DE", "FR", "ES", "PT", "TH", "VN", "KH", "LA", "ME", "AL", "TR", "CY", "IE", "GE", "IN", "BR", "KP"];
+const DEST = ["US", "GB", "DE", "FR", "ES", "PT", "TH", "VN", "KH", "LA", "ME", "AL", "TR", "CY", "IE", "GE", "IN", "BR", "KP", "AD"];
 const row = (cells: Record<string, string>) => DEST.map((d) => cells[d] ?? "vr").join(" ");
 const DATA: VisaData = {
   version: 1,
@@ -50,10 +53,11 @@ const DATA: VisaData = {
     IN: { name: "India" },
     BR: { name: "Brazil" },
     KP: { name: "North Korea", aliases: ["Korea, North"] },
+    AD: { name: "Andorra" },
   },
   destinations: DEST,
   matrix: {
-    US: row({ US: "-", GB: "eta", DE: "vf90", FR: "vf90", ES: "vf90", PT: "vf90", TH: "vf60", VN: "ev90", KH: "voa30", LA: "voa30", ME: "vf90", AL: "vf360", TR: "vf90", CY: "vf90", IE: "vf90", GE: "vf360", IN: "ev", BR: "vf90", KP: "na" }),
+    US: row({ US: "-", GB: "eta", DE: "vf90", FR: "vf90", ES: "vf90", PT: "vf90", TH: "vf60", VN: "ev90", KH: "voa30", LA: "voa30", ME: "vf90", AL: "vf360", TR: "vf90", CY: "vf90", IE: "vf90", GE: "vf360", IN: "ev", BR: "vf90", KP: "na", AD: "vf90" }),
     DE: row({ US: "eta90", GB: "eta", DE: "-", FR: "vf", ES: "vf", PT: "vf", TH: "vf60", VN: "vf45", KH: "voa30", LA: "voa30", ME: "vf90", AL: "vf90", TR: "vf90", CY: "vf", IE: "vf", GE: "vf360", IN: "ev30", BR: "vf90" }),
     GB: row({ US: "eta90", GB: "-", DE: "vf90", FR: "vf90", ES: "vf90", PT: "vf90", TH: "vf60", VN: "vf45", KH: "voa30", LA: "vf30", ME: "vf90", AL: "vf90", TR: "vf90", CY: "vf90", IE: "vf", GE: "vf360", IN: "ev", BR: "vf90" }),
     IN: row({ IN: "-", TH: "vf60", VN: "ev90", KH: "voa30", LA: "voa30", GE: "ev", ME: "vr", AL: "vf90", TR: "ev30", CY: "vr", IE: "vr", BR: "vr" }),
@@ -337,12 +341,15 @@ describe("border runs and Schengen buffers", () => {
     { cityId: "dublin", name: "Dublin", country: "Ireland", lat: 53.35, lng: -6.26, comfort: [30, 30, 40, 50, 60, 70, 75, 75, 65, 50, 40, 30] },
     { cityId: "lyon", name: "Lyon", country: "France", lat: 45.76, lng: 4.84, comfort: [50, 50, 60, 70, 80, 85, 85, 85, 80, 70, 55, 50] },
     { cityId: "tbilisi", name: "Tbilisi", country: "Georgia", lat: 41.72, lng: 44.78, comfort: null },
+    { cityId: "andorra", name: "Andorra la Vella", country: "AD", lat: 42.51, lng: 1.52, comfort: null },
   ];
 
   it("offers places outside Schengen, Cyprus and Ireland included, ranked by distance and comfort", () => {
     const b = schengenBuffers(DATA, ["US"], { lat: 41.9, lng: 12.5 }, "2027-04-01", 60, europe);
     const ids = b.map((x) => x.place.cityId);
     expect(ids).not.toContain("lyon");
+    // Enclaved by Schengen: reached only through it.
+    expect(ids).not.toContain("andorra");
     expect(ids).toEqual(expect.arrayContaining(["kotor", "tirana", "limassol", "dublin", "tbilisi"]));
     const kotor = b.find((x) => x.place.cityId === "kotor")!;
     expect(kotor.distanceRank).toBe(1);
@@ -352,6 +359,13 @@ describe("border runs and Schengen buffers", () => {
     for (let i = 1; i < b.length; i++) expect(b[i - 1].score).toBeGreaterThanOrEqual(b[i].score);
   });
 
+  it("leaves out places under an avoid advisory and names lesser ones", () => {
+    const withAdv = europe.map((p) => (p.cityId === "kotor" ? { ...p, advisories: [{ label: "Test conflict", severity: 3, source: "test list" }] } : p.cityId === "tirana" ? { ...p, advisories: [{ label: "Test watch", severity: 1, source: "test list" }] } : p));
+    const b = schengenBuffers(DATA, ["US"], { lat: 41.9, lng: 12.5 }, "2027-04-01", 60, withAdv);
+    expect(b.map((x) => x.place.cityId)).not.toContain("kotor");
+    expect(b.find((x) => x.place.cityId === "tirana")!.notes[0]).toMatch(/Test watch/);
+  });
+
   it("leaves out places the passport cannot enter, or not for that long", () => {
     const india = schengenBuffers(DATA, ["IN"], { lat: 41.9, lng: 12.5 }, "2027-04-01", 60, europe).map((x) => x.place.cityId);
     expect(india).not.toContain("kotor");
@@ -359,5 +373,23 @@ describe("border runs and Schengen buffers", () => {
     const long = schengenBuffers(DATA, ["GB"], { lat: 41.9, lng: 12.5 }, "2027-04-01", 120, europe).map((x) => x.place.cityId);
     expect(long).not.toContain("kotor");
     expect(long).toContain("tbilisi");
+  });
+});
+
+describe("limit usage for the counters", () => {
+  it("reports the peak from today on and today's count for each kind of limit", () => {
+    const stays = [stay("a", "France", "2026-10-01", "2026-10-30", { past: true }), stay("b", "Spain", "2026-12-01", "2027-01-29"), stay("v", "Vietnam", "2027-03-01", "2027-04-10")];
+    const p = toPresence(DATA, stays);
+    const limits = limitsFor(DATA, ["GB"], firstArrivals(p), [{ country: "Georgia", maxDaysPerYear: 120 }]);
+    const u = limitUsage(p, limits, d("2026-11-10"));
+    const sch = u.find((x) => x.limit.key === "schengen")!;
+    expect(sch.now).toBe(30);
+    expect(sch.peak).toBe(90);
+    expect(sch.over).toBe(false);
+    const vn = u.find((x) => x.limit.key === "VN")!;
+    expect(vn.peak).toBe(41);
+    expect(vn.now).toBe(0);
+    const ge = u.find((x) => x.limit.key === "GE")!;
+    expect(ge.peak).toBe(0);
   });
 });

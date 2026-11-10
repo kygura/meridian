@@ -1,0 +1,64 @@
+/* Visa checks (ADR 0012), shared by trips, the rotation, the solver and the Days page. Tokens only. */
+.visa-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.visa-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.visa-detail-req {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.visa-detail-msg {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+.visa-detail--compact .visa-detail-msg {
+  font-size: var(--text-xs);
+}
+.visa-detail-list {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.visa-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+a.visa-source {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.visa-violations {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--danger);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.visa-violations .visa-source {
+  display: block;
+}
+.visa-disclaimer {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}

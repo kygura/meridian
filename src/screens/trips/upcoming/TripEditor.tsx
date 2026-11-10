@@ -39,6 +39,7 @@ import { SeasonCard } from "./season";
 import { seasonText } from "../../../lib/season";
 import { DepartureCard } from "./departure";
 import { RiskCard } from "./risk";
+import { EntryCard } from "./entry";
 
 export interface TripEditorProps {
   /** Trip id from #/trips/plan/<tripId> (useMeridianStore.trips[].id). */
@@ -242,6 +243,11 @@ export default function TripEditor({ tripId }: TripEditorProps) {
           <Card className="trips-ed-card">
             <h2 className="ui-section-title">Risk</h2>
             <RiskCard trip={trip} route={route} />
+          </Card>
+
+          <Card className="trips-ed-card">
+            <h2 className="ui-section-title">Entry and visas</h2>
+            <EntryCard trip={trip} />
           </Card>
 
           <Card className="trips-ed-card">
