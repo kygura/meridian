@@ -6,6 +6,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./ui/ui.css";
 import "./shell/shell.css";
+import "./shell/phone.css";
 import App from "./App";
 
 createRoot(document.getElementById("root")!).render(
