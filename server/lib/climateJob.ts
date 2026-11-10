@@ -24,7 +24,7 @@ export function climateJobBudget(env: NodeJS.ProcessEnv = process.env): number {
 }
 
 /** One run: plan the gaps, spend up to the budget, persist each cell as it lands. Never throws. */
-export async function runClimateJobOnce(opts: { budget?: number; maxCells?: number; fetchFn?: typeof fetch } = {}): Promise<BackfillResult | undefined> {
+export async function runClimateJobOnce(opts: { budget?: number; maxCells?: number; fetchFn?: typeof fetch; delayMs?: number } = {}): Promise<BackfillResult | undefined> {
   if (running) return undefined;
   running = true;
   try {
@@ -36,6 +36,7 @@ export async function runClimateJobOnce(opts: { budget?: number; maxCells?: numb
       runBudget: opts.budget ?? climateJobBudget(),
       maxCells: opts.maxCells,
       fetchFn: opts.fetchFn,
+      delayMs: opts.delayMs,
       sink: {
         get: (k) => climateCells()[k],
         save: (k, cell) => saveRuntimeClimateCell(k, cell),

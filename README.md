@@ -85,7 +85,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
 | `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
 | `ALERT_WEBHOOK_URL` | Where watch alerts are POSTed |
-| `CLIMATE_JOB`, `CLIMATE_JOB_HOUR_UTC`, `CLIMATE_JOB_BUDGET` | The nightly climate backfill: `CLIMATE_JOB=off` disables it, it runs at the given UTC hour (default 3) and spends up to the budget of weighted Open-Meteo calls (default 2500, about 29 cells) |
+| `CLIMATE_JOB`, `CLIMATE_JOB_HOUR_UTC`, `CLIMATE_JOB_BUDGET` | The nightly climate backfill: `CLIMATE_JOB=off` disables it, it runs at the given UTC hour (default 3) and spends up to the budget of weighted Open-Meteo calls (default 2500, about 29 cells). Runs in the long-lived server (`npm start`), not on Vercel; there use `npm run backfill:climate` |
 | `OPEN_METEO_MINUTELY_BUDGET`, `OPEN_METEO_HOURLY_BUDGET`, `OPEN_METEO_DAILY_BUDGET` | Our own ceilings on weighted Open-Meteo calls, kept under the free tier's 600 / 5,000 / 10,000. Defaults 400 / 3500 / 7000 |
 | `VITE_API_BASE_URL` | Only if the frontend is served separately from the API |
 
@@ -115,7 +115,7 @@ docs/
 Open decisions carried over from the old wiki:
 
 - **Rate limits are per server process.** On Vercel each warm instance counts on its own and forgets on a cold start, so the limits on Ask, news and flight search slow abuse down but are not a hard budget (ADR 0009). The sign-in lockout is stored and does not have this gap.
-- **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
+- **Climate coverage is partial and fills in slowly.** Open-Meteo's free tier allows about 80 climate cells a day, so the committed `data/climate-normals.json` holds the first 39 of 5,463 cells (49 cities with weekly normals, 48 with air quality; 134 of 5,878 cities have any monthly figure, counting the 120-city seed and on-demand fetches). The nightly job and `npm run backfill:climate` close the rest, about 70 days of quota. Cities without air or weekly data show "no data yet" and fall back to months; the air penalty is not applied to them.
 - **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
