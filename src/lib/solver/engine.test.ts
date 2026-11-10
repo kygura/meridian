@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { __internal, addMonthsToDate, buildSlots, evaluatePlan, planOf, solve } from "./engine";
+import { __internal, addMonthsToDate, buildSlots, evaluatePlan, planOf, RISK_SCOPE_NOTE, solve, VISA_SCOPE_NOTE } from "./engine";
 import { baseInput, BASE_CONSTRAINTS, cand, POOL } from "./fixtures";
-import { addRange, dayNum, inSchengen, peakUse, usedOn } from "./visa";
+import { addRange, dayNum, inSchengen, peakUse, sameCountry, usedOn } from "./visa";
+import { parseDaysInWindow } from "./settings";
 import type { ProposedRotation, SolveInput } from "./types";
 
 /** Every hard rule, checked independently of the engine's own validator. */
@@ -62,6 +63,27 @@ describe("visa ranges", () => {
     expect(r.length).toBe(1);
     expect(usedOn(r, dayNum("2027-02-10"), 180)).toBe(41);
     expect(peakUse(r, 180).used).toBe(41);
+  });
+
+  it("matches country names across spelling, case and accents", () => {
+    expect(sameCountry("thailand", "Thailand")).toBe(true);
+    expect(sameCountry("Burma", "Myanmar")).toBe(true);
+    expect(sameCountry("Czech Republic", "Czechia")).toBe(true);
+    expect(sameCountry(" Türkiye ", "Turkey")).toBe(true);
+    expect(sameCountry("Korea, South", "south korea")).toBe(true);
+    expect(sameCountry("Thailand", "Vietnam")).toBe(false);
+    expect(sameCountry("", "")).toBe(false);
+    expect(inSchengen("Czech Republic")).toBe(true);
+  });
+
+  it("reads a typed window limit only once it is complete", () => {
+    expect(parseDaysInWindow("")).toBeUndefined();
+    // Partial input is kept by the field but not saved (it used to be dropped on the first key).
+    expect(parseDaysInWindow("9")).toBeNull();
+    expect(parseDaysInWindow("90 in")).toBeNull();
+    expect(parseDaysInWindow("90 in 18")).toBeNull();
+    expect(parseDaysInWindow("90 in 180")).toEqual({ days: 90, windowDays: 180 });
+    expect(parseDaysInWindow("90/180")).toEqual({ days: 90, windowDays: 180 });
   });
 });
 
@@ -189,6 +211,31 @@ describe("solve", () => {
       const first = [...p.stays].sort((a, b) => a.start.localeCompare(b.start))[0];
       if (first.cityId === "chiang-mai") expect(Date.parse(first.end) - Date.parse("2026-11-15")).toBeLessThanOrEqual(59 * 86_400_000);
     }
+  });
+
+  it("applies a rule typed in another case, flags one that matches nothing, and says what is not checked", () => {
+    const pool = [
+      cand("chiang-mai", "Chiang Mai", "Thailand", 18.79, 98.98, { levels: Array(12).fill("great"), cost: 1000, maxNights: 400 }),
+      cand("tbilisi", "Tbilisi", "Georgia", 41.72, 44.79, { levels: Array(12).fill("fair"), cost: 1300, maxNights: 400 }),
+    ];
+    const constraints = { ...BASE_CONSTRAINTS, schengen: false, taxDays: null, countryRules: [{ country: "thailand", maxDaysPerEntry: 60 }, { country: "Thialand", maxDaysPerEntry: 30 }] };
+    const res = solve(baseInput({ candidates: pool, constraints, results: 1 }));
+    expect(res.ok).toBe(true);
+    const p = res.proposals[0];
+    // The lower-case rule binds exactly like "Thailand" would; without it Chiang Mai would run long.
+    const exact = solve(baseInput({ candidates: pool, constraints: { ...constraints, countryRules: [{ country: "Thailand", maxDaysPerEntry: 60 }] }, results: 1 })).proposals[0];
+    const none = solve(baseInput({ candidates: pool, constraints: { ...constraints, countryRules: [] }, results: 1 })).proposals[0];
+    expect(planOf(p).stays.map((x) => [x.cityId, x.start, x.end])).toEqual(planOf(exact).stays.map((x) => [x.cityId, x.start, x.end]));
+    expect(Math.max(...none.stays.filter((x) => x.cityId === "chiang-mai").map((x) => x.nights))).toBeGreaterThan(60);
+    expect(p.visa.countryRules.find((r) => r.country === "thailand")!.maxUsed).toBeLessThanOrEqual(60);
+    expect(p.visa.unmatchedRules).toEqual(["Thialand"]);
+    expect(p.visa.notes.join(" ")).toMatch(/"Thialand" matches no place/);
+    expect(p.visa.notes).toContain(VISA_SCOPE_NOTE);
+    expect(p.components.find((c) => c.key === "visa")!.notes).toContain(VISA_SCOPE_NOTE);
+    // No listed risk is not "no risk": the risk score says what it rests on.
+    const risk = p.components.find((c) => c.key === "risk")!;
+    expect(risk.detail).toMatch(/curated and partial/);
+    expect(risk.notes).toContain(RISK_SCOPE_NOTE);
   });
 
   it("says what blocks it when nothing legal exists", () => {

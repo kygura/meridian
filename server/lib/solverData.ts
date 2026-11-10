@@ -73,13 +73,15 @@ async function comfortMonths(cityId: string, timeoutMs: number): Promise<MonthSe
 /** Advisories, conflicts and nearby seasonal hazards from data/phenomena.json. */
 export function standingRisks(city: Pick<City, "country" | "lat" | "lng">): PlaceRisk[] {
   const out: PlaceRisk[] = [];
+  const asOf = anomaliesFor().asOf;
+  const listed = `Meridian's curated list${asOf ? ` as of ${asOf}` : ""} (partial, not an official advisory)`;
   for (const a of advisoriesForCountry(city.country)) {
-    out.push({ kind: a.kind === "conflict" ? "conflict" : "advisory", severity: clampSev(a.severity), label: a.label, source: "Meridian curated list (data/phenomena.json)", url: a.sources?.[0]?.url });
+    out.push({ kind: a.kind === "conflict" ? "conflict" : "advisory", severity: clampSev(a.severity), label: a.label, source: listed, url: a.sources?.[0]?.url });
   }
   for (const h of anomaliesFor().items) {
     if (h.kind !== "hazard") continue;
     if (haversineKm([city.lng, city.lat], [h.lng, h.lat]) > HAZARD_REACH_KM) continue;
-    out.push({ kind: "hazard", severity: clampSev(h.severity), label: h.label, source: `Seasonal hazard within ${HAZARD_REACH_KM} km (data/phenomena.json)`, months: h.months });
+    out.push({ kind: "hazard", severity: clampSev(h.severity), label: h.label, source: `Seasonal hazard within ${HAZARD_REACH_KM} km, ${listed}`, months: h.months });
   }
   return out;
 }

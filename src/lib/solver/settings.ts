@@ -47,6 +47,9 @@ export interface SolverSettings {
 }
 
 export const DEFAULT_CONSTRAINTS: Constraints = {
+  // On by default: wrongly on costs some options, wrongly off risks an overstay. The Rules
+  // panel says to turn it off with an EU, EEA or Swiss passport, and every plan states that
+  // past days not in the rotation or journal are counted as zero (SCHENGEN_PRIOR_NOTE).
   schengen: true,
   countryRules: [],
   allowBorderRuns: false,
@@ -154,4 +157,14 @@ export interface SolverDoc {
   lastReplan?: { at: string; shifts: number; proposals: number; notes: string[] };
   /** First fare seen per move (origin-destination-date), the baseline for fare shifts. */
   fareBaselines?: Record<string, number>;
+}
+
+/** "90 in 180" → { days: 90, windowDays: 180 }; null while incomplete or unreadable; undefined when blank. */
+export function parseDaysInWindow(text: string): { days: number; windowDays: number } | null | undefined {
+  if (!text.trim()) return undefined;
+  const m = text.match(/^\s*(\d+)\D+(\d+)\s*$/);
+  if (!m) return null;
+  const days = Number(m[1]);
+  const windowDays = Number(m[2]);
+  return days > 0 && windowDays >= days ? { days, windowDays } : null;
 }

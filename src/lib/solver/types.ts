@@ -217,6 +217,8 @@ export interface VisaReport {
   schengen: { enabled: boolean; maxUsed: number; marginDays: number | null; peakOn: string | null };
   taxDays: { country: string; year: number; days: number; over: boolean }[];
   countryRules: { country: string; maxUsed: number; limit: string }[];
+  /** Rules whose country matches no place in the pool or past presence: never applied. */
+  unmatchedRules?: string[];
   notes: string[];
 }
 

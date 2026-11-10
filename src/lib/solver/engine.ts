@@ -39,7 +39,9 @@ import {
   dayNum,
   inSchengen,
   nightsByYear,
+  countryKey,
   peakUse,
+  sameCountry,
   SCHENGEN_RULE,
   SCHENGEN_SOURCE,
   TAX_NOTE,
@@ -90,6 +92,17 @@ export const HUB_MIN_HOURS = 7;
 export const HUB_MAX_DETOUR = 1.15;
 export const DISTINCT_SHARE = 0.2;
 export const DEFAULT_BEAM = 96;
+
+/** What the risk score rests on: a curated seed list and the news, not official advisories. */
+export const RISK_SCOPE_NOTE =
+  "Risk comes from Meridian's curated list of conflicts, advisories and seasonal hazards (partial, with its own as-of date) and from recent news when it could be reached. It is not an official travel advisory: check your government's current advice before you travel.";
+
+/** What the visa score covers, shown with every plan: it is not visa clearance. */
+export const VISA_SCOPE_NOTE =
+  "Only Schengen 90/180, the tax-day threshold and the country limits you entered are checked. Meridian has no visa database: other countries' entry limits are not checked, so a high visa margin is not visa clearance.";
+/** Where past days come from: anything not recorded counts as zero. */
+export const SCHENGEN_PRIOR_NOTE =
+  "Past Schengen days are counted only from your rotation and the last 13 months of your journal; days not recorded there are assumed to be zero.";
 
 export const DEFAULT_WEIGHTS: Weights = { fit: 1, cost: 0.8, friction: 0.6, visa: 0.6, risk: 0.6, preferences: 0.8 };
 
@@ -260,6 +273,8 @@ interface Prepared {
   landmassOf: LandmassOf;
   /** The entry the owner is in when the horizon starts (from prior presence), for per-entry limits. */
   priorEntry: { country: string; start: number } | null;
+  /** Per candidate: countryKey of its country (spellings unified), for the hot path. */
+  countryKeys: string[];
 }
 
 /**
@@ -275,7 +290,7 @@ export function priorEntryAt(prior: SolveInput["prior"], start: number): { count
   for (let grew = true; grew; ) {
     grew = false;
     for (const r of ranges) {
-      if (r.country === last.country && r.a < from && r.b >= from) {
+      if (sameCountry(r.country, last.country) && r.a < from && r.b >= from) {
         from = r.a;
         grew = true;
       }
@@ -414,6 +429,7 @@ function prepare(input: SolveInput, env: SolverEnv): Prepared | { error: string 
     hubs: env.hubs ?? [],
     landmassOf: (id: string) => cands[byCity.get(id) ?? -1]?.landmass,
     priorEntry: priorEntryAt(input.prior, start),
+    countryKeys: cands.map((c) => countryKey(c.place.country)),
   };
   input.candidates.forEach((c, i) => {
     if (!c.inPool || c.excluded) return;
@@ -421,7 +437,7 @@ function prepare(input: SolveInput, env: SolverEnv): Prepared | { error: string 
     else P.passThroughs.push(i);
   });
   cands.forEach((c, i) => {
-    P.ruleOf[i] = input.constraints.countryRules.findIndex((r) => r.country === c.place.country);
+    P.ruleOf[i] = input.constraints.countryRules.findIndex((r) => sameCountry(r.country, c.place.country));
   });
   // Month-scoped preferences: where they apply over the horizon.
   P.prefNights = input.preferences.map((p) => slots.reduce((a, s) => a + (applies(p, s.month) ? s.nights : 0), 0));
@@ -456,7 +472,7 @@ function prepare(input: SolveInput, env: SolverEnv): Prepared | { error: string 
   for (let ci = 0; ci < cands.length; ci++) {
     const c = cands[ci];
     const others = [...P.pool, ...P.passThroughs]
-      .filter((j) => cands[j].place.country && cands[j].place.country !== c.place.country && !inSchengen(cands[j].place.country) && P.ruleOf[j] === -1)
+      .filter((j) => cands[j].place.country && !sameCountry(cands[j].place.country, c.place.country) && !inSchengen(cands[j].place.country) && P.ruleOf[j] === -1)
       .sort((a, b) => haversineKm([c.place.lng, c.place.lat], [cands[a].place.lng, cands[a].place.lat]) - haversineKm([c.place.lng, c.place.lat], [cands[b].place.lng, cands[b].place.lat]) || a - b);
     P.borderTargets.push(others.slice(0, 3));
   }
@@ -510,7 +526,7 @@ function initialNode(P: Prepared): Node {
     const b = Math.min(dayNum(p.end), P.start);
     if (b <= a) continue;
     if (P.input.constraints.schengen && inSchengen(p.country) && b >= look) sch = addRange(sch, a, b);
-    const ri = P.input.constraints.countryRules.findIndex((r) => r.country === p.country);
+    const ri = P.input.constraints.countryRules.findIndex((r) => sameCountry(r.country, p.country));
     if (ri !== -1) rules[ri] = addRange(rules[ri], a, b);
     for (const [y, n] of nightsByYear(a, b)) tax.set(`${p.country}|${y}`, (tax.get(`${p.country}|${y}`) ?? 0) + n);
   }
@@ -532,9 +548,11 @@ interface Expansion {
 }
 
 /** Does placing `cand` after `n` continue the same entry into its country (prior presence included)? */
-function continuesEntry(P: Prepared, n: Node, cand: Candidate): boolean {
-  if (n.slot < 0) return P.priorEntry !== null && P.priorEntry.country === cand.place.country;
-  return n.c !== P.fromIdx && P.cands[n.c].place.country === cand.place.country;
+function continuesEntry(P: Prepared, n: Node, ci: number): boolean {
+  const k = P.countryKeys[ci];
+  if (k === "") return false;
+  if (n.slot < 0) return P.priorEntry !== null && countryKey(P.priorEntry.country) === k;
+  return n.c !== P.fromIdx && P.countryKeys[n.c] === k;
 }
 
 /** Can `n` close its current run now (moving elsewhere at slot `si`)? */
@@ -558,7 +576,7 @@ function expand(P: Prepared, n: Node, si: number, penalty: Float64Array[] | null
     let border = -1;
     // Per-entry and windowed country rules.
     const ri = P.ruleOf[c];
-    const sameCountry = continuesEntry(P, n, cand);
+    const sameCountry = continuesEntry(P, n, c);
     const entryStart = sameCountry ? n.entryStart : slot.start;
     if (ri !== -1) {
       const rule = k.countryRules[ri];
@@ -647,7 +665,7 @@ function materialize(P: Prepared, e: Expansion, si: number): Node {
     const key = `${cand.place.country}|${slot.year}`;
     tax.set(key, (tax.get(key) ?? 0) + slot.nights);
   }
-  const sameCountry = continuesEntry(P, n, cand);
+  const sameCountry = continuesEntry(P, n, e.c);
   let entryStart = sameCountry ? n.entryStart : slot.start;
   if (e.border !== -1) entryStart = slot.start + BORDER_RUN_NIGHTS;
   let lhQ = n.lhQ;
@@ -730,7 +748,7 @@ function planFromNode(P: Prepared, n: Node, tag: string): PlanInput {
     if (x.border !== -1 && sameRun) {
       const t = P.cands[x.border];
       const ruleCountry = cand.place.country;
-      const rule = P.input.constraints.countryRules.find((r) => r.country === ruleCountry);
+      const rule = P.input.constraints.countryRules.find((r) => sameCountry(r.country, ruleCountry));
       last.end = dayIso(slot.start);
       stays.push({
         id: nextId(),
@@ -878,9 +896,9 @@ function violations(P: Prepared, plan: PlanInput): string[] {
     const ri = P.ruleOf[ci];
     if (ri !== -1) rules[ri] = addRange(rules[ri], a, b);
     const last = entries[entries.length - 1];
-    if (last && last.country === c.place.country && last.end === a) last.end = b;
+    if (last && sameCountry(last.country, c.place.country) && last.end === a) last.end = b;
     // The first stay continues an entry that began before the horizon.
-    else if (!last && a === P.start && P.priorEntry && P.priorEntry.country === c.place.country) entries.push({ country: c.place.country, start: P.priorEntry.start, end: b });
+    else if (!last && a === P.start && P.priorEntry && sameCountry(P.priorEntry.country, c.place.country)) entries.push({ country: c.place.country ?? "", start: P.priorEntry.start, end: b });
     else entries.push({ country: c.place.country ?? "", start: a, end: b });
   }
   if (k.schengen) {
@@ -894,7 +912,7 @@ function violations(P: Prepared, plan: PlanInput): string[] {
     }
     if (rule.maxDaysPerEntry) {
       for (const e of entries) {
-        if (e.country !== rule.country) continue;
+        if (!sameCountry(e.country, rule.country)) continue;
         const days = e.end - e.start + 1;
         if (days > rule.maxDaysPerEntry) out.push(`${rule.country}: one entry of ${days} days from ${dayIso(e.start)}, over ${rule.maxDaysPerEntry}.`);
       }
@@ -1050,6 +1068,7 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
       visaNotes.push(`Schengen: at most ${peak.used} of 90 days in any 180${peak.day !== null ? ` (on ${dayIso(peak.day)})` : ""}.`);
     }
     visa.notes.push(SCHENGEN_SOURCE);
+    visa.notes.push(SCHENGEN_PRIOR_NOTE);
     // Buffers: a stay outside Schengen where a Schengen place would have broken 90/180.
     for (const ps of planned) {
       if (inSchengen(ps.country) || ps.role === "fixed") continue;
@@ -1072,12 +1091,12 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
     if (rule.maxDaysPerEntry) {
       let longest = 0;
       // An entry under way when the horizon starts: its earlier days count.
-      const pe = P.priorEntry && P.priorEntry.country === rule.country ? P.priorEntry : null;
+      const pe = P.priorEntry && sameCountry(P.priorEntry.country, rule.country) ? P.priorEntry : null;
       let run = pe ? P.start - pe.start + 1 : 0;
       let prevEnd = pe ? dayIso(P.start) : "";
       for (const s of stays) {
         const c = P.cands[P.byCity.get(s.cityId) ?? P.fromIdx];
-        if (c.place.country === rule.country) {
+        if (sameCountry(c.place.country, rule.country)) {
           run = prevEnd === s.start && run ? run + stayNightsOf(s) : stayNightsOf(s) + 1;
           longest = Math.max(longest, run);
         } else run = 0;
@@ -1086,6 +1105,12 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
       visa.countryRules.push({ country: rule.country, maxUsed: longest, limit: `${rule.maxDaysPerEntry} days per entry` });
     }
   });
+  // A rule typed for a country no place here is in (a typo, another spelling) is never applied: say so.
+  visa.unmatchedRules = k.countryRules
+    .filter((rule) => !P.cands.some((c) => sameCountry(c.place.country, rule.country)) && !P.input.prior.some((p) => sameCountry(p.country, rule.country)))
+    .map((rule) => rule.country.trim() || "(no country)");
+  for (const name of visa.unmatchedRules) visa.notes.push(`Your rule for "${name}" matches no place in the pool, so it was not applied. Check the spelling.`);
+  visa.notes.push(VISA_SCOPE_NOTE);
   if (k.taxDays !== null) {
     const years = new Set<number>();
     for (let d = P.start; d < P.end; d += 300) years.add(new Date(d * 86_400_000).getUTCFullYear());
@@ -1164,15 +1189,15 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
       score: r1(visaScore),
       weight: W.visa,
       detail: visaNotes.length ? visaNotes.join(" ") : "No day-count limit comes close.",
-      notes: [`Full marks with ${SCHENGEN_COMFORT_DAYS}+ spare Schengen days and ${TAX_COMFORT_DAYS}+ nights under the tax threshold.`],
+      notes: [`Full marks with ${SCHENGEN_COMFORT_DAYS}+ spare Schengen days and ${TAX_COMFORT_DAYS}+ nights under the tax threshold.`, VISA_SCOPE_NOTE],
     },
     {
       key: "risk",
       label: COMPONENT_LABEL.risk,
       score: r1(risk),
       weight: W.risk,
-      detail: riskItems.size ? `${riskItems.size} ${riskItems.size === 1 ? "risk" : "risks"} on the way.` : "No advisories, seasonal hazards or news issues for these places.",
-      notes: [...riskItems.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t, n]) => `${t} (${n} nights)`),
+      detail: riskItems.size ? `${riskItems.size} ${riskItems.size === 1 ? "risk" : "risks"} on the way.` : "None of these places is on Meridian's advisory and hazard list, and no news issue was found. That list is curated and partial.",
+      notes: [...[...riskItems.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([t, n]) => `${t} (${n} nights)`), RISK_SCOPE_NOTE],
     },
   ];
   if (W.preferences > 0) {

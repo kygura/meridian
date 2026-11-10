@@ -5,7 +5,7 @@ import { useMeridianStore } from "../../../store";
 import { listJourneys } from "../../../lib/journalApi";
 import { getCandidatePool } from "../../../lib/bridgesApi";
 import { preferenceLabel, regionOptions } from "../../../lib/solver/prefs";
-import type { PoolEntry, SolverSettings } from "../../../lib/solver/settings";
+import { parseDaysInWindow, type PoolEntry, type SolverSettings } from "../../../lib/solver/settings";
 import type { Preference, Weights } from "../../../lib/solver/types";
 import type { PlaceProfile, RotationStay } from "../../../lib/rotation";
 
@@ -55,6 +55,37 @@ function Check({ checked, onChange, children }: { checked: boolean; onChange: (v
 
 const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
 const numOrUndef = (v: string) => (v.trim() === "" ? undefined : Number(v));
+
+const windowText = (v: { days: number; windowDays: number } | undefined) => (v ? `${v.days} in ${v.windowDays}` : "");
+
+/**
+ * "Days in window": the owner types freely ("9", "90 in", "90 in 180"); the rule is saved once
+ * the text reads as a limit, and the field keeps what was typed until then.
+ */
+function WindowInput({ value, onChange }: { value: { days: number; windowDays: number } | undefined; onChange: (v: { days: number; windowDays: number } | undefined) => void }) {
+  const [text, setText] = useState(() => windowText(value));
+  // Follow changes made elsewhere (a reset, a reload) without clobbering a draft that means the same.
+  useEffect(() => {
+    const parsed = parseDaysInWindow(text);
+    if (parsed === null) return;
+    if (windowText(parsed ?? undefined) !== windowText(value)) setText(windowText(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value?.days, value?.windowDays]);
+  const parsed = parseDaysInWindow(text);
+  return (
+    <Input
+      size="sm"
+      value={text}
+      placeholder="90 in 180"
+      aria-invalid={parsed === null || undefined}
+      onChange={(e) => {
+        setText(e.target.value);
+        const next = parseDaysInWindow(e.target.value);
+        if (next !== null) onChange(next);
+      }}
+    />
+  );
+}
 
 let prefCounter = 0;
 const newId = () => `p${Date.now().toString(36)}${prefCounter++}`;
@@ -244,7 +275,7 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
       <Disclosure summary="Rules">
         <div className="solve-rules">
           <Check checked={k.schengen} onChange={(v) => setK({ schengen: v })}>
-            Schengen 90 days in any 180 <span className="solve-fine">(off if you hold an EU, EEA or Swiss passport)</span>
+            Schengen 90 days in any 180 <span className="solve-fine">(off if you hold an EU, EEA or Swiss passport; past days count only from your rotation and journal, anything else as zero)</span>
           </Check>
           <Check checked={k.avoidIsHard} onChange={(v) => setK({ avoidIsHard: v })}>
             Never place a stay in months you avoid
@@ -273,20 +304,12 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
                 <Input size="sm" inputMode="numeric" value={r.maxDaysPerEntry ?? ""} onChange={(e) => setK({ countryRules: k.countryRules.map((x, j) => (j === i ? { ...x, maxDaysPerEntry: numOrUndef(e.target.value) } : x)) })} />
               </Field>
               <Field label="Days in window" optional hint="e.g. 90 in 180">
-                <Input
-                  size="sm"
-                  value={r.maxDaysIn ? `${r.maxDaysIn.days} in ${r.maxDaysIn.windowDays}` : ""}
-                  placeholder="90 in 180"
-                  onChange={(e) => {
-                    const m = e.target.value.match(/(\d+)\D+(\d+)/);
-                    setK({ countryRules: k.countryRules.map((x, j) => (j === i ? { ...x, maxDaysIn: m ? { days: Number(m[1]), windowDays: Number(m[2]) } : undefined } : x)) });
-                  }}
-                />
+                <WindowInput value={r.maxDaysIn} onChange={(maxDaysIn) => setK({ countryRules: k.countryRules.map((x, j) => (j === i ? { ...x, maxDaysIn } : x)) })} />
               </Field>
               <IconButton label="Remove rule" size="sm" variant="ghost" icon={<IconTrash size={14} />} onClick={() => setK({ countryRules: k.countryRules.filter((_, j) => j !== i) })} />
             </div>
           ))}
-          <Button size="sm" variant="ghost" icon={<IconPlus size={14} />} onClick={() => setK({ countryRules: [...k.countryRules, { country: "", maxDaysPerEntry: 60 }] })}>
+          <Button size="sm" variant="ghost" icon={<IconPlus size={14} />} onClick={() => setK({ countryRules: [...k.countryRules, { country: "" }] })}>
             Add a country limit
           </Button>
         </div>

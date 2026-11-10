@@ -2,6 +2,7 @@ import { Badge, Button, Card, Disclosure, IconButton, Select, cx } from "../../.
 import { IconLock, IconUnlock } from "../../../ui/icons";
 import { FIT_LABEL, formatShortDate } from "../../../lib/rotation";
 import { stayLevel } from "../../../lib/solver/view";
+import { VISA_SCOPE_NOTE } from "../../../lib/solver/engine";
 import type { ProposedRotation } from "../../../lib/solver/types";
 
 const ROLE_LABEL = { base: "Base", "pass-through": "Pass-through", "border-run": "Border run", fixed: "Fixed" } as const;
@@ -132,8 +133,14 @@ export function ProposalCard({ index, proposal: p, selected, edited, busy, locke
 
       <p className="solve-fine num">
         {p.moves.length} moves · ≈ ${travelUsd.toLocaleString("en-US")} travel (estimate)
-        {p.visa.schengen.enabled ? ` · Schengen peak ${p.visa.schengen.maxUsed}/90` : ""}
+        {p.visa.schengen.enabled ? ` · Schengen peak ${p.visa.schengen.maxUsed}/90 from recorded days` : ""}
       </p>
+      {(p.visa.unmatchedRules ?? []).map((name) => (
+        <p key={name} className="solve-note">
+          Your rule for “{name}” matches no place, so it was not applied. Check the spelling.
+        </p>
+      ))}
+      <p className="solve-fine">{VISA_SCOPE_NOTE}</p>
       <Button variant={selected ? "primary" : "secondary"} block onClick={onAccept} disabled={busy}>
         Make this my rotation
       </Button>
