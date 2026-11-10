@@ -38,11 +38,6 @@ export function matchSummary(rm: PlaceResult["replayMatch"], topN = 3): MatchSum
   };
 }
 
-/** `Authorization` header for agent requests, only when a token exists (journal tools need it). */
-export function bearerHeaders(token: string | null | undefined): Record<string, string> | undefined {
-  return token ? { Authorization: `Bearer ${token}` } : undefined;
-}
-
 /** Places carrying a replay breakdown, from the AI-SDK tool invocations of one message. */
 export function replayPlaces(invocations: ReadonlyArray<{ toolName: string; state: string; result?: unknown }> | undefined): PlaceResult[] {
   const out: PlaceResult[] = [];

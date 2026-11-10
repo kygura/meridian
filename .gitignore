@@ -10,6 +10,8 @@ data/settings.json
 data/watches.json
 data/alerts.json
 data/bookings.json
+data/trips.json
+data/tripLinks.json
 .vercel
 data/notices.json
 data/push-subscriptions.json

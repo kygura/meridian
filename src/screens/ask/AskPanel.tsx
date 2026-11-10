@@ -1,10 +1,9 @@
 import "./ask.css";
 import { useChat } from "ai/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, type FormEvent, type KeyboardEvent } from "react";
-import { Chip, EmptyState, ErrorState, IconButton, Select, Sheet, Textarea, toast, useJournalToken } from "../../ui";
+import { Chip, EmptyState, ErrorState, IconButton, Select, Sheet, Textarea, UnlockCard, toast, useJournalToken } from "../../ui";
 import { IconAsk, IconClose, IconEdit, IconSend, IconSparkle } from "../../ui/icons";
-import { apiUrl } from "../../lib/api";
-import { bearerHeaders } from "../../lib/replayMatch";
+import { apiCredentials, apiUrl } from "../../lib/api";
 import { navigate } from "../../lib/router";
 import { useMeridianStore } from "../../store";
 import { openCity, useUIStore } from "../../shell/uiStore";
@@ -37,7 +36,7 @@ const PROMPTS = [
 
 /** Global chat panel (DESIGN-v3 §6 Ask). Mounted by AppShell only while uiStore.ask.open. */
 export default function AskPanel({ mode, onClose }: AskPanelProps) {
-  const { token, unlocked } = useJournalToken();
+  const { unlocked } = useJournalToken();
   const cities = useMeridianStore((s) => s.cities);
   const names = useMemo(() => cityNameIndex(cities), [cities]);
   const prefill = useUIStore((s) => s.ask.prefill);
@@ -48,11 +47,11 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
   const models = useAskModels();
   const setModel = useAskModel((s) => s.setModel);
 
-  // Journal tools only run when the request carries the token; headers are re-read on every request.
+  // The session cookie rides along; journal tools only run for the signed-in owner.
   const { messages, input, setInput, append, status, error, reload, stop, setMessages } = useChat({
     id: CHAT_ID,
     api: apiUrl("/api/agent/chat"),
-    headers: bearerHeaders(unlocked ? token : null),
+    credentials: apiCredentials,
     // Read on every request, so switching models applies to the next message.
     body: models.selected ? { model: models.selected } : undefined,
     experimental_throttle: 50,
@@ -140,15 +139,21 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
   const waiting = status === "submitted" && last?.role === "user";
 
+  // With a Claude key on the server, Ask spends it, so it is owner-only (ADR 0009).
+  // Without one it runs the demo path, open to anyone.
+  const needsSignIn = models.list?.available === true && !unlocked;
+
   const thread = (
     <div className="ask-thread-inner">
-      {messages.length === 0 ? (
+      {needsSignIn && messages.length === 0 ? (
+        <UnlockCard title="Sign in to use Ask" />
+      ) : messages.length === 0 ? (
         <EmptyState
           className="ask-intro"
           icon={<IconAsk />}
           title="Ask about places, seasons and prices"
           description={
-            unlocked ? "Ask can also look through your past trips to find places like them." : "Unlock your journal in Settings and Ask can compare places with your past trips."
+            unlocked ? "Ask can also look through your past trips to find places like them." : "Sign in under Settings and Ask can compare places with your past trips."
           }
           action={
             <div className="ask-prompts" role="group" aria-label="Suggested questions">
@@ -187,7 +192,11 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
           )}
         </ol>
       )}
-      {error && !busy && <ErrorState message="Ask couldn't answer that." onRetry={() => void reload()} />}
+      {needsSignIn && messages.length > 0 ? (
+        <UnlockCard compact title="Sign in to keep asking" />
+      ) : (
+        error && !busy && <ErrorState message="Ask couldn't answer that." onRetry={() => void reload()} />
+      )}
       <TripIdeas
         onKeep={(id, name) => {
           toast(`Kept “${name}”`, {
@@ -206,7 +215,7 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
     </div>
   );
 
-  const composer = (
+  const composer = needsSignIn ? undefined : (
     <form className="ask-composer" onSubmit={onSubmit}>
       <Textarea
         ref={inputRef}

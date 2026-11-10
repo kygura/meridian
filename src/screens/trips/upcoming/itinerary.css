@@ -1,0 +1,368 @@
+/* Itinerary, legs, calendar and sharing in the trip editor (ADR 0010).
+   Colours and sizes come from tokens.css only. */
+
+/* ── Leg row ── */
+.trips-leg-mode {
+  flex: none;
+  width: 96px;
+}
+.trips-leg .trips-ed-leg-text {
+  cursor: help;
+}
+.trips-leg-booked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.trips-leg-booked .ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.trips-leg-booked:hover {
+  color: var(--text);
+}
+.trips-leg-booked:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.trips-leg-pop {
+  width: min(300px, calc(100vw - 32px));
+}
+.trips-leg-pop-link {
+  flex-wrap: wrap;
+  row-gap: 0;
+  text-decoration: none;
+}
+.trips-leg-pop-link:hover {
+  text-decoration: none;
+}
+.trips-leg-pop-sub {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 11px;
+}
+.trips-leg-pop-note {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.trips-ed-method {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ── Stop: dates and plans under the season row ── */
+.trips-itin-stop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: 0 0 var(--space-3) calc(var(--space-2) + 52px);
+  font-size: 12px;
+  color: var(--muted);
+}
+.trips-itin-dates {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.trips-itin-dates .ui-input {
+  width: 138px;
+}
+.trips-itin-summary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+.trips-itin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trips-itin-fill {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.trips-itin-fill:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ── Sheets: stop details, record a booking ── */
+.trips-itin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.trips-itin-wide {
+  grid-column: 1 / -1;
+}
+.trips-itin-money {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: var(--space-2);
+}
+.trips-itin-help {
+  margin: 0 0 var(--space-3);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.trips-itin-help svg {
+  vertical-align: -2px;
+}
+.trips-itin-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+}
+.trips-itin-foot {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.trips-itin-acts {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+.trips-itin-act {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+}
+.trips-itin-act:first-child {
+  border-top: 0;
+}
+.trips-itin-act-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.trips-itin-act-title {
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+.trips-itin-act-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+.trips-itin-actform {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+}
+
+/* ── Day by day ── */
+.trips-itin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trips-itin .trips-itin-help {
+  margin: 0;
+}
+.trips-itin-issues {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-soft);
+  font-size: 13px;
+}
+.trips-itin-issue {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--ink-2);
+}
+.trips-itin-issue svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warning);
+}
+.trips-itin-issue.is-error {
+  color: var(--danger);
+  font-weight: var(--weight-medium);
+}
+.trips-itin-issue.is-error svg {
+  color: var(--danger);
+}
+.trips-itin-days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.trips-itin-day {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+}
+.trips-itin-day:first-child {
+  border-top: 0;
+}
+.trips-itin-day-when {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.trips-itin-day-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.trips-itin-day-place {
+  font-weight: var(--weight-medium);
+}
+.trips-itin-day.is-quiet .trips-itin-day-place {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+.trips-itin-day-count {
+  color: var(--muted);
+  font-weight: var(--weight-regular);
+}
+.trips-itin-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.trips-itin-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: 2px 0;
+  font-size: 13px;
+}
+.trips-itin-item-time {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding-top: 2px;
+}
+.trips-itin-item-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  overflow-wrap: anywhere;
+}
+.trips-itin-item-detail {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ── Calendar and sharing ── */
+.trips-share {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.trips-share-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.trips-share-block .trips-itin-help {
+  margin: 0;
+}
+.trips-share-url {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.trips-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* ── Costs ── */
+.trips-costs .ui-stat-value {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.trips-costs .ui-stat-hint {
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+}
+.trips-costs-wide {
+  grid-column: 1 / -1;
+}
+
+/* ── Phone ── */
+@media (max-width: 720px) {
+  .trips-itin-stop {
+    padding-left: 0;
+  }
+  .trips-itin-dates {
+    width: 100%;
+  }
+  .trips-itin-dates .ui-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: var(--touch);
+  }
+  .trips-itin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trips-itin-day {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .trips-leg-mode {
+    width: 108px;
+  }
+  .trips-leg-mode .ui-input {
+    min-height: var(--touch);
+  }
+  .trips-costs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

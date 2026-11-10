@@ -8,6 +8,8 @@ import {
   resolveCitySeasonality,
   type MonthSeasonality,
 } from "../lib/seasonality.js";
+import { clientIp } from "../lib/clientIp.js";
+import { seasonalityFetchLimiter, tooManyRequests } from "../middleware/rateLimit.js";
 
 const seasonality = new Hono();
 
@@ -90,7 +92,10 @@ seasonality.get("/", async (c) => {
     }
   }
 
-  const capped = toFetch.slice(0, MAX_ON_DEMAND_FETCHES);
+  // Each on-demand fetch counts against the client's limit; once it is used up the
+  // remaining misses stay null, which the client already treats as "ask again later".
+  const ip = clientIp(c);
+  const capped = toFetch.slice(0, MAX_ON_DEMAND_FETCHES).filter(() => seasonalityFetchLimiter.take(ip).ok);
   await mapWithConcurrency(capped, ON_DEMAND_CONCURRENCY, async (id) => {
     const result = await resolveCitySeasonality(id);
     cities[id] = result.kind === "hit" ? result.months : null;
@@ -107,6 +112,11 @@ seasonality.get("/", async (c) => {
  */
 seasonality.get("/:cityId", async (c) => {
   const cityId = c.req.param("cityId");
+  // Only a miss goes out to the climate provider, so only a miss is rate-limited.
+  if (peekCitySeasonality(cityId).kind === "miss") {
+    const v = seasonalityFetchLimiter.take(clientIp(c));
+    if (!v.ok) return tooManyRequests(c, "seasonality_fetch", v.retryAfterSeconds);
+  }
   const result = await resolveCitySeasonality(cityId);
 
   if (result.kind === "unknown") {

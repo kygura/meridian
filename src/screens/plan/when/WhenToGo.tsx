@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
-import { apiUrl } from "../../../lib/api";
+import { apiCredentials, apiUrl } from "../../../lib/api";
 import { assembleCityRows, bestWindow, climateWindowCaption, sortRows, type HeatRowDef, type SortMode } from "../../../lib/seasonality";
 import { CLIMATE_MODES, valueStep, type ClimateMode } from "../../../lib/climate";
 import {
@@ -29,6 +29,7 @@ import {
   Select,
   Spinner,
   searchCities,
+  toast,
 } from "../../../ui";
 import { IconCalendar, IconClose, IconPlus, IconSearch, IconWorld } from "../../../ui/icons";
 import type { City } from "../../../types";
@@ -256,12 +257,20 @@ export default function WhenToGo() {
     fetch(apiUrl("/api/shortlist"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: apiCredentials,
       body: JSON.stringify({ cityId: c.id }),
-    }).catch(() => {});
+    })
+      .then((r) => {
+        // Saving places is owner-only (ADR 0009): signed out, undo the local add and say why.
+        if (r.status !== 401) return;
+        removeFromShortlist(c.id);
+        toast("Sign in to save places. You'll find it in Settings.", { tone: "warning" });
+      })
+      .catch(() => {});
   };
   const removeCity = (cityId: string) => {
     removeFromShortlist(cityId);
-    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(cityId)}`), { method: "DELETE" }).catch(() => {});
+    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(cityId)}`), { method: "DELETE", credentials: apiCredentials }).catch(() => {});
   };
   const retry = () => {
     retriedRef.current.clear();
