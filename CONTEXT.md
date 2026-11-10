@@ -369,6 +369,7 @@ two weeks before it.
 **Stay Template**:
 A Rotation Stay made from a past Journey's stop: place, type and length, and its real cost
 scaled to a month, with no dates.
+
 **Notice**:
 A message Meridian raises for the owner (a watch Alert, a test, later a booking reminder),
 written to the notice log first and then sent through every Channel that is set up. The
@@ -386,3 +387,61 @@ scheduler on a long-running server or from Vercel Cron.
 **Private cache**:
 What the service worker keeps of the owner's data for offline reading. Emptied on sign-out
 and on any 401, and never holds sign-in state or share links.
+
+### Solver and re-planning (ADR 0015)
+
+**Rotation Solver**:
+Proposes whole rotations from a Pool for the next 12–18 months, keeping fixed stays where
+they are. Deterministic: the same input and seed give the same proposals.
+_Avoid_: optimiser, AI planner
+
+**Pool**:
+The places the solver may use, each a base or a pass-through with its own minimum and
+maximum nights and, optionally, the owner's own monthly figure.
+
+**Proposed Rotation**:
+One complete plan the solver returns, with its score broken into six components (fit, cost,
+travel, visa margin, risk, preferences) and the next-best Alternatives for each stay.
+_Avoid_: solution, result
+
+**Alternative**:
+Another pool place for one stay of a Proposed Rotation, on the same dates, with the score
+difference and what changed most.
+
+**Fixed Stay**:
+A stay the solver and plan B keep exactly: locked, booked, or where the owner is on the
+start day.
+
+**Preference**:
+A weighted fuzzy wish the solver scores but never enforces: somewhere in a region in some
+months, by the sea in some months, at most N long-haul flights a quarter.
+_Avoid_: constraint (those are hard)
+
+**Schengen Buffer**:
+A stay outside the Schengen Area placed after Schengen stays because another Schengen stay
+there would break 90 days in any 180.
+
+**Border Run**:
+Two nights in another country that restart a per-entry limit, inserted only when the owner
+allows them.
+
+**Shift**:
+A measured change about the current or an upcoming stay (fresh news, a new advisory, air or
+temperature against normal, a fare change, a day-count breach) with a magnitude against its
+threshold.
+_Avoid_: alert (that's a Watch's), event
+
+**Proposal**:
+What the re-plan check raises when a Shift fires: the evidence with sources and plan B as a
+diff against the active rotation. Changes nothing until the owner accepts it; can be
+dismissed or snoozed.
+_Avoid_: suggestion, recommendation
+
+**Plan B**:
+The best Proposed Rotation from today with the shifted place penalised or excluded and every
+Fixed Stay kept.
+
+**Hysteresis**:
+The margin a continuous Shift must clear past its threshold to fire, and fall below it to
+clear, so a reading near the line neither fires nor flaps. With the cooldown (a week by default),
+one Shift raises at most one Proposal per cooldown.

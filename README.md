@@ -19,6 +19,9 @@ Live: https://meridian-mocha-iota.vercel.app
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
 | **Rotation** | Where you live next, separate from trips: a 12–18 month calendar of bases and pass-throughs with no trip home. A timeline coloured by fit (your own peak, shoulder and avoid months for a place first, otherwise the comfort index), gaps and overlaps flagged, the route on the globe, moves between stays with flight or ground time and cost estimates, totals (months covered, cost per month, moves per year), what's next (days left here, next move), and book-by dates from lead times you can set per place, with Flatio, Airbnb monthly and Booking.com searches filled in. Add stays from a planned trip or a past journey's stop. Owner only. |
+| **Rotation › Solve** | Proposes 3–5 complete rotations from a pool of places (from your rotation, shortlist, past journeys or search) for a budget, with weighted preferences ("Southeast Asia Nov–Feb", "by the sea in summer", "one long-haul a quarter") and hard rules (Schengen 90/180, your country limits, internet and healthcare floors, months you avoid). Side by side on one timeline and the map, each with its score explained (fit, cost, travel, visa margin, risk, preferences), the next-best alternatives per stay, Schengen buffers and border runs marked. Lock a stay and re-solve, swap a stay, and make one your rotation. Ask can run it too. Owner only. |
+| **Rotation › Re-plan** | A daily check of where you are and your next stays: fresh news issues, new advisories, air and temperature against normal, fare changes on the next move (with a flight provider), and day-count breaches. When something crosses a threshold, a plan B with its evidence and a diff (dates, cost, Schengen days, travel) waits here to accept, snooze or dismiss; nothing changes until you accept. It and book-by reminders also go out as alerts. |
+| **Settings › Re-planning** | Turn the daily check on or off, its thresholds (news level, air, temperature, fare change, book-by notice, hysteresis, quiet days), and run it now. |
 | **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
 | **Alerts** | Every Notice Meridian has raised (watch alerts, test alerts), newest first, with a badge on the sidebar and the phone's More tab. Works with no channel set up. |
 | **Settings › Alerts** | Which channels are set up (push, email, Telegram, ntfy, webhook), turn push on for this device, send a test alert. |
@@ -42,6 +45,7 @@ Live: https://meridian-mocha-iota.vercel.app
 - Quality of life: [UNDP Human Development Index](https://hdr.undp.org/), [World Happiness Report](https://worldhappiness.report/) via [Our World in Data](https://ourworldindata.org/), [World Bank](https://data.worldbank.org/) homicide and PM2.5 data, and [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) for major cities.
 - Beauty: [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), [Natural Earth](https://www.naturalearthdata.com/) lakes, UNESCO World Heritage sites from Wikidata, [Wikimedia Commons](https://commons.wikimedia.org/) and English Wikipedia geotags. Built with `scripts/build-livability.ts`; method in ADR 0008.
 - Time zones and landmasses per city (`data/city-geo.json`): [Natural Earth](https://www.naturalearthdata.com/) 1:10m land (public domain) and [@photostructure/tz-lookup](https://github.com/photostructure/tz-lookup) (CC0, from timezone-boundary-builder). Rebuilt with `npx tsx scripts/build-city-geo.ts`; method in ADR 0010.
+- Distance to the sea per city (`data/city-coast.json`, the solver's "by the sea"): [Natural Earth](https://www.naturalearthdata.com/) 1:10m coastline (public domain). Rebuilt with `npm run build:coast`; method in ADR 0015.
 - Trip cost estimates: transport figures are stated formulas (distance × a rate per km), never fares. A stay is estimated only from your own journal's past stays, otherwise it reads "not estimated".
 - Map label fonts: Instrument Serif and Noto (SIL OFL 1.1), see `public/fonts/LICENSE.md`.
 
@@ -69,6 +73,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `npm test` | Vitest. Set `TEST_DATABASE_URL` to also run the Postgres tests against a scratch database |
 | `npm run build:data` | Rebuild `data/airports.json` (needs Bun) |
 | `npm run build:place-data` | Rebuild `data/country-data.json` and `data/city-data.json` from Eurostat, World Bank, Ookla and Wikipedia (hours; `PAGEVIEW_MAX`, `OOKLA_QUARTER` limit it; cached in `data/cache/realdata`) |
+| `npm run build:coast` | Rebuild `data/city-coast.json` (distance to the sea for cities within 100 km) from Natural Earth's 1:10m coastline |
 | `npm run build:seasonality` | Rebuild `data/seasonality.json` from Open-Meteo (needs Bun) |
 | `npm run backfill:climate` | Fill `data/climate-normals.json` (monthly PM2.5, weekly normals) cell by cell within Open-Meteo's free-tier limits; resumable. `-- --wait` sleeps through limits, `-- --dry-run` prints the plan |
 
@@ -88,7 +93,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `ANTHROPIC_API_KEY` | Claude for Ask, city research and the news briefing, instead of the mock and rule-based paths |
 | `AGENT_MODEL` | Default Claude model for Ask and research (`claude-opus-5-5`, `claude-sonnet-5-5` or `claude-haiku-5-5`). Default `claude-opus-5-5` |
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
-| `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
+| `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones. Also let the re-plan check watch the next move's fare (it never uses mock prices) |
 | `ALERT_WEBHOOK_URL` | Where every Notice is POSTed as JSON (`text`, `kind`, `title`, `body`, `url`) |
 | `PUBLIC_URL` | The app's public address, so alerts sent by email, Telegram, ntfy and webhook can link back. Falls back to `RENDER_EXTERNAL_URL` or Vercel's production URL |
 | `RESEND_API_KEY` or `SMTP_URL`, with `ALERT_EMAIL_TO` | Email alerts. `SMTP_URL` is `smtp://user:pass@host:587` (or `smtps://` for port 465). `ALERT_EMAIL_FROM` sets the sender (Resend's test sender only delivers to your own Resend address) |
@@ -132,4 +137,6 @@ Open decisions carried over from the old wiki:
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
-- **Rotation reminders are computed, not sent.** `GET /api/rotation/reminders` and `rotationRemindersDue()` say which stays are due for booking; nothing sends them yet, and nothing proposes a rotation for you (ADR 0011 lists the hooks for a notifier, a solver, visa day counting and a Notion import of your windows).
+- **The solver knows one visa rule.** Schengen 90/180 is built in; every other limit (days per entry, days in a window) is one you enter, and tax days use the general 183-day test. There is no visa database (ADR 0015).
+- **The solver is a beam search over half months.** It is fast and explains itself but is not exhaustive, and it places stays on the 1st and 16th except around fixed stays.
+- **Some re-plan shifts depend on outside services.** Fare shifts need `DUFFEL_API_KEY` or `SERPAPI_KEY`; temperature shifts use the ERA5 archive (5 days behind, with a shared daily quota); air shifts need the place's PM2.5 normal from the climate backfill. Whatever can't be checked is listed as not checked.
