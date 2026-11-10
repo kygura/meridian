@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from "vitest";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -36,6 +36,9 @@ function fakeDeps(over: Partial<ReplanDeps> = {}) {
 describe("re-plan loop", () => {
   let TMP: string;
   beforeEach(async () => {
+    // No network: a pool place without precomputed seasonality (Da Nang) would otherwise wait
+    // on Open-Meteo for up to its timeout in every solve, and the test would time out offline.
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline in tests"));
     TMP = mkdtempSync(join(tmpdir(), "meridian-replan-"));
     process.env.DATA_DIR = TMP;
     await putSettings({ name: "Mine", horizonMonths: 12 }, undefined);
@@ -57,6 +60,7 @@ describe("re-plan loop", () => {
   afterEach(() => {
     rmSync(TMP, { recursive: true, force: true });
     delete process.env.DATA_DIR;
+    vi.restoreAllMocks();
   });
 
   it("stays quiet when nothing has shifted", async () => {
