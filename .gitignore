@@ -13,3 +13,7 @@ data/bookings.json
 data/trips.json
 data/tripLinks.json
 .vercel
+data/rotation.json
+data/notices.json
+data/push-subscriptions.json
+data/daily-jobs.json

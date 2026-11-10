@@ -195,7 +195,7 @@ export interface TintOptions {
 /** A region's 12 months as climate months, or null when it lacks temperature and rain. */
 function regionMonths(r: RegionSeason): ClimateMonth[] | null {
   if (!r.months.every((m) => typeof m.tempC === "number" && typeof m.precipMm === "number")) return null;
-  return r.months.map((m) => ({ score: m.score, tempC: m.tempC!, precipMm: m.precipMm! }));
+  return r.months.map((m) => ({ score: m.score, tempC: m.tempC!, precipMm: m.precipMm!, ...(typeof m.pm25 === "number" ? { pm25: m.pm25 } : {}) }));
 }
 
 /**
@@ -222,6 +222,8 @@ export function tintCountries(fc: CountryCollection, regions: RegionSeason[] | n
     }
     const t = monthTraits(months, month);
     if (!t || (filtering && !matchesFilter(t, filter))) continue;
+    // No PM2.5 for the country this month: leave it untinted rather than painting it as clean air.
+    if (mode === "air" && t.pm25 === undefined) continue;
     tint.set(key, ramp[modeStep(mode, t)]);
   }
   return {

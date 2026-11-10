@@ -4,8 +4,8 @@
 //
 // The Content-Security-Policy lists exactly what the frontend loads:
 //   scripts   own files only (the theme bootstrap is /theme-init.js, not inline)
-//   styles    own files, inline style attributes (React, MapLibre), Google Fonts CSS
-//   fonts     own files and fonts.gstatic.com
+//   styles    own files, inline style attributes (React, MapLibre)
+//   fonts     own files (self-hosted, ADR 0016)
 //   images    own files, data:/blob: (MapLibre sprites, photo previews), Wikimedia photos in Ask
 //   connect   the API, and the Natural Earth country outlines the map fetches
 //   workers   blob: (MapLibre builds its worker from a blob URL)
@@ -40,8 +40,8 @@ export function contentSecurityPolicy(opts: SecurityHeaderOptions = {}): string 
   const directives: Array<[string, string[]]> = [
     ["default-src", ["'self'"]],
     ["script-src", ["'self'"]],
-    ["style-src", ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]],
-    ["font-src", ["'self'", "data:", "https://fonts.gstatic.com"]],
+    ["style-src", ["'self'", "'unsafe-inline'"]],
+    ["font-src", ["'self'", "data:"]],
     ["img-src", ["'self'", "data:", "blob:", ...IMAGE_HOSTS]],
     ["connect-src", connect],
     ["worker-src", ["'self'", "blob:"]],

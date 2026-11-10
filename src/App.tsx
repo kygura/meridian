@@ -4,6 +4,7 @@ import { useRoute } from "./lib/router";
 import { apiUrl } from "./lib/api";
 import { AppShell } from "./shell/AppShell";
 import { useUIStore } from "./shell/uiStore";
+import { PwaLayer } from "./shell/PwaLayer";
 import { Toaster } from "./ui";
 import { onJournalTokenChange } from "./ui/journalToken";
 import { startTripSync } from "./lib/tripSync";
@@ -15,6 +16,7 @@ import PlanScreen from "./screens/plan/PlanScreen";
 import BookingSheet from "./screens/plan/flights/BookingSheet";
 import InboxScreen from "./screens/inbox/InboxScreen";
 import WorldScreen from "./screens/world/WorldScreen";
+import RotationScreen from "./screens/rotation/RotationScreen";
 
 export default function App() {
   const route = useRoute();
@@ -73,12 +75,18 @@ export default function App() {
             <WorldScreen />
           </div>
         )}
+        {route.view === "rotation" && (
+          <div className="shell-screen">
+            <RotationScreen />
+          </div>
+        )}
       </AppShell>
 
       {/* Global layers, reachable from any route. */}
       {cityPanel && <CityPanel key={cityPanel.cityId} cityId={cityPanel.cityId} onClose={closeCity} />}
       <QuickLogSheet />
       <BookingSheet />
+      <PwaLayer />
       <Toaster />
     </>
   );

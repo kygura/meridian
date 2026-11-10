@@ -4,6 +4,8 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { createServer } from "net";
 import { execSync } from "child_process";
 import app from "./app.js";
+import { startClimateJob } from "./lib/climateJob.js";
+import { startDailyScheduler } from "./lib/scheduler.js";
 
 // Serve static files from dist/ in production. The security headers (CSP, nosniff,
 // frame-ancestors, referrer policy) are added to these too: installGuards in app.ts
@@ -91,6 +93,10 @@ async function startServer(port: number): Promise<void> {
   });
 
   console.log(`[meridian] Server running on http://localhost:${port}`);
+
+  // Daily jobs (the watch run and anything registered with registerDailyJob). Vercel uses its cron instead.
+  startDailyScheduler();
 }
 
 startServer(port);
+startClimateJob();

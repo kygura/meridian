@@ -89,8 +89,8 @@ describe("security headers", () => {
     expect(directive("script-src")).toBe("script-src 'self'");
     expect(directive("frame-ancestors")).toBe("frame-ancestors 'none'");
     expect(directive("object-src")).toBe("object-src 'none'");
-    expect(directive("style-src")).toContain("https://fonts.googleapis.com");
-    expect(directive("font-src")).toContain("https://fonts.gstatic.com");
+    expect(directive("style-src")).not.toContain("googleapis");
+    expect(directive("font-src")).toBe("font-src 'self' data:");
     expect(directive("worker-src")).toContain("blob:");
     for (const host of MAP_DATA_HOSTS) expect(directive("connect-src")).toContain(host);
     for (const host of IMAGE_HOSTS) expect(directive("img-src")).toContain(host);

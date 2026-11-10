@@ -1,10 +1,11 @@
 // Pure helpers for rendering PlaceResult.replayMatch on agent place cards. No React.
 
 import { MONTHS } from "./journal";
-import type { FingerprintDim, PlaceResult } from "../types";
+import type { PlaceResult, ReplayDim } from "../types";
 
-export const DIM_LABEL: Record<FingerprintDim, string> = {
+export const DIM_LABEL: Record<ReplayDim, string> = {
   month: "SEASON",
+  weekOfYear: "SEASON",
   comfort: "COMFORT",
   tempC: "TEMPERATURE",
   precipMm: "RAINFALL",
@@ -18,7 +19,7 @@ export interface MatchSummary {
   match: number;
   month: string;
   /** The strongest contributors, biggest first, as whole percents of the match. */
-  top: Array<{ name: FingerprintDim; label: string; pct: number }>;
+  top: Array<{ name: ReplayDim; label: string; pct: number }>;
   /** What the score was computed on, in words. */
   scoredOn: string[];
 }

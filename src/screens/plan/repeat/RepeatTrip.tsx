@@ -13,7 +13,7 @@ import {
   type ReplayControls as Controls,
   type ReplayTemplateRef,
 } from "../../../lib/replayQuery";
-import { monthName, querySentence } from "../../../lib/repeatCopy";
+import { monthName, querySentence, resultWhen } from "../../../lib/repeatCopy";
 import {
   Button,
   Card,
@@ -34,6 +34,7 @@ import { TemplatePicker } from "./TemplatePicker";
 import { RepeatToolbar } from "./RepeatToolbar";
 import { ResultCard } from "./ResultCard";
 import { ResultGrid } from "./ResultGrid";
+import { ResultWeekGrid } from "./ResultWeekGrid";
 import WatchSheet from "../watches/WatchSheet";
 import "./repeat.css";
 import { learnEurRate } from "../../trips/upcoming/money";
@@ -248,8 +249,8 @@ function RepeatTripInner({ journeyId, stopIndex }: RepeatTripProps) {
   useEffect(() => () => window.clearTimeout(flash.current), []);
   const openWatch = (r?: ReplayResult) => {
     if (!query) return;
-    const q = r ? narrowQuery(query, r.cityId, r.month) : query;
-    const label = r ? `${cityName(r.cityId)} in ${monthName(r.month)}, like ${placeName}` : `Places like ${likeWhat}`;
+    const q = r ? narrowQuery(query, r.cityId, r.month, r.week) : query;
+    const label = r ? `${cityName(r.cityId)} in ${resultWhen(r)}, like ${placeName}` : `Places like ${likeWhat}`;
     setWatch({ key: r ? resultKey(r) : "query", label, query: q, summary: querySentence(q, likeWhat, cityName) });
   };
   const watchSaved = (w: Watch) => {
@@ -423,14 +424,24 @@ function RepeatTripInner({ journeyId, stopIndex }: RepeatTripProps) {
             />
           ) : view === "grid" ? (
             <>
-              <ResultGrid
-                resp={resp}
-                cityById={cityById}
-                templateMonth={tplMonth}
-                targetMonth={targetMonth}
-                selectedKey={selectedKey}
-                onSelect={setSelectedKey}
-              />
+              {resp.resolution === "week" ? (
+                <ResultWeekGrid
+                  resp={resp}
+                  cityById={cityById}
+                  templateWeek={fp?.weekOfYear ? Math.min(52, fp.weekOfYear) : undefined}
+                  selectedKey={selectedKey}
+                  onSelect={setSelectedKey}
+                />
+              ) : (
+                <ResultGrid
+                  resp={resp}
+                  cityById={cityById}
+                  templateMonth={tplMonth}
+                  targetMonth={targetMonth}
+                  selectedKey={selectedKey}
+                  onSelect={setSelectedKey}
+                />
+              )}
               {selected && (
                 <ol className="plan-repeat-list plan-repeat-picked" aria-label="Picked place">
                   <ResultCard

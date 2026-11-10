@@ -22,9 +22,31 @@ A continent or subregion grouping of cities, used for aggregate views.
 
 **Comfort Index**:
 The 0–100 monthly seasonality score for a city, derived from multi-year climate
-normals (temperature comfort band minus precipitation penalty). Deliberately labeled an
-index, not "best time" truth.
+normals (temperature comfort band minus precipitation penalty minus air penalty, ADR 0014).
+Deliberately labeled an index, not "best time" truth. Shown as three terms wherever it is explained.
 _Avoid_: weather score, climate score
+
+**Air penalty**:
+Points taken off the Comfort Index for a month's mean PM2.5 (CAMS via Open-Meteo): nothing at 10 µg/m³
+or less, 40 at 75 or more. A place with no air figure yet loses nothing and says so; it is never read as clean.
+_Avoid_: pollution score
+
+**Weekly normals**:
+The 52 week-of-year climate normals of a city (temperature, rain per 7 days, PM2.5), averaged over the
+climate window from daily data and lightly smoothed. Where a city has them, Repeat a trip and When to go can
+work by week; where it doesn't they fall back to months, labelled. Not interpolated from months.
+_Avoid_: week data
+
+**Climate cell**:
+A 0.25 degree grid square holding the monthly and weekly normals shared by every city inside it
+(`data/climate-normals.json`). The unit the climate backfill fetches and dedupes by.
+
+**Granularity**:
+How local a measured value is: city, region (a NUTS 2 area) or country. Shown beside every figure from place data, with its source and year. A value the sources lack is a gap, shown as "no data", never filled in.
+_Avoid_: accuracy
+
+**Place data**:
+The measured figures behind cost, rent, internet, healthcare, stability and visitors (`data/country-data.json`, `data/city-data.json`, ADR 0013).
 
 **Seasonality**:
 The 12-month Comfort Index profile of a city or region, rendered as a heatmap calendar.
@@ -290,3 +312,136 @@ The per-client (and overall) cap on calls to a Paid route. Over it, the answer i
 the seconds to wait.
 _Avoid_: throttle, quota (quota is the provider's)
 
+
+### Rotation (ADR 0011)
+
+**Rotation**:
+Where the Owner lives next: a rolling 12–18 month calendar of Rotation Stays, with no
+return leg and an optional home airport. Not a Trip, which leaves a departure and comes back.
+_Avoid_: itinerary, long trip
+
+**Rotation Stay**:
+One place held in a Rotation: a base or a pass-through, with move-in and move-out days or a
+Month Window, minimum and maximum nights, budget and rent per month, lodging, notes and a
+status (idea, planned, booked, current, done). "Stay" alone still means a trip stop's lodging.
+_Avoid_: stop (that's a Journey's), node (that's a Trip's)
+
+**Base**:
+A Rotation Stay of weeks or months, lived in.
+
+**Pass-through**:
+A Rotation Stay of a few days in a hub or on the way, such as Bangkok between two bases.
+
+**Month Window**:
+The months a Rotation Stay should fall in (YYYY-MM to YYYY-MM) before its dates are fixed.
+Gaps and overlaps against it are tentative.
+
+**Locked**:
+A Rotation Stay a re-planning solver must keep where it is.
+
+**Personal Window**:
+The Owner's own peak, shoulder or avoid months for a place, with a reason ("burning season,
+air quality"). Overrides the Comfort Index wherever a Rotation is scored or shown.
+_Avoid_: Window (that's Replay's City × month), season
+
+**Place Profile**:
+What the Owner keeps about one place across stays: its Personal Windows and Lead Time.
+
+**Fit**:
+How well a Rotation Stay's months suit its place: great, good, fair, poor, avoid or unknown,
+from Personal Windows first and the Comfort Index where there are none.
+
+**Current Location**:
+The committed Rotation Stay containing today. On a moving day, the one moved into.
+
+**Move**:
+Travel between two consecutive committed Rotation Stays, estimated like a Trip Leg.
+_Avoid_: leg (that's a Trip's), segment (that's a Journey's)
+
+**Lead Time**:
+How many weeks before moving in a stay should be booked: a default by type and length,
+overridden per place or per stay.
+
+**Book-by Date**:
+Move-in day (or the Month Window's first day) minus the Lead Time. A Reminder is due from
+two weeks before it.
+
+**Stay Template**:
+A Rotation Stay made from a past Journey's stop: place, type and length, and its real cost
+scaled to a month, with no dates.
+
+**Notice**:
+A message Meridian raises for the owner (a watch Alert, a test, later a booking reminder),
+written to the notice log first and then sent through every Channel that is set up. The
+in-app Alerts list is the log. The same dedupe key is the same Notice and is sent once.
+_Avoid_: notification (an Alert is the Watch's own record; a Notice carries one)
+
+**Channel**:
+One way a Notice leaves the server: email, Telegram, ntfy, Web Push or the webhook. Each is
+optional and fails on its own.
+
+**Daily job**:
+Work registered with `registerDailyJob` that runs once per UTC day, from the in-process
+scheduler on a long-running server or from Vercel Cron.
+
+**Private cache**:
+What the service worker keeps of the owner's data for offline reading. Emptied on sign-out
+and on any 401, and never holds sign-in state or share links.
+
+### Solver and re-planning (ADR 0015)
+
+**Rotation Solver**:
+Proposes whole rotations from a Pool for the next 12–18 months, keeping fixed stays where
+they are. Deterministic: the same input and seed give the same proposals.
+_Avoid_: optimiser, AI planner
+
+**Pool**:
+The places the solver may use, each a base or a pass-through with its own minimum and
+maximum nights and, optionally, the owner's own monthly figure.
+
+**Proposed Rotation**:
+One complete plan the solver returns, with its score broken into six components (fit, cost,
+travel, visa margin, risk, preferences) and the next-best Alternatives for each stay.
+_Avoid_: solution, result
+
+**Alternative**:
+Another pool place for one stay of a Proposed Rotation, on the same dates, with the score
+difference and what changed most.
+
+**Fixed Stay**:
+A stay the solver and plan B keep exactly: locked, booked, or where the owner is on the
+start day.
+
+**Preference**:
+A weighted fuzzy wish the solver scores but never enforces: somewhere in a region in some
+months, by the sea in some months, at most N long-haul flights a quarter.
+_Avoid_: constraint (those are hard)
+
+**Schengen Buffer**:
+A stay outside the Schengen Area placed after Schengen stays because another Schengen stay
+there would break 90 days in any 180.
+
+**Border Run**:
+Two nights in another country that restart a per-entry limit, inserted only when the owner
+allows them.
+
+**Shift**:
+A measured change about the current or an upcoming stay (fresh news, a new advisory, air or
+temperature against normal, a fare change, a day-count breach) with a magnitude against its
+threshold.
+_Avoid_: alert (that's a Watch's), event
+
+**Proposal**:
+What the re-plan check raises when a Shift fires: the evidence with sources and plan B as a
+diff against the active rotation. Changes nothing until the owner accepts it; can be
+dismissed or snoozed.
+_Avoid_: suggestion, recommendation
+
+**Plan B**:
+The best Proposed Rotation from today with the shifted place penalised or excluded and every
+Fixed Stay kept.
+
+**Hysteresis**:
+The margin a continuous Shift must clear past its threshold to fire, and fall below it to
+clear, so a reading near the line neither fires nor flaps. With the cooldown (a week by default),
+one Shift raises at most one Proposal per cooldown.
