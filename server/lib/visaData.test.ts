@@ -95,3 +95,28 @@ describe("committed visa data", () => {
     expect(SCHENGEN.members).toContain("RO");
   });
 });
+
+describe("engine against the committed data", async () => {
+  const { entryRule } = await import("../../src/lib/visa/rules");
+  const { checkStays } = await import("../../src/lib/visa/engine");
+  const data = getVisaData()!;
+
+  it("reads Schengen for a US passport and free movement for a German one", () => {
+    expect(entryRule(data, ["US"], "PT", "2027-01-01").pool).toBe("schengen");
+    expect(entryRule(data, ["DE"], "PT", "2027-01-01").status).toBe("free-movement");
+  });
+
+  it("caps Thailand at 30 days for arrivals from 15 September 2026", () => {
+    expect(entryRule(data, ["US"], "TH", "2026-10-01").limit).toEqual({ kind: "per-entry", days: 30 });
+  });
+
+  it("checks a mixed plan end to end", () => {
+    const r = checkStays(data, ["US"], [
+      { id: "a", country: "Portugal", start: "2027-01-01", end: "2027-03-01" },
+      { id: "b", country: "Montenegro", start: "2027-03-01", end: "2027-04-15" },
+      { id: "c", country: "Spain", start: "2027-04-15", end: "2027-05-20" },
+    ]);
+    expect(r.verdicts.map((v) => v.level)).toEqual(["ok", "ok", "over"]);
+    expect(r.violations.map((v) => v.key)).toEqual(["schengen"]);
+  });
+});
