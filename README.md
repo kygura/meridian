@@ -18,6 +18,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | **Inbox** | Review queue for imports (past bookings, photo locations, Google location history, booking emails) before they become journal entries. Photos never leave the device; only time, place and a hash are sent. |
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
+| **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
 
@@ -27,7 +28,7 @@ Live: https://meridian-mocha-iota.vercel.app
 - **Server:** Hono on Node 22 (`tsx`), zod validation.
 - **Storage:** one document store with two backends: JSON files under `DATA_DIR`, or Postgres when `DATABASE_URL` is set (ADR 0006).
 - **External services, all optional:** Anthropic Claude (assistant and news briefing), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images), Google News search RSS (city and country headlines; Google allows personal, non-commercial use of these feeds).
-- **Tests:** Vitest.
+- **Tests:** Vitest. CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every push and pull request.
 
 ## Data sources
 
@@ -48,7 +49,7 @@ npm run dev:all             # app on http://localhost:5173, API on :3001
 
 Without any keys the app runs fully on mock data, clearly labelled. Personal data goes to `data/` as JSON files.
 
-To unlock the journal, trips sync, Repeat a trip and Watches, set `MERIDIAN_TOKEN` in `.env` and paste the same value into **Settings › Journal**.
+To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDIAN_TOKEN` in `.env` and sign in with the same value under **Settings › Account**. The browser keeps a session cookie, not the password (ADR 0009).
 
 ## Scripts
 
@@ -69,8 +70,13 @@ To unlock the journal, trips sync, Repeat a trip and Watches, set `MERIDIAN_TOKE
 |---|---|
 | `DATABASE_URL` | Postgres for personal data. Required on hosts without a persistent disk (Vercel) |
 | `DATA_DIR` | Where JSON files and caches go when there's no database. Default `./data` |
-| `MERIDIAN_TOKEN` | Password for the journal, trips sync, Repeat a trip, imports and watches. Unset means those stay locked |
-| `CRON_SECRET` | Vercel only. Same value as `MERIDIAN_TOKEN`, so the daily watch run passes the gate |
+| `MERIDIAN_TOKEN` | The owner's password (Settings › Account) for the journal, trips sync, bookings, Repeat a trip, imports and watches, and the Bearer token for automation. Unset means those stay locked |
+| `SESSION_SECRET` | Signs the session cookie. Optional: when unset the key is derived from `MERIDIAN_TOKEN`, and changing the password signs every browser out |
+| `SESSION_TTL_DAYS` | How long a sign-in lasts. Default 30 |
+| `CRON_SECRET` | Vercel only. Lets the daily watch run pass the gate: its own value (accepted for that one route) or the same value as `MERIDIAN_TOKEN` |
+| `MERIDIAN_ALLOWED_ORIGINS` | Only if the frontend is served from another origin than the API: comma-separated origins allowed to call it with the session cookie |
+| `TRUST_PROXY` | Number of proxy hops in front of the server, so rate limits and the sign-in lockout see the real client address. Not needed on Vercel |
+| `RATE_LIMIT` | `off` disables the rate limits (local load tests only) |
 | `ANTHROPIC_API_KEY` | Claude for Ask, city research and the news briefing, instead of the mock and rule-based paths |
 | `AGENT_MODEL` | Default Claude model for Ask and research (`claude-opus-5-5`, `claude-sonnet-5-5` or `claude-haiku-5-5`). Default `claude-opus-5-5` |
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
@@ -103,7 +109,7 @@ docs/
 
 Open decisions carried over from the old wiki:
 
-- **Bookings have no auth.** `/api/bookings` holds passenger details and isn't behind `MERIDIAN_TOKEN` yet, so anyone with the URL can read them. Bookings are test-mode only, but they should be gated before real use.
+- **Rate limits are per server process.** On Vercel each warm instance counts on its own and forgets on a cold start, so the limits on Ask, news and flight search slow abuse down but are not a hard budget (ADR 0009). The sign-in lockout is stored and does not have this gap.
 - **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
 - **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
 - **Repeat a trip works by month**, not by week.

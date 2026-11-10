@@ -42,7 +42,7 @@ import "./watches.css";
 
 type Status = "loading" | "ready" | "error";
 
-/** #/plan/watches: alerts feed on top, then the watch list. Needs the journal token. */
+/** #/plan/watches: alerts feed on top, then the watch list. Needs the owner signed in. */
 export default function Watches() {
   const { token, unlocked } = useJournalToken();
   const alerts = useMeridianStore((s) => s.alerts);

@@ -16,7 +16,7 @@ import {
 } from "../../../lib/bookingApi";
 import { navigate } from "../../../lib/router";
 import { useMeridianStore } from "../../../store";
-import { Button, Dialog, ErrorState, Sheet, Spinner, toast } from "../../../ui";
+import { Button, Dialog, ErrorState, Sheet, Spinner, UnlockCard, toast, useJournalToken } from "../../../ui";
 import { IconArrowLeft, IconSearch } from "../../../ui/icons";
 import { BookingReview } from "./BookingReview";
 import { BookingTicket } from "./BookingTicket";
@@ -53,6 +53,7 @@ export default function BookingSheet() {
   const closeBookingModal = useMeridianStore((s) => s.closeBookingModal);
   const setBookings = useMeridianStore((s) => s.setBookings);
   const { open, target } = bookingModal;
+  const { unlocked } = useJournalToken();
 
   const [phase, setPhase] = useState<Phase>("configuring");
   const [search, setSearch] = useState<SearchDraft>(emptySearch);
@@ -304,9 +305,12 @@ export default function BookingSheet() {
         headerExtra={source ? <ProvenanceBadge source={source} /> : undefined}
         size="lg"
         desktop="center"
-        footer={footer ? <div className="plan-flights-sheet-foot">{footer}</div> : undefined}
+        footer={unlocked && footer ? <div className="plan-flights-sheet-foot">{footer}</div> : undefined}
         className="plan-flights-sheet"
       >
+        {/* Bookings hold passenger details, so booking needs the owner signed in (ADR 0009). */}
+        {!unlocked ? <UnlockCard title="Sign in to book flights" /> : null}
+        <div className="plan-flights-sheet-flow" hidden={!unlocked}>
         {phase === "configuring" ? (
           <SearchForm
             idPrefix="bk"
@@ -378,6 +382,7 @@ export default function BookingSheet() {
             ) : null}
           </div>
         ) : null}
+        </div>
       </Sheet>
 
       <Dialog

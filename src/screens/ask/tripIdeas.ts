@@ -3,7 +3,7 @@
 // map also show them. This store only tracks the request. Panel-local on purpose (not in uiStore).
 
 import { create } from "zustand";
-import { apiUrl } from "../../lib/api";
+import { apiCredentials, apiUrl } from "../../lib/api";
 import { useMeridianStore } from "../../store";
 import type { TripOption } from "../../types";
 
@@ -27,6 +27,7 @@ export const useTripIdeas = create<TripIdeasState>((set) => ({
       const res = await fetch(apiUrl("/api/agent/trip-options"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: apiCredentials,
         body: JSON.stringify({ cityId }),
       });
       if (!res.ok) throw new Error(String(res.status));

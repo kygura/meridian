@@ -25,7 +25,7 @@ import {
   draftJourneyParams,
   parseJournalIntent,
 } from "../lib/agent/journal-tools.js";
-import { tokenMatches } from "../middleware/auth.js";
+import { ownerIdentity } from "../middleware/auth.js";
 import { CLAUDE_MODELS, DEFAULT_MODEL, completeText, hasAnthropicKey, parseJsonReply, resolveModel, runClaudeChat, type AgentTool } from "../lib/agent/claude.js";
 import type { TickerItem, AgentBrief, City, CityResearch, NearbyDestination, TripOption, TripNode, TripEstimate } from "../../src/types.js";
 
@@ -438,13 +438,6 @@ function parseMockIntent(lastUserText: string): {
   return { region, regionLabel, cheap, safe, mentionedCity };
 }
 
-/** The agent route is public; journal tools run only when the request carries the valid Bearer token. */
-function journalUnlocked(authHeader: string | undefined): boolean {
-  const expected = process.env.MERIDIAN_TOKEN;
-  const m = /^Bearer\s+(.+)$/i.exec(authHeader ?? "");
-  return !!expected && !!m && tokenMatches(m[1].trim(), expected);
-}
-
 /** Plain words for fingerprint dimensions, so replies never show internal field names (crowdProxy → crowds). */
 const DIM_WORDS: Record<string, string> = {
   month: "season",
@@ -752,7 +745,7 @@ you could look up. Be concise, specific, and actionable.
 For the user's own travel history use the journal tools: search_journal to find a past journey, get_fingerprint for the
 conditions it had, find_similar_windows to rank other destination/month windows like it (bend with tempC/spendPct/crowd),
 and draft_journey to propose a journey for the user to review in the inbox (you cannot confirm it). If a journal tool
-returns journal_locked, tell the user to unlock their journal in Settings.
+returns journal_locked, tell the user to sign in under Settings.
 Write for a traveller in plain words: never mention tool names, field names, ids or error codes. Say "crowds" not
 "crowdProxy", "temperature" not "tempC", "rainfall" not "precipMm", "daily spend" not "dailySpendEur", "flight cost" not
 "flightCostEurPer1000km", "best months" not "seasonality", and "similar places" not "windows". Mention city names in full
@@ -777,7 +770,8 @@ agent.post("/chat", async (c) => {
     return c.json({ error: "Invalid request", details: parsed.error.issues }, 400);
   }
 
-  const unlocked = journalUnlocked(c.req.header("Authorization"));
+  // Journal tools run only for the signed-in owner (session cookie or Bearer token).
+  const unlocked = !!(await ownerIdentity(c));
   if (!hasAIKey()) {
     return streamMockChatWithTools(parsed.data.messages, unlocked);
   }

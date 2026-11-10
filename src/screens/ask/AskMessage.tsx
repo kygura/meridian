@@ -124,7 +124,7 @@ export default function AskMessage({ message: m, names, unlocked, live, offerIde
         </div>
       )}
 
-      {locked && <UnlockCard compact title="Unlock your journal so Ask can read your past trips" />}
+      {locked && <UnlockCard compact title="Sign in so Ask can read your past trips" />}
 
       {draft && draft.pending && (
         <a className="ask-link" href={hrefFor({ view: "inbox" })} onClick={onNavigate}>
