@@ -62,7 +62,7 @@ export function factResearch(city: City, nearby: NearbyDestination[]): CityResea
   const net = f.internet;
   const population = city.population > 0 ? `Population ${city.population.toLocaleString("en-US")}. ` : "";
   const costLine = c.monthlyEur
-    ? `Living costs come to about ${eur(c.monthlyEur.value)} a month for one person (an estimate from ${c.monthlyEur.granularity === "city" ? "this city's" : "the country's"} price level).`
+    ? `Living costs come to about ${eur(c.monthlyEur.value)} a month for one person (an estimate from the country's price level).`
     : "There is no cost data for this city.";
   const netLine = net.fixed ? `Fixed internet averages ${net.fixed.downMbps} Mbps.` : net.mobile ? `Mobile internet averages ${net.mobile.downMbps} Mbps; no fixed-line data.` : "There is no internet speed data for this city.";
 

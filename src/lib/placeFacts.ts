@@ -57,7 +57,7 @@ export interface PlaceFacts {
   cost: {
     /** Estimated monthly spending for one person, housing included. */
     monthlyEur: Fact | null;
-    /** Price level, Brussels (city) or Belgium (country) = 100. */
+    /** The country's price level, Belgium = 100. */
     index: Fact | null;
     /** Measured average rent for a 1-bedroom flat in this city. */
     rent1br: Fact | null;
@@ -145,10 +145,7 @@ export function factRows(f: PlaceFacts, cityName: string): FactRow[] {
           id: "cost",
           label: "Monthly cost",
           value: `About ${eur(cost.value)}`,
-          detail:
-            f.cost.index?.granularity === "city"
-              ? `One person, housing included. Prices are ${f.cost.index.value}% of Brussels`
-              : `One person, housing included. Prices are ${f.cost.index?.value}% of Belgium’s`,
+          detail: `One person, housing included, from the country’s price level (${f.cost.index?.value}% of Belgium’s)`,
           score: f.scores.cost ?? undefined,
           tag: tag(["Estimate", grainLabel(cost.granularity), cost.year || null]),
           sources: [cost.source, "costAnchor"],

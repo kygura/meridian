@@ -6,9 +6,9 @@ Before this, the map's cost, internet and crowds surfaces were tagged `source: "
 
 | Fact | Source (licence) | Granularity |
 |---|---|---|
-| Cost index | Eurostat correction coefficients, `prc_colc_tot` (EU) and `prc_colc_ext` (outside), Brussels = 100 (CC BY 4.0) | city, 181 of 189 stations matched to a city |
-| Cost index, elsewhere | World Bank price level of household consumption: PPP factor over exchange rate (CC BY 4.0), re-based so Belgium = 100 | country |
-| Monthly cost, one person | index / 100 times Belgian household consumption per person (Eurostat `nama_10_pc`) divided by 12 | an **estimate**, labelled as one; granularity follows the index |
+| Cost index | World Bank price level of household consumption: PPP factor over exchange rate (CC BY 4.0), re-based so Belgium = 100 | country, for every city |
+| Monthly cost, one person | index / 100 times Belgian household consumption per person (Eurostat `nama_10_pc`) divided by 12 | an **estimate**, labelled as one; country level |
+| (kept, not used for cost) | Eurostat correction coefficients, `prc_colc_tot` (EU) and `prc_colc_ext` (outside), Brussels = 100 (CC BY 4.0) | city, 181 of 189 stations |
 | Rent, 1-bedroom | Eurostat `prc_colc_rents`, flat with one bedroom, EUR | city, 41 cities |
 | Rent, elsewhere | not shown as a figure. The ICP housing price level is kept for reference; checked against Eurostat rents it has a median error of 31%, which is too loose to show | none |
 | Internet | Ookla Open Data speed-test tiles (CC BY-NC-SA 4.0), quarter 2025 Q3, tiles within a population-scaled radius of the centre, test-weighted; at least 30 tests | city |
@@ -17,6 +17,8 @@ Before this, the map's cost, internet and crowds surfaces were tagged `source: "
 | Visitors | UN Tourism international arrivals (via Our World in Data) over World Bank population | country |
 | Crowd seasonality | Eurostat nights in tourist accommodation by month (`tour_occ_nin2m`), 2022-25, NUTS 2 region of the city, else the country | region or country (Europe only) |
 | Crowd seasonality, city signal | English Wikipedia page views by month, 2017-19 and 2022-25, as a sign of interest (stored, not scored) | city, the 1,000 most populous cities with an article |
+
+The correction coefficients were first used as a city-level cost index for the 181 duty-station cities. They price an expatriate EU official's basket, not the country's household consumption: about 1.5 times the country level at the median and 2.5 to 4 times for many cities outside the EU (Cairo at three times Alexandria). Mixed with the country levels they ranked cities on two scales in the Affordability layer, the city panel, the Score and the solver, so cost now uses the country level everywhere and the coefficients stay in the build only. Known gap: the World Bank's latest PPP factors are extrapolated for some countries (Haiti's 2025 level comes out above the United States); the build does not yet flag or drop those.
 
 Rejected: Numbeo and similar crowd-sourced cost indexes (terms forbid scraping, and licence), Global Peace Index (not openly licensed), a made-up city adjustment on country price levels (no real basis; city granularity exists only where Eurostat measured it).
 
@@ -34,7 +36,7 @@ The overall score is the weighted mean of the parts that exist (economics 25, qu
 
 | Value | Cities |
 |---|---|
-| Cost index, city (Eurostat) | 181 |
+| Cost index, city (Eurostat; kept, not used for cost) | 181 |
 | Cost index, country (World Bank) | 5,077 |
 | Rent, city | 41 (751 more can read their capital's rent for reference only) |
 | Internet, fixed | 5,139 |

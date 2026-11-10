@@ -101,7 +101,7 @@ const FACT_SURFACES: Record<
   stability: { label: "Safety and Stability", pick: stabilityValue, granularity: "country", sourceKeys: ["stability"] },
   connectivity: { label: "Internet Speed", pick: connectivityValue, granularity: "city", sourceKeys: ["internet"] },
   tourism: { label: "Tourism Pressure", pick: tourismValue, granularity: "country", sourceKeys: ["arrivals"] },
-  cost: { label: "Living Cost", pick: costValue, granularity: "country", sourceKeys: ["costCity", "costCountry", "costAnchor"] },
+  cost: { label: "Living Cost", pick: costValue, granularity: "country", sourceKeys: ["costCountry", "costAnchor"] },
   health: { label: "Healthcare", pick: healthValue, granularity: "country", sourceKeys: ["uhc"] },
 };
 

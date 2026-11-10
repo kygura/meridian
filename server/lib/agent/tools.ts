@@ -186,7 +186,7 @@ export async function getPlaceFacts(params: GetPlaceFactsParams): Promise<PlaceF
       );
     const eur = (n: number) => `€${n.toLocaleString("en-US")}`;
     add("Monthly cost for one person", f.cost.monthlyEur, (x) => `about ${eur(x.value)} a month, housing included`);
-    add("Price level", f.cost.index, (x) => `${x.value} (${x.granularity === "city" ? "Brussels" : "Belgium"} = 100)`);
+    add("Price level", f.cost.index, (x) => `${x.value} (Belgium = 100, country level)`);
     add("Rent, 1-bedroom flat", f.cost.rent1br, (x) => `${eur(x.value)} a month on average`);
     if (!f.cost.rent1br && f.cost.rentReference)
       add(`Rent, 1-bedroom flat in ${f.cost.rentReference.place}`, f.cost.rentReference, (x) => `${eur(x.value)} a month on average (the capital, not this city)`);

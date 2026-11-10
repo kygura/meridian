@@ -138,11 +138,13 @@ export function placeFacts(city: Pick<City, "id" | "population">, cityName?: (id
   const anchor = d?.country.anchor;
   const period = d?.country.sources.internet?.name.match(/(\d{4} Q\d)/)?.[1] ?? null;
 
-  // Cost: the city's own Eurostat coefficient where it is a duty station, else the country's price level.
-  let index: Fact | null = null;
-  if (row?.cost) index = { value: row.cost.v, unit: "index (Brussels = 100)", year: row.cost.y, source: "costCity", granularity: "city", place: row.cost.st };
-  else if (country?.priceLevel)
-    index = { value: country.priceLevel.v, unit: "index (Belgium = 100)", year: country.priceLevel.y, source: "costCountry", granularity: "country" };
+  // Cost: the country's price level, for every city. The Eurostat correction coefficients the
+  // build also keeps (row.cost) price an expatriate EU official's basket, about 1.5 times the
+  // country level at the median and 2.5 to 4 times outside the EU, so mixing them in put the
+  // 181 duty-station cities on another scale from the rest (ADR 0013). They are not used here.
+  const index: Fact | null = country?.priceLevel
+    ? { value: country.priceLevel.v, unit: "index (Belgium = 100)", year: country.priceLevel.y, source: "costCountry", granularity: "country" }
+    : null;
   const monthlyEur: Fact | null =
     index && anchor
       ? {
