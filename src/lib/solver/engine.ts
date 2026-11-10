@@ -258,6 +258,30 @@ interface Prepared {
   legCache: Map<number, Leg>;
   hubs: FlightHub[];
   landmassOf: LandmassOf;
+  /** The entry the owner is in when the horizon starts (from prior presence), for per-entry limits. */
+  priorEntry: { country: string; start: number } | null;
+}
+
+/**
+ * The country the owner is in on the night before `start`, and the day that entry began:
+ * prior presence that runs up to the horizon, followed back through earlier contiguous
+ * presence in the same country. Null when the owner was nowhere known that night.
+ */
+export function priorEntryAt(prior: SolveInput["prior"], start: number): { country: string; start: number } | null {
+  const ranges = prior.map((p) => ({ country: p.country, a: dayNum(p.start), b: Math.min(dayNum(p.end), start) })).filter((r) => r.b > r.a && r.country);
+  const last = ranges.find((r) => r.b === start);
+  if (!last) return null;
+  let from = last.a;
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const r of ranges) {
+      if (r.country === last.country && r.a < from && r.b >= from) {
+        from = r.a;
+        grew = true;
+      }
+    }
+  }
+  return { country: last.country, start: from };
 }
 
 function nodeOf(c: Candidate): TripNode {
@@ -389,6 +413,7 @@ function prepare(input: SolveInput, env: SolverEnv): Prepared | { error: string 
     legCache: new Map(),
     hubs: env.hubs ?? [],
     landmassOf: (id: string) => cands[byCity.get(id) ?? -1]?.landmass,
+    priorEntry: priorEntryAt(input.prior, start),
   };
   input.candidates.forEach((c, i) => {
     if (!c.inPool || c.excluded) return;
@@ -489,7 +514,8 @@ function initialNode(P: Prepared): Node {
     if (ri !== -1) rules[ri] = addRange(rules[ri], a, b);
     for (const [y, n] of nightsByYear(a, b)) tax.set(`${p.country}|${y}`, (tax.get(`${p.country}|${y}`) ?? 0) + n);
   }
-  return { parent: null, c: P.fromIdx, slot: -1, runStart: 0, runNights: 0, entryStart: P.start, border: -1, obj: 0, vScore: 100, add: 0, sch, rules, tax, lhQ: -1, lhN: 0, h: P.input.seed >>> 0 };
+  // An entry already under way when the horizon starts counts its earlier days.
+  return { parent: null, c: P.fromIdx, slot: -1, runStart: 0, runNights: 0, entryStart: P.priorEntry?.start ?? P.start, border: -1, obj: 0, vScore: 100, add: 0, sch, rules, tax, lhQ: -1, lhN: 0, h: P.input.seed >>> 0 };
 }
 
 const quarterOf = (d: number) => {
@@ -503,6 +529,12 @@ interface Expansion {
   border: number;
   obj: number;
   tie: number;
+}
+
+/** Does placing `cand` after `n` continue the same entry into its country (prior presence included)? */
+function continuesEntry(P: Prepared, n: Node, cand: Candidate): boolean {
+  if (n.slot < 0) return P.priorEntry !== null && P.priorEntry.country === cand.place.country;
+  return n.c !== P.fromIdx && P.cands[n.c].place.country === cand.place.country;
 }
 
 /** Can `n` close its current run now (moving elsewhere at slot `si`)? */
@@ -526,7 +558,7 @@ function expand(P: Prepared, n: Node, si: number, penalty: Float64Array[] | null
     let border = -1;
     // Per-entry and windowed country rules.
     const ri = P.ruleOf[c];
-    const sameCountry = n.slot >= 0 && P.cands[n.c].place.country === cand.place.country && n.c !== P.fromIdx;
+    const sameCountry = continuesEntry(P, n, cand);
     const entryStart = sameCountry ? n.entryStart : slot.start;
     if (ri !== -1) {
       const rule = k.countryRules[ri];
@@ -615,7 +647,7 @@ function materialize(P: Prepared, e: Expansion, si: number): Node {
     const key = `${cand.place.country}|${slot.year}`;
     tax.set(key, (tax.get(key) ?? 0) + slot.nights);
   }
-  const sameCountry = n.slot >= 0 && n.c !== P.fromIdx && P.cands[n.c].place.country === cand.place.country;
+  const sameCountry = continuesEntry(P, n, cand);
   let entryStart = sameCountry ? n.entryStart : slot.start;
   if (e.border !== -1) entryStart = slot.start + BORDER_RUN_NIGHTS;
   let lhQ = n.lhQ;
@@ -847,6 +879,8 @@ function violations(P: Prepared, plan: PlanInput): string[] {
     if (ri !== -1) rules[ri] = addRange(rules[ri], a, b);
     const last = entries[entries.length - 1];
     if (last && last.country === c.place.country && last.end === a) last.end = b;
+    // The first stay continues an entry that began before the horizon.
+    else if (!last && a === P.start && P.priorEntry && P.priorEntry.country === c.place.country) entries.push({ country: c.place.country, start: P.priorEntry.start, end: b });
     else entries.push({ country: c.place.country ?? "", start: a, end: b });
   }
   if (k.schengen) {
@@ -1037,8 +1071,10 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
     }
     if (rule.maxDaysPerEntry) {
       let longest = 0;
-      let run = 0;
-      let prevEnd = "";
+      // An entry under way when the horizon starts: its earlier days count.
+      const pe = P.priorEntry && P.priorEntry.country === rule.country ? P.priorEntry : null;
+      let run = pe ? P.start - pe.start + 1 : 0;
+      let prevEnd = pe ? dayIso(P.start) : "";
       for (const s of stays) {
         const c = P.cands[P.byCity.get(s.cityId) ?? P.fromIdx];
         if (c.place.country === rule.country) {

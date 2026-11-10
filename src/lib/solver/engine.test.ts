@@ -167,6 +167,30 @@ describe("solve", () => {
     expect(res.proposals[0].violations).toEqual([]);
   });
 
+  it("counts days of an entry that began before the horizon against a per-entry limit", () => {
+    const rule = { country: "Thailand", maxDaysPerEntry: 60, note: "test rule" };
+    const constraints = { ...BASE_CONSTRAINTS, schengen: false, taxDays: null, countryRules: [rule] };
+    const prior = [{ country: "Thailand", start: "2026-11-15", end: "2027-01-01" }];
+    // Fixed current stay 15 Nov to 20 Feb: 98 days in one entry, over 60.
+    const input = baseInput({ constraints, prior, fixed: [{ id: "cm", cityId: "chiang-mai", start: "2026-11-15", end: "2027-02-20", kind: "base", why: "Where you are" }] });
+    const res = solve(input);
+    expect(res.ok).toBe(false);
+    const plan = { stays: [{ id: "cm", cityId: "chiang-mai", start: "2027-01-01", end: "2027-02-20", kind: "base" as const, role: "fixed" as const }, { id: "x", cityId: "tbilisi", start: "2027-02-20", end: "2028-01-01", kind: "base" as const, role: "base" as const }] };
+    const ev = evaluatePlan(input, plan, {}, false);
+    if ("error" in ev) throw new Error(ev.error);
+    expect(ev.violations.join(" ")).toMatch(/Thailand: one entry of 98 days from 2026-11-15, over 60/);
+    expect(ev.visa.countryRules.find((r) => r.country === "Thailand")?.maxUsed).toBe(98);
+
+    // Without the fixed stay, the solver may not add Thailand nights that would carry the entry past 60.
+    const free = solve(baseInput({ constraints, prior, results: 1 }));
+    expect(free.ok).toBe(true);
+    for (const p of free.proposals) {
+      expect(p.violations).toEqual([]);
+      const first = [...p.stays].sort((a, b) => a.start.localeCompare(b.start))[0];
+      if (first.cityId === "chiang-mai") expect(Date.parse(first.end) - Date.parse("2026-11-15")).toBeLessThanOrEqual(59 * 86_400_000);
+    }
+  });
+
   it("says what blocks it when nothing legal exists", () => {
     const pool = [POOL[0]]; // Lisbon only: a year in Schengen breaks 90/180
     const res = solve(baseInput({ candidates: pool }));
