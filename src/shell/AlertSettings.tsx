@@ -46,7 +46,7 @@ export function AlertSettingsSection() {
     return (
       <section className="shell-settings-section">
         <h3 className="shell-settings-heading">Alerts</h3>
-        <p className="shell-settings-hint">Unlock your journal to set up alerts.</p>
+        <p className="shell-settings-hint">Sign in to set up alerts.</p>
       </section>
     );
   }

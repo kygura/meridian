@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Button, EmptyState, Sheet, UnlockCard, cx, toast, useIsDesktop, useJournalToken } from "../ui";
 import { onJournalTokenChange } from "../ui/journalToken";
 import { IconBell, IconRefresh } from "../ui/icons";
-import { apiUrl } from "../lib/api";
 import { hasToken, jfetch } from "../lib/journalApi";
 import { applyUpdate, purgePrivateCache, startPwa, useConnectivity, useOffline } from "../lib/pwa";
 import {
@@ -25,10 +24,8 @@ const OFFLINE_HELP =
 
 /** Fetch the personal data worth having offline, so the service worker keeps a copy. Errors don't matter. */
 function primeOfflineData(): void {
-  void fetch(apiUrl("/api/bookings")).catch(() => undefined);
-  void fetch(apiUrl("/api/shortlist")).catch(() => undefined);
   if (!hasToken()) return;
-  for (const path of ["/api/journal", "/api/journal/settings", "/api/watches", "/api/watches/alerts", "/api/import/queue", "/api/notifications"]) {
+  for (const path of ["/api/bookings", "/api/shortlist", "/api/journal", "/api/journal/settings", "/api/watches", "/api/watches/alerts", "/api/import/queue", "/api/notifications"]) {
     void jfetch(path).catch(() => undefined);
   }
 }
@@ -116,7 +113,7 @@ function NoticesSheet() {
   return (
     <Sheet open={open} onClose={close} title="Alerts" description="Watch alerts and reminders, newest first." size="md">
       {!unlocked ? (
-        <UnlockCard compact title="Unlock to see your alerts" />
+        <UnlockCard compact title="Sign in to see your alerts" />
       ) : notices.length === 0 ? (
         <EmptyState
           size="inline"

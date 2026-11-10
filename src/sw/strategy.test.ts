@@ -28,7 +28,7 @@ describe("routeFor", () => {
   });
 
   it("never caches trips (they sync), streams, jobs or anything that does work", () => {
-    for (const p of ["/api/trips", "/api/trips/t1", "/api/agent/models", "/api/health", "/api/jobs/daily", "/api/watches/run", "/api/notifications/test"]) {
+    for (const p of ["/api/trips", "/api/trips/t1", "/api/agent/models", "/api/health", "/api/jobs/daily", "/api/watches/run", "/api/notifications/test", "/api/auth/session", "/api/shared/abc123"]) {
       expect(get(`https://m.example${p}`), p).toBe("pass");
     }
   });
