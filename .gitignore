@@ -11,3 +11,6 @@ data/watches.json
 data/alerts.json
 data/bookings.json
 .vercel
+data/notices.json
+data/push-subscriptions.json
+data/daily-jobs.json

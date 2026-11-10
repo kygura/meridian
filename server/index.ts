@@ -4,6 +4,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 import { createServer } from "net";
 import { execSync } from "child_process";
 import app from "./app.js";
+import { startDailyScheduler } from "./lib/scheduler.js";
 
 // Serve static files from dist/ in production
 app.use("/*", serveStatic({ root: "./dist" }));
@@ -89,6 +90,9 @@ async function startServer(port: number): Promise<void> {
   });
 
   console.log(`[meridian] Server running on http://localhost:${port}`);
+
+  // Daily jobs (the watch run and anything registered with registerDailyJob). Vercel uses its cron instead.
+  startDailyScheduler();
 }
 
 startServer(port);

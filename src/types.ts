@@ -661,3 +661,36 @@ export interface MeridianEvent {
   recurring: boolean;
   tags: string[];
 }
+
+// ── Notices (ADR 0016) ───────────────────────────────────────────────
+
+/** How one channel fared for one Notice. */
+export interface NoticeDelivery {
+  channel: string;
+  ok: boolean;
+  error?: string;
+  at: string;
+}
+
+/** A message Meridian raised for the owner: logged first, then sent through every configured channel. */
+export interface Notice {
+  id: string;
+  /** What raised it, e.g. "watch-alert", "test". */
+  kind: string;
+  title: string;
+  body: string;
+  /** App-relative link ("/#/plan/watches") or an absolute URL. */
+  url?: string;
+  dedupeKey: string;
+  createdAt: string;
+  seen: boolean;
+  deliveries: NoticeDelivery[];
+}
+
+/** A delivery channel as Settings shows it. Never carries a secret. */
+export interface NoticeChannelStatus {
+  id: string;
+  label: string;
+  configured: boolean;
+  detail?: string;
+}

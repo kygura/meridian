@@ -19,6 +19,8 @@ import watchesRoutes from "./routes/watches.js";
 import tripsRoutes from "./routes/trips.js";
 import livabilityRoutes from "./routes/livability.js";
 import overlaysRoutes from "./routes/overlays.js";
+import notificationsRoutes from "./routes/notifications.js";
+import jobsRoutes from "./routes/jobs.js";
 import { gateRoutes } from "./middleware/auth.js";
 
 // Load city data on startup
@@ -58,6 +60,8 @@ app.route("/api/watches", watchesRoutes);
 app.route("/api/trips", tripsRoutes);
 app.route("/api/overlays", overlaysRoutes);
 app.route("/api/livability", livabilityRoutes);
+app.route("/api/notifications", notificationsRoutes);
+app.route("/api/jobs", jobsRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

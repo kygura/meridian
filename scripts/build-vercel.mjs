@@ -3,7 +3,7 @@
 //   functions/api.func  the Hono server bundled into one Node function, plus the
 //                    read-only datasets it loads at startup
 //   config.json      routes (/api/* → function, everything else → the SPA) and the
-//                    daily watch run (Vercel Cron)
+//                    daily jobs run (Vercel Cron)
 //
 // Usage: npm run build:vercel   (Vercel's build command; see docs/DEPLOY.md)
 
@@ -80,8 +80,9 @@ writeFileSync(
         { src: "^/api(?:/.*)?$", dest: "/api" },
         { src: "^/(.*)$", dest: "/index.html" },
       ],
-      // Daily watch run (spec-journal §10). Needs CRON_SECRET = MERIDIAN_TOKEN.
-      crons: [{ path: "/api/watches/run", schedule: "17 6 * * *" }],
+      // Daily jobs: the watch run and anything registered with registerDailyJob (ADR 0016).
+      // Needs CRON_SECRET = MERIDIAN_TOKEN.
+      crons: [{ path: "/api/jobs/daily", schedule: "17 6 * * *" }],
     },
     null,
     2
