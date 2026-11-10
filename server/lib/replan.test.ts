@@ -140,6 +140,29 @@ describe("re-plan loop", () => {
     expect("error" in r && r.error).toBe("stale");
   });
 
+  it("treats a fare drop as news: a notice, no re-plan, and an open proposal stays open", async () => {
+    let fare = 500;
+    const { deps, sent } = fakeDeps({
+      recentPm25: async (lat) => (lat > 18 && lat < 19 ? 95 : 12),
+      normalPm25: async () => 20,
+      fare: async () => ({ price: fare, currency: "EUR", source: "Duffel" }),
+    });
+    await runReplan({ now: new Date("2026-11-10T06:00:00Z"), deps });
+    const [open] = await listProposals("2026-11-10");
+    expect(open.status).toBe("open");
+    fare = 300; // down 40%
+    const r = await runReplan({ now: new Date("2026-11-11T06:00:00Z"), deps });
+    expect(r.fired).toBe(1);
+    expect(r.proposals).toBe(0);
+    const all = await listProposals("2026-11-11");
+    expect(all).toHaveLength(1);
+    expect(all[0].status).toBe("open");
+    expect(sent.filter((n) => n.kind === "replan")).toHaveLength(1);
+    const drop = sent.filter((n) => n.kind === "fare-drop");
+    expect(drop).toHaveLength(1);
+    expect(drop[0].title).toMatch(/down 40%/);
+  });
+
   it("refuses plan B when a stay it was free to replace has since been booked, and writes nothing", async () => {
     const { deps } = fakeDeps({ recentPm25: async (lat) => (lat > 18 && lat < 19 ? 95 : 12), normalPm25: async () => 20 });
     await runReplan({ now: new Date("2026-11-10T06:00:00Z"), deps });

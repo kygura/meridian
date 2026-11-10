@@ -9,7 +9,7 @@
 // at 1 and clear only once they have been absent for the cooldown. Once a Shift has raised
 // a Proposal it cannot raise another until the cooldown has passed, whatever it does.
 
-import { addRange, inSchengen, peakUse, SCHENGEN_RULE, dayIso, dayNum, type Ranges } from "./visa";
+import { addRange, inSchengen, peakUse, sameCountry, SCHENGEN_RULE, dayIso, dayNum, type Ranges } from "./visa";
 import type { PlannedStay, ProposedRotation, CountryRule } from "./types";
 import type { ReplanSettings, Shift, ShiftMemory, StayChange } from "./settings";
 
@@ -198,9 +198,37 @@ export function visaShifts(stays: WatchedStay[], prior: { country: string; start
     }
   }
   for (const rule of rules) {
+    if (rule.maxDaysPerEntry) {
+      // One entry: presence in the country without a night elsewhere (consecutive stays share the moving day).
+      const mine = all.filter((s) => sameCountry(s.country, rule.country)).sort((a, b) => a.start.localeCompare(b.start));
+      const entries: { start: string; end: string }[] = [];
+      for (const s of mine) {
+        const last = entries[entries.length - 1];
+        if (last && s.start <= last.end) {
+          if (s.end > last.end) last.end = s.end;
+        } else entries.push({ start: s.start, end: s.end });
+      }
+      const over = entries.find((e) => dayNum(e.end) >= from && dayNum(e.end) - dayNum(e.start) + 1 > rule.maxDaysPerEntry!);
+      if (over) {
+        const days = dayNum(over.end) - dayNum(over.start) + 1;
+        const hit = stays.find((s) => sameCountry(s.country, rule.country) && s.start < over.end && over.start < s.end);
+        out.push({
+          key: `visa:entry:${rule.country}`,
+          kind: "visa",
+          stayId: hit?.id ?? "",
+          cityId: hit?.cityId ?? "",
+          place: hit?.name ?? rule.country,
+          title: `${rule.country}: one entry of ${days} days from ${over.start}, over your limit of ${rule.maxDaysPerEntry}`,
+          magnitude: days / rule.maxDaysPerEntry,
+          action: "none",
+          continuous: false,
+          evidence: [{ label: "Your rule for this country", source: rule.note || "Entered by you", value: `${rule.maxDaysPerEntry} days per entry` }],
+        });
+      }
+    }
     if (!rule.maxDaysIn) continue;
     let r: Ranges = [];
-    for (const s of all) if (s.country === rule.country) r = addRange(r, dayNum(s.start), dayNum(s.end));
+    for (const s of all) if (sameCountry(s.country, rule.country)) r = addRange(r, dayNum(s.start), dayNum(s.end));
     const peak = peakUse(r, rule.maxDaysIn.windowDays, from, Infinity);
     if (peak.day !== null && peak.day >= from && peak.used > rule.maxDaysIn.days) {
       out.push({

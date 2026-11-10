@@ -222,8 +222,12 @@ export async function runReplan(opts: { now?: Date; force?: boolean; deps?: Repl
   report.fired = fired.length;
   if (notChecked.length) report.notes.push(`Not checked: ${[...new Set(notChecked)].join("; ")}.`);
 
+  // A fare drop is news, not a reason to move: it is sent as a notice, and never re-solves the
+  // rotation or supersedes an open proposal.
+  const news = fired.filter((f) => f.kind === "flight-price" && f.action === "none");
+  const actionable = fired.filter((f) => !news.includes(f));
   let proposal: Proposal | null = null;
-  if (fired.length) proposal = await buildProposal(fired, rot.stays, doc.settings, today, now);
+  if (actionable.length) proposal = await buildProposal(actionable, rot.stays, doc.settings, today, now);
 
   await updateSolverDoc((d) => {
     d.shifts = memory;
@@ -236,6 +240,16 @@ export async function runReplan(opts: { now?: Date; force?: boolean; deps?: Repl
     }
     d.lastReplan = { at: now.toISOString(), shifts: report.shifts, proposals: report.proposals, notes: report.notes };
   });
+
+  for (const f of news) {
+    await deps.notify({
+      kind: "fare-drop",
+      title: f.title.slice(0, 160),
+      body: `${f.evidence.map((e) => `${e.label}: ${e.value} (${e.source})`).join(". ")}. Nothing in your rotation changes.`,
+      url: "/#/rotation",
+      dedupeKey: `fare-drop:${f.stayId}:${today}`,
+    });
+  }
 
   if (proposal && report.proposals) {
     const first = proposal.shifts[0];

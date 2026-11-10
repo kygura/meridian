@@ -70,6 +70,28 @@ describe("detectors", () => {
     expect(v[0].title).toMatch(/Schengen/);
     expect(visaShifts(stays.slice(0, 1), [], true, [], "2026-11-10")).toEqual([]);
   });
+
+  it("finds a per-entry breach made by an edit, past days of the entry included", () => {
+    const rules = [{ country: "Thailand", maxDaysPerEntry: 60 }];
+    const long: WatchedStay[] = [{ id: "cm", cityId: "chiang-mai-thailand", name: "Chiang Mai", country: "Thailand", start: "2026-12-01", end: "2027-02-14", fixed: false }];
+    const v = visaShifts(long, [], false, rules, "2026-11-10");
+    expect(v).toHaveLength(1);
+    expect(v[0].key.startsWith("visa:")).toBe(true);
+    expect(v[0].stayId).toBe("cm");
+    expect(v[0].title).toMatch(/Thailand: one entry of 76 days from 2026-12-01, over your limit of 60/);
+    expect(v[0].magnitude).toBeGreaterThan(1);
+    // 50 days in the plan, but the entry began 20 days earlier; a rule typed in another case still applies.
+    const short: WatchedStay[] = [{ id: "cm", cityId: "chiang-mai-thailand", name: "Chiang Mai", country: "Thailand", start: "2026-11-10", end: "2026-12-30", fixed: false }];
+    expect(visaShifts(short, [], false, rules, "2026-11-10")).toEqual([]);
+    expect(visaShifts(short, [{ country: "Thailand", start: "2026-10-21", end: "2026-11-10" }], false, [{ country: "thailand", maxDaysPerEntry: 60 }], "2026-11-10")).toHaveLength(1);
+    // A visit elsewhere in between starts a new entry.
+    const split: WatchedStay[] = [
+      { id: "a", cityId: "chiang-mai-thailand", name: "Chiang Mai", country: "Thailand", start: "2026-12-01", end: "2027-01-15", fixed: false },
+      { id: "b", cityId: "vientiane-laos", name: "Vientiane", country: "Laos", start: "2027-01-15", end: "2027-01-18", fixed: false },
+      { id: "c", cityId: "chiang-mai-thailand", name: "Chiang Mai", country: "Thailand", start: "2027-01-18", end: "2027-03-01", fixed: false },
+    ];
+    expect(visaShifts(split, [], false, rules, "2026-11-10")).toEqual([]);
+  });
 });
 
 describe("hysteresis", () => {
