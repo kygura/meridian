@@ -19,6 +19,9 @@ Live: https://meridian-mocha-iota.vercel.app
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
 | **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
+| **Alerts** | Every Notice Meridian has raised (watch alerts, test alerts), newest first, with a badge on the sidebar and the phone's More tab. Works with no channel set up. |
+| **Settings › Alerts** | Which channels are set up (push, email, Telegram, ntfy, webhook), turn push on for this device, send a test alert. |
+| **Offline** | Installable (manifest and icons). The app, its fonts, the city and climate data and the last-synced journal, bookings, watches and alerts open without a connection; trips and itineraries show this browser's copy, and edits sync when you're back. An "Offline" pill shows while it's using saved data; other changes need a connection. A new version shows a reload prompt. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
 
@@ -75,7 +78,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `MERIDIAN_TOKEN` | The owner's password (Settings › Account) for the journal, trips sync, bookings, Repeat a trip, imports and watches, and the Bearer token for automation. Also needed to create a trip's share link and calendar feed; the links themselves open without it, since each carries its own token and can be turned off from the trip. Unset means those stay locked |
 | `SESSION_SECRET` | Signs the session cookie. Optional: when unset the key is derived from `MERIDIAN_TOKEN`, and changing the password signs every browser out |
 | `SESSION_TTL_DAYS` | How long a sign-in lasts. Default 30 |
-| `CRON_SECRET` | Vercel only. Lets the daily watch run pass the gate: its own value (accepted for that one route) or the same value as `MERIDIAN_TOKEN` |
+| `CRON_SECRET` | Vercel only. Lets the daily job run pass the gate: its own value (accepted for `/api/jobs/daily` and `/api/watches/run` only) or the same value as `MERIDIAN_TOKEN` |
 | `MERIDIAN_ALLOWED_ORIGINS` | Only if the frontend is served from another origin than the API: comma-separated origins allowed to call it with the session cookie |
 | `TRUST_PROXY` | Number of proxy hops in front of the server, so rate limits and the sign-in lockout see the real client address. Not needed on Vercel |
 | `RATE_LIMIT` | `off` disables the rate limits (local load tests only) |
@@ -83,7 +86,13 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `AGENT_MODEL` | Default Claude model for Ask and research (`claude-opus-5-5`, `claude-sonnet-5-5` or `claude-haiku-5-5`). Default `claude-opus-5-5` |
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
 | `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
-| `ALERT_WEBHOOK_URL` | Where watch alerts are POSTed |
+| `ALERT_WEBHOOK_URL` | Where every Notice is POSTed as JSON (`text`, `kind`, `title`, `body`, `url`) |
+| `PUBLIC_URL` | The app's public address, so alerts sent by email, Telegram, ntfy and webhook can link back. Falls back to `RENDER_EXTERNAL_URL` or Vercel's production URL |
+| `RESEND_API_KEY` or `SMTP_URL`, with `ALERT_EMAIL_TO` | Email alerts. `SMTP_URL` is `smtp://user:pass@host:587` (or `smtps://` for port 465). `ALERT_EMAIL_FROM` sets the sender (Resend's test sender only delivers to your own Resend address) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram alerts |
+| `NTFY_TOPIC` | ntfy alerts. `NTFY_SERVER` for a self-hosted server (default `https://ntfy.sh`), `NTFY_TOKEN` for a protected topic |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push. Make keys with `node scripts/generate-vapid.mjs`; the subject is a `mailto:` or https address that push services may see. Then subscribe each device in Settings › Alerts |
+| `DAILY_JOBS_AT`, `DAILY_JOBS` | Time (UTC, `HH:MM`, default 06:17) of the in-process daily run on a long-running server; `DAILY_JOBS=off` turns it off. Vercel uses its cron instead |
 | `VITE_API_BASE_URL` | Only if the frontend is served separately from the API |
 
 ## Deploying
