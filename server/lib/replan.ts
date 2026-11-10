@@ -336,6 +336,7 @@ export async function decideProposal(id: string, action: "accept" | "dismiss" | 
     });
     if (stale) return { error: "stale", message: `${stale.name} changed since this plan B was made. Run the check again for a fresh one.` };
     const r = await acceptPlan(planOf(p.planB), p.id.replace(/^pr-/, "rp"), now, today);
+    if ("error" in r) return { error: "stale", message: r.message };
     result = { added: r.added.length, removed: r.removed.length };
   }
   const updated = await updateSolverDoc((d) => {

@@ -93,12 +93,27 @@ export async function priorPresence(stays: RotationStay[], start: string): Promi
       if (!country) continue;
       const a = stop.arrive;
       const b = stop.depart < start ? stop.depart : start;
-      // The rotation wins where both cover the same nights.
-      if (out.some((o) => o.start < b && a < o.end)) continue;
-      out.push({ country, start: a, end: b });
+      // The rotation (and an earlier stop) wins where both cover the same nights; the stop's
+      // other nights still count.
+      for (const piece of uncovered(a, b, out)) out.push({ country, ...piece });
     }
   }
   return out;
+}
+
+/** The parts of [a, b) that no range in `cover` holds (ISO dates, end exclusive). */
+export function uncovered(a: string, b: string, cover: { start: string; end: string }[]): { start: string; end: string }[] {
+  let pieces = [{ start: a, end: b }];
+  for (const c of cover) {
+    pieces = pieces.flatMap((p) => {
+      if (c.end <= p.start || p.end <= c.start) return [p];
+      const keep: { start: string; end: string }[] = [];
+      if (p.start < c.start) keep.push({ start: p.start, end: c.start });
+      if (c.end < p.end) keep.push({ start: c.end, end: p.end });
+      return keep;
+    });
+  }
+  return pieces.filter((p) => p.start < p.end);
 }
 
 function placeAt(stays: RotationStay[], start: string): RotationPlace | null {
@@ -143,6 +158,13 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
     ...fixed.filter((f) => !s.pool.some((p) => p.cityId === f.cityId)).map((f) => ({ cityId: f.cityId, kind: f.kind, inPool: false, ownCostEur: ownCost(stayById.get(f.id)) })),
   ];
   const data = await buildCandidates(reqs, rot.places, { news: !!req.news, timeoutMs: 4000 });
+  // A fixed stay must stay fixed: if there is no data for its place, solving around it would
+  // put other stays over its dates (and score the plan as if its nights did not exist).
+  const unknownFixed = fixed.filter((f) => !data.candidates.some((c) => c.place.cityId === f.cityId));
+  if (unknownFixed.length) {
+    const named = unknownFixed.map((f) => `${stayById.get(f.id)?.place.name ?? f.cityId} (${f.start} to ${f.end})`).join(", ");
+    return { error: `Meridian has no data for ${named}, which is booked, locked or where you are, so it cannot plan around it. Pick the place again in the rotation, then solve.` };
+  }
   const candidates = data.candidates.map((c) => ({
     ...c,
     ...(exclude.has(c.place.cityId) ? { excluded: exclude.get(c.place.cityId)! } : {}),
@@ -154,7 +176,7 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
     from,
     budgetMonthlyEur: s.budgetMonthlyEur,
     candidates,
-    fixed: fixed.filter((f) => candidates.some((c) => c.place.cityId === f.cityId)),
+    fixed,
     prior: await priorPresence(rot.stays, start),
     constraints: s.constraints,
     preferences: s.preferences,
@@ -207,12 +229,17 @@ export interface AcceptResult {
   removed: { id: string; name: string; start?: string; end?: string }[];
 }
 
+export interface AcceptConflict {
+  error: "conflict";
+  message: string;
+}
+
 /**
  * Make a plan the active rotation: its solver-placed stays become planned stays (origin
  * solver), and the unlocked, unbooked stays they replace inside the horizon are deleted.
  * Fixed stays (locked, booked, where you are) are never touched.
  */
-export async function acceptPlan(plan: PlanInput, runId: string, now = new Date(), today = todayIso(now)): Promise<AcceptResult> {
+export async function acceptPlan(plan: PlanInput, runId: string, now = new Date(), today = todayIso(now)): Promise<AcceptResult | AcceptConflict> {
   const rot = stateOf(await readRotation());
   const stays = [...plan.stays].sort((a, b) => a.start.localeCompare(b.start));
   if (!stays.length) return { added: [], removed: [] };
@@ -226,6 +253,22 @@ export async function acceptPlan(plan: PlanInput, runId: string, now = new Date(
     const span = staySpan(s);
     return !!span && span.start >= start && span.start < end;
   });
+  // Refuse, before changing anything, a plan whose new stays would overlap a stay that stays:
+  // one booked, locked or started since the plan was made, or a fixed stay that has grown.
+  const removing = new Set(removable.map((s) => s.id));
+  const placed = stays.filter((s) => s.role !== "fixed");
+  for (const r of rot.stays) {
+    if (removing.has(r.id) || effectiveStatus(r, today) === "idea") continue;
+    const span = staySpan(r);
+    if (!span) continue;
+    const hit = placed.find((p) => p.start < span.end && span.start < p.end);
+    if (hit) {
+      return {
+        error: "conflict",
+        message: `${r.place.name} (${span.start} to ${span.end}) now overlaps this plan's ${getCityById(hit.cityId)?.name ?? hit.cityId} (${hit.start} to ${hit.end}). It was booked, locked or changed since the plan was made; solve again for a fresh one.`,
+      };
+    }
+  }
   const removed: AcceptResult["removed"] = [];
   for (const s of removable) {
     await deleteStay(s.id, now);

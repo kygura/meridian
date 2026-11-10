@@ -80,7 +80,9 @@ solver.post("/evaluate", async (c) => {
 solver.post("/accept", async (c) => {
   const body = z.object({ plan: planSchema, runId: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_request", details: body.error.issues }, 400);
-  return c.json(await acceptPlan(body.data.plan, body.data.runId));
+  const r = await acceptPlan(body.data.plan, body.data.runId);
+  if ("error" in r) return c.json(r, 409);
+  return c.json(r);
 });
 
 solver.get("/proposals", async (c) => c.json({ proposals: await listProposals(todayIso()) }));

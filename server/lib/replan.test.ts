@@ -139,4 +139,18 @@ describe("re-plan loop", () => {
     const r = await decideProposal(p.id, "accept");
     expect("error" in r && r.error).toBe("stale");
   });
+
+  it("refuses plan B when a stay it was free to replace has since been booked, and writes nothing", async () => {
+    const { deps } = fakeDeps({ recentPm25: async (lat) => (lat > 18 && lat < 19 ? 95 : 12), normalPm25: async () => 20 });
+    await runReplan({ now: new Date("2026-11-10T06:00:00Z"), deps });
+    const [p] = await listProposals("2026-11-10");
+    // Chiang Mai was only planned when plan B was made; the owner books it the next day.
+    const cur = (await readRotation()).stays.find((s) => s.id === "next")!;
+    await putStay("next", { place: CNX, kind: "base", status: "booked", start: "2026-12-10", end: "2027-02-20" } as never, cur.updatedAt);
+    const before = (await readRotation()).stays.map((s) => s.id).sort();
+    const r = await decideProposal(p.id, "accept", { now: new Date("2026-11-11T09:00:00Z") });
+    expect("error" in r && r.error).toBe("stale");
+    expect((await readRotation()).stays.map((s) => s.id).sort()).toEqual(before);
+    expect((await listProposals("2026-11-11"))[0].status).toBe("open");
+  });
 });
