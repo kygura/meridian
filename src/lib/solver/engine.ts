@@ -48,6 +48,7 @@ import {
   usedOn,
   type Ranges,
 } from "./visa";
+import { SCHENGEN, countLimits, type CountLimit, type Presence } from "../visa";
 import type {
   Alternative,
   Candidate,
@@ -100,6 +101,11 @@ export const RISK_SCOPE_NOTE =
 /** What the visa score covers, shown with every plan: it is not visa clearance. */
 export const VISA_SCOPE_NOTE =
   "Only Schengen 90/180, the tax-day threshold and the country limits you entered are checked. Meridian has no visa database: other countries' entry limits are not checked, so a high visa margin is not visa clearance.";
+/** What the visa score and the hard checks covered: the visa module's lines when passports are known. */
+export function visaScope(k: Pick<SolveInput["constraints"], "visa">): string[] {
+  return k.visa?.checked.length ? k.visa.checked : [VISA_SCOPE_NOTE];
+}
+
 /** Where past days come from: anything not recorded counts as zero. */
 export const SCHENGEN_PRIOR_NOTE =
   "Past Schengen days are counted only from your rotation and the last 13 months of your journal; days not recorded there are assumed to be zero.";
@@ -472,11 +478,27 @@ function prepare(input: SolveInput, env: SolverEnv): Prepared | { error: string 
   for (let ci = 0; ci < cands.length; ci++) {
     const c = cands[ci];
     const others = [...P.pool, ...P.passThroughs]
-      .filter((j) => cands[j].place.country && !sameCountry(cands[j].place.country, c.place.country) && !inSchengen(cands[j].place.country) && P.ruleOf[j] === -1)
+      .filter((j) => cands[j].place.country && !sameCountry(cands[j].place.country, c.place.country) && !inSchengen(cands[j].place.country) && borderRunTarget(P, j))
       .sort((a, b) => haversineKm([c.place.lng, c.place.lat], [cands[a].place.lng, cands[a].place.lat]) - haversineKm([c.place.lng, c.place.lat], [cands[b].place.lng, cands[b].place.lat]) || a - b);
     P.borderTargets.push(others.slice(0, 3));
   }
   return P;
+}
+
+/**
+ * Can a border run go to this place? Without passport data, only where no day rule applies (as
+ * before). With it (ADR 0012), only where the passports enter on arrival, and any limit there is
+ * a per-entry one long enough for the run's nights.
+ */
+function borderRunTarget(P: Prepared, j: number): boolean {
+  const country = P.cands[j].place.country;
+  const visa = P.input.constraints.visa;
+  if (visa && !visa.arriveOk.some((c) => sameCountry(c, country))) return false;
+  const ri = P.ruleOf[j];
+  if (ri === -1) return true;
+  const rule = P.input.constraints.countryRules[ri];
+  if (!visa || rule.maxDaysIn) return false;
+  return !rule.maxDaysPerEntry || rule.maxDaysPerEntry > BORDER_RUN_NIGHTS;
 }
 
 // ── Beam search ─────────────────────────────────────────────────────────
@@ -837,6 +859,23 @@ function stayNightsOf(s: { start: string; end: string }) {
   return dayNum(s.end) - dayNum(s.start);
 }
 
+const SCHENGEN_KEYS = SCHENGEN.memberNames.map(countryKey);
+
+/** Schengen and the country rules as the visa module's count limits, keyed by countryKey. */
+export function solverLimits(P: Pick<Prepared, "input">): CountLimit[] {
+  const k = P.input.constraints;
+  const out: CountLimit[] = [];
+  if (k.schengen) out.push({ key: "schengen", label: "Schengen", countries: SCHENGEN_KEYS, limit: { kind: "rolling", days: SCHENGEN_RULE.days, windowDays: SCHENGEN_RULE.windowDays }, source: SCHENGEN_SOURCE, origin: "zone" });
+  for (const r of k.countryRules) {
+    const key = countryKey(r.country);
+    if (!key) continue;
+    const origin = r.origin === "visa" ? "curated" : "owner";
+    if (r.maxDaysPerEntry) out.push({ key, label: r.country, countries: [key], limit: { kind: "per-entry", days: r.maxDaysPerEntry }, source: r.note ?? "", origin });
+    if (r.maxDaysIn) out.push({ key, label: r.country, countries: [key], limit: { kind: "rolling", ...r.maxDaysIn }, source: r.note ?? "", origin });
+  }
+  return out;
+}
+
 /** Hard-constraint violations of a plan, in words. Empty = legal. */
 function violations(P: Prepared, plan: PlanInput): string[] {
   const out: string[] = [];
@@ -856,12 +895,11 @@ function violations(P: Prepared, plan: PlanInput): string[] {
   }
   const fixedStarts = new Set(P.input.fixed.map((f) => f.start));
   const fixedEnds = new Set(P.input.fixed.map((f) => f.end));
-  let sch: Ranges = [];
-  const rules: Ranges[] = k.countryRules.map(() => []);
-  const init = initialNode(P);
-  sch = init.sch;
-  init.rules.forEach((r, i) => (rules[i] = r));
-  const entries: { country: string; start: number; end: number }[] = [];
+  // Day counting is the visa module's (ADR 0012): past presence and the plan's stays, counted
+  // against Schengen and every country rule by countLimits, the single source of those checks.
+  const presence: Presence[] = P.input.prior
+    .map((p, i) => ({ id: `prior-${i}`, country: countryKey(p.country), start: dayNum(p.start), end: Math.min(dayNum(p.end), P.start), label: p.country, past: true, tentative: false }))
+    .filter((p) => p.end > p.start && p.country);
   for (let i = 0; i < stays.length; i++) {
     const s = stays[i];
     const ci = P.byCity.get(s.cityId);
@@ -890,34 +928,9 @@ function violations(P: Prepared, plan: PlanInput): string[] {
         }
       }
     }
-    const a = dayNum(s.start);
-    const b = dayNum(s.end);
-    if (k.schengen && inSchengen(c.place.country)) sch = addRange(sch, a, b);
-    const ri = P.ruleOf[ci];
-    if (ri !== -1) rules[ri] = addRange(rules[ri], a, b);
-    const last = entries[entries.length - 1];
-    if (last && sameCountry(last.country, c.place.country) && last.end === a) last.end = b;
-    // The first stay continues an entry that began before the horizon.
-    else if (!last && a === P.start && P.priorEntry && sameCountry(P.priorEntry.country, c.place.country)) entries.push({ country: c.place.country ?? "", start: P.priorEntry.start, end: b });
-    else entries.push({ country: c.place.country ?? "", start: a, end: b });
+    presence.push({ id: s.id, country: countryKey(c.place.country), start: dayNum(s.start), end: dayNum(s.end), label: c.place.name, past: false, tentative: false });
   }
-  if (k.schengen) {
-    const peak = peakUse(sch, SCHENGEN_RULE.windowDays, P.start, P.end);
-    if (peak.used > SCHENGEN_RULE.days && peak.day !== null && peak.day >= P.start) out.push(`Schengen: ${peak.used} days in the 180 to ${dayIso(peak.day)}, over 90.`);
-  }
-  k.countryRules.forEach((rule, ri) => {
-    if (rule.maxDaysIn) {
-      const peak = peakUse(rules[ri], rule.maxDaysIn.windowDays, P.start, P.end);
-      if (peak.used > rule.maxDaysIn.days && peak.day !== null && peak.day >= P.start) out.push(`${rule.country}: ${peak.used} days in ${rule.maxDaysIn.windowDays}, over ${rule.maxDaysIn.days}.`);
-    }
-    if (rule.maxDaysPerEntry) {
-      for (const e of entries) {
-        if (!sameCountry(e.country, rule.country)) continue;
-        const days = e.end - e.start + 1;
-        if (days > rule.maxDaysPerEntry) out.push(`${rule.country}: one entry of ${days} days from ${dayIso(e.start)}, over ${rule.maxDaysPerEntry}.`);
-      }
-    }
-  });
+  for (const v of countLimits(presence, solverLimits(P), P.start)) out.push(v.message);
   return out;
 }
 
@@ -1107,10 +1120,20 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
   });
   // A rule typed for a country no place here is in (a typo, another spelling) is never applied: say so.
   visa.unmatchedRules = k.countryRules
+    .filter((rule) => rule.origin !== "visa")
     .filter((rule) => !P.cands.some((c) => sameCountry(c.place.country, rule.country)) && !P.input.prior.some((p) => sameCountry(p.country, rule.country)))
     .map((rule) => rule.country.trim() || "(no country)");
   for (const name of visa.unmatchedRules) visa.notes.push(`Your rule for "${name}" matches no place in the pool, so it was not applied. Check the spelling.`);
-  visa.notes.push(VISA_SCOPE_NOTE);
+  const scope = visaScope(k);
+  visa.notes.push(...scope);
+  visa.checked = scope;
+  if (k.visa) {
+    // Stays where the passports need a visa first: legal to plan, but say so on the stay.
+    for (const ps of planned) {
+      const hit = k.visa.visaFirst.find((v) => sameCountry(v.country, ps.country));
+      if (hit && ps.role !== "border-run") ps.notes.push(hit.note);
+    }
+  }
   if (k.taxDays !== null) {
     const years = new Set<number>();
     for (let d = P.start; d < P.end; d += 300) years.add(new Date(d * 86_400_000).getUTCFullYear());
@@ -1189,7 +1212,7 @@ function evaluate(P: Prepared, plan: PlanInput, id: string): ProposedRotation {
       score: r1(visaScore),
       weight: W.visa,
       detail: visaNotes.length ? visaNotes.join(" ") : "No day-count limit comes close.",
-      notes: [`Full marks with ${SCHENGEN_COMFORT_DAYS}+ spare Schengen days and ${TAX_COMFORT_DAYS}+ nights under the tax threshold.`, VISA_SCOPE_NOTE],
+      notes: [`Full marks with ${SCHENGEN_COMFORT_DAYS}+ spare Schengen days and ${TAX_COMFORT_DAYS}+ nights under the tax threshold.`, ...scope],
     },
     {
       key: "risk",
@@ -1343,6 +1366,13 @@ function explainInfeasible(P: Prepared): string {
       return `Nothing in the pool can be used from ${dayIso(slot.start)}: ${reasons.join("; ")}.`;
     }
   }
+  // Fixed stays that break a day limit on their own make every plan illegal: name the limit.
+  const fixedPresence: Presence[] = [
+    ...P.input.prior.map((p, i) => ({ id: `prior-${i}`, country: countryKey(p.country), start: dayNum(p.start), end: Math.min(dayNum(p.end), P.start), label: p.country, past: true, tentative: false })),
+    ...P.input.fixed.map((f) => ({ id: f.id, country: countryKey(P.cands[P.byCity.get(f.cityId) ?? P.fromIdx].place.country), start: dayNum(f.start), end: dayNum(f.end), label: f.id, past: false, tentative: false })),
+  ].filter((p) => p.country && p.end > p.start);
+  const broken = countLimits(fixedPresence, solverLimits(P), P.start);
+  if (broken.length) return `Your booked, locked or current stays already break a day limit, so no plan around them is legal: ${broken[0].message} Change or unlock that stay, or solve from after it.`;
   return "No combination of the pool fits every rule: stay lengths, Schengen and country day limits, and fixed stays leave a gap. Add places, loosen a limit, or unlock a stay.";
 }
 

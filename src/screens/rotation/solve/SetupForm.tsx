@@ -275,7 +275,7 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
       <Disclosure summary="Rules">
         <div className="solve-rules">
           <Check checked={k.schengen} onChange={(v) => setK({ schengen: v })}>
-            Schengen 90 days in any 180 <span className="solve-fine">(off if you hold an EU, EEA or Swiss passport; past days count only from your rotation and journal, anything else as zero)</span>
+            Schengen 90 days in any 180 <span className="solve-fine">(used only while no passport is set in Settings › Visas; with one, Schengen follows your passport. Past days count only from your rotation and journal, anything else as zero)</span>
           </Check>
           <Check checked={k.avoidIsHard} onChange={(v) => setK({ avoidIsHard: v })}>
             Never place a stay in months you avoid
@@ -294,7 +294,7 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
               <Input size="sm" inputMode="numeric" value={k.minHealthUhc ?? ""} onChange={(e) => setK({ minHealthUhc: numOrNull(e.target.value) })} />
             </Field>
           </div>
-          <p className="solve-fine">Country limits you know of for your passport. Meridian has no visa database: enter the rule as you have it.</p>
+          <p className="solve-fine">With your passport set in Settings › Visas, each country's limit comes from the visa data and is checked as a hard rule. A limit you enter here replaces the data for that country (an extension you hold, a rule you know is newer).</p>
           {k.countryRules.map((r, i) => (
             <div key={i} className={cx("solve-row", "solve-rule")}>
               <Field label="Country">

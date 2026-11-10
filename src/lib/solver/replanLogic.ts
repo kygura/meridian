@@ -9,7 +9,9 @@
 // at 1 and clear only once they have been absent for the cooldown. Once a Shift has raised
 // a Proposal it cannot raise another until the cooldown has passed, whatever it does.
 
-import { addRange, inSchengen, peakUse, sameCountry, SCHENGEN_RULE, dayIso, dayNum, type Ranges } from "./visa";
+import { countryKey, SCHENGEN_RULE, dayNum } from "./visa";
+import { countLimits, type Presence } from "../visa/engine";
+import { solverLimits } from "./engine";
 import type { PlannedStay, ProposedRotation, CountryRule } from "./types";
 import type { ReplanSettings, Shift, ShiftMemory, StayChange } from "./settings";
 
@@ -172,76 +174,68 @@ export function flightShift(stay: WatchedStay, fromName: string, price: number, 
   };
 }
 
-/** Schengen 90/180 and the owner's country rules over the committed stays, past ones included. */
+/**
+ * Schengen 90/180 and the country rules (the owner's, and with a passport set the visa
+ * module's, ADR 0012) over the committed stays, past ones included. Counted by the visa
+ * module's countLimits, the same code the solver and the Days page use.
+ */
 export function visaShifts(stays: WatchedStay[], prior: { country: string; start: string; end: string }[], schengen: boolean, rules: CountryRule[], today: string): Detected[] {
   const out: Detected[] = [];
-  const all = [...prior.map((p, i) => ({ id: `prior-${i}`, name: p.country, country: p.country, start: p.start, end: p.end })), ...stays];
   const from = dayNum(today);
-  if (schengen) {
-    let r: Ranges = [];
-    for (const s of all) if (inSchengen(s.country)) r = addRange(r, dayNum(s.start), dayNum(s.end));
-    const peak = peakUse(r, SCHENGEN_RULE.windowDays, from, Infinity);
-    if (peak.day !== null && peak.day >= from && peak.used > SCHENGEN_RULE.days) {
-      const hit = stays.find((s) => inSchengen(s.country) && dayNum(s.start) <= peak.day! && peak.day! <= dayNum(s.end));
+  const presence: Presence[] = [
+    ...prior.map((p, i) => ({ id: `prior-${i}`, country: countryKey(p.country), start: dayNum(p.start), end: dayNum(p.end), label: p.country, past: true, tentative: false })),
+    ...stays.map((s) => ({ id: s.id, country: countryKey(s.country), start: dayNum(s.start), end: dayNum(s.end), label: s.name, past: false, tentative: false })),
+  ].filter((p) => p.country);
+  const limits = solverLimits({ input: { constraints: { schengen, countryRules: rules } } as never });
+  for (const v of countLimits(presence, limits, from)) {
+    const over = dayNum(v.firstOver);
+    const mine = stays.filter((s) => v.stayIds.includes(s.id));
+    const hit = mine.find((s) => dayNum(s.start) <= over && over <= dayNum(s.end)) ?? mine[0];
+    const rule = rules.find((r) => countryKey(r.country) === v.key);
+    const limitDays = Number(v.limit.match(/^\d+/)?.[0] ?? 0) || 1;
+    if (v.key === "schengen") {
       out.push({
         key: "visa:schengen",
         kind: "visa",
         stayId: hit?.id ?? "",
         cityId: hit?.cityId ?? "",
         place: hit?.name ?? "Schengen Area",
-        title: `Schengen: ${peak.used} days in the 180 to ${dayIso(peak.day)}, over 90`,
-        magnitude: peak.used / SCHENGEN_RULE.days,
+        title: `Schengen: ${v.days} days in the 180 to ${v.firstOver}, over 90`,
+        magnitude: v.days / SCHENGEN_RULE.days,
         action: "none",
         continuous: false,
-        evidence: [{ label: "Days inside the Schengen Area in any 180, your stays and past journeys counted", source: "Schengen Borders Code (EU) 2016/399, Art. 6", value: `${peak.used} of 90` }],
+        evidence: [{ label: "Days inside the Schengen Area in any 180, your stays and past journeys counted", source: "Schengen Borders Code (EU) 2016/399, Art. 6", value: `${v.days} of 90` }],
       });
+      continue;
     }
-  }
-  for (const rule of rules) {
-    if (rule.maxDaysPerEntry) {
-      // One entry: presence in the country without a night elsewhere (consecutive stays share the moving day).
-      const mine = all.filter((s) => sameCountry(s.country, rule.country)).sort((a, b) => a.start.localeCompare(b.start));
-      const entries: { start: string; end: string }[] = [];
-      for (const s of mine) {
-        const last = entries[entries.length - 1];
-        if (last && s.start <= last.end) {
-          if (s.end > last.end) last.end = s.end;
-        } else entries.push({ start: s.start, end: s.end });
-      }
-      const over = entries.find((e) => dayNum(e.end) >= from && dayNum(e.end) - dayNum(e.start) + 1 > rule.maxDaysPerEntry!);
-      if (over) {
-        const days = dayNum(over.end) - dayNum(over.start) + 1;
-        const hit = stays.find((s) => sameCountry(s.country, rule.country) && s.start < over.end && over.start < s.end);
-        out.push({
-          key: `visa:entry:${rule.country}`,
-          kind: "visa",
-          stayId: hit?.id ?? "",
-          cityId: hit?.cityId ?? "",
-          place: hit?.name ?? rule.country,
-          title: `${rule.country}: one entry of ${days} days from ${over.start}, over your limit of ${rule.maxDaysPerEntry}`,
-          magnitude: days / rule.maxDaysPerEntry,
-          action: "none",
-          continuous: false,
-          evidence: [{ label: "Your rule for this country", source: rule.note || "Entered by you", value: `${rule.maxDaysPerEntry} days per entry` }],
-        });
-      }
-    }
-    if (!rule.maxDaysIn) continue;
-    let r: Ranges = [];
-    for (const s of all) if (sameCountry(s.country, rule.country)) r = addRange(r, dayNum(s.start), dayNum(s.end));
-    const peak = peakUse(r, rule.maxDaysIn.windowDays, from, Infinity);
-    if (peak.day !== null && peak.day >= from && peak.used > rule.maxDaysIn.days) {
+    const whose = rule?.origin === "visa" ? "the limit for your passport" : "your limit";
+    const source = rule?.origin === "visa" ? rule.note ?? "Visa data" : rule?.note || "Entered by you";
+    if (v.kind === "per-entry") {
+      const start = v.message.match(/from (\d{4}-\d{2}-\d{2})/)?.[1] ?? "";
       out.push({
-        key: `visa:${rule.country}`,
+        key: `visa:entry:${rule?.country ?? v.label}`,
         kind: "visa",
-        stayId: "",
-        cityId: "",
-        place: rule.country,
-        title: `${rule.country}: ${peak.used} days in ${rule.maxDaysIn.windowDays}, over your limit of ${rule.maxDaysIn.days}`,
-        magnitude: peak.used / rule.maxDaysIn.days,
+        stayId: hit?.id ?? "",
+        cityId: hit?.cityId ?? "",
+        place: hit?.name ?? v.label,
+        title: `${rule?.country ?? v.label}: one entry of ${v.days} days from ${start}, over ${whose} of ${limitDays}`,
+        magnitude: v.days / limitDays,
         action: "none",
         continuous: false,
-        evidence: [{ label: "Your rule for this country", source: rule.note || "Entered by you", value: `${rule.maxDaysIn.days} days in ${rule.maxDaysIn.windowDays}` }],
+        evidence: [{ label: rule?.origin === "visa" ? "Limit for your passport" : "Your rule for this country", source, value: v.limit }],
+      });
+    } else {
+      out.push({
+        key: `visa:${rule?.country ?? v.label}`,
+        kind: "visa",
+        stayId: hit?.id ?? "",
+        cityId: hit?.cityId ?? "",
+        place: hit?.name ?? v.label,
+        title: `${rule?.country ?? v.label}: ${v.days} days ${v.kind === "rolling" ? "in the window" : "in the year"} to ${v.firstOver}, over ${whose} of ${limitDays}`,
+        magnitude: v.days / limitDays,
+        action: "none",
+        continuous: false,
+        evidence: [{ label: rule?.origin === "visa" ? "Limit for your passport" : "Your rule for this country", source, value: v.limit }],
       });
     }
   }

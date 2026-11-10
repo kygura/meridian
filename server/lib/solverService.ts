@@ -20,6 +20,15 @@ import {
 import type { FixedStay, PlanInput, PriorPresence, ProposedRotation, SolveInput, SolveResult } from "../../src/lib/solver/types.js";
 import type { SolverSettings } from "../../src/lib/solver/settings.js";
 import type { FlightHub } from "../../src/lib/geo.js";
+import { visaConstraints } from "../../src/lib/solver/visaRules.js";
+import { inSchengen, sameCountry } from "../../src/lib/solver/visa.js";
+import { BUFFER_MAX_KM, borderRunOptions, schengenBuffers } from "../../src/lib/visa/engine.js";
+import { haversineKm } from "../../src/lib/geo.js";
+import { getVisaData } from "./visaData.js";
+import { getVisaSettings } from "./visaStore.js";
+import { suggestionPlaces } from "./visaService.js";
+import { passportCodes } from "../../src/lib/visa/settings.js";
+import { SCHENGEN } from "../../src/lib/visa/data.js";
 
 export interface SolveRequest {
   settings: SolverSettings;
@@ -157,7 +166,15 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
     ...s.pool.map((p) => ({ ...p, inPool: true })),
     ...fixed.filter((f) => !s.pool.some((p) => p.cityId === f.cityId)).map((f) => ({ cityId: f.cityId, kind: f.kind, inPool: false, ownCostEur: ownCost(stayById.get(f.id)) })),
   ];
+  // The visa module (ADR 0012): limits for the owner's passports, and places it adds so a legal
+  // plan exists (Schengen buffers, border-run targets). Each added place is named in the notes.
+  const prior = await priorPresence(rot.stays, start);
+  const visaData = getVisaData();
+  const passports = passportCodes(await getVisaSettings().catch(() => null));
+  const added = visaData && passports.length ? visaSuggestions(visaData, passports, reqs, s, start) : { reqs: [], notes: [] };
+  reqs.push(...added.reqs);
   const data = await buildCandidates(reqs, rot.places, { news: !!req.news, timeoutMs: 4000 });
+  const visa = visaConstraints(visaData, passports, [...data.candidates.map((c) => c.place.country ?? ""), ...prior.map((p) => p.country)], start, s.constraints);
   // A fixed stay must stay fixed: if there is no data for its place, solving around it would
   // put other stays over its dates (and score the plan as if its nights did not exist).
   const unknownFixed = fixed.filter((f) => !data.candidates.some((c) => c.place.cityId === f.cityId));
@@ -167,6 +184,7 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
   }
   const candidates = data.candidates.map((c) => ({
     ...c,
+    ...(c.place.country && visa.excluded.has(c.place.country) ? { excluded: visa.excluded.get(c.place.country)! } : {}),
     ...(exclude.has(c.place.cityId) ? { excluded: exclude.get(c.place.cityId)! } : {}),
     ...(penalise.has(c.place.cityId) ? { penalty: { points: penalise.get(c.place.cityId)!.points, reason: penalise.get(c.place.cityId)!.reason } } : {}),
   }));
@@ -177,8 +195,8 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
     budgetMonthlyEur: s.budgetMonthlyEur,
     candidates,
     fixed,
-    prior: await priorPresence(rot.stays, start),
-    constraints: s.constraints,
+    prior,
+    constraints: visa.constraints,
     preferences: s.preferences,
     weights: s.weights,
     results: s.results,
@@ -186,7 +204,7 @@ export async function prepareSolve(req: SolveRequest, today = todayIso()): Promi
   };
   return {
     input,
-    notes: [...notes, ...data.notes],
+    notes: [...notes, ...data.notes, ...added.notes, ...visa.notes],
     rotation: rot,
     places: candidates.map((c) => ({ cityId: c.place.cityId, name: c.place.name, country: c.place.country, lat: c.place.lat, lng: c.place.lng, inPool: c.inPool })),
   };
@@ -298,4 +316,55 @@ export async function acceptPlan(plan: PlanInput, runId: string, now = new Date(
     if (r.ok) added.push(r.value);
   }
   return { added, removed };
+}
+
+
+/**
+ * Places the visa module adds to the pool so that a legal plan exists: when the pool has
+ * Schengen bases but no base outside Schengen within reach, the two best Schengen buffers; when
+ * border runs are allowed and a pool base has a per-entry limit, the nearest place the passports
+ * enter on arrival, as a pass-through. Nothing is added that the pool already covers.
+ */
+export function visaSuggestions(data: NonNullable<ReturnType<typeof getVisaData>>, passports: string[], reqs: CandidateRequest[], s: SolverSettings, start: string): { reqs: CandidateRequest[]; notes: string[] } {
+  const out: CandidateRequest[] = [];
+  const notes: string[] = [];
+  const have = new Set(reqs.map((r) => r.cityId));
+  const pool = reqs.filter((r) => r.inPool).map((r) => ({ r, city: getCityById(r.cityId) })).filter((x): x is { r: CandidateRequest; city: NonNullable<ReturnType<typeof getCityById>> } => !!x.city);
+  const places = suggestionPlaces();
+  const schengenBases = pool.filter((x) => x.r.kind === "base" && inSchengen(x.city.country));
+  const freeMove = passports.some((p) => SCHENGEN.freeMovement.includes(p));
+  if (schengenBases.length && !freeMove) {
+    const lat = schengenBases.reduce((a, x) => a + x.city.lat, 0) / schengenBases.length;
+    const lng = schengenBases.reduce((a, x) => a + x.city.lng, 0) / schengenBases.length;
+    const outsideNear = pool.some((x) => x.r.kind === "base" && !inSchengen(x.city.country) && haversineKm([lng, lat], [x.city.lng, x.city.lat]) <= BUFFER_MAX_KM);
+    if (!outsideNear) {
+      for (const b of schengenBuffers(data, passports, { lat, lng }, start, 60, places, 2)) {
+        if (have.has(b.place.cityId)) continue;
+        have.add(b.place.cityId);
+        out.push({ cityId: b.place.cityId, kind: "base", inPool: true });
+        notes.push(`Added ${b.place.name} (${b.countryName}) to the pool as a Schengen buffer: ${b.km.toLocaleString("en-US")} km from your Schengen places${b.comfort !== null ? `, comfort ${b.comfort}` : ""}. Remove it from the pool to leave it out.`);
+      }
+    }
+  }
+  if (s.constraints.allowBorderRuns) {
+    for (const x of pool.filter((p) => p.r.kind === "base" && !inSchengen(p.city.country))) {
+      const runs = borderRunOptions(data, passports, { country: x.city.country, lat: x.city.lat, lng: x.city.lng, date: start }, places, 3);
+      if (!runs.options.length) continue;
+      const covered = [...pool.map((p) => p.city), ...out.map((o) => getCityById(o.cityId)!)].some((c) => c && !sameCountry(c.country, x.city.country) && runs.options.some((o) => sameCountry(o.place.country, c.country)) && haversineKm([x.city.lng, x.city.lat], [c.lng, c.lat]) <= 1500);
+      if (covered) continue;
+      const o = runs.options[0];
+      if (have.has(o.place.cityId)) continue;
+      have.add(o.place.cityId);
+      out.push({ cityId: o.place.cityId, kind: "pass-through", inPool: true });
+      notes.push(`Added ${o.place.name} (${o.countryName}) as a border-run stop for ${x.city.name}: ${o.estimate}.${runs.notes.length ? ` ${runs.notes.join(" ")}` : ""}`);
+    }
+  }
+  return { reqs: out, notes };
+}
+
+
+/** The owner's constraints with the visa module's limits for their passports (ADR 0012), for the re-plan check. */
+export async function ownerVisaConstraints(base: SolverSettings["constraints"], countries: string[], start: string) {
+  const passports = passportCodes(await getVisaSettings().catch(() => null));
+  return visaConstraints(getVisaData(), passports, countries, start, base);
 }

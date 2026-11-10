@@ -1,3 +1,4 @@
+import { hrefFor } from "../../../lib/router";
 import { Badge, Button, Card, Disclosure, IconButton, Select, cx } from "../../../ui";
 import { IconLock, IconUnlock } from "../../../ui/icons";
 import { FIT_LABEL, formatShortDate } from "../../../lib/rotation";
@@ -140,7 +141,19 @@ export function ProposalCard({ index, proposal: p, selected, edited, busy, locke
           Your rule for “{name}” matches no place, so it was not applied. Check the spelling.
         </p>
       ))}
-      <p className="solve-fine">{VISA_SCOPE_NOTE}</p>
+      <div className="solve-checked">
+        <span className="ui-section-title">What was checked</span>
+        <ul>
+          {(p.visa.checked ?? [VISA_SCOPE_NOTE]).map((n) => (
+            <li key={n} className="solve-fine">
+              {n}
+            </li>
+          ))}
+        </ul>
+        <a className="solve-fine" href={hrefFor({ view: "plan", tab: "days" })}>
+          Your days, counted: Plan › Days
+        </a>
+      </div>
       <Button variant={selected ? "primary" : "secondary"} block onClick={onAccept} disabled={busy}>
         Make this my rotation
       </Button>

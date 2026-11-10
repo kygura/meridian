@@ -20,6 +20,13 @@ import {
   hasFlightProvider,
 } from "../flightSearch.js";
 import { haversineKm } from "../../../src/lib/geo.js";
+import { getVisaData } from "../visaData.js";
+import { getVisaSettings } from "../visaStore.js";
+import { ownerStays } from "../visaService.js";
+import { checkStays, schengenSummary, type StayInput } from "../../../src/lib/visa/engine.js";
+import { STATUS_LABEL, limitLabel } from "../../../src/lib/visa/rules.js";
+import { VISA_DISCLAIMER, isoOf } from "../../../src/lib/visa/data.js";
+import { expiryByPassport, passportCodes } from "../../../src/lib/visa/settings.js";
 import type {
   City,
   PlaceResult,
@@ -536,4 +543,74 @@ export async function getFlightEstimate(params: GetFlightEstimateParams): Promis
   }
 
   return mockFlightEstimate(originIata, destinationIata, departureDate);
+}
+
+
+// ── check_visa (ADR 0012) ────────────────────────────────────────────
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const checkVisaParams = z.object({
+  /** Passports as ISO-2 codes or country names. Omit to use the owner's (needs sign-in). */
+  passports: z.array(z.string().min(2).max(60)).max(5).optional(),
+  /** Stays to check: country (name or ISO-2), arrival and departure dates. */
+  stays: z.array(z.object({ country: z.string().min(2).max(60), start: isoDate, end: isoDate })).max(40).optional(),
+  /** Also count the owner's journal, dated trips and rotation (needs sign-in). */
+  includeMyStays: z.boolean().optional(),
+  today: isoDate.optional(),
+});
+export type CheckVisaParams = z.infer<typeof checkVisaParams>;
+
+export const VISA_LOCKED = { error: "owner_only", message: "Sign in as the owner to check against your own passports and stays, or name the passports." } as const;
+
+/**
+ * Entry requirements, days allowed against days planned, passport validity, yellow fever and
+ * whole-plan violations (Schengen 90/180, rolling and per-entry limits) for a set of stays.
+ * The owner's passports and stays are personal: they are used only when signed in.
+ */
+export async function checkVisa(raw: CheckVisaParams, ctx: { unlocked: boolean }) {
+  const p = checkVisaParams.safeParse(raw ?? {});
+  if (!p.success) return { error: "invalid_params", issues: p.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`) };
+  try {
+    const data = getVisaData();
+    if (!data) return { error: "no_data", message: "The visa data file is missing on this server." };
+    const needsOwner = !p.data.passports?.length || p.data.includeMyStays;
+    if (needsOwner && !ctx.unlocked) return { ...VISA_LOCKED };
+    const settings = needsOwner ? await getVisaSettings() : null;
+    const passports = p.data.passports?.length ? p.data.passports.map((x) => isoOf(data, x)).filter((x): x is string => !!x) : passportCodes(settings);
+    if (!passports.length) return { error: "no_passport", message: "No passport given and none set in Settings › Visas." };
+    const today = p.data.today ?? new Date().toISOString().slice(0, 10);
+    const given: StayInput[] = (p.data.stays ?? []).map((s, i) => ({ id: `ask-${i}`, country: s.country, start: s.start, end: s.end, label: s.country }));
+    const mine: StayInput[] = p.data.includeMyStays ? await ownerStays(today) : [];
+    const all = [...mine, ...given];
+    if (!all.length) return { error: "no_stays", message: "Give stays to check, or ask to include your own plans." };
+    const r = checkStays(data, passports, all, { today, expiry: expiryByPassport(settings) });
+    const sch = schengenSummary(data, passports, all, today);
+    return {
+      passports,
+      stays: r.verdicts
+        .filter((v) => !p.data.includeMyStays || v.id.startsWith("ask-") || !all.find((x) => x.id === v.id)?.past)
+        .map((v) => ({
+          country: v.countryName,
+          from: all.find((x) => x.id === v.id)?.start,
+          to: all.find((x) => x.id === v.id)?.end,
+          verdict: v.level,
+          summary: v.message,
+          requirement: v.rule ? STATUS_LABEL[v.rule.status] : null,
+          limit: v.rule?.limit ? limitLabel(v.rule.limit) : null,
+          passportUsed: v.rule?.passport ?? null,
+          passportValidity: v.validity ? { rule: v.validity.rule, validUntilAtLeast: v.validity.requiredUntil, yoursOk: v.validity.ok, source: v.validity.url } : null,
+          yellowFever: v.yellowFever ? v.yellowFever.message : null,
+          notes: v.rule?.notes.slice(0, 3) ?? [],
+          sources: (v.rule?.sources ?? []).slice(0, 3).map((x) => ({ title: x.title, url: x.url, checked: x.checked })),
+        })),
+      violations: r.violations.map((v) => ({ limit: v.label, rule: v.limit, firstDayOver: v.firstOver, days: v.days, what: v.message, source: v.source })),
+      schengen: sch.applies ? { usedToday: sch.today.used, leftToday: sch.today.left, firstOverstay: sch.firstOverstay, earliestEntry: sch.earliestEntry } : { applies: false, why: sch.reason },
+      dataset: { name: data.sources.requirements?.name, datasetOf: data.sources.requirements?.datasetUpdated, fetched: data.sources.requirements?.fetchedAt },
+      disclaimer: VISA_DISCLAIMER,
+    };
+  } catch (err) {
+    console.error("[agent/tools] check_visa error:", err instanceof Error ? err.message : String(err));
+    return { error: "check_visa_failed" };
+  }
 }

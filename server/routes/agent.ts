@@ -18,6 +18,9 @@ import {
   getPlaceFacts,
   getPlaceFactsParams,
   REGION_COUNTRIES,
+  checkVisa,
+  checkVisaParams,
+  type CheckVisaParams,
 } from "../lib/agent/tools.js";
 import { factResearch, factSentences, nearbyReason } from "../lib/agent/researchFacts.js";
 import {
@@ -708,6 +711,8 @@ returns journal_locked, tell the user to sign in under Settings.
 For where the owner should live over the next 12-18 months use solve_rotation: it proposes whole rotations from their
 pool of places and explains each score (fit, cost, travel, visa margin, risk, preferences) and each stay's alternatives.
 Relay its reasons and say which figures are estimates; it changes nothing, and the owner picks an option on the Rotation screen.
+For visas, entry rules, Schengen days or tax days use check_visa. Relay its sources and dates, say that rules change and
+that it is not legal advice, and point to Plan › Days for the full counters.
 Write for a traveller in plain words: never mention tool names, field names, ids or error codes. Say "crowds" not
 "crowdProxy", "temperature" not "tempC", "rainfall" not "precipMm", "daily spend" not "dailySpendEur", "flight cost" not
 "flightCostEurPer1000km", "best months" not "seasonality", and "similar places" not "windows". Mention city names in full
@@ -789,6 +794,12 @@ agent.post("/chat", async (c) => {
       description: "Draft a journey (stops with cityId or cityHint, dates, optional segments) into the user's review inbox. Cannot confirm it.",
       parameters: draftJourneyParams,
       execute: journal.draftJourney as AgentTool["execute"],
+    },
+    check_visa: {
+      description:
+        "Check entry requirements and day limits for passports and stays: per stay the requirement (visa free, on arrival, ETA, e-visa, visa), days allowed against days planned, passport validity and yellow fever; for the plan Schengen 90/180, rolling and per-entry breaches with the first day over, and the Schengen days left today. Omit passports to use the owner's; includeMyStays adds their journal, dated trips and rotation. Every figure carries its source.",
+      parameters: checkVisaParams,
+      execute: ((args: CheckVisaParams) => checkVisa(args, { unlocked })) as AgentTool["execute"],
     },
     solve_rotation: {
       description:

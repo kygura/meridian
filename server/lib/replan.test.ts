@@ -7,6 +7,7 @@ import { putStay, readRotation, putSettings } from "./rotation";
 import { putSolverSettings, readSolverDoc } from "./solverStore";
 import { decideProposal, listProposals, runReplan, type ReplanDeps } from "./replan";
 import { DEFAULT_SOLVER_SETTINGS } from "../../src/lib/solver/settings";
+import { putVisaSettings } from "./visaStore";
 import type { NotifyInput } from "./notifier";
 
 beforeAll(() => loadCities());
@@ -92,6 +93,21 @@ describe("re-plan loop", () => {
     }
     expect(sent.filter((n) => n.kind === "replan")).toHaveLength(1);
     expect((await readSolverDoc()).proposals).toHaveLength(1);
+  });
+
+  it("detects a day-limit breach for the owner's passport with the visa module", async () => {
+    // Chiang Mai 10 Dec to 20 Feb is 73 days; no rule typed, so nothing without a passport.
+    const quiet = await runReplan({ now: new Date("2026-11-10T06:00:00Z"), deps: fakeDeps().deps });
+    expect(Object.keys((await readSolverDoc()).shifts).some((k) => k.startsWith("visa:"))).toBe(false);
+    expect(quiet.proposals).toBe(0);
+    await putVisaSettings({ passports: [{ country: "US" }], residency: null, taxWatch: [] });
+    await runReplan({ now: new Date("2026-11-11T06:00:00Z"), deps: fakeDeps().deps });
+    const doc = await readSolverDoc();
+    expect(doc.shifts["visa:entry:Thailand"]?.active).toBe(true);
+    const [p] = await listProposals("2026-11-11");
+    const sh = p.shifts.find((x) => x.key === "visa:entry:Thailand")!;
+    expect(sh.title).toMatch(/Thailand: one entry of 73 days from 2026-12-10, over the limit for your passport of 30/);
+    expect(sh.evidence[0].source).toMatch(/FCDO travel advice: Thailand/);
   });
 
   it("does not count a source it could not reach as a clearing", async () => {

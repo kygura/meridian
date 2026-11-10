@@ -17,7 +17,7 @@ import { getPlaceNews } from "./placeNews.js";
 import { readRotation, stateOf } from "./rotation.js";
 import { getCitySeasonality } from "./seasonality.js";
 import { readSolverDoc, updateSolverDoc } from "./solverStore.js";
-import { acceptPlan, activePlan, prepareSolve, priorPresence, runSolve } from "./solverService.js";
+import { acceptPlan, activePlan, ownerVisaConstraints, prepareSolve, priorPresence, runSolve } from "./solverService.js";
 import { addDays, dueReminders, effectiveStatus, formatShortDate, hasDates, orderStays, todayIso, type RotationStay } from "../../src/lib/rotation.js";
 import { addMonthsToDate, evaluatePlan, planOf } from "../../src/lib/solver/engine.js";
 import { advisoriesForCountry } from "./phenomena.js";
@@ -198,7 +198,9 @@ export async function runReplan(opts: { now?: Date; force?: boolean; deps?: Repl
   const committed = rot.stays.filter((x) => x.status !== "idea" && hasDates(x));
   const prior = await priorPresence(rot.stays, today);
   const all = watchedStays(committed, today, 100);
-  for (const sh of visaShifts(all, prior, doc.settings.constraints.schengen, doc.settings.constraints.countryRules, today)) readings.push({ shift: sh, checked: true });
+  // With a passport set, the visa module's limits for it, as the solver uses them (ADR 0012).
+  const vk = (await ownerVisaConstraints(doc.settings.constraints, [...all.map((x) => x.country ?? ""), ...prior.map((x) => x.country)], today)).constraints;
+  for (const sh of visaShifts(all, prior, vk.schengen, vk.countryRules, today)) readings.push({ shift: sh, checked: true });
   zero("visa:*");
 
   // Hysteresis. Shifts seen before but missing now count as magnitude 0, if their source was checked.

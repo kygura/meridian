@@ -6,6 +6,7 @@ import { loadCities } from "./cities";
 import { putStay, readRotation } from "./rotation";
 import { acceptPlan, prepareSolve, priorPresence, uncovered } from "./solverService";
 import { DEFAULT_SOLVER_SETTINGS } from "../../src/lib/solver/settings";
+import { putVisaSettings } from "./visaStore";
 
 const journeys = vi.hoisted(() => ({ list: [] as unknown[] }));
 vi.mock("./journal", async (orig) => ({ ...(await orig<typeof import("./journal")>()), listJourneys: async () => journeys.list }));
@@ -26,6 +27,33 @@ describe("solver service", () => {
   afterEach(() => {
     rmSync(TMP, { recursive: true, force: true });
     delete process.env.DATA_DIR;
+  });
+
+  it("solves with the owner's passport: per-passport limits, Schengen buffers added, and says what it checked", async () => {
+    await putStay("lis", { place: LIS, kind: "base", status: "booked", start: "2026-11-01", end: "2027-01-01" } as never, undefined);
+    const settings = { ...DEFAULT_SOLVER_SETTINGS, pool: [{ cityId: "lisbon-portugal", kind: "base" as const }, { cityId: "porto-portugal", kind: "base" as const }, { cityId: "chiang-mai-thailand", kind: "base" as const }] };
+    const before = await prepareSolve({ settings }, "2027-01-01");
+    if ("error" in before) throw new Error(before.error);
+    expect(before.input.constraints.visa).toBeNull();
+    expect(before.notes.join(" ")).toMatch(/No passport set/);
+
+    await putVisaSettings({ passports: [{ country: "US" }], residency: null, taxWatch: [] });
+    const p = await prepareSolve({ settings }, "2027-01-01");
+    if ("error" in p) throw new Error(p.error);
+    const k = p.input.constraints;
+    expect(k.schengen).toBe(true);
+    expect(k.countryRules.find((r) => r.country === "Thailand")).toMatchObject({ maxDaysPerEntry: 30, origin: "visa" });
+    expect(k.visa!.checked[0]).toMatch(/United States passport/);
+    // No base outside Schengen near Lisbon and Porto: the visa module adds buffers to the pool, and says so.
+    const added = p.input.candidates.filter((c) => c.inPool && !settings.pool.some((x) => x.cityId === c.place.cityId));
+    expect(added.length).toBeGreaterThan(0);
+    expect(p.notes.some((n) => /as a Schengen buffer/.test(n))).toBe(true);
+
+    await putVisaSettings({ passports: [{ country: "PT" }], residency: null, taxWatch: [] });
+    const eu = await prepareSolve({ settings }, "2027-01-01");
+    if ("error" in eu) throw new Error(eu.error);
+    expect(eu.input.constraints.schengen).toBe(false);
+    expect(eu.notes.some((n) => /Schengen buffer/.test(n))).toBe(false);
   });
 
   it("uncovered keeps the nights no other range holds", () => {

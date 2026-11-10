@@ -92,6 +92,19 @@ export interface CountryRule {
   maxDaysIn?: { days: number; windowDays: number };
   /** Where the owner got the rule. */
   note?: string;
+  /** "owner": typed in Rules (it overrides the data for its country); "visa": from the visa module for the owner's passports (ADR 0012). */
+  origin?: "owner" | "visa";
+}
+
+/** What the visa module (ADR 0012) checked for the owner's passports, carried to the proposals. */
+export interface VisaCheckInfo {
+  passports: string[];
+  /** One line each, shown on every proposal: what was checked and against which source. */
+  checked: string[];
+  /** Countries (city dataset spelling) the passports can enter without applying first; border runs go only there. */
+  arriveOk: string[];
+  /** Countries needing a visa or e-visa before arrival, with the stay note to show. */
+  visaFirst: { country: string; note: string }[];
 }
 
 export interface Constraints {
@@ -107,6 +120,8 @@ export interface Constraints {
   minHealthUhc: number | null;
   /** A month the owner marked "avoid" can never be filled by that place. */
   avoidIsHard: boolean;
+  /** Set when the owner's passports are known: the visa module's limits are in countryRules (origin "visa"). */
+  visa?: VisaCheckInfo | null;
 }
 
 export type Preference =
@@ -219,6 +234,8 @@ export interface VisaReport {
   countryRules: { country: string; maxUsed: number; limit: string }[];
   /** Rules whose country matches no place in the pool or past presence: never applied. */
   unmatchedRules?: string[];
+  /** What the hard checks covered, one line each (ADR 0012): the passports, sources and gaps. */
+  checked?: string[];
   notes: string[];
 }
 
