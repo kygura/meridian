@@ -12,6 +12,7 @@ import { setWatchPrefill } from "../../lib/watchPrefill";
 import { filterNewsByRegion, formatNewsTime, newsForCountry, newsPlace, regionFromContinent, regionLabel } from "../../lib/newsRegions";
 import {
   Badge,
+  ComfortBreakdown,
   Button,
   EmptyState,
   ErrorState,
@@ -269,9 +270,11 @@ function BestMonths({ cityId }: { cityId: string }) {
             {MONTH_NAMES[shown]}: {comfortWord(m.score).toLowerCase()}.{" "}
             <span className="num">
               {Math.round(m.tempC)}°C, {Math.round(m.precipMm)} mm rain
+              {typeof m.pm25 === "number" ? `, PM2.5 ${Math.round(m.pm25)} µg/m³` : ""}
             </span>
           </p>
         ) : null}
+        {m ? <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} /> : null}
       </>
     );
   }

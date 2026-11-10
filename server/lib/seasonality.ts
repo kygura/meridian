@@ -42,7 +42,7 @@ export interface SeasonalityDataset {
 export interface RegionAggregate {
   region: string;
   /** Means over the country's covered cities. tempC to 1dp, precipMm rounded. */
-  months: Array<{ score: number; tempC: number; precipMm: number }>;
+  months: Array<{ score: number; tempC: number; precipMm: number; pm25?: number }>;
 }
 
 // ── Comfort score formula ───────────────────────────────────────────────
@@ -514,8 +514,11 @@ export function getRegionAggregates(): RegionAggregate[] {
   for (const [region, lists] of byCountry) {
     const months = Array.from({ length: 12 }, (_, i) => {
       const ms = lists.map((l) => l[i]).filter((m): m is MonthSeasonality => !!m);
+      // PM2.5 is the mean over the cities that have it: a country with none reports none, never zero.
+      const air = ms.filter((m) => typeof m.pm25 === "number").map((m) => m.pm25 as number);
       return {
         score: Math.round(mean(ms.map((m) => m.score))),
+        ...(air.length ? { pm25: Math.round(mean(air) * 10) / 10 } : {}),
         tempC: Math.round(mean(ms.map((m) => m.tempC)) * 10) / 10,
         precipMm: Math.round(mean(ms.map((m) => m.precipMm))),
       };

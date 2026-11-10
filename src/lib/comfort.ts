@@ -109,3 +109,26 @@ export function monthOfWeek(week: number): number {
 export function weekOfDayOfYear(doy: number): number {
   return Math.min(52, Math.floor((doy - 1) / 7) + 1);
 }
+
+export interface BreakdownRow {
+  key: "temp" | "rain" | "air";
+  label: string;
+  /** Points added (temperature) or taken off (rain, air), rounded. */
+  points: number;
+  /** "+71", "−17", "0", or "n/a" when air quality is unknown. */
+  text: string;
+  /** What the points come from: "22°C", "140 mm a month", "PM2.5 42 µg/m³ (Poor air)". */
+  note: string;
+}
+
+/** The three terms of the Comfort Index as display rows, for every place the index is explained. */
+export function breakdownRows(b: ComfortBreakdown, tempC: number, precipMm: number, pm25?: number | null, rainUnit = "mm a month"): BreakdownRow[] {
+  const take = (v: number) => (Math.round(v) === 0 ? "0" : `−${Math.round(v)}`);
+  return [
+    { key: "temp", label: "Temperature", points: Math.round(b.temp), text: `+${Math.round(b.temp)}`, note: `${Math.round(tempC)}°C` },
+    { key: "rain", label: "Rain", points: -Math.round(b.rain), text: take(b.rain), note: `${Math.round(precipMm)} ${rainUnit}` },
+    b.airKnown
+      ? { key: "air", label: "Air", points: -Math.round(b.air), text: take(b.air), note: `PM2.5 ${Math.round(pm25 as number)} µg/m³ (${AIR_BAND_LABEL[airBand(pm25 as number)]})` }
+      : { key: "air", label: "Air", points: 0, text: "n/a", note: "No air-quality data for this place yet, so nothing is taken off" },
+  ];
+}

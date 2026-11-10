@@ -3,6 +3,7 @@ import {
   AIR_BAND_LABEL,
   airBand,
   airPenalty,
+  breakdownRows,
   comfortBreakdown,
   comfortScore,
   monthOfWeek,
@@ -46,6 +47,20 @@ describe("comfortBreakdown", () => {
     // 50 mm in a week is ~217 mm over an average month.
     const w = weeklyComfortBreakdown(22, 50);
     expect(w.rain).toBeCloseTo((35 * (50 * (365.25 / 12 / 7) - 30)) / 220, 5);
+  });
+});
+
+describe("breakdownRows", () => {
+  it("lists temperature, rain and air with the points each is worth", () => {
+    const rows = breakdownRows(comfortBreakdown(30, 140, 42.5), 30, 140, 42.5);
+    expect(rows.map((r) => r.key)).toEqual(["temp", "rain", "air"]);
+    expect(rows.map((r) => r.text)).toEqual(["+71", "−18", "−20"]);
+    expect(rows[2]!.note).toBe("PM2.5 43 µg/m³ (Poor air)");
+  });
+  it("says so when air quality is unknown instead of showing a clean result", () => {
+    const rows = breakdownRows(comfortBreakdown(22, 10), 22, 10);
+    expect(rows[2]).toMatchObject({ text: "n/a", points: 0 });
+    expect(rows[2]!.note).toContain("No air-quality data");
   });
 });
 
