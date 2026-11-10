@@ -15,6 +15,7 @@
     "build:data": "bun scripts/build-airports.mjs",
     "build:place-data": "tsx scripts/build-place-data.ts",
     "build:coast": "tsx scripts/build-city-coast.ts",
+    "build:visa": "tsx scripts/build-visa-data.ts",
     "build:seasonality": "bun scripts/build-seasonality.mjs",
     "backfill:climate": "tsx scripts/backfill-climate.ts",
     "build:vercel": "npm run build && node scripts/build-vercel.mjs"
