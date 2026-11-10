@@ -8,11 +8,11 @@ Live: https://meridian-mocha-iota.vercel.app
 
 | Screen | What it does |
 |---|---|
-| **Map** | Flat map of ~5,900 cities matched to their airports, labelled in English, in each city's own language and script (東京, Москва, القاهرة), or both (Layers › Cities). Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain or greenery for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
+| **Map** | Flat map of ~5,900 cities matched to their airports, labelled in English, in each city's own language and script (東京, Москва, القاهرة), or both (Layers › Cities). Click a city for scores, climate, and a neutral briefing of what's happening there, written by Claude Haiku from the headlines (no headlines printed, numbered sources at the bottom; rule-based without an Anthropic key). The briefing leads with problems detected from the country's headlines (e.g. repeated deadly rail crashes followed by fraud probes and protests reads as a rail-safety pattern; also air, roads, power, water, outbreaks, crime, strikes, corruption). Layers tint countries by comfort, temperature, rain, greenery or air quality for any month, search cities by conditions ("warm dry", "lush", "snow"), colour and filter cities by safety, quality of life, internet, cost and crowds, and mark events, conflicts, seasonal hazards and news alerts. |
 | **Trips** | Planned trips as seasonal routes: each stop sits in the months it works best, with its comfort and events, and you pick a year only when you want dates and flights. With a year, a trip takes an itinerary: dates and nights per stop, where you're staying, activities, a day-by-day view with date conflicts flagged, and legs by flight, train, bus, ferry or road. "Book on…" opens the real search on Google Flights, Skyscanner, Kayak, Rome2Rio, Booking.com, Airbnb or Flatio with the route, dates and travellers filled in; you record the booking back on the trip. Export the trip to your calendar (.ics file or a private feed) and send a read-only share link. Plus past journeys from the journal. |
-| **Plan › When to go** | Month-by-month comfort index per city or region, from 2015–2024 climate data. |
+| **Plan › When to go** | Month-by-month (or season, or week-by-week) comfort index per city or region, from 2015–2024 climate data. The index is temperature comfort minus rain minus air quality (monthly PM2.5, 2023–2025); each cell's popover shows the three parts, and Air is a metric of its own. Weeks need a city's weekly normals; others show their month flat, labelled. |
 | **Plan › Live & love** | Every city by quality of life (human development, life satisfaction, safety, air) against beauty (natural setting and built character), with a "best of both" ranking. The city panel shows each score's parts and the facts behind them. |
-| **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. |
+| **Plan › Repeat a trip** | Ranks city × month windows by how closely they match a past journey, with sliders to shift temperature, budget, crowds and month. "Match by Week" (under When) ranks city × week-of-year windows for cities with weekly normals and falls back to months for the rest. |
 | **Plan › Watches** | Saved Repeat-a-trip searches, checked daily, that alert when a match comes into booking range at a good price. |
 | **Plan › Flights** | Flight search and test bookings in Duffel's test mode (mock offers without a key), labelled as test throughout. Nothing is ticketed or charged; results link out to the same search on real booking sites. |
 | **Inbox** | Review queue for imports (past bookings, photo locations, Google location history, booking emails) before they become journal entries. Photos never leave the device; only time, place and a hash are sent. |
@@ -65,6 +65,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `npm test` | Vitest. Set `TEST_DATABASE_URL` to also run the Postgres tests against a scratch database |
 | `npm run build:data` | Rebuild `data/airports.json` (needs Bun) |
 | `npm run build:seasonality` | Rebuild `data/seasonality.json` from Open-Meteo (needs Bun) |
+| `npm run backfill:climate` | Fill `data/climate-normals.json` (monthly PM2.5, weekly normals) cell by cell within Open-Meteo's free-tier limits; resumable. `-- --wait` sleeps through limits, `-- --dry-run` prints the plan |
 
 ## Configuration
 
@@ -84,6 +85,8 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `NEWS_BRIEF_MODEL` | Model for the city news briefing. Default `claude-haiku-5-5` |
 | `DUFFEL_API_KEY`, `SERPAPI_KEY` | Real flight offers and prices instead of mock ones |
 | `ALERT_WEBHOOK_URL` | Where watch alerts are POSTed |
+| `CLIMATE_JOB`, `CLIMATE_JOB_HOUR_UTC`, `CLIMATE_JOB_BUDGET` | The nightly climate backfill: `CLIMATE_JOB=off` disables it, it runs at the given UTC hour (default 3) and spends up to the budget of weighted Open-Meteo calls (default 2500, about 29 cells) |
+| `OPEN_METEO_MINUTELY_BUDGET`, `OPEN_METEO_HOURLY_BUDGET`, `OPEN_METEO_DAILY_BUDGET` | Our own ceilings on weighted Open-Meteo calls, kept under the free tier's 600 / 5,000 / 10,000. Defaults 400 / 3500 / 7000 |
 | `VITE_API_BASE_URL` | Only if the frontend is served separately from the API |
 
 ## Deploying
@@ -114,7 +117,6 @@ Open decisions carried over from the old wiki:
 - **Rate limits are per server process.** On Vercel each warm instance counts on its own and forgets on a cold start, so the limits on Ask, news and flight search slow abuse down but are not a hard budget (ADR 0009). The sign-in lockout is stored and does not have this gap.
 - **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
 - **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
-- **Repeat a trip works by month**, not by week.
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
