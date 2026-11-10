@@ -18,6 +18,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | **Inbox** | Review queue for imports (past bookings, photo locations, Google location history, booking emails) before they become journal entries. Photos never leave the device; only time, place and a hash are sent. |
 | **World** | Travel news and country stats by region. |
 | **Ask** | Research assistant that searches places, pulls images and checks seasonality. Runs on Claude (pick Opus 5.5, Sonnet 5.5 or Haiku 5.5 in the panel) with an Anthropic key, or a deterministic mock without one. |
+| **Rotation** | Where you live next, separate from trips: a 12–18 month calendar of bases and pass-throughs with no trip home. A timeline coloured by fit (your own peak, shoulder and avoid months for a place first, otherwise the comfort index), gaps and overlaps flagged, the route on the globe, moves between stays with flight or ground time and cost estimates, totals (months covered, cost per month, moves per year), what's next (days left here, next move), and book-by dates from lead times you can set per place, with Flatio, Airbnb monthly and Booking.com searches filled in. Add stays from a planned trip or a past journey's stop. Owner only. |
 | **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
@@ -118,3 +119,4 @@ Open decisions carried over from the old wiki:
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
+- **Rotation reminders are computed, not sent.** `GET /api/rotation/reminders` and `rotationRemindersDue()` say which stays are due for booking; nothing sends them yet, and nothing proposes a rotation for you (ADR 0011 lists the hooks for a notifier, a solver, visa day counting and a Notion import of your windows).

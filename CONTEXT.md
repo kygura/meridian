@@ -290,3 +290,60 @@ The per-client (and overall) cap on calls to a Paid route. Over it, the answer i
 the seconds to wait.
 _Avoid_: throttle, quota (quota is the provider's)
 
+
+### Rotation (ADR 0011)
+
+**Rotation**:
+Where the Owner lives next: a rolling 12–18 month calendar of Rotation Stays, with no
+return leg and an optional home airport. Not a Trip, which leaves a departure and comes back.
+_Avoid_: itinerary, long trip
+
+**Rotation Stay**:
+One place held in a Rotation: a base or a pass-through, with move-in and move-out days or a
+Month Window, minimum and maximum nights, budget and rent per month, lodging, notes and a
+status (idea, planned, booked, current, done). "Stay" alone still means a trip stop's lodging.
+_Avoid_: stop (that's a Journey's), node (that's a Trip's)
+
+**Base**:
+A Rotation Stay of weeks or months, lived in.
+
+**Pass-through**:
+A Rotation Stay of a few days in a hub or on the way, such as Bangkok between two bases.
+
+**Month Window**:
+The months a Rotation Stay should fall in (YYYY-MM to YYYY-MM) before its dates are fixed.
+Gaps and overlaps against it are tentative.
+
+**Locked**:
+A Rotation Stay a re-planning solver must keep where it is.
+
+**Personal Window**:
+The Owner's own peak, shoulder or avoid months for a place, with a reason ("burning season,
+air quality"). Overrides the Comfort Index wherever a Rotation is scored or shown.
+_Avoid_: Window (that's Replay's City × month), season
+
+**Place Profile**:
+What the Owner keeps about one place across stays: its Personal Windows and Lead Time.
+
+**Fit**:
+How well a Rotation Stay's months suit its place: great, good, fair, poor, avoid or unknown,
+from Personal Windows first and the Comfort Index where there are none.
+
+**Current Location**:
+The committed Rotation Stay containing today. On a moving day, the one moved into.
+
+**Move**:
+Travel between two consecutive committed Rotation Stays, estimated like a Trip Leg.
+_Avoid_: leg (that's a Trip's), segment (that's a Journey's)
+
+**Lead Time**:
+How many weeks before moving in a stay should be booked: a default by type and length,
+overridden per place or per stay.
+
+**Book-by Date**:
+Move-in day (or the Month Window's first day) minus the Lead Time. A Reminder is due from
+two weeks before it.
+
+**Stay Template**:
+A Rotation Stay made from a past Journey's stop: place, type and length, and its real cost
+scaled to a month, with no dates.
