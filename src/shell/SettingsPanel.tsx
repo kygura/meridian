@@ -8,6 +8,7 @@ import { AlertSettingsSection } from "./AlertSettings";
 import { ReplanSettingsSection } from "./ReplanSettings";
 import { NotionSection } from "./NotionSettings";
 import { GmailSection } from "./GmailSettings";
+import { VisaSettingsSection } from "./VisaSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -97,6 +98,7 @@ export function SettingsPanel() {
           <UnlockCard compact title="Sign in" />
         )}
       </section>
+      <VisaSettingsSection />
       <AlertSettingsSection />
       <ReplanSettingsSection />
     </div>

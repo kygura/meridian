@@ -20,6 +20,7 @@ const DOCUMENTS = [
   "bookings.json",
   "shortlist.json",
   "trips.json",
+  "visa.json",
 ];
 
 const dataDir = process.env.DATA_DIR ?? join(process.cwd(), "data");

@@ -23,6 +23,7 @@ import jobsRoutes from "./routes/jobs.js";
 import sharedRoutes from "./routes/shared.js";
 import rotationRoutes from "./routes/rotation.js";
 import solverRoutes from "./routes/solver.js";
+import visaRoutes from "./routes/visa.js";
 import notionRoutes from "./routes/notion.js";
 import gmailRoutes from "./routes/gmail.js";
 // Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
@@ -69,6 +70,8 @@ app.route("/api/auth", authRoutes);
 app.route("/api/rotation", rotationRoutes);
 // Owner-only (ADR 0015).
 app.route("/api/solver", solverRoutes);
+// Owner-only (ADR 0012).
+app.route("/api/visa", visaRoutes);
 // Owner-only (ADR 0017).
 app.route("/api/notion", notionRoutes);
 app.route("/api/gmail", gmailRoutes);

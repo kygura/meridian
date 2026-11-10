@@ -20,6 +20,7 @@ data/daily-jobs.json
 data/notion.json
 data/gmail.json
 data/solver.json
+data/visa.json
 data/auth.json
 .env
 .env.local

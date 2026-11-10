@@ -177,6 +177,7 @@ export const GATED_PREFIXES = [
   "/api/jobs",
   "/api/rotation",
   "/api/solver",
+  "/api/visa",
   "/api/notion",
   "/api/gmail",
 ] as const;
