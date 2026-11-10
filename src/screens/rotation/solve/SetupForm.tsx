@@ -3,6 +3,7 @@ import { Button, Chip, CitySearch, Disclosure, Field, IconButton, Input, Segment
 import { IconPlus, IconTrash } from "../../../ui/icons";
 import { useMeridianStore } from "../../../store";
 import { listJourneys } from "../../../lib/journalApi";
+import { getCandidatePool } from "../../../lib/bridgesApi";
 import { preferenceLabel, regionOptions } from "../../../lib/solver/prefs";
 import type { PoolEntry, SolverSettings } from "../../../lib/solver/settings";
 import type { Preference, Weights } from "../../../lib/solver/types";
@@ -64,6 +65,7 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
   const shortlist = useMeridianStore((s) => s.shortlist);
   const cityById = useMemo(() => new Map(cities.map((c) => [c.id, c])), [cities]);
   const [journeyIds, setJourneyIds] = useState<string[] | null>(null);
+  const [notionIds, setNotionIds] = useState<string[]>([]);
   const set = (patch: Partial<SolverSettings>) => onChange({ ...settings, ...patch });
   const inPool = new Set(settings.pool.map((p) => p.cityId));
 
@@ -72,6 +74,10 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
     listJourneys()
       .then((js) => live && setJourneyIds([...new Set(js.flatMap((j) => j.stops.map((s) => s.cityId)))]))
       .catch(() => live && setJourneyIds([]));
+    // The Candidate Pool from Notion's Location Research (ADR 0017); empty until an import has run.
+    getCandidatePool()
+      .then((r) => live && setNotionIds([...new Set(r.pool.map((p) => p.cityId))]))
+      .catch(() => live && setNotionIds([]));
     return () => {
       live = false;
     };
@@ -81,6 +87,7 @@ export function SetupForm({ settings, onChange, stays, places }: SetupFormProps)
     { label: "Your rotation", ids: [...new Set([...stays.map((s) => s.place.cityId), ...places.map((p) => p.cityId)])] },
     { label: "Shortlist", ids: shortlist.map((s) => s.cityId) },
     { label: "Past journeys", ids: journeyIds ?? [] },
+    { label: "Notion research", ids: notionIds },
   ];
 
   const addCity = (cityId: string) => {

@@ -9,7 +9,7 @@
 // own scheduler does the same work (server/lib/scheduler.ts).
 
 import { Hono, type Context } from "hono";
-import { requireToken } from "../middleware/auth.js";
+import { ownerIdentity, requireToken } from "../middleware/auth.js";
 import { dailyJobsState, listDailyJobs, registerDailyJob, runDailyJobs } from "../lib/dailyJobs.js";
 import { executeReplay } from "../lib/replayService.js";
 import { runWatches } from "../lib/watches.js";
@@ -36,7 +36,13 @@ const runDaily = async (c: Context) => {
     return c.json({ error: "run_failed", message: "Could not run the daily jobs." }, 500);
   }
 };
-jobs.get("/daily", runDaily);
+// A GET that changes state must not ride on the session cookie (a link from another site
+// would carry it under SameSite=Lax), as for GET /api/watches/run: cron uses the Bearer token.
+jobs.get("/daily", async (c) => {
+  const who = await ownerIdentity(c);
+  if (who?.method === "session") return c.json({ error: "bearer_required", message: "Run the daily jobs with POST, or with the Bearer token." }, 403);
+  return runDaily(c);
+});
 jobs.post("/daily", runDaily);
 
 export default jobs;

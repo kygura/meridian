@@ -27,16 +27,20 @@ export const PRIVATE_API_PREFIXES = [
   "/api/notifications",
   "/api/shortlist",
   "/api/replay",
+  "/api/rotation",
+  "/api/solver",
+  "/api/notion",
+  "/api/gmail",
 ] as const;
 
 /**
- * GETs that must not be answered from a saved copy: they do work or stream, or, for
+ * GETs that must not be answered from a saved copy: they do work (job runs, the Gmail OAuth callback) or stream, or, for
  * /api/trips, feed a sync. Sign-in state (/api/auth) and share/calendar links (/api/shared, which carry
  * their own token and show trip content) are never kept either. Trips are already kept in the browser (localStorage) and merged
  * three ways against the server (lib/tripSync); an old server snapshot served as if it were
  * current would make that merge undo edits made since.
  */
-const NEVER_CACHE = [/^\/api\/trips(\/|$)/, /^\/api\/agent(\/|$)/, /^\/api\/health$/, /^\/api\/auth(\/|$)/, /^\/api\/shared(\/|$)/, /^\/api\/jobs(\/|$)/, /\/run$/, /^\/api\/notifications\/test$/];
+const NEVER_CACHE = [/^\/api\/trips(\/|$)/, /^\/api\/agent(\/|$)/, /^\/api\/health$/, /^\/api\/auth(\/|$)/, /^\/api\/shared(\/|$)/, /^\/api\/jobs(\/|$)/, /\/run$/, /^\/api\/notifications\/test$/, /^\/api\/gmail\/callback$/];
 
 /** Hosts the map loads from besides this one. */
 export const MAP_HOSTS = ["d2ad6b4ur7yvpq.cloudfront.net"] as const;

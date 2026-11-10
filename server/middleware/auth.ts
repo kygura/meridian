@@ -158,7 +158,19 @@ export const requireOwnerForWrites: MiddlewareHandler = async (c, next) =>
 
 /** Route prefixes that hold personal data. /api/bookings is gated too, apart from the keyless
  *  mock search (see server/middleware/guards.ts; ADR 0009 replaces ruling R2). */
-export const GATED_PREFIXES = ["/api/journal", "/api/replay", "/api/import", "/api/watches", "/api/trips"] as const;
+export const GATED_PREFIXES = [
+  "/api/journal",
+  "/api/replay",
+  "/api/import",
+  "/api/watches",
+  "/api/trips",
+  "/api/notifications",
+  "/api/jobs",
+  "/api/rotation",
+  "/api/solver",
+  "/api/notion",
+  "/api/gmail",
+] as const;
 
 /** Gate each prefix itself and everything under it. Call before mounting routes. */
 export function gateRoutes(app: Hono, prefixes: readonly string[] = GATED_PREFIXES): void {

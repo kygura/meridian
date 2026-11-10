@@ -231,4 +231,20 @@ describe("sync", () => {
     const bad = await runGmailDaily({ fetch: async () => new Response("{}", { status: 500 }), now: () => NOW });
     expect(bad).toHaveProperty("error");
   });
+
+  it("the daily job tells the owner through the notifier about new bookings and a lost grant", async () => {
+    const sent: Array<{ kind: string; title: string; dedupeKey: string; url?: string }> = [];
+    const notify = async (n: { kind: string; title: string; dedupeKey: string; url?: string }) => void sent.push(n);
+    const g = fakeGoogle();
+    await connect(g);
+    const out = (await runGmailDaily({ fetch: g.fetchMock, now: () => NOW, fromYear: 2026, notify })) as { added: number };
+    expect(out.added).toBeGreaterThan(0);
+    expect(sent).toEqual([expect.objectContaining({ kind: "gmail", url: "/#/inbox", dedupeKey: `gmail-added:${NOW.toISOString().slice(0, 10)}` })]);
+
+    sent.length = 0;
+    const revoked = fakeGoogle({ refreshError: true });
+    await connect(revoked);
+    expect(await runGmailDaily({ fetch: revoked.fetchMock, now: () => NOW, notify })).toHaveProperty("error");
+    expect(sent).toEqual([expect.objectContaining({ kind: "gmail", title: "Gmail needs reconnecting", dedupeKey: `gmail-reconnect:${NOW.toISOString().slice(0, 10)}` })]);
+  });
 });

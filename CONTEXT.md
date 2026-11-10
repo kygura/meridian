@@ -456,7 +456,7 @@ Gmail in the Inbox.
 **Candidate Pool**:
 The Owner's Location Research entries from Notion, matched to cities: the notes, monthly budget
 range, stay range and the Owner's own scores. The places a Rotation could use; they are not
-stays and carry no dates.
+stays and carry no dates. The Rotation Solver offers them as Pool places.
 _Avoid_: shortlist (that's the saved places on the map)
 
 **Import Preview**:

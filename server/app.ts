@@ -25,6 +25,8 @@ import rotationRoutes from "./routes/rotation.js";
 import solverRoutes from "./routes/solver.js";
 import notionRoutes from "./routes/notion.js";
 import gmailRoutes from "./routes/gmail.js";
+// Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
+import "./lib/bridgesJob.js";
 import { gateRoutes } from "./middleware/auth.js";
 import { installGuards } from "./middleware/guards.js";
 import authRoutes from "./routes/auth.js";
@@ -41,7 +43,8 @@ export const app = new Hono();
 installGuards(app);
 
 // Owner-gate personal-data prefixes (spec-journal D1/R1) — each prefix itself and
-// everything under it, including routes later tasks mount.
+// everything under it, including routes later tasks mount. Rotation, solver, Notion,
+// Gmail, notifications and jobs also gate inside their own routers.
 gateRoutes(app);
 
 // Mount API routes
@@ -62,11 +65,11 @@ app.route("/api/livability", livabilityRoutes);
 app.route("/api/notifications", notificationsRoutes);
 app.route("/api/jobs", jobsRoutes);
 app.route("/api/auth", authRoutes);
-// Owner-only; gated inside the router (ADR 0011).
+// Owner-only (ADR 0011).
 app.route("/api/rotation", rotationRoutes);
-// Owner-only; gated inside the router (ADR 0015).
+// Owner-only (ADR 0015).
 app.route("/api/solver", solverRoutes);
-// Owner-only; gated inside the router (ADR 0017).
+// Owner-only (ADR 0017).
 app.route("/api/notion", notionRoutes);
 app.route("/api/gmail", gmailRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).

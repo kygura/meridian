@@ -59,6 +59,8 @@ export const previewNotion = (source: NotionSource): Promise<{ plan: NotionPlan 
 export const applyNotion = (source: NotionSource, digest: string): Promise<{ summary: NotionPlan["summary"]; review: NotionReviewItem[] }> =>
   jfetch("/api/notion/apply", { method: "POST", body: JSON.stringify({ source, digest }) });
 export const resolveNotionReview = (key: string, cityIds: string[]): Promise<{ ok: true }> => jfetch("/api/notion/review/resolve", { method: "POST", body: JSON.stringify({ key, cityIds }) });
+/** Location Research entries matched to cities (the Candidate Pool); the solver offers them as pool places. */
+export const getCandidatePool = (): Promise<{ pool: { cityId: string; cityName: string }[] }> => jfetch("/api/notion/pool");
 export const writeBackNotion = (): Promise<{ created: number; updated: number; skipped: number }> => jfetch("/api/notion/write-back", { method: "POST" });
 
 // ── Gmail ────────────────────────────────────────────────────────────

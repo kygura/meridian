@@ -18,7 +18,7 @@ describe("routeFor", () => {
   });
 
   it("keeps the owner's data apart from public data", () => {
-    for (const p of ["/api/journal", "/api/journal/j1", "/api/bookings", "/api/watches/alerts", "/api/import/queue", "/api/notifications", "/api/shortlist"]) {
+    for (const p of ["/api/journal", "/api/journal/j1", "/api/bookings", "/api/watches/alerts", "/api/import/queue", "/api/notifications", "/api/shortlist", "/api/rotation", "/api/rotation/reminders", "/api/solver/proposals", "/api/notion/pool", "/api/gmail/status"]) {
       expect(get(`https://m.example${p}`), p).toBe("private");
     }
     for (const p of ["/api/cities?limit=10000", "/api/seasonality/cities", "/api/livability", "/api/news", "/api/metrics/city/x", "/api/overlays/events?cityIds=a"]) {
@@ -28,7 +28,7 @@ describe("routeFor", () => {
   });
 
   it("never caches trips (they sync), streams, jobs or anything that does work", () => {
-    for (const p of ["/api/trips", "/api/trips/t1", "/api/agent/models", "/api/health", "/api/jobs/daily", "/api/watches/run", "/api/notifications/test", "/api/auth/session", "/api/shared/abc123"]) {
+    for (const p of ["/api/trips", "/api/trips/t1", "/api/agent/models", "/api/health", "/api/jobs/daily", "/api/watches/run", "/api/notifications/test", "/api/auth/session", "/api/shared/abc123", "/api/gmail/callback"]) {
       expect(get(`https://m.example${p}`), p).toBe("pass");
     }
   });

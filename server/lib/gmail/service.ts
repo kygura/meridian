@@ -9,6 +9,7 @@
 import { addAll, flagCancelled } from "../imports.js";
 import { parseEmailUpload } from "../ingest/jsonld.js";
 import { createJsonStore } from "../jsonStore.js";
+import { notify, type NotifyInput } from "../notifier.js";
 import { decryptToken, encryptToken, tokenKeyConfigured } from "./crypto.js";
 import { GMAIL_SCOPE, GoogleError, authorizationUrl, createGmailApi, exchangeCode, googleCredentials, newPkce, refreshAccessToken, revokeToken, type FetchLike, type GmailApi } from "./google.js";
 
@@ -67,6 +68,8 @@ export class GmailSetupError extends Error {
 export interface GmailDeps {
   fetch?: FetchLike;
   now?: () => Date;
+  /** Test seam for the daily job's Notices. */
+  notify?: (n: NotifyInput) => Promise<unknown>;
   /** Test seam for the Gmail calls. */
   api?: (accessToken: string) => GmailApi;
   fromYear?: number;
@@ -332,10 +335,25 @@ export async function syncGmail(deps: GmailDeps = {}): Promise<LastSync> {
 export async function runGmailDaily(deps: GmailDeps = {}): Promise<Record<string, unknown>> {
   if (missingConfig().length) return { skipped: "not configured" };
   if (!(await store.read()).connection) return { skipped: "not connected" };
+  const day = (deps.now?.() ?? new Date()).toISOString().slice(0, 10);
+  // Daily results reach the owner through the one notifier (ADR 0016); a channel failing never fails the sync.
+  const tell = (n: NotifyInput) => (deps.notify ?? notify)(n).catch((e) => console.warn("[gmail] notice failed:", e instanceof Error ? e.message : e));
   try {
     const r = await syncGmail(deps);
+    if (r.added > 0) {
+      await tell({
+        kind: "gmail",
+        title: `${r.added} booking${r.added === 1 ? "" : "s"} from Gmail to review`,
+        body: "New confirmations found in your mail are waiting in the Inbox.",
+        url: "/#/inbox",
+        dedupeKey: `gmail-added:${day}`,
+      });
+    }
     return { mode: r.mode, messages: r.messages, added: r.added, duplicates: r.duplicates, complete: r.complete };
   } catch (err) {
+    if (err instanceof GmailSetupError && err.status === 409) {
+      await tell({ kind: "gmail", title: "Gmail needs reconnecting", body: err.message, url: "/#/inbox", dedupeKey: `gmail-reconnect:${day}` });
+    }
     return { error: err instanceof Error ? err.message : "failed" };
   }
 }
