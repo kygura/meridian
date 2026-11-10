@@ -1,7 +1,11 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import {
+  climateCoverage,
+  getAirWindow,
   getAllCitySeasonality,
+  getCityWeeks,
+  type WeekSeasonality,
   getRegionAggregates,
   getSeasonalityWindow,
   peekCitySeasonality,
@@ -47,7 +51,30 @@ seasonality.get("/regions", (c) => {
  */
 seasonality.get("/cities", (c) => {
   c.header("Cache-Control", "public, max-age=3600");
-  return c.json({ cities: getAllCitySeasonality(), window: getSeasonalityWindow() });
+  return c.json({ cities: getAllCitySeasonality(), window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
+});
+
+/**
+ * GET /api/seasonality/coverage - how many cities have monthly, weekly and air-quality normals.
+ */
+seasonality.get("/coverage", (c) => c.json({ ...climateCoverage(), window: getSeasonalityWindow(), airWindow: getAirWindow() || null }));
+
+/**
+ * GET /api/seasonality/weekly?cityIds=a,b - 52 week-of-year normals per city (index 0 = week 1,
+ * `precipMm` per 7 days). Cache-only; null where a city has no weekly profile yet, so the client
+ * falls back to months.
+ */
+seasonality.get("/weekly", (c) => {
+  const ids = (c.req.query("cityIds") ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (ids.length === 0 || ids.length > MAX_BATCH) {
+    return c.json({ error: "Invalid request", details: [{ message: `cityIds must contain 1-${MAX_BATCH} ids` }] }, 400);
+  }
+  const cities: Record<string, WeekSeasonality[] | null> = {};
+  for (const id of ids) cities[id] = getCityWeeks(id) ?? null;
+  return c.json({ cities, window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
 });
 
 /**
@@ -101,7 +128,7 @@ seasonality.get("/", async (c) => {
     cities[id] = result.kind === "hit" ? result.months : null;
   });
 
-  return c.json({ cities, window: getSeasonalityWindow() });
+  return c.json({ cities, window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
 });
 
 /**
