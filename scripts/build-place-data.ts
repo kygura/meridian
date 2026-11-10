@@ -656,8 +656,14 @@ async function main() {
   // ── Wikipedia page views ──
   const gn = await matchGeonames(cities);
   const titles = await wikipediaTitles([...new Set(Object.values(gn))]);
-  const withTitle = cities.filter((c) => gn[c.id] && titles[gn[c.id]!]);
-  const views = await pooled("pageviews", withTitle, (c) => c.id, (c) => pageViews(titles[gn[c.id]!]!), 2);
+  // Wikimedia rate-limits to a few requests a second, so a full run takes hours. PAGEVIEW_MAX caps it to the
+  // most populous N cities (cached articles are always kept; the rest are read on a later run).
+  const pvMax = Number(process.env.PAGEVIEW_MAX ?? Infinity);
+  const withTitle = cities
+    .filter((c) => gn[c.id] && titles[gn[c.id]!])
+    .sort((a, b) => b.population - a.population)
+    .slice(0, pvMax);
+  const views = await pooled("pageviews", withTitle, (c) => c.id, (c) => pageViews(titles[gn[c.id]!]!), 3);
 
   // ── Assemble ──
   const countryOut: Record<string, any> = {};
