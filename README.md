@@ -64,6 +64,7 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest. Set `TEST_DATABASE_URL` to also run the Postgres tests against a scratch database |
 | `npm run build:data` | Rebuild `data/airports.json` (needs Bun) |
+| `npm run build:place-data` | Rebuild `data/country-data.json` and `data/city-data.json` from Eurostat, World Bank, Ookla and Wikipedia (hours; `PAGEVIEW_MAX`, `OOKLA_QUARTER` limit it; cached in `data/cache/realdata`) |
 | `npm run build:seasonality` | Rebuild `data/seasonality.json` from Open-Meteo (needs Bun) |
 
 ## Configuration
@@ -113,7 +114,8 @@ Open decisions carried over from the old wiki:
 
 - **Rate limits are per server process.** On Vercel each warm instance counts on its own and forgets on a cold start, so the limits on Ask, news and flight search slow abuse down but are not a hard budget (ADR 0009). The sign-in lockout is stored and does not have this gap.
 - **Seasonality covers 120 cities up front.** Others are fetched on demand when they show up. There's no nightly backfill.
-- **Crowds is a proxy** built from climate peaks and holidays, not real visitor data.
+- **Crowds are real only in part.** Country arrivals per resident cover most cities; monthly busyness is measured only in Europe (Eurostat nights) and for 920 big cities (Wikipedia views, a weak signal). Elsewhere it falls back to the labelled comfort-curve proxy (ADR 0013).
+- **Cost and rent are mostly country-level.** City-level cost exists for 181 cities and rent for 41 (Eurostat); the rest use the World Bank price level, marked as a country figure and an estimate. Cities in countries with no price level show no cost.
 - **Repeat a trip works by month**, not by week.
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.

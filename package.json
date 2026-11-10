@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:data": "bun scripts/build-airports.mjs",
+    "build:place-data": "tsx scripts/build-place-data.ts",
     "build:seasonality": "bun scripts/build-seasonality.mjs",
     "build:vercel": "npm run build && node scripts/build-vercel.mjs"
   },
