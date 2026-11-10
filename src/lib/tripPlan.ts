@@ -63,8 +63,18 @@ export function stopChain(nodes: TripNode[], max = 4): string {
 }
 
 /** Whole days between the estimate's start and end dates, or null without dates. */
+/**
+ * The estimate's dates, or null. A mock estimate's dates are invented (seeded from the trip id,
+ * server/routes/agent.ts), so they are not shown as the trip's dates at all.
+ */
+function estimateDates(trip: Trip): { start: string; end: string } | null {
+  const e = trip.estimate;
+  if (!e || e.source === "mock") return null;
+  return e.dateRange ?? null;
+}
+
 export function tripDays(trip: Trip): number | null {
-  const r = trip.estimate?.dateRange;
+  const r = estimateDates(trip);
   if (!r) return null;
   const ms = new Date(r.end).getTime() - new Date(r.start).getTime();
   if (!Number.isFinite(ms)) return null;
@@ -73,7 +83,7 @@ export function tripDays(trip: Trip): number | null {
 
 /** "Mar 4 – Mar 12", or null without dates. */
 export function tripDateRange(trip: Trip, locale?: string): string | null {
-  const r = trip.estimate?.dateRange;
+  const r = estimateDates(trip);
   if (!r) return null;
   const s = new Date(r.start);
   const e = new Date(r.end);

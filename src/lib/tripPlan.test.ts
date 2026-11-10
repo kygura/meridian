@@ -107,6 +107,13 @@ describe("dates", () => {
     expect(tripDays(t)).toBe(8);
     expect(tripDateRange(t, "en-US")).toBe("Mar 4 – Mar 12");
   });
+  it("shows no dates from a mock estimate: they are invented, not the trip's", () => {
+    const t = trip([LIS], {
+      estimate: { priceEstimate: 300, currency: "USD", source: "mock", dateRange: { start: "2026-03-04", end: "2026-03-12" } },
+    });
+    expect(tripDays(t)).toBeNull();
+    expect(tripDateRange(t, "en-US")).toBeNull();
+  });
 });
 
 describe("names", () => {

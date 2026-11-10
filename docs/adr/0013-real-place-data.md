@@ -57,4 +57,4 @@ The Wikipedia page-view pattern correlates with measured nights at a median of o
 
 ## Other invented numbers found, and left alone
 
-Not part of this change, listed so they are not mistaken for data: `estimateForOption` in `server/routes/agent.ts` (trip price and dates from a seeded hash, shown in trip options), `mockFlightEstimate` in `server/lib/agent/tools.ts` (source `"mock"`, used when no flight provider is configured), the mock offers in `server/lib/booking.ts` (labelled test mode), and the flat per-night lodging and ground-transport formulas on trips (labelled estimates, ADR 0010).
+Not part of this change, listed so they are not mistaken for data: `estimateForOption` in `server/routes/agent.ts` (trip price and dates from a seeded hash; the price carries a Mock badge, and since then a mock estimate's dates are not shown at all, `tripPlan.ts`), `mockFlightEstimate` in `server/lib/agent/tools.ts` (source `"mock"`, used when no flight provider is configured), the mock offers in `server/lib/booking.ts` (labelled test mode), and the flat per-night lodging and ground-transport formulas on trips (labelled estimates, ADR 0010).
