@@ -7,14 +7,15 @@ import {
   comfortBreakdown,
   comfortScore,
   monthOfWeek,
+  tempComfort,
   weekOfDayOfYear,
   weeklyComfortBreakdown,
 } from "./comfort";
 
 describe("comfortBreakdown", () => {
   it("splits the index into temperature, rain and air", () => {
-    const b = comfortBreakdown(30, 140, 42.5);
-    expect(b.temp).toBeCloseTo(71.43, 1); // 100 * (40-30)/14
+    const b = comfortBreakdown(24, 140, 42.5);
+    expect(b.temp).toBe(65); // TEMP_CURVE point
     expect(b.rain).toBeCloseTo(17.5, 5); // 35 * (140-30)/220
     expect(b.air).toBeCloseTo(20, 5); // 40 * (42.5-10)/65
     expect(b.airKnown).toBe(true);
@@ -22,12 +23,12 @@ describe("comfortBreakdown", () => {
   });
 
   it("is unchanged from the two-term index when no PM2.5 is known", () => {
-    expect(comfortScore(22, 140)).toBe(83);
-    expect(comfortScore(33, 0)).toBe(50);
-    const b = comfortBreakdown(22, 140);
+    expect(comfortScore(18, 140)).toBe(83); // 100 - 35 * 110/220
+    expect(comfortScore(26, 0)).toBe(45);
+    const b = comfortBreakdown(18, 140);
     expect(b.airKnown).toBe(false);
     expect(b.air).toBe(0);
-    expect(comfortBreakdown(22, 140, null).airKnown).toBe(false);
+    expect(comfortBreakdown(18, 140, null).airKnown).toBe(false);
   });
 
   it("applies no air penalty at or below 10 ug/m3 and the full 40 at or above 75", () => {
@@ -40,7 +41,29 @@ describe("comfortBreakdown", () => {
 
   it("never goes below 0 or above 100", () => {
     expect(comfortScore(-30, 500, 300)).toBe(0);
-    expect(comfortScore(22, 0, 0)).toBe(100);
+    expect(comfortScore(18, 0, 0)).toBe(100);
+  });
+});
+
+describe("tempComfort", () => {
+  it("peaks across a 16-20C monthly mean", () => {
+    expect(tempComfort(16)).toBe(100);
+    expect(tempComfort(20)).toBe(100);
+  });
+  it("falls away fast above it and more gently below", () => {
+    expect(tempComfort(22)).toBe(85);
+    expect(tempComfort(26)).toBe(45);
+    expect(tempComfort(30)).toBe(15);
+    expect(tempComfort(34)).toBe(0);
+    expect(tempComfort(13)).toBe(78);
+    expect(tempComfort(4)).toBe(25);
+    expect(tempComfort(-10)).toBe(0);
+  });
+  it("interpolates between points and stays flat past the ends", () => {
+    expect(tempComfort(23)).toBe(75);
+    expect(tempComfort(45)).toBe(0);
+    expect(tempComfort(-30)).toBe(0);
+    expect(tempComfort(Number.NaN)).toBe(0);
   });
 
   it("scores weekly rain on the monthly scale", () => {
@@ -52,9 +75,9 @@ describe("comfortBreakdown", () => {
 
 describe("breakdownRows", () => {
   it("lists temperature, rain and air with the points each is worth", () => {
-    const rows = breakdownRows(comfortBreakdown(30, 140, 42.5), 30, 140, 42.5);
+    const rows = breakdownRows(comfortBreakdown(24, 140, 42.5), 24, 140, 42.5);
     expect(rows.map((r) => r.key)).toEqual(["temp", "rain", "air"]);
-    expect(rows.map((r) => r.text)).toEqual(["+71", "−18", "−20"]);
+    expect(rows.map((r) => r.text)).toEqual(["+65", "−18", "−20"]);
     expect(rows[2]!.note).toBe("PM2.5 43 µg/m³ (Poor air)");
   });
   it("says so when air quality is unknown instead of showing a clean result", () => {

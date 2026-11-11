@@ -271,30 +271,43 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
   display: none;
 }
 
-/* Best window: a bracket in the best-window green, edges closed, peak notched. */
-.plan-heat-cell.is-best {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best);
+/* Dense: a wall of colour, values on hover. */
+.plan-heat-dense .plan-heat-table thead th {
+  height: 30px;
 }
-.plan-heat-cell.is-best.is-best-start {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset 2px 0 0 var(--ramp-best);
+.plan-heat-dense .plan-heat-td {
+  padding: 0.5px !important;
 }
-.plan-heat-cell.is-best.is-best-end {
-  box-shadow: inset 0 2px 0 var(--ramp-best), inset 0 -2px 0 var(--ramp-best), inset -2px 0 0 var(--ramp-best);
+.plan-heat-dense .plan-heat-cell {
+  height: 20px;
 }
-.plan-heat-cell.is-best.is-best-start.is-best-end {
-  box-shadow: inset 0 0 0 2px var(--ramp-best);
+.plan-heat-dense .plan-heat-row > * {
+  border-bottom-color: transparent;
 }
-.plan-heat-cell.is-best-peak::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  border-left: 7px solid transparent;
-  border-top: 7px solid var(--ramp-best);
+.plan-heat-dense .plan-heat-name-btn {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  min-height: 21px;
+  padding: 0 var(--space-3);
 }
-.plan-heat-cell.is-best:hover,
-.plan-heat-cell.is-best.is-active {
-  box-shadow: inset 0 0 0 2px var(--ink);
+.plan-heat-dense .plan-heat-name-main {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+.plan-heat-dense .plan-heat-name-sub {
+  flex: 0 10 auto;
+  min-width: 0;
+}
+.plan-heat-dense .plan-heat-trail {
+  font-size: 11px;
+}
+
+/* Columns inside the chosen time window: an accent wash shows in the gaps between cells. */
+.plan-heat-td.is-window {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* Four columns (seasons) stay readable without the month-sized minimum width. */
@@ -469,6 +482,15 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
 }
 
 @media (max-width: 899.98px) {
+  .plan-heat-dense .plan-heat-cell {
+    height: 24px;
+  }
+  .plan-heat-dense .plan-heat-td {
+    padding: 0 0.5px !important;
+  }
+  .plan-heat-dense .plan-heat-name-sub {
+    display: none;
+  }
   .plan-heat-cols-52 .plan-heat-table {
     min-width: 1300px;
   }

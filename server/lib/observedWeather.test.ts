@@ -23,7 +23,7 @@ describe("summarizeDaily", () => {
     const o = summarizeDaily([20, 22], [3, 1], { score: 90, tempC: 19.5 })!;
     expect(o.tempC).toBe(21);
     expect(o.precipMm).toBe(61); // 4 / 2 * 30.4 = 60.8
-    expect(o.comfort).toBe(95); // comfortScore(21, 61) = 100 - 35*31/220
+    expect(o.comfort).toBe(88); // comfortScore(21, 61) = 92.5 - 35*31/220
     expect(o.normalComfort).toBe(90);
     expect(o.normalTempC).toBe(19.5);
   });

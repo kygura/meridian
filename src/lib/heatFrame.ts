@@ -206,3 +206,54 @@ export function bestRunLabel(run: BestRun | null, tf: Timeframe): string {
   if (run.start === run.end) return MONTH_SHORT[run.start]!;
   return `${MONTH_SHORT[run.start]}–${MONTH_SHORT[run.end]}`;
 }
+
+// ── Time window ────────────────────────────────────────────────────────
+
+/** "2026-11-10" -> Date at local midnight, or null. */
+function parseDay(iso: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * 0-based months a date range touches, in calendar order from the start date
+ * ("2026-12-20".."2027-01-05" -> [11, 0]). A year or more gives all 12. Null when either
+ * date is invalid or the range runs backwards.
+ */
+export function monthsInRange(from: string, to: string): number[] | null {
+  const a = parseDay(from);
+  const b = parseDay(to);
+  if (!a || !b || b < a) return null;
+  const span = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth()) + 1;
+  if (span >= 12) return Array.from({ length: 12 }, (_, i) => (a.getMonth() + i) % 12);
+  return Array.from({ length: span }, (_, i) => (a.getMonth() + i) % 12);
+}
+
+/** Mean comfort over the window's months; null when any of them has no score. */
+export function windowScore(months: FrameMonth[], window: number[]): number | null {
+  if (window.length === 0) return null;
+  let sum = 0;
+  for (const m of window) {
+    const v = months[m]?.score;
+    if (!finite(v)) return null;
+    sum += v;
+  }
+  return sum / window.length;
+}
+
+/** Columns of a timeframe that overlap the window's months. */
+export function columnsInWindow(tf: Timeframe, window: number[]): number[] {
+  return frameColumns(tf)
+    .map((c, i) => (c.months.some((m) => window.includes(m)) ? i : -1))
+    .filter((i) => i >= 0);
+}
+
+/** "Nov", "Dec–Jan", "All year". */
+export function windowLabel(window: number[]): string {
+  if (window.length === 0) return "";
+  if (window.length >= 12) return "All year";
+  const first = MONTH_SHORT[window[0]!]!;
+  return window.length === 1 ? first : `${first}–${MONTH_SHORT[window[window.length - 1]!]}`;
+}

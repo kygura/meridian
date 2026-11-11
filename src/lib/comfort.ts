@@ -3,15 +3,30 @@
 //
 //   score = temperature comfort - rain penalty - air penalty, clamped to 0-100.
 //
-// Temperature contributes 100 inside the 18-26C comfort band, falling off linearly to 0 at
-// -5C and 40C. Rain subtracts 0 at <=30mm/month, scaling to 35 at >=250mm/month. Air subtracts
+// Temperature is the month's MEAN daily temperature (average of day high and night low). A
+// 16-20C mean scores 100: afternoons around 21-27C. Above it the score falls away fast, since
+// afternoons run 6-8C over the mean (more in deserts): a 26C mean is a ~33C afternoon, a 30C
+// mean ~37C. Below it falls away more gently: cold can be dressed for. See TEMP_CURVE. Rain subtracts 0 at <=30mm/month, scaling to 35 at >=250mm/month. Air subtracts
 // 0 at a monthly mean PM2.5 of <=10 ug/m3, scaling to 40 at >=75 ug/m3 (the WHO 24-hour interim target 1). A month with no
 // air-quality figure has no air penalty applied (and says so), never an assumed one.
 
-export const TEMP_COMFORT_MIN = 18;
-export const TEMP_COMFORT_MAX = 26;
-export const TEMP_FLOOR = -5;
-export const TEMP_CEILING = 40;
+/** [mean C, temperature comfort] points; linear between them, flat beyond the ends. */
+export const TEMP_CURVE: ReadonlyArray<readonly [number, number]> = [
+  [-10, 0],
+  [-2, 8],
+  [4, 25],
+  [9, 50],
+  [13, 78],
+  [16, 100],
+  [20, 100],
+  [22, 85],
+  [24, 65],
+  [26, 45],
+  [28, 28],
+  [30, 15],
+  [32, 6],
+  [34, 0],
+];
 
 export const PRECIP_FREE_MM = 30;
 export const PRECIP_MAX_MM = 250;
@@ -37,11 +52,18 @@ export interface ComfortBreakdown {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function tempComfort(tempC: number): number {
-  let s: number;
-  if (tempC >= TEMP_COMFORT_MIN && tempC <= TEMP_COMFORT_MAX) s = 100;
-  else if (tempC < TEMP_COMFORT_MIN) s = (100 * (tempC - TEMP_FLOOR)) / (TEMP_COMFORT_MIN - TEMP_FLOOR);
-  else s = (100 * (TEMP_CEILING - tempC)) / (TEMP_CEILING - TEMP_COMFORT_MAX);
-  return clamp(s, 0, 100);
+  const first = TEMP_CURVE[0]!;
+  const last = TEMP_CURVE[TEMP_CURVE.length - 1]!;
+  if (!(tempC > first[0])) return first[1];
+  if (tempC >= last[0]) return last[1];
+  for (let i = 1; i < TEMP_CURVE.length; i++) {
+    const [x1, y1] = TEMP_CURVE[i]!;
+    if (tempC <= x1) {
+      const [x0, y0] = TEMP_CURVE[i - 1]!;
+      return clamp(y0 + ((y1 - y0) * (tempC - x0)) / (x1 - x0), 0, 100);
+    }
+  }
+  return last[1];
 }
 
 export function rainPenalty(precipMm: number): number {

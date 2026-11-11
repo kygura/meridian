@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import type { Hono } from "hono";
-import { resetSeasonalityCache } from "../lib/seasonality.js";
+import { comfortScore, resetSeasonalityCache } from "../lib/seasonality.js";
 
 let app: Hono;
 let realCityIds: string[];
@@ -90,7 +90,7 @@ describe("GET /api/seasonality/:cityId", () => {
     const body = await res.json();
     expect(body.cityId).toBe("paris-france");
     expect(body.months).toHaveLength(12);
-    expect(body.months[0]).toEqual({ score: 50, tempC: 10, precipMm: 40 });
+    expect(body.months[0]).toEqual({ score: comfortScore(10, 40), tempC: 10, precipMm: 40 });
   });
 
   it("returns 404 for an uncovered city", async () => {
@@ -109,7 +109,7 @@ describe("GET /api/seasonality/regions", () => {
     const france = body.regions.find((r: { region: string }) => r.region === "France");
     expect(france).toBeDefined();
     expect(france.months).toHaveLength(12);
-    expect(france.months[0].score).toBe(50);
+    expect(france.months[0].score).toBe(comfortScore(10, 40));
     // Temperature and rain ride along so the map can tint by them.
     expect(france.months[0].tempC).toBe(10);
     expect(france.months[0].precipMm).toBe(40);

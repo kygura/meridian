@@ -959,7 +959,7 @@ a.map-watch-title:hover {
   margin-top: var(--space-3);
 }
 
-/* ── Live & love (CityLiveLove.tsx) ── */
+/* ── Places to live (CityPlacesToLive.tsx) ── */
 .map-live {
   display: flex;
   flex-direction: column;

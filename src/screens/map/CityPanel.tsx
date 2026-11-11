@@ -27,7 +27,7 @@ import {
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
 import { TOPIC_LABELS, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
-import CityLiveLove from "./CityLiveLove";
+import CityPlacesToLive from "./CityPlacesToLive";
 import CityFacts from "./CityFacts";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -98,7 +98,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <BestMonths cityId={city.id} />
         <AtAGlance city={city} />
         <CityFacts city={city} />
-        <CityLiveLove city={city} />
+        <CityPlacesToLive city={city} />
         <Visits city={city} />
         <Briefing city={city} />
       </div>

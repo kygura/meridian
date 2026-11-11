@@ -49,6 +49,23 @@ export interface RegionAggregate {
 // Lives in src/lib/comfort.ts so the client can show the same breakdown (ADR 0014).
 // comfortScore(tempC, precipMm, pm25?) is re-exported above.
 
+/**
+ * Re-derives each month's score from its temperature, rain and air, so stored per-city
+ * datasets (the seed and the runtime cache) always follow the current formula.
+ */
+export function rescoreMonths(months: MonthSeasonality[]): MonthSeasonality[] {
+  return months.map((m) =>
+    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm, m.pm25) } : m
+  );
+}
+
+function rescoreDataset(d: SeasonalityDataset): SeasonalityDataset {
+  for (const entry of Object.values(d.cities ?? {})) {
+    if (Array.isArray(entry?.months)) entry.months = rescoreMonths(entry.months);
+  }
+  return d;
+}
+
 // ── Daily → monthly aggregation ─────────────────────────────────────────
 
 export interface DailyRecord {
@@ -119,7 +136,7 @@ export function loadSeasonality(): SeasonalityDataset {
   const candidates = new Set([getDataPath("seasonality.json"), join(process.cwd(), "data", "seasonality.json")]);
   for (const path of candidates) {
     try {
-      cache = JSON.parse(readFileSync(path, "utf-8")) as SeasonalityDataset;
+      cache = rescoreDataset(JSON.parse(readFileSync(path, "utf-8")) as SeasonalityDataset);
       return cache;
     } catch {
       // try the next location
@@ -143,7 +160,7 @@ function loadRuntimeCache(): SeasonalityDataset {
   if (runtimeCache) return runtimeCache;
   try {
     const raw = readFileSync(getDataPath(...RUNTIME_CACHE_FILE), "utf-8");
-    runtimeCache = JSON.parse(raw) as SeasonalityDataset;
+    runtimeCache = rescoreDataset(JSON.parse(raw) as SeasonalityDataset);
   } catch {
     runtimeCache = { version: 1, generatedAt: new Date(0).toISOString(), window: WINDOW, cities: {} };
   }

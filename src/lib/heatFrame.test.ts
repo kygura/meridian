@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { bestRun, bestRunLabel, columnOfMonth, formatMetric, frameValues, monthValues } from "./heatFrame";
+import {
+  columnOfMonth,
+  columnsInWindow,
+  formatMetric,
+  frameValues,
+  monthValues,
+  monthsInRange,
+  windowLabel,
+  windowScore,
+} from "./heatFrame";
 
 const year = (f: (i: number) => { score: number; tempC?: number; precipMm?: number }) =>
   Array.from({ length: 12 }, (_, i) => f(i));
@@ -30,25 +39,30 @@ describe("frameValues", () => {
   });
 });
 
-describe("bestRun", () => {
-  it("finds a run across the year seam", () => {
-    const s = [90, 88, 40, 30, 30, 30, 30, 30, 30, 30, 40, 85];
-    const r = bestRun(s)!;
-    expect(r.cols).toEqual([11, 0, 1]);
-    expect(r.peak).toBe(0);
-    expect(bestRunLabel(r, "months")).toBe("Dec–Feb");
+describe("time window", () => {
+  it("lists the months a range touches, across the new year", () => {
+    expect(monthsInRange("2026-12-20", "2027-01-05")).toEqual([11, 0]);
+    expect(monthsInRange("2026-11-10", "2026-11-24")).toEqual([10]);
+    expect(monthsInRange("2026-03-01", "2027-05-01")).toHaveLength(12);
   });
 
-  it("covers the whole frame when everything is close", () => {
-    expect(bestRunLabel(bestRun([80, 82, 79, 81]), "seasons")).toBe("All year");
+  it("rejects backwards or broken ranges", () => {
+    expect(monthsInRange("2026-05-02", "2026-05-01")).toBeNull();
+    expect(monthsInRange("", "2026-05-01")).toBeNull();
   });
 
-  it("labels a season run by its months", () => {
-    expect(bestRunLabel(bestRun([20, 70, 75, 30]), "seasons")).toBe("Mar–Aug");
+  it("scores a window by mean comfort", () => {
+    const m = year((i) => ({ score: i * 10 }));
+    expect(windowScore(m, [1, 2, 3])).toBe(20);
+    expect(windowScore([{ score: 50 }], [0, 1])).toBeNull();
   });
 
-  it("gives nothing for missing data", () => {
-    expect(bestRun([1, null, 3])).toBeNull();
+  it("finds the season columns a window overlaps and labels it", () => {
+    expect(columnsInWindow("seasons", [11, 0])).toEqual([0]);
+    expect(columnsInWindow("seasons", [4, 5])).toEqual([1, 2]);
+    expect(columnsInWindow("months", [3])).toEqual([3]);
+    expect(windowLabel([11, 0])).toBe("Dec–Jan");
+    expect(windowLabel([10])).toBe("Nov");
   });
 });
 

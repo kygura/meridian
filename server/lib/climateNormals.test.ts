@@ -97,14 +97,14 @@ describe("monthlyMeanNormals and dailyFromHourly", () => {
 
 describe("record encode / decode", () => {
   it("decodes months with the Comfort Index including the air penalty", () => {
-    const cell = { m: { t: Array(12).fill(220), p: Array(12).fill(10), a: [...Array(11).fill(50), 750] } };
+    const cell = { m: { t: Array(12).fill(180), p: Array(12).fill(10), a: [...Array(11).fill(50), 750] } };
     const m = decodeMonths(cell)!;
-    expect(m[0]).toMatchObject({ tempC: 22, precipMm: 10, pm25: 5, score: 100 });
+    expect(m[0]).toMatchObject({ tempC: 18, precipMm: 10, pm25: 5, score: 100 });
     expect(m[11]).toMatchObject({ pm25: 75, score: 60 }); // 100 - 40
   });
 
   it("leaves pm25 off months with no air-quality figure", () => {
-    const m = decodeMonths({ m: { t: Array(12).fill(220), p: Array(12).fill(10) } })!;
+    const m = decodeMonths({ m: { t: Array(12).fill(180), p: Array(12).fill(10) } })!;
     expect(m[0]).not.toHaveProperty("pm25");
     expect(m[0]!.score).toBe(100);
   });
