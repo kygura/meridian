@@ -12,6 +12,7 @@ import { setWatchPrefill } from "../../lib/watchPrefill";
 import { filterNewsByRegion, formatNewsTime, newsForCountry, newsPlace, regionFromContinent, regionLabel } from "../../lib/newsRegions";
 import {
   Badge,
+  ComfortBreakdown,
   Button,
   EmptyState,
   ErrorState,
@@ -24,9 +25,10 @@ import {
   SectionHeader,
 } from "../../ui";
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
-import { CITY_METRICS, sentenceCase, TOPIC_LABELS, useCityMetrics, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
+import { TOPIC_LABELS, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
 import CityPlacesToLive from "./CityPlacesToLive";
+import CityFacts from "./CityFacts";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
 import type { City, Journey, TripNode } from "../../types";
@@ -95,6 +97,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <Actions city={city} onClose={onClose} />
         <BestMonths cityId={city.id} />
         <AtAGlance city={city} />
+        <CityFacts city={city} />
         <CityPlacesToLive city={city} />
         <Visits city={city} />
         <Briefing city={city} />
@@ -269,9 +272,11 @@ function BestMonths({ cityId }: { cityId: string }) {
             {MONTH_NAMES[shown]}: {comfortWord(m.score).toLowerCase()}.{" "}
             <span className="num">
               {Math.round(m.tempC)}°C, {Math.round(m.precipMm)} mm rain
+              {typeof m.pm25 === "number" ? `, PM2.5 ${Math.round(m.pm25)} µg/m³` : ""}
             </span>
           </p>
         ) : null}
+        {m ? <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} /> : null}
       </>
     );
   }
@@ -294,9 +299,8 @@ function BestMonths({ cityId }: { cityId: string }) {
 // ── At a glance (metrics) ───────────────────────────────────────────
 
 function AtAGlance({ city }: { city: City }) {
-  const { data, status, retry } = useCityMetrics(city.id);
-  const rows = CITY_METRICS.filter((r) => data?.[r.id]);
   const tz = city.timezone ? (/^[+-]/.test(city.timezone) ? `UTC${city.timezone}` : city.timezone) : "";
+  if (!city.population && !city.currency && !tz && !city.capital) return null;
 
   return (
     <section className="map-city-section" aria-labelledby={`${city.id}-glance`}>
@@ -319,43 +323,6 @@ function AtAGlance({ city }: { city: City }) {
         ) : null}
         {city.capital ? <Badge>Capital</Badge> : null}
       </div>
-      {status === "loading" ? (
-        <div className="map-metrics">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} height={36} />
-          ))}
-        </div>
-      ) : status === "error" ? (
-        <ErrorState message="Couldn’t load local stats." onRetry={retry} />
-      ) : rows.length === 0 ? (
-        <p className="map-city-note">No local stats for this city yet.</p>
-      ) : (
-        <div className="map-metrics">
-          {rows.map((r) => {
-            const v = data![r.id];
-            const pct = Math.max(0, Math.min(100, Math.round(v.normalized)));
-            return (
-              <div key={r.id} className="map-metric" title={r.hint}>
-                <div className="map-metric-top">
-                  <span>{r.label}</span>
-                  <span className="num">{pct}</span>
-                </div>
-                <div className="map-metric-value">{sentenceCase(v.label) || "—"}</div>
-                <div
-                  className="map-meter"
-                  role="meter"
-                  aria-label={r.label}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={pct}
-                >
-                  <span style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
     </section>
   );
 }

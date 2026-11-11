@@ -6,10 +6,14 @@
 // for those conditions. The greenery figure is a proxy (recent rain x warmth for growth),
 // not satellite NDVI; label it as such in the UI.
 
+import { airBand, type AirBand } from "./comfort";
+
 export interface ClimateMonth {
   score: number;
   tempC: number;
   precipMm: number;
+  /** Monthly mean PM2.5 in ug/m3; absent where the air-quality data hasn't reached the place. */
+  pm25?: number;
 }
 
 export type Warmth = "freezing" | "cold" | "cool" | "mild" | "warm" | "hot";
@@ -26,6 +30,9 @@ export interface MonthTraits {
   lush: number;
   greenery: Greenery;
   snowy: boolean;
+  /** Monthly mean PM2.5 in ug/m3, when known. */
+  pm25?: number;
+  air?: AirBand;
 }
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
@@ -89,13 +96,16 @@ export function monthTraits(months: ClimateMonth[], month: number): MonthTraits 
     lush,
     greenery: greeneryOf(lush),
     snowy: m.tempC <= 1 && m.precipMm >= 15,
+    ...(typeof m.pm25 === "number" && Number.isFinite(m.pm25) ? { pm25: m.pm25, air: airBand(m.pm25) } : {}),
   };
 }
 
 // ── Conditions: the searchable vocabulary ──────────────────────────────
 
-export type ConditionGroup = "warmth" | "wetness" | "greenery" | "snow";
-export type ConditionId = `warmth:${Warmth}` | `wetness:${Wetness}` | `greenery:${Greenery}` | "snow:snowy";
+export type ConditionGroup = "warmth" | "wetness" | "greenery" | "snow" | "air";
+/** Air conditions merge "hazardous" into "unhealthy" so the filter stays four chips. */
+export type AirCondition = "clean" | "moderate" | "poor" | "unhealthy";
+export type ConditionId = `warmth:${Warmth}` | `wetness:${Wetness}` | `greenery:${Greenery}` | "snow:snowy" | `air:${AirCondition}`;
 
 export interface Condition {
   id: ConditionId;
@@ -123,6 +133,10 @@ export const CONDITIONS: Condition[] = [
   { id: "greenery:green", group: "greenery", label: "Green", detail: "Leafy and growing", keywords: ["leafy", "verdant", "blooming", "bloom", "meadow"] },
   { id: "greenery:lush", group: "greenery", label: "Lush", detail: "Dense and verdant", keywords: ["jungle", "rainforest", "verdant", "overgrown", "tropical"] },
   { id: "snow:snowy", group: "snow", label: "Snowy", detail: "Freezing with precipitation", keywords: ["snow", "ski", "skiing", "powder", "white"] },
+  { id: "air:clean", group: "air", label: "Clean air", detail: "PM2.5 under 10 µg/m³", keywords: ["breathe", "fresh", "pure", "unpolluted", "clear-air"] },
+  { id: "air:moderate", group: "air", label: "Moderate air", detail: "PM2.5 10–25 µg/m³", keywords: ["haze", "hazy", "city-air"] },
+  { id: "air:poor", group: "air", label: "Poor air", detail: "PM2.5 25–55 µg/m³", keywords: ["smog", "smoggy", "pollution", "polluted"] },
+  { id: "air:unhealthy", group: "air", label: "Unhealthy air", detail: "PM2.5 over 55 µg/m³", keywords: ["smoke", "smoky", "burning", "burning-season", "wildfire", "toxic"] },
 ];
 
 const CONDITION_BY_ID = new Map(CONDITIONS.map((c) => [c.id, c]));
@@ -136,6 +150,7 @@ export const GROUP_LABELS: Record<ConditionGroup, string> = {
   wetness: "Rain",
   greenery: "Greenery",
   snow: "Snow",
+  air: "Air quality",
 };
 
 export interface ClimateFilter {
@@ -161,6 +176,9 @@ function traitFor(group: ConditionGroup, t: MonthTraits): string {
       return `greenery:${t.greenery}`;
     case "snow":
       return t.snowy ? "snow:snowy" : "";
+    case "air":
+      // A month with no air-quality figure cannot be said to have clean air, so it never matches an air condition.
+      return t.air ? `air:${t.air === "hazardous" ? "unhealthy" : t.air}` : "";
   }
 }
 
@@ -196,6 +214,7 @@ export const PRESETS: ClimatePreset[] = [
   { id: "crisp", label: "Crisp and dry", keywords: ["autumn", "fall", "city", "walking"], filter: { conditions: ["warmth:cool", "wetness:arid", "wetness:dry"], minComfort: 0 } },
   { id: "escape-heat", label: "Escape the heat", keywords: ["cool", "summer", "heatwave", "escape"], filter: { conditions: ["warmth:cool", "warmth:mild"], minComfort: 0 } },
   { id: "snow", label: "Snow season", keywords: ["ski", "snow", "winter", "christmas"], filter: { conditions: ["snow:snowy"], minComfort: 0 } },
+  { id: "breathe", label: "Breathe easy", keywords: ["breathe", "clean", "fresh", "asthma", "lungs"], filter: { conditions: ["air:clean"], minComfort: 0 } },
   { id: "pleasant", label: "Comfortable", keywords: ["pleasant", "nice", "best", "comfort", "ideal"], filter: { conditions: [], minComfort: 70 } },
 ];
 
@@ -257,18 +276,21 @@ export function describeFilter(f: ClimateFilter): string {
 
 // ── Tint modes ─────────────────────────────────────────────────────────
 
-export type ClimateMode = "comfort" | "temperature" | "rainfall" | "greenery";
+export type ClimateMode = "comfort" | "temperature" | "rainfall" | "greenery" | "air";
 
 export const CLIMATE_MODES: { value: ClimateMode; label: string; low: string; high: string }[] = [
   { value: "comfort", label: "Comfort", low: "Harsh", high: "Pleasant" },
   { value: "temperature", label: "Temp", low: "Cold", high: "Hot" },
   { value: "rainfall", label: "Rain", low: "Dry", high: "Wet" },
   { value: "greenery", label: "Green", low: "Barren", high: "Lush" },
+  { value: "air", label: "Air", low: "Clean", high: "Smoky" },
 ];
 
 const TEMP_STEPS = [-5, 5, 12, 18, 24, 29];
 const RAIN_STEPS = [10, 30, 60, 100, 150, 220];
 const LUSH_STEPS = [10, 25, 40, 55, 70, 85];
+/** PM2.5 (ug/m3) edges: under 5 is step 0, then the clean / moderate / poor / unhealthy cut-offs at 10, 25, 55 and beyond. */
+const AIR_STEPS = [5, 10, 18, 25, 55, 100];
 
 const stepOf = (v: number, edges: number[]) => edges.filter((e) => v >= e).length;
 
@@ -283,17 +305,19 @@ export function valueStep(mode: ClimateMode, v: number): number {
       return stepOf(v, RAIN_STEPS);
     case "greenery":
       return stepOf(v, LUSH_STEPS);
+    case "air":
+      return stepOf(v, AIR_STEPS);
   }
 }
 
 /** Ramp step 0-6 for a month in a tint mode. Comfort skips step 0 (too close to plain land). */
 export function modeStep(mode: ClimateMode, t: MonthTraits): number {
-  const v = mode === "comfort" ? t.comfort : mode === "temperature" ? t.tempC : mode === "rainfall" ? t.precipMm : t.lush;
+  const v = mode === "comfort" ? t.comfort : mode === "temperature" ? t.tempC : mode === "rainfall" ? t.precipMm : mode === "air" ? (t.pm25 ?? 0) : t.lush;
   return valueStep(mode, v);
 }
 
 /** Token names of the 7-step ramp a mode paints with. */
 export function modeRampVars(mode: ClimateMode): string[] {
-  const prefix = mode === "comfort" ? "--ramp" : mode === "temperature" ? "--temp" : mode === "rainfall" ? "--wet" : "--green";
+  const prefix = mode === "comfort" ? "--ramp" : mode === "temperature" ? "--temp" : mode === "rainfall" ? "--wet" : mode === "air" ? "--smoke" : "--green";
   return [0, 1, 2, 3, 4, 5, 6].map((i) => `${prefix}-${i}`);
 }

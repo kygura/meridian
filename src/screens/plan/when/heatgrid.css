@@ -237,6 +237,14 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
 .plan-heat-ramp-green .plan-heat-s5 { background: var(--green-5); }
 .plan-heat-ramp-green .plan-heat-s6 { background: var(--green-6); }
 
+.plan-heat-ramp-smoke .plan-heat-s0 { background: var(--smoke-0); }
+.plan-heat-ramp-smoke .plan-heat-s1 { background: var(--smoke-1); }
+.plan-heat-ramp-smoke .plan-heat-s2 { background: var(--smoke-2); }
+.plan-heat-ramp-smoke .plan-heat-s3 { background: var(--smoke-3); }
+.plan-heat-ramp-smoke .plan-heat-s4 { background: var(--smoke-4); }
+.plan-heat-ramp-smoke .plan-heat-s5 { background: var(--smoke-5); }
+.plan-heat-ramp-smoke .plan-heat-s6 { background: var(--smoke-6); }
+
 /* Value in the cell. */
 .plan-heat-cell.has-text {
   display: flex;
@@ -305,6 +313,33 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
 /* Four columns (seasons) stay readable without the month-sized minimum width. */
 .plan-heat-cols-4 .plan-heat-table {
   min-width: 480px;
+}
+
+/* 52 week columns: wide, scrolls inside its container; month names sit on each month's first week. */
+.plan-heat-cols-52 .plan-heat-table {
+  min-width: 1480px;
+}
+.plan-heat-cols-52 .plan-heat-mh {
+  overflow: visible;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+.plan-heat-cols-52 .plan-heat-mh-long,
+.plan-heat-cols-52 .plan-heat-mh-short {
+  display: inline;
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.plan-heat-cols-52 .plan-heat-mh-short {
+  display: none;
+}
+.plan-heat-cols-52 .plan-heat-td {
+  padding: 1px 0 !important;
+}
+.plan-heat-cols-52 .plan-heat-cell-text {
+  font-size: 9px;
 }
 
 .plan-heat-state {
@@ -455,6 +490,9 @@ button.plan-heat-name-btn:hover .plan-heat-name-main {
   }
   .plan-heat-dense .plan-heat-name-sub {
     display: none;
+  }
+  .plan-heat-cols-52 .plan-heat-table {
+    min-width: 1300px;
   }
   .plan-heat-cols-4 .plan-heat-table {
     min-width: 440px;

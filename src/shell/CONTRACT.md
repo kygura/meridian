@@ -11,7 +11,7 @@ own directory, or ask for it.
 | Path | Owner | Notes |
 |---|---|---|
 | `src/styles/tokens.css`, `src/styles/base.css` | shared (foundation) | Colours are defined only here. |
-| `src/ui/**` | shared (foundation) | Primitives, icons, toast, layers, palette, journal token hook. |
+| `src/ui/**` | shared (foundation) | Primitives, icons, toast, layers, palette, owner session hook. |
 | `src/shell/**` | shared (foundation) | AppShell, Sidebar, TabBar/MoreSheet, SettingsPanel, theme, uiStore, nav badges, keys. |
 | `src/lib/router.ts` | shared (foundation) | Routes, `navigate`, `hrefFor`. |
 | `src/App.tsx`, `src/main.tsx`, `index.html` | shared (foundation) | Mounting only. |
@@ -52,6 +52,7 @@ props as listed.
 | `screens/plan/repeat/RepeatTrip` | `{ journeyId?: string; stopIndex?: number }` | PlanScreen, `#/plan/repeat[/<journeyId>[/<stopIndex>]]`, keyed by seed. `stopIndex` is 0-based. |
 | `screens/plan/watches/Watches` | none | PlanScreen, `#/plan/watches`. |
 | `screens/plan/flights/Flights` | none | PlanScreen, `#/plan/flights`. |
+| `screens/plan/days/DaysPage` | none | PlanScreen, `#/plan/days`. Owner only. Visa display parts shared with trips and the rotation live in `screens/visa/`. |
 | `screens/plan/flights/BookingSheet` | none | App, always mounted. Reads `useMeridianStore.bookingModal`. |
 | `screens/inbox/InboxScreen` | none | App on `#/inbox`. |
 | `screens/world/WorldScreen` | none | App on `#/world`. |
@@ -67,7 +68,7 @@ padding.
 type Route =
   | { view: "map" }
   | { view: "trips"; tab: "upcoming" | "past"; tripId?: string; journeyId?: string }
-  | { view: "plan"; tab: "when" | "repeat" | "watches" | "flights"; journeyId?: string; stopIndex?: number }
+  | { view: "plan"; tab: "when" | "live" | "repeat" | "watches" | "flights" | "days"; journeyId?: string; stopIndex?: number }
   | { view: "inbox" }
   | { view: "world" };
 parseHash(hash): Route          // legacy hashes map to their new route
@@ -91,6 +92,7 @@ Canonical hashes:
 | `#/plan/repeat/<journeyId>[/<stopIndex>]` | Repeat a trip, seeded from a journey |
 | `#/plan/watches` | Watches |
 | `#/plan/flights` | Flights |
+| `#/plan/days` | Days: Schengen window, country and tax-day counters (ADR 0012) |
 | `#/inbox` | inbox |
 | `#/world` | world |
 
@@ -225,23 +227,27 @@ reworded. For the city panel, use `uiStore.openCity`.
 `html[data-theme]` and mirrors the resolved value into `useMeridianStore.theme`, which is
 read-only for you.
 
-Months are 1-based in the API. Journal, replay, import, watches and the agent's journal
-tools all need the Bearer token. `lib/journalApi`'s `jfetch` attaches it, so always use the
-typed calls there.
+Months are 1-based in the API. Journal, replay, import, watches, trips, bookings and the
+agent's journal tools all need the owner's session. The browser sends the session cookie by
+itself; `lib/journalApi`'s `jfetch` and `lib/bookingApi` handle the 401, so always use the
+typed calls there. A plain `fetch` to a gated or state-changing route must pass
+`credentials: apiCredentials` (from `lib/api`).
 
-## 7. Journal token
+## 7. Owner session (was: journal token)
 
 ```ts
 import { useJournalToken, UnlockCard } from "src/ui";
-const { token, unlocked, lockReason, setToken, clear } = useJournalToken();
-useEffect(() => { if (unlocked) void load(); }, [token, unlocked]);   // refetch on unlock
+const { token, unlocked, lockReason, sessionEnded, signIn, clear } = useJournalToken();
+useEffect(() => { if (unlocked) void load(); }, [token, unlocked]);   // refetch on sign-in
 if (!unlocked) return <UnlockCard />;                                  // locked state
 ```
 
-`unlocked` is true when a token is saved and the server has not answered 401. `UnlockCard`
-verifies the token, saves it, notifies every hook user and refreshes the nav badges.
-`onJournalTokenChange(cb)` works outside React. The shell polls the inbox and alert badges
-every 15 minutes, and only while a token exists. In screens, read the counts with
+The names are historical: no token is stored in the browser (ADR 0009). `token` is an
+opaque marker that changes with every sign-in (null when signed out); use it only as an
+effect dependency. `unlocked` is true when the browser is signed in and the server has not
+answered 401. `UnlockCard` asks for the password, signs in and notifies every hook user;
+`clear()` signs out. `onJournalTokenChange(cb)` works outside React. The shell polls the inbox and alert badges
+every 15 minutes, and only while signed in. In screens, read the counts with
 `useBadgeCounts()` from `src/shell/useNavBadges`.
 
 ## 8. Primitives (`import { … } from "src/ui"`)

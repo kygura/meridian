@@ -36,7 +36,9 @@ const booking = (legIndex: number, status: Booking["status"], createdAt = "2026-
 
 describe("tripLegs / tripTotals", () => {
   it("builds one leg per consecutive pair with estimates", () => {
-    const legs = tripLegs([LIS, OPO, MAD]);
+    // Flown: the short Iberian hops default to ground transport (lib/legs.test.ts).
+    const fly = (n: TripNode, from: string): TripNode => ({ ...n, travel: { fromCityId: from, mode: "flight" } });
+    const legs = tripLegs([LIS, fly(OPO, "lis"), fly(MAD, "opo")]);
     expect(legs).toHaveLength(2);
     expect(legs[0].from.cityId).toBe("lis");
     expect(legs[0].to.cityId).toBe("opo");
@@ -51,6 +53,13 @@ describe("tripLegs / tripTotals", () => {
 
   it("marks legs without an airport as not bookable", () => {
     expect(tripLegs([LIS, TOWN])[0].bookable).toBe(false);
+    expect(tripLegs([LIS, { ...TOWN, travel: { fromCityId: "lis", mode: "flight" } }])[0].bookable).toBe(false);
+  });
+
+  it("defaults a short hop to ground transport, which flight search skips", () => {
+    const [leg] = tripLegs([LIS, OPO]);
+    expect(leg).toMatchObject({ mode: "train", modeIsDefault: true, bookable: false });
+    expect(tripTotals([leg])).toMatchObject({ flights: 0, groundLegs: 1, flightCost: 0, groundCost: leg.cost });
   });
 
   it("returns no legs for zero or one stop", () => {
@@ -66,6 +75,13 @@ describe("bookedLegCount", () => {
     expect(bookedLegCount(t, [booking(0, "booked"), booking(1, "cancelled")])).toBe(1);
     // A leg index past the end of the trip doesn't count.
     expect(bookedLegCount(t, [booking(5, "booked")])).toBe(0);
+  });
+
+  it("counts a booking recorded by hand on the leg", () => {
+    const t = trip([LIS, { ...OPO, travel: { fromCityId: "lis", booked: { reference: "ZX81" } } }, MAD]);
+    expect(bookedLegCount(t, [], tripLegs(t.nodes))).toBe(1);
+    // Recorded and test-booked at once is still one leg.
+    expect(bookedLegCount(t, [booking(0, "booked")], tripLegs(t.nodes))).toBe(1);
   });
 });
 
@@ -90,6 +106,13 @@ describe("dates", () => {
     });
     expect(tripDays(t)).toBe(8);
     expect(tripDateRange(t, "en-US")).toBe("Mar 4 – Mar 12");
+  });
+  it("shows no dates from a mock estimate: they are invented, not the trip's", () => {
+    const t = trip([LIS], {
+      estimate: { priceEstimate: 300, currency: "USD", source: "mock", dateRange: { start: "2026-03-04", end: "2026-03-12" } },
+    });
+    expect(tripDays(t)).toBeNull();
+    expect(tripDateRange(t, "en-US")).toBeNull();
   });
 });
 

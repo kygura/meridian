@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import type { Route } from "../lib/router";
 import { useMeridianStore } from "../store";
 import { Button, cx } from "../ui";
-import { IconAsk, IconLogo, IconPlus } from "../ui/icons";
+import { IconAsk, IconBell, IconLogo, IconPlus } from "../ui/icons";
+import { openNotices, useNotices } from "../lib/notices";
+import { ConnectionStatus } from "./PwaLayer";
 import { NAV_ITEMS, isActive } from "./nav";
 import { SettingsPopover } from "./SettingsPanel";
 import { useUIStore } from "./uiStore";
@@ -18,6 +20,8 @@ export function Sidebar({ route, badges }: SidebarProps) {
   const openQuickLog = useMeridianStore((s) => s.openQuickLog);
   const askOpen = useUIStore((s) => s.ask.open);
   const toggleAsk = useUIStore((s) => s.toggleAsk);
+  const noticesOpen = useNotices((s) => s.open);
+  const noticesUnseen = useNotices((s) => s.unseen);
 
   return (
     <aside className="shell-sidebar" aria-label="Main">
@@ -66,6 +70,22 @@ export function Sidebar({ route, badges }: SidebarProps) {
             ⌘K
           </kbd>
         </button>
+        <button
+          type="button"
+          className={cx("shell-nav-link", noticesOpen && "shell-nav-link--active")}
+          aria-haspopup="dialog"
+          aria-expanded={noticesOpen}
+          aria-label={noticesUnseen ? `Alerts, ${noticesUnseen} new` : undefined}
+          onClick={openNotices}
+        >
+          <IconBell />
+          <span>Alerts</span>
+          {noticesUnseen ? (
+            <span className="shell-nav-badge" aria-hidden="true">
+              {badgeLabel(noticesUnseen)}
+            </span>
+          ) : null}
+        </button>
       </nav>
       <div className="shell-sidebar-cta">
         {/* Secondary, so the page's own primary action stays the only filled button on screen. */}
@@ -74,6 +94,7 @@ export function Sidebar({ route, badges }: SidebarProps) {
         </Button>
       </div>
       <div className="shell-sidebar-foot">
+        <ConnectionStatus placement="sidebar" />
         <UtcClock />
         <SettingsPopover />
       </div>

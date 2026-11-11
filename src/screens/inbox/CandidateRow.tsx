@@ -4,6 +4,7 @@ import { cityFixes, isUnresolved } from "../../lib/inbox";
 import type { CityIndex } from "../../lib/journal";
 import type { ImportCandidate, Journey } from "../../types";
 import MergeMenu from "./MergeMenu";
+import TripMenu from "./TripMenu";
 import { candidateTitle, candidateWhen, fixLabel, flagNotes, kindWord, sourceWord } from "./inboxText";
 
 export interface CandidateActions {
@@ -72,6 +73,7 @@ export default function CandidateRow({
             <Spinner size={18} label="Working" />
           ) : (
             <>
+              <TripMenu candidate={c} cities={cities} disabled={disabled || unresolved} onApplied={() => actions.discard(c.id)} />
               <IconButton size="sm" label={`Accept ${title} as its own trip`} title={why ?? "Accept as its own trip"} icon={<IconCheck size={18} />} disabled={disabled || unresolved} onClick={() => actions.accept(c.id)} />
               <MergeMenu
                 trigger="icon"

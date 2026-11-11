@@ -16,6 +16,10 @@ services:
         value: /var/data
       - key: MERIDIAN_TOKEN
         sync: false
+      # One proxy hop in front of the service: rate limits and the sign-in lockout
+      # then count per visitor (ADR 0009).
+      - key: TRUST_PROXY
+        value: 1
       - key: ALERT_WEBHOOK_URL
         sync: false
       - key: DUFFEL_API_KEY
@@ -26,7 +30,6 @@ services:
       name: meridian-data
       mountPath: /var/data
       sizeGB: 1
-  # Watches (spec-journal §10): no in-process timer. Something must POST
-  # /api/watches/run daily with the Bearer token: a Render Cron Job (paid) or a
-  # scheduled Claude task. Not provisioned here. (On Vercel, the cron in
-  # scripts/build-vercel.mjs does it.)
+  # Daily jobs (watches, ADR 0016): the server runs them itself once a day (DAILY_JOBS_AT,
+  # default 06:17 UTC). No Cron Job needed. (On Vercel, the cron in
+  # scripts/build-vercel.mjs calls /api/jobs/daily.)

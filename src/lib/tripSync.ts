@@ -17,19 +17,44 @@ const RETRY_MS = 30_000;
 /** Map of trip id → fingerprint of the synced fields. */
 export type SyncBase = Record<string, string>;
 
+/** Same content, same string: nested itinerary objects come back from the server with their keys in schema order. */
+function sorted<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(sorted) as T;
+  if (!v || typeof v !== "object") return v;
+  const o = v as Record<string, unknown>;
+  return Object.fromEntries(Object.keys(o).sort().map((k) => [k, sorted(o[k])])) as T;
+}
+
 export function tripFingerprint(
-  t: Pick<Trip, "name" | "color" | "status" | "nodes" | "season" | "year" | "departure" | "returnHome">
+  t: Pick<Trip, "name" | "color" | "status" | "nodes" | "season" | "year" | "departure" | "returnHome" | "travellers" | "homeLeg">
 ): string {
   const dep = t.departure;
   return JSON.stringify({
     name: t.name,
     color: t.color,
     status: t.status,
-    nodes: t.nodes.map(({ cityId, name, iata, lat, lng, months }) => ({ cityId, name, iata, lat, lng, months })),
+    // Itinerary fields (ADR 0010) are undefined on older trips, and JSON drops undefined:
+    // a trip without them fingerprints exactly as it did before they existed.
+    nodes: t.nodes.map(({ cityId, name, iata, lat, lng, months, arrive, depart, lodging, activities, notes, travel }) => ({
+      cityId,
+      name,
+      iata,
+      lat,
+      lng,
+      months,
+      arrive,
+      depart,
+      lodging: sorted(lodging),
+      activities: activities?.length ? sorted(activities) : undefined,
+      notes: notes || undefined,
+      travel: sorted(travel),
+    })),
     season: t.season,
     year: t.year,
     departure: dep ? { cityId: dep.cityId, name: dep.name, iata: dep.iata, lat: dep.lat, lng: dep.lng } : undefined,
     returnHome: t.returnHome === false ? false : undefined,
+    travellers: t.travellers && t.travellers > 1 ? t.travellers : undefined,
+    homeLeg: sorted(t.homeLeg),
   });
 }
 
@@ -205,6 +230,8 @@ export function startTripSync(onTokenChange: (cb: () => void) => () => void): ()
     if (active) void push().then(pull);
   };
   window.addEventListener("focus", onFocus);
+  // Back online: send what was edited offline now, not at the next retry.
+  window.addEventListener("online", onFocus);
   if (getToken()) void pull();
   return () => {
     stop();
@@ -212,5 +239,6 @@ export function startTripSync(onTokenChange: (cb: () => void) => () => void): ()
     unsubStore();
     unsubToken();
     window.removeEventListener("focus", onFocus);
+    window.removeEventListener("online", onFocus);
   };
 }

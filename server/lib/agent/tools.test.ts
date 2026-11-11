@@ -19,7 +19,7 @@ describe("searchPlaces", () => {
     expect(a).toEqual(b);
     expect(a.length).toBeGreaterThan(0);
     for (let i = 1; i < a.length; i++) {
-      expect(a[i - 1].score).toBeGreaterThanOrEqual(a[i].score);
+      expect(a[i - 1].score ?? -1).toBeGreaterThanOrEqual(a[i].score ?? -1);
     }
   });
 
@@ -189,5 +189,21 @@ describe("getFlightEstimate", () => {
     await expect(
       getFlightEstimate({ originIata: "ZZZ", destinationIata: "ZZZ" })
     ).resolves.toMatchObject({ source: "mock" });
+  });
+});
+
+describe("check_visa", async () => {
+  const { checkVisa } = await import("./tools");
+  it("checks named passports without the owner, and refuses the owner's data while locked", async () => {
+    const r = await checkVisa({ passports: ["US"], stays: [{ country: "Portugal", start: "2027-01-01", end: "2027-04-15" }, { country: "Thailand", start: "2027-05-01", end: "2027-06-15" }] }, { unlocked: false });
+    if ("error" in r) throw new Error(String(r.error));
+    expect(r.stays.map((s) => s.verdict)).toEqual(["over", "over"]);
+    expect(r.violations.map((v) => v.limit)).toEqual(["Schengen Area", "Thailand"]);
+    expect(r.stays[1].limit).toBe("30 days per entry");
+    expect(r.stays[1].sources[0].url).toMatch(/^https:\/\/www\.gov\.uk\//);
+    expect(r.disclaimer).toMatch(/not legal or tax advice/);
+    expect(await checkVisa({ stays: [{ country: "Portugal", start: "2027-01-01", end: "2027-02-01" }] }, { unlocked: false })).toMatchObject({ error: "owner_only" });
+    expect(await checkVisa({ passports: ["US"], includeMyStays: true }, { unlocked: false })).toMatchObject({ error: "owner_only" });
+    expect(await checkVisa({ passports: ["US"], stays: [{ country: "Portugal", start: "2027-01-01" }] } as never, { unlocked: true })).toMatchObject({ error: "invalid_params" });
   });
 });

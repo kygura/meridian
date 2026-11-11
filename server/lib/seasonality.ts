@@ -2,11 +2,30 @@ import { join } from "path";
 import { readFileSync, writeFileSync } from "fs";
 import { getDataPath, ensureDataDir } from "./paths.js";
 import { getCities, getCityById } from "./cities.js";
+import { comfortScore } from "../../src/lib/comfort.js";
+import { createJsonStore } from "./jsonStore.js";
+import {
+  cellKeyFor,
+  decodeMonths,
+  decodeWeeks,
+  encodeWeekly,
+  emptyClimateFile,
+  readCommittedClimate,
+  type ClimateCell,
+  type ClimateFile,
+  type WeekSeasonality,
+} from "./climateNormals.js";
+
+export { comfortScore };
+export type { WeekSeasonality };
 
 export interface MonthSeasonality {
+  /** Comfort Index: temperature comfort minus rain penalty minus air penalty (src/lib/comfort.ts). */
   score: number;
   tempC: number;
   precipMm: number;
+  /** Monthly mean PM2.5 in ug/m3 (CAMS via Open-Meteo); absent until the air-quality backfill reaches the city. */
+  pm25?: number;
 }
 
 export interface CitySeasonality {
@@ -23,74 +42,20 @@ export interface SeasonalityDataset {
 export interface RegionAggregate {
   region: string;
   /** Means over the country's covered cities. tempC to 1dp, precipMm rounded. */
-  months: Array<{ score: number; tempC: number; precipMm: number }>;
+  months: Array<{ score: number; tempC: number; precipMm: number; pm25?: number }>;
 }
 
 // ── Comfort score formula ───────────────────────────────────────────────
-// Pure, deterministic, unit-tested. Input is the month's MEAN daily temperature
-// (average of day high and night low) and its total rain.
-//
-// A mean of 16-20C is the sweet spot for being out all day: afternoons around
-// 21-27C. Above that it falls away fast, because the afternoon runs 6-8C over the
-// mean (more in deserts): a 26C mean is a ~33C afternoon, a 30C mean is ~37C. Below
-// it falls away more gently: cold can be dressed for. Points in between are linear.
-// Rain then subtracts up to 35: nothing at <=30mm a month, the full 35 at >=250mm.
-
-const TEMP_CURVE: Array<[tempC: number, score: number]> = [
-  [-10, 0],
-  [-2, 8],
-  [4, 25],
-  [9, 50],
-  [13, 78],
-  [16, 100],
-  [20, 100],
-  [22, 85],
-  [24, 65],
-  [26, 45],
-  [28, 28],
-  [30, 15],
-  [32, 6],
-  [34, 0],
-];
-
-const PRECIP_FREE_MM = 30;
-const PRECIP_MAX_MM = 250;
-const PRECIP_MAX_PENALTY = 35;
-
-function tempScore(tempC: number): number {
-  const first = TEMP_CURVE[0]!;
-  const last = TEMP_CURVE[TEMP_CURVE.length - 1]!;
-  if (tempC <= first[0]) return first[1];
-  if (tempC >= last[0]) return last[1];
-  for (let i = 1; i < TEMP_CURVE.length; i++) {
-    const [x1, y1] = TEMP_CURVE[i]!;
-    if (tempC <= x1) {
-      const [x0, y0] = TEMP_CURVE[i - 1]!;
-      return y0 + ((y1 - y0) * (tempC - x0)) / (x1 - x0);
-    }
-  }
-  return last[1];
-}
-
-export function comfortScore(tempC: number, precipMm: number): number {
-  let penalty: number;
-  if (precipMm <= PRECIP_FREE_MM) {
-    penalty = 0;
-  } else if (precipMm >= PRECIP_MAX_MM) {
-    penalty = PRECIP_MAX_PENALTY;
-  } else {
-    penalty = (PRECIP_MAX_PENALTY * (precipMm - PRECIP_FREE_MM)) / (PRECIP_MAX_MM - PRECIP_FREE_MM);
-  }
-  return Math.round(Math.min(100, Math.max(0, tempScore(tempC) - penalty)));
-}
+// Lives in src/lib/comfort.ts so the client can show the same breakdown (ADR 0014).
+// comfortScore(tempC, precipMm, pm25?) is re-exported above.
 
 /**
- * Re-derives each month's score from its temperature and rain, so stored datasets
- * (the seed and the runtime cache) always follow the current formula.
+ * Re-derives each month's score from its temperature, rain and air, so stored per-city
+ * datasets (the seed and the runtime cache) always follow the current formula.
  */
 export function rescoreMonths(months: MonthSeasonality[]): MonthSeasonality[] {
   return months.map((m) =>
-    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm) } : m
+    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm, m.pm25) } : m
   );
 }
 
@@ -214,16 +179,158 @@ function persistToRuntimeCache(cityId: string, months: MonthSeasonality[]): void
 export function resetSeasonalityCache(): void {
   cache = null;
   runtimeCache = null;
+  committedClimate = null;
+  runtimeClimate = emptyClimateFile();
+  derived = null;
   inFlight.clear();
 }
 
-/** Runtime cache wins over the seed on duplicate city ids. */
+// ── Climate cells (ADR 0014) ──────────────────────────────────────────────
+//
+// Monthly PM2.5 and the 52-week normals live in climate cells (climateNormals.ts), shared by every
+// city in the same 0.25 degree cell. The committed file is data/climate-normals.json; cells the server
+// fetched itself (the nightly job, and weekly profiles from on-demand fetches) are kept in the
+// document store under cache/climate-runtime.json, so they work on both the JSON-file and
+// Postgres backends. A cell, when present, supersedes the legacy per-city months above it.
+
+let committedClimate: ClimateFile | null = null;
+let runtimeClimate: ClimateFile = emptyClimateFile();
+let derived: { months: Map<string, MonthSeasonality[]>; weeks: Map<string, WeekSeasonality[]> } | null = null;
+
+const climateRuntimeStore = createJsonStore<ClimateFile>("cache/climate-runtime.json", () => emptyClimateFile());
+
+function loadCommittedClimate(): ClimateFile {
+  if (committedClimate) return committedClimate;
+  // A DATA_DIR that carries its own seasonality seed owns the whole dataset (tests, overrides): the repo's
+  // committed climate cells must not leak into it.
+  let ownSeed = false;
+  try {
+    readFileSync(getDataPath("seasonality.json"), "utf-8");
+    ownSeed = process.env.DATA_DIR !== undefined && process.env.DATA_DIR !== join(process.cwd(), "data");
+  } catch {
+    ownSeed = false;
+  }
+  committedClimate = ownSeed ? readOwnClimate() : readCommittedClimate();
+  return committedClimate;
+}
+
+function readOwnClimate(): ClimateFile {
+  try {
+    const parsed = JSON.parse(readFileSync(getDataPath("climate-normals.json"), "utf-8")) as ClimateFile;
+    if (parsed?.version === 1 && parsed.cells) return parsed;
+  } catch {
+    // none
+  }
+  return emptyClimateFile();
+}
+
+/** Loads the server-fetched cells from the document store into memory. Call once at server start; safe to repeat. */
+export async function hydrateClimateRuntime(): Promise<void> {
+  try {
+    const f = await climateRuntimeStore.read();
+    if (f?.version === 1 && f.cells) {
+      runtimeClimate = f;
+      derived = null;
+    }
+  } catch (err) {
+    console.warn("[seasonality] could not read the runtime climate cells:", err instanceof Error ? err.message : String(err));
+  }
+}
+
+/** Persists one server-fetched cell (document store) and makes it visible to readers immediately. */
+export async function saveRuntimeClimateCell(key: string, cell: ClimateCell): Promise<void> {
+  runtimeClimate.cells[key] = cell;
+  runtimeClimate.generatedAt = new Date().toISOString();
+  derived = null;
+  await climateRuntimeStore.update((f) => {
+    f.version = 1;
+    f.cells ??= {};
+    f.cells[key] = cell;
+    f.generatedAt = runtimeClimate.generatedAt;
+    f.cellDeg = runtimeClimate.cellDeg;
+  });
+}
+
+/** Cells visible to readers: committed, with server-fetched ones on top when they are at least as new. */
+export function climateCells(): Record<string, ClimateCell> {
+  const committed = loadCommittedClimate().cells;
+  const runtime = runtimeClimate.cells;
+  const keys = Object.keys(runtime);
+  if (keys.length === 0) return committed;
+  const out = { ...committed };
+  for (const k of keys) {
+    const r = runtime[k]!;
+    const c = out[k];
+    if (!c || (r.at ?? "") >= (c.at ?? "")) out[k] = r;
+  }
+  return out;
+}
+
+export function getClimateCell(cityId: string): ClimateCell | undefined {
+  const city = getCityById(cityId);
+  return city ? climateCells()[cellKeyFor(city.lat, city.lng)] : undefined;
+}
+
+export function getAirWindow(): string {
+  return loadCommittedClimate().airWindow || "";
+}
+
+function buildDerived() {
+  if (derived) return derived;
+  const cells = climateCells();
+  const months = new Map<string, MonthSeasonality[]>();
+  const weeks = new Map<string, WeekSeasonality[]>();
+  const decodedM = new Map<string, MonthSeasonality[] | null>();
+  const decodedW = new Map<string, WeekSeasonality[] | null>();
+  for (const city of getCities()) {
+    const key = cellKeyFor(city.lat, city.lng);
+    const cell = cells[key];
+    if (!cell) continue;
+    if (!decodedM.has(key)) {
+      decodedM.set(key, decodeMonths(cell));
+      decodedW.set(key, decodeWeeks(cell));
+    }
+    const m = decodedM.get(key);
+    const w = decodedW.get(key);
+    if (m) months.set(city.id, m);
+    if (w) weeks.set(city.id, w);
+  }
+  derived = { months, weeks };
+  return derived;
+}
+
+/** Cache-only: a city's 52 week-of-year normals, when its climate cell has them. */
+export function getCityWeeks(cityId: string): WeekSeasonality[] | undefined {
+  return buildDerived().weeks.get(cityId);
+}
+
+/** Every covered city's weekly normals (cache-only). */
+export function getAllCityWeeks(): Record<string, WeekSeasonality[]> {
+  return Object.fromEntries(buildDerived().weeks);
+}
+
+/** How many cities have each kind of data, for the job log and status. */
+export function climateCoverage(): { cities: number; monthly: number; weekly: number; air: number } {
+  const d = buildDerived();
+  const monthly = new Set([...d.months.keys(), ...Object.keys(loadSeasonality().cities), ...Object.keys(loadRuntimeCache().cities)]);
+  let air = 0;
+  for (const m of d.months.values()) if (m.some((x) => x.pm25 !== undefined)) air++;
+  return { cities: getCities().length, monthly: monthly.size, weekly: d.weeks.size, air };
+}
+
+/** Climate cells win over the legacy per-city months (they carry air quality); the runtime cache wins over the seed. */
 function mergedCities(): Record<string, CitySeasonality> {
-  return { ...loadSeasonality().cities, ...loadRuntimeCache().cities };
+  const out: Record<string, CitySeasonality> = { ...loadSeasonality().cities, ...loadRuntimeCache().cities };
+  for (const [id, months] of buildDerived().months) out[id] = { months };
+  return out;
 }
 
 function getCachedMonths(cityId: string): MonthSeasonality[] | undefined {
-  return loadRuntimeCache().cities[cityId]?.months ?? loadSeasonality().cities[cityId]?.months;
+  return (
+    buildDerived().months.get(cityId) ??
+    loadRuntimeCache().cities[cityId]?.months ??
+    loadSeasonality().cities[cityId]?.months
+  );
 }
 
 // ── On-demand live fetch (Open-Meteo archive API) ─────────────────────────
@@ -334,6 +441,20 @@ async function fetchCityLive(
   }));
 
   persistToRuntimeCache(cityId, months);
+
+  // The same daily data also gives the week-of-year profile; stored when the series is dense enough.
+  // (Air quality is a second provider call, left to the nightly job.)
+  const weekly = encodeWeekly(
+    records.map((r) => ({ date: r.date, v: r.tempC })),
+    records.map((r) => ({ date: r.date, v: r.precipMm }))
+  );
+  if (weekly) {
+    void saveRuntimeClimateCell(cellKeyFor(lat, lng), {
+      at: new Date().toISOString().slice(0, 10),
+      m: { t: months.map((m) => Math.round(m.tempC * 10)), p: months.map((m) => m.precipMm) },
+      w: weekly,
+    }).catch(() => undefined);
+  }
   return { kind: "hit", months };
 }
 
@@ -410,8 +531,11 @@ export function getRegionAggregates(): RegionAggregate[] {
   for (const [region, lists] of byCountry) {
     const months = Array.from({ length: 12 }, (_, i) => {
       const ms = lists.map((l) => l[i]).filter((m): m is MonthSeasonality => !!m);
+      // PM2.5 is the mean over the cities that have it: a country with none reports none, never zero.
+      const air = ms.filter((m) => typeof m.pm25 === "number").map((m) => m.pm25 as number);
       return {
         score: Math.round(mean(ms.map((m) => m.score))),
+        ...(air.length ? { pm25: Math.round(mean(air) * 10) / 10 } : {}),
         tempC: Math.round(mean(ms.map((m) => m.tempC)) * 10) / 10,
         precipMm: Math.round(mean(ms.map((m) => m.precipMm))),
       };

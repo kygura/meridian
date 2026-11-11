@@ -1,5 +1,6 @@
 import type { Trip, TripNode } from "../types";
 import { isMonthSpan } from "./season";
+import { cleanLegPlan, cleanNodeItinerary, cleanTravellers } from "./itinerary";
 
 /** File format for moving trips between browsers: Settings › Trips › Export / Import. */
 export const TRIP_FILE_KIND = "meridian-trips";
@@ -37,12 +38,17 @@ function toTrip(t: unknown): Trip | null {
     name: o.name,
     color: typeof o.color === "string" ? o.color : "#1d4ed8",
     status: STATUSES.includes(o.status as Trip["status"]) ? (o.status as Trip["status"]) : "draft",
-    nodes: (o.nodes as TripNode[]).map(({ cityId, name, iata, lat, lng, months }) =>
-      months ? { cityId, name, iata, lat, lng, months: { start: months.start, end: months.end } } : { cityId, name, iata, lat, lng }
-    ),
+    // Itinerary fields (ADR 0010) are validated piece by piece; a malformed one is dropped.
+    nodes: (o.nodes as TripNode[]).map((n) => {
+      const { cityId, name, iata, lat, lng, months } = n;
+      const base = months ? { cityId, name, iata, lat, lng, months: { start: months.start, end: months.end } } : { cityId, name, iata, lat, lng };
+      return { ...base, ...cleanNodeItinerary(n) };
+    }),
     origin: "manual",
     ...(isMonthSpan(o.season) ? { season: { start: o.season.start, end: o.season.end } } : {}),
     ...(Number.isInteger(o.year) && (o.year as number) >= 2000 && (o.year as number) <= 2100 ? { year: o.year as number } : {}),
+    ...(cleanTravellers(o.travellers) ? { travellers: cleanTravellers(o.travellers) } : {}),
+    ...(cleanLegPlan(o.homeLeg) ? { homeLeg: cleanLegPlan(o.homeLeg) } : {}),
   };
 }
 

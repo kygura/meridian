@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Badge, type BadgeTone } from "../../../ui";
 import { useMeridianStore } from "../../../store";
 import { resolveTripColor } from "../../../lib/tripColors";
-import { hubsFromCities, STATUS_LABEL } from "../../../lib/tripPlan";
+import { hubsFromCities, landmassFromCities, STATUS_LABEL } from "../../../lib/tripPlan";
 import type { Trip } from "../../../types";
 
 const STATUS_TONE: Record<Trip["status"], BadgeTone> = {
@@ -36,4 +36,16 @@ export function MockBadge({ trip }: { trip: Trip }) {
 export function useHubs() {
   const cities = useMeridianStore((s) => s.cities);
   return useMemo(() => hubsFromCities(cities), [cities]);
+}
+
+/** City id → landmass group, for defaulting a leg's transport mode (lib/legs). */
+export function useLandmass() {
+  const cities = useMeridianStore((s) => s.cities);
+  return useMemo(() => landmassFromCities(cities), [cities]);
+}
+
+/** Loaded cities by id: country and time zone for search links and the calendar. */
+export function useCityIndex() {
+  const cities = useMeridianStore((s) => s.cities);
+  return useMemo(() => new Map(cities.map((c) => [c.id, c])), [cities]);
 }

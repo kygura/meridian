@@ -7,6 +7,7 @@ import PlacesToLive from "./live/PlacesToLive";
 import RepeatTrip from "./repeat/RepeatTrip";
 import Watches from "./watches/Watches";
 import Flights from "./flights/Flights";
+import DaysPage from "./days/DaysPage";
 import "./plan.css";
 
 export interface PlanScreenProps {
@@ -19,6 +20,7 @@ const TABS: { value: PlanTab; label: string }[] = [
   { value: "repeat", label: "Repeat a trip" },
   { value: "watches", label: "Watches" },
   { value: "flights", label: "Flights" },
+  { value: "days", label: "Days" },
 ];
 
 /**
@@ -54,6 +56,7 @@ export default function PlanScreen({ route }: PlanScreenProps) {
         )}
         {route.tab === "watches" && <Watches />}
         {route.tab === "flights" && <Flights />}
+        {route.tab === "days" && <DaysPage />}
       </Page>
     </PageActionsProvider>
   );

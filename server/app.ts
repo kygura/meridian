@@ -1,7 +1,6 @@
 // The Hono app, without a listener: server/index.ts serves it on a port with the
 // built frontend; server/vercel.ts exposes it as one Vercel function.
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 
 import { loadCities } from "./lib/cities.js";
 import citiesRoutes from "./routes/cities.js";
@@ -19,7 +18,19 @@ import watchesRoutes from "./routes/watches.js";
 import tripsRoutes from "./routes/trips.js";
 import livabilityRoutes from "./routes/livability.js";
 import overlaysRoutes from "./routes/overlays.js";
+import notificationsRoutes from "./routes/notifications.js";
+import jobsRoutes from "./routes/jobs.js";
+import sharedRoutes from "./routes/shared.js";
+import rotationRoutes from "./routes/rotation.js";
+import solverRoutes from "./routes/solver.js";
+import visaRoutes from "./routes/visa.js";
+import notionRoutes from "./routes/notion.js";
+import gmailRoutes from "./routes/gmail.js";
+// Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
+import "./lib/bridgesJob.js";
 import { gateRoutes } from "./middleware/auth.js";
+import { installGuards } from "./middleware/guards.js";
+import authRoutes from "./routes/auth.js";
 
 // Load city data on startup
 loadCities();
@@ -28,19 +39,13 @@ registerJournalFingerprint();
 
 export const app = new Hono();
 
-// CORS middleware for dev
-app.use(
-  "/api/*",
-  cors({
-    origin: ["http://localhost:5173", "http://localhost:3000"],
-    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// Security headers, CORS, CSRF, and the gates and rate limits for bookings, shortlist
+// writes, the agent, news and flight search (ADR 0009).
+installGuards(app);
 
-// Token-gate personal-data prefixes (spec-journal D1/R1) — each prefix itself and
-// everything under it, including routes later tasks mount. /api/bookings stays
-// ungated (ruling R2).
+// Owner-gate personal-data prefixes (spec-journal D1/R1) — each prefix itself and
+// everything under it, including routes later tasks mount. Rotation, solver, Notion,
+// Gmail, notifications and jobs also gate inside their own routers.
 gateRoutes(app);
 
 // Mount API routes
@@ -58,6 +63,20 @@ app.route("/api/watches", watchesRoutes);
 app.route("/api/trips", tripsRoutes);
 app.route("/api/overlays", overlaysRoutes);
 app.route("/api/livability", livabilityRoutes);
+app.route("/api/notifications", notificationsRoutes);
+app.route("/api/jobs", jobsRoutes);
+app.route("/api/auth", authRoutes);
+// Owner-only (ADR 0011).
+app.route("/api/rotation", rotationRoutes);
+// Owner-only (ADR 0015).
+app.route("/api/solver", solverRoutes);
+// Owner-only (ADR 0012).
+app.route("/api/visa", visaRoutes);
+// Owner-only (ADR 0017).
+app.route("/api/notion", notionRoutes);
+app.route("/api/gmail", gmailRoutes);
+// Public by design: share and calendar links carry their own token (ADR 0010).
+app.route("/api/shared", sharedRoutes);
 
 // Health check
 app.get("/api/health", (c) => {

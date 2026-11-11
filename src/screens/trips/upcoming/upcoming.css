@@ -864,3 +864,28 @@
 .trips-risk-note {
   color: var(--subtle);
 }
+
+/* Entry and visas card (ADR 0012). */
+.trips-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.trips-entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.trips-entry-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border-width) solid var(--border);
+  min-width: 0;
+}
+.trips-entry-place {
+  font-weight: var(--weight-medium);
+}

@@ -4,6 +4,11 @@ import { IconLock, IconMonitor, IconMoon, IconSettings, IconSun, IconUnlock, Ico
 import { useMeridianStore } from "../store";
 import { parseTripFile, serializeTrips } from "../lib/tripTransfer";
 import { useThemeStore, type ThemePref } from "./theme";
+import { AlertSettingsSection } from "./AlertSettings";
+import { ReplanSettingsSection } from "./ReplanSettings";
+import { NotionSection } from "./NotionSettings";
+import { GmailSection } from "./GmailSettings";
+import { VisaSettingsSection } from "./VisaSettings";
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -52,11 +57,11 @@ function TripTransferSection() {
   );
 }
 
-/** Theme and journal settings. Used in the sidebar popover and the phone More sheet. */
+/** Theme, trips file and sign-in settings. Used in the sidebar popover and the phone More sheet. */
 export function SettingsPanel() {
   const pref = useThemeStore((s) => s.pref);
   const setPref = useThemeStore((s) => s.setPref);
-  const { unlocked, token, clear } = useJournalToken();
+  const { unlocked, clear } = useJournalToken();
 
   return (
     <div className="shell-settings">
@@ -75,25 +80,27 @@ export function SettingsPanel() {
         />
       </section>
       <TripTransferSection />
+      {unlocked && <GmailSection />}
+      {unlocked && <NotionSection />}
       <section className="shell-settings-section">
-        <h3 className="shell-settings-heading">Journal</h3>
+        <h3 className="shell-settings-heading">Account</h3>
         {unlocked ? (
           <div className="shell-settings-row">
             <span className="shell-settings-status">
               <IconUnlock size={16} />
-              Unlocked in this browser
+              Signed in
             </span>
             <Button size="sm" icon={<IconLock size={16} />} onClick={clear}>
-              Lock
+              Sign out
             </Button>
           </div>
         ) : (
-          <>
-            {token ? <p className="shell-settings-note">The saved token was rejected. Enter it again.</p> : null}
-            <UnlockCard compact title="Unlock your journal" />
-          </>
+          <UnlockCard compact title="Sign in" />
         )}
       </section>
+      <VisaSettingsSection />
+      <AlertSettingsSection />
+      <ReplanSettingsSection />
     </div>
   );
 }

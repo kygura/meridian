@@ -21,7 +21,7 @@ import {
   shiftMonthBy,
   tempLabel,
 } from "../../../lib/repeatCopy";
-import { Button, Chip, CitySearch, Field, Popover, Select, Sheet, cx, toast, SectionHeader } from "../../../ui";
+import { Button, Chip, CitySearch, Field, Popover, Segmented, Select, Sheet, cx, toast, SectionHeader } from "../../../ui";
 import { IconChevronDown, IconFilter } from "../../../ui/icons";
 import type { City, Fingerprint, ReplayResponse } from "../../../types";
 import { BendSlider } from "./BendSlider";
@@ -126,6 +126,7 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
     controls.monthShift !== 0 ||
     controls.anyMonth ||
     controls.months.length > 0 ||
+    controls.resolution !== "month" ||
     moreCount > 0;
 
   const [homeSaving, setHomeSaving] = useState(false);
@@ -150,8 +151,25 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
         <BendSlider label="Temperature" value={controls.tempC} min={-10} max={10} step={1} readout={tempLabel(controls.tempC)} onChange={(v) => set({ tempC: v })} />
       </FilterPop>
 
-      <FilterPop label="When" value={whenValue} set={controls.monthShift !== 0 || controls.anyMonth || controls.months.length > 0}>
+      <FilterPop
+        label="When"
+        value={controls.resolution === "week" ? `${whenValue}, by week` : whenValue}
+        set={controls.monthShift !== 0 || controls.anyMonth || controls.months.length > 0 || controls.resolution === "week"}
+      >
         <div className="plan-repeat-popstack">
+          <Segmented<"month" | "week">
+            label="Match by"
+            size="sm"
+            value={controls.resolution}
+            onChange={(resolution) => set({ resolution })}
+            options={[
+              { value: "month", label: "Month" },
+              { value: "week", label: "Week" },
+            ]}
+          />
+          {controls.resolution === "week" && (
+            <p className="plan-repeat-hint">Places with week-by-week climate are matched to the week; the rest are matched by month.</p>
+          )}
           <BendSlider
             label="Compared with your trip"
             value={controls.monthShift}

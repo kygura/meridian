@@ -17,6 +17,8 @@ export interface City {
   currency?: string;
   /** The city's name in its own language and script ("東京", "Москва"), when it differs. */
   nativeName?: string;
+  /** Which piece of land the city is on (data/city-geo.json); equal ids are joined by land. */
+  landmass?: number;
 }
 
 export type MetricCategory =
@@ -29,7 +31,8 @@ export type MetricCategory =
   | "cost"
   | "connectivity"
   | "events"
-  | "beauty";
+  | "beauty"
+  | "health";
 
 export type Granularity =
   | "city"
@@ -49,6 +52,16 @@ export interface MetricValue {
   unit: string;
   normalized: number; // 0-100
   label?: string;
+  /** How local this value is (ADR 0013). A country value is shared by every city in the country. */
+  granularity?: "city" | "region" | "country";
+  /** Year the figure describes, when the source gives one. */
+  year?: number;
+  /** Key of the source in GET /api/metrics/facts/:cityId `sources`. */
+  source?: string;
+  /** True when worked out from measured inputs rather than measured directly. */
+  estimate?: boolean;
+  /** The figure in plain words ("About €1,450 a month for one person"). */
+  note?: string;
 }
 
 export interface MetricSurface {
@@ -62,13 +75,18 @@ export interface MetricSurface {
   values: MetricValue[];
 }
 
+/** Each part is null when there is no data for the city (ADR 0013); nothing is filled in. */
 export interface MeridianScore {
-  overall: number;
-  economics: number;
-  quality: number;
-  climate: number;
-  stability: number;
-  nomadInfra: number;
+  /** Weighted mean of the parts that exist; null with fewer than three. */
+  overall: number | null;
+  economics: number | null;
+  quality: number | null;
+  climate: number | null;
+  stability: number | null;
+  nomadInfra: number | null;
+  health: number | null;
+  /** How many of the six parts have data. */
+  parts: number;
 }
 
 /**
@@ -90,6 +108,14 @@ export interface TripNode {
   lng: number;
   /** When in the season this stop happens. Absent = not placed yet. */
   months?: MonthSpan;
+  /** Itinerary (ADR 0010), used once the trip has a year. YYYY-MM-DD. */
+  arrive?: string;
+  depart?: string;
+  lodging?: TripLodging;
+  activities?: TripActivity[];
+  notes?: string;
+  /** How you get to this stop: transport mode and a booking recorded by hand. */
+  travel?: LegPlan;
 }
 
 export interface TripEstimate {
@@ -123,6 +149,10 @@ export interface Trip {
   departure?: TripNode;
   /** Fly back to the departure after the last stop. Absent = true. */
   returnHome?: boolean;
+  /** How many people travel, for search links. Absent = 1. */
+  travellers?: number;
+  /** The leg home from the last stop (the other legs live on the stop they arrive at). */
+  homeLeg?: LegPlan;
 }
 
 export interface ShortlistEntry {
@@ -133,7 +163,7 @@ export interface ShortlistEntry {
   lng: number;
   iata?: string;
   addedAt: string;
-  score?: number;
+  score?: number | null;
 }
 
 export interface AgentBrief {
@@ -243,7 +273,8 @@ export interface PlaceResult {
   lat: number;
   lng: number;
   population: number;
-  score: number;
+  /** Null when there is too little data for a score (ADR 0013). */
+  score: number | null;
   summaryLine: string;
   /** Set when the place came from a journal replay (find_similar_windows): the matched month + breakdown. */
   replayMatch?: { match: number; month: number; dims: ReplayDimScore[]; scoredOn: FingerprintDim[] };
@@ -393,6 +424,9 @@ export type FingerprintDim =
   | "flightCostEurPer1000km"
   | "crowdProxy";
 
+/** A dimension a replay match can be scored on: the fingerprint's, plus the week of the year at week resolution. */
+export type ReplayDim = FingerprintDim | "weekOfYear";
+
 /** ok = computed from real data; pending = fetch failed/quota, will retry; absent = no input data. */
 export type FingerprintDimStatus = "ok" | "pending" | "absent";
 
@@ -480,26 +514,38 @@ export interface ReplayQuery {
     tags?: string[]; // event tags, e.g. ["eclipse"]
     /** Restrict to these cities (row-level watches). */
     cityIds?: string[];
+    /** Week resolution only: restrict to these weeks of the year (1-52). */
+    weeks?: number[];
   };
   limit?: number; // default 30
+  /**
+   * "week" matches destination x week-of-year cells for cities with weekly normals and falls back
+   * to months for the rest (ADR 0014). Default "month" (ADR 0005).
+   */
+  resolution?: "month" | "week";
 }
 
 export interface ReplayDimScore {
-  name: FingerprintDim;
+  name: ReplayDim;
   value: number;
   templateValue: number;
-  /** "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder). */
-  basis?: "dealRating";
+  /**
+   * "dealRating": no user baseline, scored on the provider's deal rating (templateValue is a placeholder).
+   * On crowds: "nights" when the month's busyness is measured visitor nights, "comfort" when it is the climate fallback.
+   */
+  basis?: "dealRating" | "nights" | "comfort";
   /** Share of the final match this dimension contributed (0-1, sums to 1 over scoredOn). */
   contribution: number;
 }
 
 export interface ReplayResult {
   cityId: string;
-  month: number; // 1-12
+  month: number; // 1-12 (the month the week mostly falls in, for a weekly cell)
+  /** Week of the year (1-52) when this result is a weekly cell; absent for a monthly one. */
+  week?: number;
   match: number; // 0-100
   dims: ReplayDimScore[];
-  scoredOn: FingerprintDim[];
+  scoredOn: ReplayDim[];
   price?: FlightEstimateResult & { priceEur?: number; baselineEur?: number; distanceKm?: number };
   visitedBefore: boolean;
   events?: MeridianEvent[];
@@ -514,6 +560,11 @@ export interface ReplayResponse {
   fromCityId?: string;
   /** Stage-1 match (0-100) for all 12 months of every result city, index 0 = Jan; null = not scorable. */
   grid?: Array<{ cityId: string; months: Array<number | null> }>;
+  /** Week resolution: the requested resolution, and stage-1 match for all 52 weeks of each result city that has weekly normals. */
+  resolution?: "month" | "week";
+  weekGrid?: Array<{ cityId: string; weeks: Array<number | null> }>;
+  /** Cities with weekly normals (a subset of universeSize); the rest were matched by month. */
+  weeklyUniverseSize?: number;
   /**
    * Where the template's comfort/tempC/precipMm came from: "observed" = the stay's
    * real weather (or values given in a partial fingerprint), "normal" = the city's
@@ -600,6 +651,8 @@ export interface Alert {
   watchId: string;
   cityId: string;
   month: number;
+  /** Week of the year (1-52) for an alert on a weekly result; its price is for that week's middle day. */
+  week?: number;
   priceEur: number;
   baselineEur: number;
   source: string;
@@ -660,4 +713,90 @@ export interface MeridianEvent {
   date?: string;
   recurring: boolean;
   tags: string[];
+}
+
+// ── Notices (ADR 0016) ───────────────────────────────────────────────
+
+/** How one channel fared for one Notice. */
+export interface NoticeDelivery {
+  channel: string;
+  ok: boolean;
+  error?: string;
+  at: string;
+}
+
+/** A message Meridian raised for the owner: logged first, then sent through every configured channel. */
+export interface Notice {
+  id: string;
+  /** What raised it, e.g. "watch-alert", "test". */
+  kind: string;
+  title: string;
+  body: string;
+  /** App-relative link ("/#/plan/watches") or an absolute URL. */
+  url?: string;
+  dedupeKey: string;
+  createdAt: string;
+  seen: boolean;
+  deliveries: NoticeDelivery[];
+}
+
+/** A delivery channel as Settings shows it. Never carries a secret. */
+export interface NoticeChannelStatus {
+  id: string;
+  label: string;
+  configured: boolean;
+  detail?: string;
+}
+
+// ── Itinerary (ADR 0010) ────────────────────────────────────────────
+// Concrete plans on a Trip once it has a year. Costs are kept as entered
+// (MoneyInput: amount + currency); nothing here is converted or booked by Meridian.
+
+export type LegMode = "flight" | "train" | "bus" | "ferry" | "drive";
+
+/** Where you sleep at a trip stop. Mirrors the journal's Lodging, plus what a plan needs. */
+export interface TripLodging {
+  name: string;
+  kind?: Lodging["kind"];
+  address?: string;
+  /** YYYY-MM-DD; default to the stop's arrival and departure. */
+  checkIn?: string;
+  checkOut?: string;
+  /** Total for the stay. */
+  cost?: MoneyInput;
+  bookingRef?: string;
+  link?: string;
+}
+
+/** Something planned at a trip stop. Becomes an Experience once it has happened. */
+export interface TripActivity {
+  id: string;
+  title: string;
+  date?: string; // YYYY-MM-DD
+  time?: string; // HH:MM, local to the stop
+  cost?: MoneyInput;
+  link?: string;
+  note?: string;
+}
+
+/** A booking made somewhere else and written down on a leg. Times are local: YYYY-MM-DDTHH:MM. */
+export interface LegRecord {
+  carrier?: string;
+  number?: string;
+  reference?: string;
+  cost?: MoneyInput;
+  departAt?: string;
+  arriveAt?: string;
+}
+
+/**
+ * The plan for one leg, stored on the stop it arrives at (Trip.homeLeg for the way home).
+ * `fromCityId` is the city it left from when it was written: reorder the route and the
+ * plan no longer matches, so it is ignored.
+ */
+export interface LegPlan {
+  fromCityId: string;
+  /** Absent = the default for the distance and geography. */
+  mode?: LegMode;
+  booked?: LegRecord;
 }

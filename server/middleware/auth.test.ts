@@ -1,6 +1,12 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { Hono } from "hono";
-import { gateRoutes, requireToken, tokenMatches } from "./auth";
+import { resetAuthMemory } from "../lib/authStore";
+import { resetRateLimits } from "./rateLimit";
+import { gateRoutes, ownerIdentity, requireOwner, requireOwnerForWrites, requireOwnerWhen, requireToken, tokenMatches } from "./auth";
+import { SESSION_COOKIE, issueSession } from "../lib/session";
 
 function appWithGates() {
   const app = new Hono();
@@ -14,8 +20,18 @@ function appWithGates() {
 
 const auth = (t: string) => ({ headers: { Authorization: `Bearer ${t}` } });
 
+// Wrong tokens are counted in the store-backed lockout: keep that state in a temp dir.
+let TMP = "";
+beforeEach(() => {
+  TMP = mkdtempSync(join(tmpdir(), "meridian-auth-"));
+  process.env.DATA_DIR = TMP;
+  resetAuthMemory();
+  resetRateLimits();
+});
 afterEach(() => {
   delete process.env.MERIDIAN_TOKEN;
+  delete process.env.DATA_DIR;
+  rmSync(TMP, { recursive: true, force: true });
 });
 
 describe("requireToken", () => {
@@ -58,11 +74,14 @@ describe("requireToken", () => {
     }
   });
 
-  it("does not gate /api/bookings (ruling R2)", async () => {
+  it("gateRoutes covers exactly the prefixes it is given (bookings are gated in guards.ts)", async () => {
     process.env.MERIDIAN_TOKEN = "s3cret";
     const app = appWithGates();
     expect((await app.request("/api/bookings")).status).toBe(200);
-    expect((await app.request("/api/bookings/x")).status).toBe(200);
+    const all = new Hono();
+    gateRoutes(all, ["/api/bookings"]);
+    all.get("/api/bookings/x", (c) => c.json({ ok: true }));
+    expect((await all.request("/api/bookings/x")).status).toBe(401);
   });
 
   it("works as plain middleware", async () => {
@@ -80,5 +99,36 @@ describe("tokenMatches", () => {
     expect(tokenMatches("abc", "abc")).toBe(true);
     expect(tokenMatches("abc", "abcd")).toBe(false);
     expect(tokenMatches("", "abc")).toBe(false);
+  });
+});
+
+describe("session cookie on the gate", () => {
+  it("passes a signed session, and exposes who is asking", async () => {
+    process.env.MERIDIAN_TOKEN = "s3cret";
+    const app = new Hono();
+    app.use("*", requireOwner);
+    app.get("/", async (c) => c.json(await ownerIdentity(c)));
+    const { token, session } = issueSession()!;
+    const res = await app.request("/", { headers: { Cookie: `${SESSION_COOKIE}=${token}` } });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ userId: "owner", method: "session", session: { sid: session.sid } });
+    const bearer = await app.request("/", { headers: { Authorization: "Bearer s3cret" } });
+    expect(await bearer.json()).toEqual({ userId: "owner", method: "bearer" });
+  });
+
+  it("requireOwnerWhen gates only while its condition holds; requireOwnerForWrites spares reads", async () => {
+    process.env.MERIDIAN_TOKEN = "s3cret";
+    let on = false;
+    const app = new Hono();
+    app.use("/paid", requireOwnerWhen(() => on));
+    app.use("/list", requireOwnerForWrites);
+    app.all("/paid", (c) => c.text("ok"));
+    app.all("/list", (c) => c.text("ok"));
+    expect((await app.request("/paid", { method: "POST" })).status).toBe(200);
+    on = true;
+    expect((await app.request("/paid", { method: "POST" })).status).toBe(401);
+    expect((await app.request("/list")).status).toBe(200);
+    expect((await app.request("/list", { method: "POST" })).status).toBe(401);
+    expect((await app.request("/list", { method: "DELETE" })).status).toBe(401);
   });
 });

@@ -12,9 +12,14 @@
 //
 // Month window: replay prices the 15th of a month's next occurrence (representativeDate), so a
 // month qualifies only when that date lies inside [now + leadWeeks[0] w, now + leadWeeks[1] w];
-// the alert's price then refers to a date the watch actually asked about.
+// the alert's price then refers to a date the watch actually asked about. At week resolution
+// a result is a week, priced on its middle day (representativeDateOfWeek); that date must lie in
+// the window, and the week is part of the alert's identity (two weeks can share a month).
 //
-// Idempotency: alert id = hash(watchId, cityId, month, UTC day of the run), so a second
+// Delivery: each new alert becomes a Notice (notifier.ts): logged for the in-app list,
+// then sent to every configured channel (push, email, Telegram, ntfy, webhook).
+//
+// Idempotency: alert id = hash(watchId, cityId, month[, week], UTC day of the run), so a second
 // run the same day adds nothing and the next day alerts again while the window still holds.
 
 import { createHash, randomUUID } from "crypto";
@@ -22,13 +27,14 @@ import { z } from "zod";
 import type { Alert, ReplayQuery, ReplayResponse, Watch } from "../../src/types.js";
 import { createJsonStore } from "./jsonStore.js";
 import { replayQuerySchema } from "./replaySchema.js";
-import { representativeDate } from "./replay.js";
+import { representativeDate, representativeDateOfWeek } from "./replay.js";
+import { getCityById } from "./cities.js";
+import { notify, type NotifyInput } from "./notifier.js";
 
 export const MAX_WATCHES = 50;
 const WEEK_MS = 7 * 24 * 3600 * 1000;
 const WEBHOOK_CONCURRENCY = 5;
 const WEBHOOK_BUDGET_MS = 15_000;
-const WEBHOOK_TIMEOUT_MS = 5000;
 
 export const priceRuleSchema = z.union([
   z.enum(["below_my_median", "deal_low"]),
@@ -131,6 +137,21 @@ export function monthsInLeadWindow(now: Date, leadWeeks: [number, number]): numb
   return out;
 }
 
+/** Is `dateIso` (a priced departure day) inside [now+lead0 w, now+lead1 w]? */
+export function inLeadWindow(dateIso: string, now: Date, leadWeeks: [number, number]): boolean {
+  const t = Date.parse(`${dateIso}T00:00:00Z`);
+  return t >= now.getTime() + leadWeeks[0] * WEEK_MS && t <= now.getTime() + leadWeeks[1] * WEEK_MS;
+}
+
+/** Months (1-12) any day of the lead window falls in: what to ask replay for at week resolution. */
+export function monthsTouchedByLeadWindow(now: Date, leadWeeks: [number, number]): number[] {
+  const out = new Set<number>();
+  const end = now.getTime() + leadWeeks[1] * WEEK_MS;
+  for (let t = now.getTime() + leadWeeks[0] * WEEK_MS; t <= end; t += 86_400_000) out.add(new Date(t).getUTCMonth() + 1);
+  out.add(new Date(end).getUTCMonth() + 1);
+  return [...out].sort((a, b) => a - b);
+}
+
 type Priced = NonNullable<ReplayResponse["results"][number]["price"]>;
 
 /** Whether the rule passes, and the reference price for the alert. */
@@ -143,28 +164,49 @@ export function checkPriceRule(rule: Watch["priceRule"], price: Priced, priceEur
   return { pass: priceEur <= rule.maxEur, baselineEur: rule.maxEur };
 }
 
-export function alertId(watchId: string, cityId: string, month: number, utcDay: string): string {
-  return "al_" + createHash("sha256").update(`${watchId}|${cityId}|${month}|${utcDay}`).digest("hex").slice(0, 16);
+export function alertId(watchId: string, cityId: string, month: number, utcDay: string, week?: number): string {
+  const when = week === undefined ? `${month}` : `${month}|w${week}`;
+  return "al_" + createHash("sha256").update(`${watchId}|${cityId}|${when}|${utcDay}`).digest("hex").slice(0, 16);
 }
 
-// ── webhook ─────────────────────────────────────────────────────────
+// ── notify ──────────────────────────────────────────────────────────
 
-/** POST {text, alert, watch} to ALERT_WEBHOOK_URL (5s timeout). Never throws. */
-export async function postAlertWebhook(alert: Alert, watch: Watch, fetchImpl: typeof fetch = fetch): Promise<void> {
-  const url = process.env.ALERT_WEBHOOK_URL;
-  if (!url) return;
-  try {
-    const text = `Meridian watch "${watch.label}": ${alert.cityId} in month ${alert.month} at ${Math.round(alert.priceEur)} EUR (${alert.source})`;
-    const res = await fetchImpl(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, alert, watch }),
-      signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
-    });
-    if (!res.ok) console.error(`[watches] webhook responded ${res.status}`);
-  } catch (err) {
-    console.error("[watches] webhook failed:", err instanceof Error ? err.message : String(err));
-  }
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** The Notice for one alert. dedupeKey is the alert id, so an alert is sent once however often the run repeats. */
+export function alertNotice(alert: Alert, watch: Watch): NotifyInput {
+  const city = getCityById(alert.cityId)?.name ?? alert.cityId;
+  const price = `${Math.round(alert.priceEur)} EUR`;
+  const mock = alert.source === "mock";
+  const when =
+    alert.week !== undefined
+      ? `the week of ${new Date(`${representativeDateOfWeek(alert.week, new Date(alert.createdAt))}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`
+      : (MONTHS[alert.month - 1] ?? `month ${alert.month}`);
+  const versus =
+    typeof watch.priceRule === "object"
+      ? `at or under your ${Math.round(watch.priceRule.maxEur)} EUR limit`
+      : watch.priceRule === "deal_low"
+        ? "rated a low price for the route"
+        : alert.baselineEur > 0
+          ? `below your usual ${Math.round(alert.baselineEur)} EUR`
+          : "";
+  return {
+    kind: "watch-alert",
+    // A mock price is said up front: the title is all a lock screen or a chat preview shows.
+    title: `${mock ? "Mock price, not a fare: " : ""}${city} in ${when} at ${price}`,
+    body: mock
+      ? `This is a mock price, not a real fare (no flight provider is set up). Watch "${watch.label}": ${price}${versus ? `, ${versus}` : ""}.`
+      : [`Watch "${watch.label}": flights are ${price}${versus ? `, ${versus}` : ""}.`, `Price source: ${alert.source}.`].join(" "),
+    url: "/#/plan/watches",
+    dedupeKey: `watch-alert:${alert.id}`,
+    // The webhook payload keeps the fields it always had.
+    data: { alert, watch },
+  };
+}
+
+/** Log the alert as a Notice and send it through every configured channel. Never throws for a channel. */
+export async function notifyAlert(alert: Alert, watch: Watch): Promise<void> {
+  await notify(alertNotice(alert, watch));
 }
 
 // ── run ─────────────────────────────────────────────────────────────
@@ -172,7 +214,7 @@ export async function postAlertWebhook(alert: Alert, watch: Watch, fetchImpl: ty
 export interface WatchRunDeps {
   now: () => Date;
   replay: (q: ReplayQuery) => Promise<ReplayResponse>;
-  /** Called once per newly created alert; errors are swallowed. Defaults to postAlertWebhook. */
+  /** Called once per newly created alert; errors are swallowed. Defaults to notifyAlert (the notifier, all channels). */
   webhook?: (alert: Alert, watch: Watch) => Promise<void>;
 }
 
@@ -193,12 +235,13 @@ export async function runWatches(deps: WatchRunDeps): Promise<WatchRunReport> {
   const now = deps.now();
   const day = now.toISOString().slice(0, 10);
   const report: WatchRunReport = { watches: 0, evaluated: 0, alerts: [], skipped: 0, errors: [] };
-  const sendWebhook = deps.webhook ?? ((a: Alert, w: Watch) => postAlertWebhook(a, w));
+  const sendWebhook = deps.webhook ?? notifyAlert;
   const toNotify: Array<[Alert, Watch]> = [];
 
   for (const watch of (await listWatches()).filter((w) => w.active)) {
     report.watches++;
-    const window = monthsInLeadWindow(now, watch.leadWeeks);
+    const weekly = watch.query.resolution === "week";
+    const window = weekly ? monthsTouchedByLeadWindow(now, watch.leadWeeks) : monthsInLeadWindow(now, watch.leadWeeks);
     // Only ask replay about in-window months so its top-N pricing isn't spent on months we'd discard.
     const wanted = watch.query.constraints?.months?.length ? window.filter((m) => watch.query.constraints!.months!.includes(m)) : window;
     const markRun = () =>
@@ -222,7 +265,8 @@ export async function runWatches(deps: WatchRunDeps): Promise<WatchRunReport> {
 
     const fresh: Alert[] = [];
     for (const r of response.results) {
-      if (!window.includes(r.month)) continue;
+      // A week is judged by its own priced day; a month by the 15th (monthsInLeadWindow).
+      if (r.week !== undefined ? !inLeadWindow(representativeDateOfWeek(r.week, now), now, watch.leadWeeks) : !window.includes(r.month) || (weekly && !inLeadWindow(representativeDate(r.month, now), now, watch.leadWeeks))) continue;
       const priceEur = r.price?.priceEur;
       if (!r.price || typeof priceEur !== "number") {
         report.skipped++;
@@ -232,10 +276,11 @@ export async function runWatches(deps: WatchRunDeps): Promise<WatchRunReport> {
       const rule = checkPriceRule(watch.priceRule, r.price, priceEur);
       if (!rule.pass) continue;
       fresh.push({
-        id: alertId(watch.id, r.cityId, r.month, day),
+        id: alertId(watch.id, r.cityId, r.month, day, r.week),
         watchId: watch.id,
         cityId: r.cityId,
         month: r.month,
+        ...(r.week !== undefined ? { week: r.week } : {}),
         priceEur,
         baselineEur: rule.baselineEur,
         source: r.price.source,

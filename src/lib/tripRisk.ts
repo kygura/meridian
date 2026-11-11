@@ -19,6 +19,10 @@ import { greatCirclePoints, haversineKm, type LngLat } from "./geo";
 import { spanMonths, tripSeason } from "./season";
 import type { MonthSpan, Trip, TripNode } from "../types";
 import type { TripLeg } from "./tripPlan";
+import { checkStays, type StayVerdict } from "./visa/engine";
+import { entryRule, type EntryRule } from "./visa/rules";
+import { isoOf, type VisaData } from "./visa/data";
+
 
 export type IncidentKind = "conflict" | "advisory" | "hazard" | "news";
 
@@ -330,4 +334,49 @@ export function clusterName(c: RiskCluster): string {
   if (c.countryNames.length === 0) return c.incidents[0]?.label ?? "Incidents";
   if (c.countryNames.length <= 2) return c.countryNames.join(", ");
   return `${c.countryNames.slice(0, 2).join(", ")} +${c.countryNames.length - 2}`;
+}
+
+// ── Entry requirements per stop (ADR 0012) ───────────────────────────
+
+
+export interface StopEntry {
+  index: number;
+  node: TripNode;
+  country: string | null;
+  /** With dates: the full verdict (days allowed against planned, validity, yellow fever). */
+  verdict: StayVerdict | null;
+  /** Without dates: the entry rule for the stop's first month. */
+  rule: EntryRule | null;
+}
+
+/**
+ * Entry checks for each stop of a trip. Dated stops are checked together, so two stops in one
+ * country are one entry and Schengen counts every stop in the area. A stop with only months
+ * gets its entry requirement and limit for the first of them, with no days counted.
+ */
+export function tripEntryChecks(
+  trip: Pick<Trip, "nodes" | "year">,
+  data: VisaData,
+  passports: string[],
+  countryOf: (cityId: string) => string | undefined,
+  opts: { expiry?: Record<string, string | undefined>; today?: string } = {}
+): { stops: StopEntry[]; check: ReturnType<typeof checkStays> | null } {
+  const dated = trip.nodes
+    .map((n, i) => ({ n, i }))
+    .filter(({ n }) => n.arrive && n.depart && n.depart >= n.arrive && countryOf(n.cityId))
+    .map(({ n, i }) => ({ id: String(i), country: countryOf(n.cityId)!, start: n.arrive!, end: n.depart!, label: n.name }));
+  const check = dated.length ? checkStays(data, passports, dated, { expiry: opts.expiry, today: opts.today }) : null;
+  const stops = trip.nodes.map((node, index) => {
+    const name = countryOf(node.cityId);
+    const country = isoOf(data, name);
+    const verdict = check?.verdicts.find((v) => v.id === String(index)) ?? null;
+    let rule: EntryRule | null = verdict?.rule ?? null;
+    if (!verdict && country && passports.length) {
+      const year = trip.year ?? Number((opts.today ?? "2026-01-01").slice(0, 4));
+      const month = node.months?.start ?? 1;
+      rule = entryRule(data, passports, country, `${year}-${String(month).padStart(2, "0")}-01`);
+    }
+    return { index, node, country, verdict, rule };
+  });
+  return { stops, check };
 }

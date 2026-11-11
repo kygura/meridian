@@ -1,26 +1,17 @@
 import { useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useMeridianStore } from "../../../store";
 import { findLegBooking } from "../../../lib/bookingApi";
-import { hrefFor } from "../../../lib/router";
-import {
-  canReturnToStart,
-  cityToNode,
-  dropIndex,
-  flightsSearchUrl,
-  formatFlightTime,
-  formatKm,
-  staysSearchUrl,
-  RETURN_LEG,
-  stopKeys,
-  type TripLeg,
-  type TripRoute,
-} from "../../../lib/tripPlan";
-import { Badge, Button, CitySearch, EmptyState, IconButton, toast, useIsDesktop } from "../../../ui";
-import { IconArrowLeft, IconChevronDown, IconChevronUp, IconDrag, IconExternal, IconPin, IconPlane, IconTrash } from "../../../ui/icons";
+import { canReturnToStart, cityToNode, dropIndex, stopKeys, type TripRoute } from "../../../lib/tripPlan";
+import { GROUND_DETOUR, GROUND_MODEL } from "../../../lib/legs";
+import { Button, CitySearch, EmptyState, IconButton, toast, useIsDesktop } from "../../../ui";
+import { IconArrowLeft, IconChevronDown, IconChevronUp, IconDrag, IconPin, IconTrash } from "../../../ui/icons";
 import type { Trip } from "../../../types";
-import { useTripMoney } from "./money";
 import { StopSeason, useStopDates, useTripSeasonData } from "./season";
 import { legDepartureHint } from "../../../lib/season";
+import { StopPlan } from "./itinerary";
+import { LegRow } from "./legRow";
+import { useCityIndex } from "./parts";
+import { StopEntryBadge, useTripEntry } from "./entry";
 
 interface StopListProps {
   trip: Trip;
@@ -43,6 +34,8 @@ export default function StopList({ trip, route }: StopListProps) {
   const keys = useMemo(() => stopKeys(trip.nodes), [trip.nodes]);
   const seasonData = useTripSeasonData(trip);
   const dates = useStopDates(trip);
+  const cityIdx = useCityIndex();
+  const entry = useTripEntry(trip);
   const count = trip.nodes.length;
   const tripId = trip.id;
 
@@ -141,7 +134,8 @@ export default function StopList({ trip, route }: StopListProps) {
       {route.outbound ? (
         <LegRow
           leg={route.outbound}
-          tripId={tripId}
+          trip={trip}
+          cityIdx={cityIdx}
           size={sz}
           booking={findLegBooking(bookings, tripId, route.outbound.index)}
           departureDateHint={legDepartureHint(trip, route.outbound.index)}
@@ -175,6 +169,7 @@ export default function StopList({ trip, route }: StopListProps) {
                     <span className="trips-ed-stop-name">{node.name}</span>
                     <span className="trips-ed-stop-sub">
                       {node.iata ? <span className="iata">{node.iata}</span> : <span>No airport</span>}
+                      <StopEntryBadge entry={entry.result?.stops[i]} />
                     </span>
                   </div>
                   <div className="trips-ed-row-actions">
@@ -198,10 +193,12 @@ export default function StopList({ trip, route }: StopListProps) {
                   </div>
                 </div>
                 <StopSeason trip={trip} index={i} node={node} data={seasonData} dates={dates[i]} />
+                {trip.year ? <StopPlan trip={trip} index={i} node={node} monthDates={dates[i]} cityIdx={cityIdx} /> : null}
                 {leg ? (
                   <LegRow
                     leg={leg}
-                    tripId={tripId}
+                    trip={trip}
+                    cityIdx={cityIdx}
                     size={sz}
                     booking={findLegBooking(bookings, tripId, i)}
                     departureDateHint={legDepartureHint(trip, i)}
@@ -216,7 +213,8 @@ export default function StopList({ trip, route }: StopListProps) {
         <>
           <LegRow
             leg={route.inbound}
-            tripId={tripId}
+            trip={trip}
+            cityIdx={cityIdx}
             size={sz}
             booking={findLegBooking(bookings, tripId, route.inbound.index)}
             departureDateHint={legDepartureHint(trip, route.inbound.index)}
@@ -248,6 +246,14 @@ export default function StopList({ trip, route }: StopListProps) {
           </Button>
         ) : null}
       </div>
+      {route.all.length > 0 ? (
+        <p className="trips-ed-method">
+          Times and costs on each leg are rough estimates, never fares or timetables. Flights: great-circle distance at 830 km/h plus 36
+          minutes, and $45 + $0.11 per km. Ground and sea: the straight-line distance × {GROUND_DETOUR} for the route, at{" "}
+          {GROUND_MODEL.train.kmh} km/h by train, {GROUND_MODEL.bus.kmh} by bus, {GROUND_MODEL.drive.kmh} by road and {GROUND_MODEL.ferry.kmh} by
+          ferry. The suggested mode comes from the distance and whether both cities are on the same landmass; change it where you know better.
+        </p>
+      ) : null}
       <div className="sr-only" aria-live="polite">
         {announce}
       </div>
@@ -269,90 +275,6 @@ function HomeRow({ node, label }: { node: TripRoute["departure"]; label: string 
         <span className="trips-ed-stop-sub">
           {node.iata ? <span className="iata">{node.iata}</span> : <span>No airport</span>}
         </span>
-      </div>
-    </div>
-  );
-}
-
-function LegRow({
-  leg,
-  tripId,
-  booking,
-  size,
-  departureDateHint,
-}: {
-  leg: TripLeg;
-  tripId: string;
-  booking: ReturnType<typeof findLegBooking>;
-  size: "sm" | "md";
-  /** Set once the trip is planned for a year: the next stop's first day. */
-  departureDateHint?: string;
-}) {
-  const live = booking && booking.status === "booked";
-  const money = useTripMoney();
-  const book = () =>
-    useMeridianStore
-      .getState()
-      .openBookingModal({ tripId, legIndex: leg.index, origin: leg.from, dest: leg.to, departureDateHint });
-
-  return (
-    <div className="trips-ed-leg">
-      <span className="trips-ed-leg-icon" aria-hidden="true">
-        <IconPlane size={16} />
-      </span>
-      <div className="trips-ed-leg-text">
-        <span className="sr-only">
-          Flight from {leg.from.name} to {leg.to.name}:{" "}
-        </span>
-        <span className="tabular">{formatFlightTime(leg.hours)}</span>
-        <span aria-hidden="true">·</span>
-        <span className="tabular">{formatKm(leg.km)}</span>
-        <span aria-hidden="true">·</span>
-        <span>
-          about <span className="tabular">{money(leg.cost)}</span>
-        </span>
-        {leg.via ? (
-          <span className="trips-ed-leg-via">
-            via <span className="iata">{leg.via}</span>
-          </span>
-        ) : null}
-      </div>
-      <div className="trips-ed-leg-actions">
-        <a className="trips-ed-link" href={flightsSearchUrl(leg.from, leg.to)} target="_blank" rel="noreferrer">
-          Compare flights
-          <IconExternal size={12} />
-          <span className="sr-only"> (opens in a new tab)</span>
-        </a>
-        {leg.index !== RETURN_LEG ? (
-          <a className="trips-ed-link" href={staysSearchUrl(leg.to)} target="_blank" rel="noreferrer">
-            Stays in {leg.to.name}
-            <IconExternal size={12} />
-            <span className="sr-only"> (opens in a new tab)</span>
-          </a>
-        ) : null}
-        {live ? (
-          <a className="trips-ed-booking" href={hrefFor({ view: "plan", tab: "flights" })} title="View in your bookings">
-            <Badge tone="success">
-              Booked · <span className="tabular">{booking.bookingReference}</span>
-            </Badge>
-          </a>
-        ) : (
-          <>
-            {booking ? <Badge tone="neutral">Cancelled</Badge> : null}
-            {leg.bookable ? (
-              <Button
-                size={size}
-                icon={<IconPlane size={16} />}
-                onClick={book}
-                aria-label={`Book a flight from ${leg.from.name} to ${leg.to.name}`}
-              >
-                Book
-              </Button>
-            ) : (
-              <span className="trips-ed-leg-note">No airport to book</span>
-            )}
-          </>
-        )}
       </div>
     </div>
   );

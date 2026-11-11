@@ -1,0 +1,39 @@
+/* Phone pass (ADR 0016): at 390px every screen already fit without sideways scroll, so
+   this only lifts what a thumb can't hit. It applies on touch screens and in narrow
+   windows, and only raises sizes, so desktop with a mouse is unchanged. Rules sit here,
+   not in each screen's stylesheet, so one place decides what "reachable" means. */
+
+@media (pointer: coarse), (max-width: 640px) {
+  .ui-btn--sm {
+    height: 40px;
+  }
+  .ui-seg--sm .ui-seg-item,
+  .ui-seg--md .ui-seg-item {
+    height: 38px;
+    min-width: 44px;
+  }
+  .ui-input--sm,
+  .ui-select.ui-input--sm {
+    height: 40px;
+  }
+  .ui-pagehead-back {
+    min-height: 40px;
+  }
+  .plan-repeat-name,
+  .trips-up-card-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Inline link-buttons inside sentences get a taller hit area without changing the line. */
+  .shell-settings-inline {
+    padding: 11px 4px;
+    margin: -11px -4px;
+  }
+  /* iOS zooms the page when a field under 16px is focused. */
+  .ui-input,
+  select.ui-input,
+  textarea.ui-input {
+    font-size: 16px;
+  }
+}

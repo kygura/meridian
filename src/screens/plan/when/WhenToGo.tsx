@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMeridianStore } from "../../../store";
 import { openCity } from "../../../shell/uiStore";
-import { apiUrl } from "../../../lib/api";
+import { apiCredentials, apiUrl } from "../../../lib/api";
 import { assembleCityRows, climateWindowCaption } from "../../../lib/seasonality";
 import { CLIMATE_MODES, valueStep, type ClimateMode } from "../../../lib/climate";
 import {
   columnsInWindow,
   describeMetric,
   formatMetric,
+  frameBreakdown,
   frameColumns,
   frameValues,
   monthsInRange,
@@ -16,7 +17,7 @@ import {
   type FrameMonth,
   type Timeframe,
 } from "../../../lib/heatFrame";
-import { fetchRegions, fetchSeasonality, type SeasonMonth } from "../../../lib/seasonalityApi";
+import { fetchRegions, fetchSeasonality, fetchWeekly, type SeasonMonth, type SeasonWeek } from "../../../lib/seasonalityApi";
 import { scoreStep } from "../../../lib/repeatCopy";
 import { WORLD_REGIONS, countryRegions, type WorldRegion } from "../../../lib/worldRegion";
 import {
@@ -31,7 +32,9 @@ import {
   Select,
   Spinner,
   searchCities,
+  toast,
 } from "../../../ui";
+import { ComfortBreakdown } from "../../../ui/ComfortBreakdown";
 import { IconCalendar, IconClose, IconPlus, IconSearch, IconWorld } from "../../../ui/icons";
 import type { City } from "../../../types";
 import { HeatGrid, HeatLegend, PopRow, type HeatCell, type HeatGridProps, type HeatGroup, type HeatRow } from "./HeatGrid";
@@ -58,6 +61,7 @@ const RAMP: Record<ClimateMode, NonNullable<HeatGridProps["ramp"]>> = {
   temperature: "temp",
   rainfall: "wet",
   greenery: "green",
+  air: "smoke",
 };
 
 const METRIC_NAMES: Record<ClimateMode, string> = {
@@ -65,11 +69,13 @@ const METRIC_NAMES: Record<ClimateMode, string> = {
   temperature: "Temperature",
   rainfall: "Rain",
   greenery: "Greenery",
+  air: "Air quality",
 };
 
 const TIMEFRAMES: { value: Timeframe; label: string }[] = [
   { value: "months", label: "Months" },
   { value: "seasons", label: "Seasons" },
+  { value: "weeks", label: "Weeks" },
 ];
 
 const PREFS_KEY = "meridian.when.frame";
@@ -78,25 +84,33 @@ function readPrefs(): { metric: ClimateMode; timeframe: Timeframe } {
   try {
     const raw = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}");
     const metric = CLIMATE_MODES.some((m) => m.value === raw.metric) ? (raw.metric as ClimateMode) : "comfort";
-    const timeframe = raw.timeframe === "seasons" ? "seasons" : "months";
+    const timeframe: Timeframe = raw.timeframe === "seasons" ? "seasons" : raw.timeframe === "weeks" ? "weeks" : "months";
     return { metric, timeframe };
   } catch {
     return { metric: "comfort", timeframe: "months" };
   }
 }
 
-/** Cells for one place: the chosen metric over the chosen timeframe. */
-function frameCells(name: string, months: FrameMonth[], metric: ClimateMode, tf: Timeframe): (HeatCell | null)[] {
+/** Cells for one place: the chosen metric over the chosen timeframe. Values show on hover, not in the cell. */
+function frameCells(
+  name: string,
+  months: FrameMonth[],
+  metric: ClimateMode,
+  tf: Timeframe,
+  weeks?: FrameMonth[] | null
+): (HeatCell | null)[] {
   const cols = frameColumns(tf);
-  const comfort = frameValues(months, "comfort", tf);
-  const values = metric === "comfort" ? comfort : frameValues(months, metric, tf);
+  const comfort = frameValues(months, "comfort", tf, weeks);
+  const values = metric === "comfort" ? comfort : frameValues(months, metric, tf, weeks);
+  // Weeks without weekly normals show their month's figure; say so in the cell's name.
+  const monthly = tf === "weeks" && !(weeks && weeks.length === 52) ? ", monthly figure" : "";
   return values.map((v, col): HeatCell | null => {
     if (v === null) return null;
     const what = metric === "comfort" ? `${comfortWord(v).toLowerCase()}, comfort ${Math.round(v)}` : describeMetric(metric, v);
     return {
       score: comfort[col] ?? 0,
       step: metric === "comfort" ? scoreStep(v) : valueStep(metric, v),
-      label: `${name}, ${cols[col]!.name}: ${what}`,
+      label: `${name}, ${cols[col]!.name}: ${what}${monthly}`,
     };
   });
 }
@@ -184,6 +198,8 @@ export default function WhenToGo() {
       /* private mode: the choice just isn't remembered */
     }
   }, [metric, timeframe]);
+  // Weekly normals for the city rows, fetched when the Weeks timeframe is chosen. null = none yet (months stand in).
+  const [weekly, setWeekly] = useState<Record<string, SeasonWeek[] | null>>({});
   const [unavailable, setUnavailable] = useState(false);
   const [regionsError, setRegionsError] = useState(false);
   const [inflight, setInflight] = useState(0);
@@ -250,6 +266,21 @@ export default function WhenToGo() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, attempt]);
 
+  // ── Weekly normals, once the Weeks timeframe is chosen ──
+  useEffect(() => {
+    if (timeframe !== "weeks") return;
+    const missing = [...rowIds].filter((id) => weekly[id] === undefined);
+    if (missing.length === 0) return;
+    let cancelled = false;
+    fetchWeekly(missing)
+      .then((r) => !cancelled && setWeekly((w) => ({ ...w, ...r })))
+      .catch(() => !cancelled && setWeekly((w) => ({ ...w, ...Object.fromEntries(missing.map((id) => [id, null])) })));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeframe, idsKey]);
+
   // ── Country aggregates, on first switch to countries ──
   const [regionsLoading, setRegionsLoading] = useState(false);
   useEffect(() => {
@@ -286,12 +317,20 @@ export default function WhenToGo() {
     fetch(apiUrl("/api/shortlist"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: apiCredentials,
       body: JSON.stringify({ cityId: c.id }),
-    }).catch(() => {});
+    })
+      .then((r) => {
+        // Saving places is owner-only (ADR 0009): signed out, undo the local add and say why.
+        if (r.status !== 401) return;
+        removeFromShortlist(c.id);
+        toast("Sign in to save places. You'll find it in Settings.", { tone: "warning" });
+      })
+      .catch(() => {});
   };
   const removeCity = (cityId: string) => {
     removeFromShortlist(cityId);
-    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(cityId)}`), { method: "DELETE" }).catch(() => {});
+    fetch(apiUrl(`/api/shortlist/${encodeURIComponent(cityId)}`), { method: "DELETE", credentials: apiCredentials }).catch(() => {});
   };
   const retry = () => {
     retriedRef.current.clear();
@@ -336,14 +375,14 @@ export default function WhenToGo() {
         ) : undefined,
       };
       if (Array.isArray(months) && months.length === 12) {
-        const cells = frameCells(d.name, months as SeasonMonth[], metric, timeframe);
+        const cells = frameCells(d.name, months as SeasonMonth[], metric, timeframe, weekly[d.cityId]);
         return { ...base, state: "ready", cells, trail: <FitTrail score={scoreOf(d.cityId)} /> };
       }
       if (months === null) return { ...base, state: "none" };
       return { ...base, state: unavailable ? "unavailable" : "loading" };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry, metric, timeframe, windowKey]);
+  }, [rowDefs, seasonality, sort, q, region, unavailable, regionOfCountry, metric, timeframe, windowKey, weekly]);
 
   const countryRows: HeatRow[] = useMemo(() => {
     if (!regions) return [];
@@ -379,7 +418,9 @@ export default function WhenToGo() {
       view === "cities"
         ? (Array.isArray(seasonality[row.key]) ? (seasonality[row.key] as SeasonMonth[]) : undefined)
         : regions?.find((r) => `country:${r.region}` === row.key)?.months;
-    const at = (m: ClimateMode) => (months ? frameValues(months, m, timeframe)[col] : null);
+    const wk = view === "cities" ? weekly[row.key] : null;
+    const at = (m: ClimateMode) => (months ? frameValues(months, m, timeframe, wk)[col] : null);
+    const parts = months ? frameBreakdown(months, timeframe, col, wk) : null;
     const v = at(metric);
     const others = CLIMATE_MODES.filter((m) => m.value !== metric);
     return (
@@ -397,9 +438,12 @@ export default function WhenToGo() {
                 ? "mm a month"
                 : metric === "temperature"
                   ? "mean °C"
-                  : "Greenery"}
+                  : metric === "air"
+                    ? "µg/m³ PM2.5"
+                    : "Greenery"}
           </span>
         </div>
+        {parts && <ComfortBreakdown tempC={parts.tempC} precipMm={parts.precipMm} pm25={parts.pm25} per={parts.per} />}
         {others.map((m) => {
           const x = at(m.value);
           if (x === null) return null;
@@ -414,16 +458,21 @@ export default function WhenToGo() {
                     ? `${Math.round(x)} mm`
                     : m.value === "comfort"
                       ? `${Math.round(x)} · ${comfortWord(x)}`
-                      : String(Math.round(x))
+                      : m.value === "air"
+                        ? `${Math.round(x)} µg/m³`
+                        : String(Math.round(x))
               }
             />
           );
         })}
         {timeframe === "seasons" && <PopRow k="Averaged over" v="Three months" />}
+        {timeframe === "weeks" && view === "cities" && !(wk && wk.length === 52) && <PopRow k="Resolution" v="Monthly figure (no weekly data yet)" />}
+        {timeframe === "weeks" && view === "countries" && <PopRow k="Resolution" v="Monthly figure" />}
         {view === "countries" && <PopRow k="Average of" v="Cities in this country" />}
         <div className="plan-heat-pop-hint">
           {windowCols.includes(col) ? (when === "now" ? "This month. " : "Inside your dates. ") : ""}
           {metric === "greenery" ? "Greenery is estimated from rain and warmth. " : ""}
+          {metric === "air" ? "Air is the monthly mean PM2.5 from the CAMS model, which smooths local peaks. " : ""}
           {view === "cities" ? "Tap the name to open the city." : null}
         </div>
       </div>
@@ -618,7 +667,7 @@ export default function WhenToGo() {
       ) : (
         <HeatGrid
           groups={groups}
-          label={`${METRIC_NAMES[metric]} by ${timeframe === "months" ? "month" : "season"}, ${view === "cities" ? "your cities" : "every country"}`}
+          label={`${METRIC_NAMES[metric]} by ${timeframe === "months" ? "month" : timeframe === "weeks" ? "week" : "season"}, ${view === "cities" ? "your cities" : "every country"}`}
           firstHeader={view === "cities" ? "City" : "Country"}
           trailHeader={fitHeader}
           renderPopover={renderPopover}

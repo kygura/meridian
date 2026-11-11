@@ -72,12 +72,12 @@ export interface HeatGridProps {
   /** Columns inside the chosen time window: shaded behind the cells. */
   windowCols?: number[];
   /** Colour ramp the cells paint with. Default "ramp" (comfort/match). */
-  ramp?: "ramp" | "temp" | "wet" | "green";
+  ramp?: "ramp" | "temp" | "wet" | "green" | "smoke";
 }
 
 const MONTHS = frameColumns("months");
 
-const RAMP_PREFIX = { ramp: "--ramp", temp: "--temp", wet: "--wet", green: "--green" } as const;
+const RAMP_PREFIX = { ramp: "--ramp", temp: "--temp", wet: "--wet", green: "--green", smoke: "--smoke" } as const;
 
 /**
  * Per step, whether the cell's number should be light. The climate ramps run dark at one
@@ -213,7 +213,7 @@ export function HeatGrid({
                 const mark = markedCols?.find((x) => x.col === col);
                 return (
                   <th
-                    key={c.short}
+                    key={col}
                     scope="col"
                     className={cx("plan-heat-mh", showNow && col === nowCol && "is-now", mark && "is-marked")}
                     aria-label={`${c.name}${mark ? `, ${mark.label}` : ""}${showNow && col === nowCol ? ", this month" : ""}`}

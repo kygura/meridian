@@ -10,12 +10,13 @@ import {
   markAlertSeen,
   runWatches,
   monthsInLeadWindow,
-  postAlertWebhook,
+  alertNotice,
   MAX_WATCHES,
   WatchLimitError,
   type WatchRunDeps,
 } from "./watches";
 import { loadEvents } from "./replayService";
+import { listNotices } from "./notifier";
 import type { ReplayQuery, ReplayResponse, ReplayResult, Watch } from "../../src/types";
 
 let TMP: string;
@@ -126,6 +127,17 @@ describe("runWatches", () => {
     expect(r3.alerts).toHaveLength(2);
     expect(await listAlerts()).toHaveLength(4);
     expect((await listWatches())[0]!.lastRunAt).toBe(NOW2.toISOString());
+  });
+
+  it("at week resolution, alerts each week once, judged by the week's own priced day", async () => {
+    await createWatch({ label: "weekly", query: { ...QUERY, resolution: "week" } });
+    // NOW1 window: 11 Dec .. 5 Feb. Weeks 1 and 4 are both January (4 Jan, 25 Jan), both inside.
+    // Week 49 is priced on 6 Dec, outside, although 15 Dec (its month's 15th) is inside.
+    const wk = (cityId: string, month: number, week: number) => ({ ...res(cityId, month, cheap), week });
+    const r = await runWatches(deps([wk("lisbon-portugal", 1, 1), wk("lisbon-portugal", 1, 4), wk("lisbon-portugal", 12, 49)]));
+    expect(r.alerts.map((a) => a.week).sort()).toEqual([1, 4]);
+    expect(new Set(r.alerts.map((a) => a.id)).size).toBe(2);
+    expect(await listAlerts()).toHaveLength(2);
   });
 
   it("filters results to the lead window and narrows the replay query to those months", async () => {
@@ -245,28 +257,49 @@ describe("runWatches", () => {
   });
 });
 
-describe("postAlertWebhook", () => {
-  const alert = { id: "al_1", watchId: "w", cityId: "lisbon-portugal", month: 12, priceEur: 80, baselineEur: 150, source: "serpapi", createdAt: NOW1.toISOString(), seen: false };
-  const watch: Watch = { id: "w", label: "L", query: QUERY, leadWeeks: [6, 14], priceRule: "deal_low", active: true };
+describe("alertNotice / notifyAlert", () => {
+  const alert = { id: "al_1", watchId: "w", cityId: "nowhere-x", month: 12, priceEur: 80, baselineEur: 150, source: "serpapi", createdAt: NOW1.toISOString(), seen: false };
+  const watch: Watch = { id: "w", label: "L", query: QUERY, leadWeeks: [6, 14], priceRule: "below_my_median", active: true };
 
-  it("does nothing without ALERT_WEBHOOK_URL", async () => {
-    const f = vi.fn();
-    await postAlertWebhook(alert, watch, f as never);
-    expect(f).not.toHaveBeenCalled();
+  it("words the alert, links to Watches and dedupes on the alert id", () => {
+    const n = alertNotice(alert, watch);
+    expect(n).toMatchObject({ kind: "watch-alert", url: "/#/plan/watches", dedupeKey: "watch-alert:al_1", data: { alert, watch } });
+    expect(n.title).toBe("nowhere-x in December at 80 EUR");
+    expect(n.body).toContain("below your usual 150 EUR");
+    expect(n.body).toContain("Price source: serpapi.");
   });
-  it("POSTs {text, alert, watch} with a timeout signal and never throws", async () => {
+
+  it("says so when the price is a mock, and words a max-price rule", () => {
+    const n = alertNotice({ ...alert, source: "mock", baselineEur: 300 }, { ...watch, priceRule: { maxEur: 300 } });
+    expect(n.body).toContain("at or under your 300 EUR limit");
+    expect(n.body).toContain("mock price");
+    // The title is what a lock screen or chat preview shows: it says mock up front.
+    expect(n.title).toMatch(/^Mock price, not a fare: /);
+    expect(n.body).toMatch(/^This is a mock price, not a real fare/);
+  });
+
+  it("names the week for a weekly alert", () => {
+    const n = alertNotice({ ...alert, month: 1, week: 4 }, watch);
+    expect(n.title).toBe("nowhere-x in the week of 25 Jan at 80 EUR");
+  });
+
+  const cheap = { priceEur: 80, baselineEur: 150 };
+  it("a new alert from a run lands in the notice log once, and the webhook still gets {text, alert, watch}", async () => {
     process.env.ALERT_WEBHOOK_URL = "https://hooks.example/x";
-    const f = vi.fn(async () => new Response("ok"));
-    await postAlertWebhook(alert, watch, f as never);
+    const f = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("ok"));
+    await createWatch({ label: "w", query: QUERY });
+    await runWatches(deps([res("a", 12, cheap)]));
+    await runWatches(deps([res("a", 12, cheap)])); // same day: no new alert, no second send
+    const notices = await listNotices();
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toMatchObject({ kind: "watch-alert", seen: false, deliveries: [{ channel: "webhook", ok: true }] });
+    expect(f).toHaveBeenCalledTimes(1);
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://hooks.example/x");
-    expect(init.method).toBe("POST");
     expect(init.signal).toBeInstanceOf(AbortSignal);
     const body = JSON.parse(init.body as string);
-    expect(body).toMatchObject({ alert: { id: "al_1" }, watch: { id: "w" } });
+    expect(body).toMatchObject({ alert: { cityId: "a" }, watch: { label: "w" }, kind: "watch-alert" });
     expect(typeof body.text).toBe("string");
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    await expect(postAlertWebhook(alert, watch, (async () => { throw new Error("net"); }) as never)).resolves.toBeUndefined();
   });
 });
 

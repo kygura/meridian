@@ -1,0 +1,22 @@
+/* Settings › Visas (ADR 0012). Tokens only. */
+.shell-visa-passport {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--border);
+}
+.shell-visa-expiry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+.shell-visa-expiry > * {
+  min-width: 0;
+}
+.shell-visa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}

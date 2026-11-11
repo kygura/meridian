@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bearerHeaders, matchSummary, replayPlaces } from "./replayMatch";
+import { matchSummary, replayPlaces } from "./replayMatch";
 import type { PlaceResult } from "../types";
 
 const rm: NonNullable<PlaceResult["replayMatch"]> = {
@@ -32,11 +32,6 @@ describe("matchSummary", () => {
 });
 
 describe("agent request helpers", () => {
-  it("sends the Bearer header only with a token", () => {
-    expect(bearerHeaders("devtoken")).toEqual({ Authorization: "Bearer devtoken" });
-    expect(bearerHeaders(null)).toBeUndefined();
-    expect(bearerHeaders("")).toBeUndefined();
-  });
   it("collects replay places from find_similar_windows results only", () => {
     const place = { cityId: "porto", name: "Porto", replayMatch: rm } as PlaceResult;
     const plain = { cityId: "x", name: "X" } as PlaceResult;

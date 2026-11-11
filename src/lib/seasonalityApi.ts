@@ -15,15 +15,26 @@ import { apiUrl } from "./api";
 
 /** One month's entry (index 0 = January .. 11 = December). */
 export interface SeasonMonth {
+  /** Comfort Index: temperature comfort minus the rain and air penalties. */
   score: number;
   tempC: number;
   precipMm: number;
+  /** Monthly mean PM2.5 (ug/m3); absent until the air-quality data reaches the place. */
+  pm25?: number;
+}
+
+/** One week-of-year normal (index 0 = week 1). `precipMm` is per 7 days. */
+export interface SeasonWeek {
+  score: number;
+  tempC: number;
+  precipMm: number;
+  pm25?: number;
 }
 
 /** Region aggregate: means over the country's covered cities (temp/precip absent on older servers). */
 export interface RegionSeason {
   region: string;
-  months: Array<{ score: number; tempC?: number; precipMm?: number }>;
+  months: Array<{ score: number; tempC?: number; precipMm?: number; pm25?: number }>;
 }
 
 /** Batch response: city records plus the dataset's year window (null if the server omitted it). */
@@ -109,4 +120,18 @@ export async function fetchAllCitySeasonality(): Promise<SeasonalityBatch> {
   checkStatus(res);
   const body = (await res.json()) as { cities?: Record<string, SeasonMonth[]>; window?: unknown };
   return { cities: body.cities && typeof body.cities === "object" ? body.cities : {}, window: readWindow(body.window) };
+}
+
+/** Weekly normals per city (cache-only on the server); null where a city has none yet, so callers fall back to months. */
+export async function fetchWeekly(cityIds: string[]): Promise<Record<string, SeasonWeek[] | null>> {
+  const unique = [...new Set(cityIds)].filter(Boolean);
+  const result: Record<string, SeasonWeek[] | null> = {};
+  for (let i = 0; i < unique.length; i += BATCH_LIMIT) {
+    const qs = unique.slice(i, i + BATCH_LIMIT).map(encodeURIComponent).join(",");
+    const res = await fetch(apiUrl(`/api/seasonality/weekly?cityIds=${qs}`));
+    checkStatus(res);
+    const body = (await res.json()) as { cities?: Record<string, SeasonWeek[] | null> };
+    for (const [id, weeks] of Object.entries(body.cities ?? {})) result[id] = Array.isArray(weeks) && weeks.length === 52 ? weeks : null;
+  }
+  return result;
 }

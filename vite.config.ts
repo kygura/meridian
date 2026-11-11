@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { serviceWorker } from "./scripts/vite-plugin-sw";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), serviceWorker()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),

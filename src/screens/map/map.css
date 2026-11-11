@@ -999,3 +999,139 @@ a.map-watch-title:hover {
   text-transform: uppercase;
   color: var(--accent-text);
 }
+
+/* ── Living here (CityFacts.tsx) ── */
+.map-fact-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.map-fact {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+}
+.map-fact:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.map-fact dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 3px;
+}
+.map-fact dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.map-fact-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+.map-fact-value b {
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+.map-fact-value .map-meter {
+  flex: 1;
+  min-width: 2rem;
+  max-width: 6rem;
+  margin-left: auto;
+}
+.map-fact[data-missing] .map-fact-value b {
+  font-weight: 400;
+  color: var(--muted);
+}
+.map-fact-detail,
+.map-fact-tag {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.map-fact-tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
+}
+.map-busy {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.map-busy figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.map-busy figcaption small {
+  font-weight: 400;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.45;
+}
+.map-busy-bars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  height: 64px;
+}
+.map-busy-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+.map-busy-bar {
+  display: block;
+  background: var(--accent);
+  min-height: 2px;
+}
+.map-busy-letter {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  text-align: center;
+  color: var(--muted);
+  line-height: 1;
+}
+.map-sources {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.map-sources summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.map-sources ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  line-height: 1.45;
+}
+.map-sources a {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

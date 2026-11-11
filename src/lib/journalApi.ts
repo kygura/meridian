@@ -1,9 +1,10 @@
 // Journal client (DESIGN-journal.md §1.3 "shared contracts owned by (a)").
-// Every call goes through jfetch: Bearer token from localStorage["meridian.token"],
-// 401 -> JournalLockedError + store.journalLocked. Typed calls (journeys, replay, watches,
-// import actions, uploads) sit below, on top of jfetch.
+// Every call goes through jfetch: the browser attaches the owner's session cookie
+// (lib/session.ts, ADR 0009); 401 -> JournalLockedError + store.journalLocked. Typed calls
+// (journeys, replay, watches, import actions, uploads) sit below, on top of jfetch.
 
-import { apiUrl } from "./api";
+import { apiCredentials, apiUrl } from "./api";
+import { isSignedIn, noteUnauthorized, sessionMarker } from "./session";
 import { useMeridianStore } from "../store";
 import { MAX_UPLOAD_BYTES, emailContentType, photoBatches, mergeReports, type PhotoPoint, type UploadReport } from "./importUpload";
 import type {
@@ -21,59 +22,25 @@ import type {
   WatchPriceRule,
 } from "../types";
 
-// ── Token ────────────────────────────────────────────────────────────
+// ── Session ──────────────────────────────────────────────────────────
+// The names predate the session cookie. Nothing here is a credential any more.
 
-export const TOKEN_KEY = "meridian.token";
+/** Storage key of the "signed in" flag (not a token). Other tabs' changes arrive as storage events on it. */
+export { SESSION_FLAG_KEY as TOKEN_KEY } from "./session";
 
-/** Kept when localStorage throws (private window) so the session still works. */
-let memoryToken: string | null = null;
-let storageFailed = false;
-
+/** An opaque marker that changes with every sign-in, or null when signed out. Use it as an effect dependency. */
 export function getToken(): string | null {
-  if (memoryToken) return memoryToken;
-  try {
-    const t = window.localStorage.getItem(TOKEN_KEY);
-    if (t) return t;
-  } catch {
-    storageFailed = true;
-  }
-  return memoryToken;
+  return sessionMarker();
 }
 
 export function hasToken(): boolean {
-  return !!getToken();
-}
-
-/** Returns false when the token could only be kept in memory (private window). */
-export function setToken(token: string): boolean {
-  memoryToken = token;
-  try {
-    window.localStorage.setItem(TOKEN_KEY, token);
-    storageFailed = false;
-  } catch {
-    storageFailed = true;
-  }
-  return !storageFailed;
-}
-
-export function clearToken(): void {
-  memoryToken = null;
-  try {
-    window.localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    /* nothing stored */
-  }
-}
-
-/** True once a write or read of localStorage has thrown this session. */
-export function tokenNotPersisted(): boolean {
-  return storageFailed;
+  return isSignedIn();
 }
 
 // ── Errors ───────────────────────────────────────────────────────────
 
 /** 401. `reason` is "token_not_configured" when the server has no MERIDIAN_TOKEN (R1);
- *  undefined means the token is missing or wrong. */
+ *  undefined means there is no session, or it has ended. */
 export class JournalLockedError extends Error {
   reason?: "token_not_configured";
   constructor(reason?: "token_not_configured") {
@@ -113,19 +80,13 @@ export class JournalNetworkError extends Error {
 
 // ── Transport ────────────────────────────────────────────────────────
 
-export async function jfetch<T = any>(
-  path: string,
-  init: RequestInit = {},
-  opts: { token?: string } = {}
-): Promise<T> {
+export async function jfetch<T = any>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  const token = opts.token ?? getToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   if (init.body !== undefined && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
 
   let res: Response;
   try {
-    res = await fetch(apiUrl(path), { ...init, headers });
+    res = await fetch(apiUrl(path), { ...init, headers, credentials: apiCredentials });
   } catch (err) {
     if (err instanceof DOMException && err.name === "AbortError") throw err;
     throw new JournalNetworkError();
@@ -134,8 +95,7 @@ export async function jfetch<T = any>(
 
   if (res.status === 401) {
     const reason = data?.reason === "token_not_configured" ? "token_not_configured" : undefined;
-    // A candidate-token check (opts.token) must not flip the page lock itself.
-    if (!opts.token) useMeridianStore.getState().setJournalLocked(true, reason ?? null);
+    noteUnauthorized(reason);
     throw new JournalLockedError(reason);
   }
   if (!res.ok) throw new JournalApiError(res.status, data);
@@ -196,11 +156,6 @@ export async function refreshJourneys(): Promise<Journey[]> {
   return journeys;
 }
 
-/** Check a candidate token with GET /api/journal. Resolves on success. */
-export async function verifyToken(token: string): Promise<void> {
-  await jfetch("/api/journal", {}, { token });
-}
-
 // ── Nav badges (TopBar §3) ───────────────────────────────────────────
 
 /** GET /api/import/queue. */
@@ -214,7 +169,7 @@ export async function listAlerts(): Promise<Alert[]> {
   return Array.isArray(data) ? data : data.alerts ?? [];
 }
 
-/** Refresh importPending + alerts in the store. No token, or locked -> no request. Never throws. */
+/** Refresh importPending + alerts in the store. Signed out, or locked -> no request. Never throws. */
 export async function refreshBadges(): Promise<void> {
   if (!hasToken() || useMeridianStore.getState().journalLocked) return;
   const [queue, alerts, watches] = await Promise.allSettled([getQueue(), listAlerts(), listWatches()]);
