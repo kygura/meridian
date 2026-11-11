@@ -113,7 +113,8 @@ describe("heat frame by week", () => {
   });
 
   it("breaks a column's Comfort Index into temperature, rain and air", () => {
-    const m: FrameMonth[] = Array.from({ length: 12 }, () => ({ score: 0, tempC: 18, precipMm: 10, pm25: 42.5 }));
+    // One wet month keeps the year off the desert scale; column 2 (March) is dry.
+    const m: FrameMonth[] = Array.from({ length: 12 }, (_, i) => ({ score: 0, tempC: 18, precipMm: i === 6 ? 400 : 10, pm25: 42.5 }));
     const b = frameBreakdown(m, "months", 2)!;
     expect(b.temp).toBe(100);
     expect(b.rain).toBe(0);

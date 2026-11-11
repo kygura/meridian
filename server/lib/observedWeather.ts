@@ -5,6 +5,7 @@
 
 import { readFileSync, writeFileSync, renameSync } from "fs";
 import { comfortScore, getCitySeasonality, type MonthSeasonality } from "./seasonality.js";
+import { annualRain } from "../../src/lib/comfort.js";
 import { getCityById } from "./cities.js";
 import { getDataPath, ensureDataDir } from "./paths.js";
 import { dominantMonth, eachDay, parseDay } from "./stayDates.js";
@@ -84,7 +85,9 @@ export function observedArchiveUrl(lat: number, lng: number, start: string, end:
 export function summarizeDaily(
   temps: (number | null | undefined)[],
   precips: (number | null | undefined)[],
-  normal: { score: number; tempC: number } | undefined
+  normal: { score: number; tempC: number } | undefined,
+  /** The place's normal yearly rain, so the observed score carries the same desert term as the normal one. */
+  annualPrecipMm?: number
 ): ObservedConditions | undefined {
   let tSum = 0;
   let pSum = 0;
@@ -99,7 +102,7 @@ export function summarizeDaily(
   if (n === 0) return undefined;
   const tempC = Math.round((tSum / n) * 10) / 10;
   const precipMm = Math.round((pSum / n) * MONTH_DAYS);
-  const comfort = comfortScore(tempC, precipMm);
+  const comfort = comfortScore(tempC, precipMm, undefined, annualPrecipMm);
   // normalComfort is required by the type; with no normals it equals the observed comfort (no "lucky week" signal).
   const out: ObservedConditions = { tempC, precipMm, comfort, normalComfort: normal?.score ?? comfort };
   if (normal) out.normalTempC = normal.tempC;
@@ -182,14 +185,16 @@ async function fetchLive(
   });
 
   let normal: MonthSeasonality | undefined;
+  let year: number | undefined;
   try {
     const months = await deps.seasonality(city.id);
     normal = months?.[dominantMonth(arrive, depart) - 1];
+    year = months ? annualRain(months.map((m) => m.precipMm)) : undefined;
   } catch {
     normal = undefined;
   }
 
-  const observed = summarizeDaily(temps, precips, normal);
+  const observed = summarizeDaily(temps, precips, normal, year);
   if (!observed) return { ok: false, reason: "network" };
   deps.cache?.set(key, observed);
   return { ok: true, observed };

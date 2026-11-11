@@ -21,7 +21,7 @@
 import { writeFileSync, readFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { loadCities, getCities } from "../server/lib/cities.ts";
-import { comfortScore, aggregateDailyToMonthly } from "../server/lib/seasonality.ts";
+import { aggregateDailyToMonthly, rescoreMonths } from "../server/lib/seasonality.ts";
 
 const WINDOW_START_YEAR = 2015;
 const WINDOW_END_YEAR = 2024;
@@ -176,11 +176,7 @@ async function main() {
         }
 
         const monthly = aggregateDailyToMonthly(records);
-        progress[city.id] = monthly.map((m) => ({
-          score: comfortScore(m.tempC, m.precipMm),
-          tempC: m.tempC,
-          precipMm: m.precipMm,
-        }));
+        progress[city.id] = rescoreMonths(monthly.map((m) => ({ score: 0, tempC: m.tempC, precipMm: m.precipMm })));
       }
       saveProgress(progress);
       writeDataset(progress);

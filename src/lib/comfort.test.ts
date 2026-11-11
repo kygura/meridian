@@ -6,6 +6,8 @@ import {
   breakdownRows,
   comfortBreakdown,
   comfortScore,
+  desertPenalty,
+  annualRain,
   monthOfWeek,
   tempComfort,
   weekOfDayOfYear,
@@ -42,6 +44,36 @@ describe("comfortBreakdown", () => {
   it("never goes below 0 or above 100", () => {
     expect(comfortScore(-30, 500, 300)).toBe(0);
     expect(comfortScore(18, 0, 0)).toBe(100);
+  });
+});
+
+describe("desert", () => {
+  it("takes nothing off at 400mm of rain a year or more, and 45 at 50mm or less", () => {
+    expect(desertPenalty(400)).toBe(0);
+    expect(desertPenalty(1200)).toBe(0);
+    expect(desertPenalty(50)).toBe(45);
+    expect(desertPenalty(10)).toBe(45);
+    expect(desertPenalty(225)).toBeCloseTo(22.5, 5);
+  });
+  it("keeps Cairo's mildest month under 50", () => {
+    // Cairo: ~18.5C mean in March, ~25mm of rain a year
+    expect(comfortScore(18.5, 9, undefined, 25)).toBeLessThanOrEqual(55);
+    expect(comfortScore(15.4, 7, 30, 25)).toBeLessThan(50);
+  });
+  it("applies only when the year's rain is given, and shows as its own row", () => {
+    expect(comfortBreakdown(18, 0).desert).toBe(0);
+    const b = comfortBreakdown(18, 0, undefined, 25);
+    expect(b.desert).toBe(45);
+    expect(b.score).toBe(55);
+    const rows = breakdownRows(b, 18, 0);
+    expect(rows.at(-1)).toMatchObject({ key: "desert", text: "−45", note: "25 mm of rain a year" });
+    expect(breakdownRows(comfortBreakdown(18, 0, undefined, 800), 18, 0).some((r) => r.key === "desert")).toBe(false);
+  });
+  it("sums a year from 12 months or 52 weeks, and refuses gaps", () => {
+    expect(annualRain(Array(12).fill(10))).toBe(120);
+    expect(annualRain(Array(52).fill(7))).toBeCloseTo(364 * (365.25 / 364), 5);
+    expect(annualRain([...Array(11).fill(10), null])).toBeUndefined();
+    expect(annualRain([1, 2, 3])).toBeUndefined();
   });
 });
 

@@ -443,7 +443,7 @@ export default function WhenToGo() {
                     : "Greenery"}
           </span>
         </div>
-        {parts && <ComfortBreakdown tempC={parts.tempC} precipMm={parts.precipMm} pm25={parts.pm25} per={parts.per} />}
+        {parts && <ComfortBreakdown tempC={parts.tempC} precipMm={parts.precipMm} pm25={parts.pm25} per={parts.per} annualPrecipMm={parts.annualPrecipMm} />}
         {others.map((m) => {
           const x = at(m.value);
           if (x === null) return null;
