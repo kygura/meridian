@@ -44,6 +44,7 @@ Live: https://meridian-mocha-iota.vercel.app
 ## Data sources
 
 - Cities: `data/worldcities.csv` (name, coordinates, country, population; origin not recorded in this repo), matched to airports from [OurAirports](https://ourairports.com/data/) and capitals from [mledoze/countries](https://github.com/mledoze/countries).
+- Country outlines: [Natural Earth](https://www.naturalearthdata.com/) 1:50m admin-0 countries (public domain), with small islands it lacks (Lampedusa, Incheon, Fernando de Noronha…) taken from 1:10m. Built into `public/geo/countries.json` by `npm run build:countries`.
 - Native city names: [Wikidata](https://www.wikidata.org/) (CC0), matched through [GeoNames](https://www.geonames.org/) ids (CC BY 4.0). Rebuilt with `scripts/build-native-names.ts`.
 - Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
 - Quality of life: [UNDP Human Development Index](https://hdr.undp.org/), [World Happiness Report](https://worldhappiness.report/) via [Our World in Data](https://ourworldindata.org/), [World Bank](https://data.worldbank.org/) homicide and PM2.5 data, and [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) for major cities.

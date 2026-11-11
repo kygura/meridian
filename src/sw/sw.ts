@@ -37,7 +37,6 @@ const CACHE_FOR: Partial<Record<SwRoute, { name: string; max: number }>> = {
 
 /** Public data worth having before the first offline visit; fetched after install, best effort. */
 const WARM = ["/api/cities?limit=10000", "/api/seasonality/cities", "/api/seasonality/regions", "/api/livability"].map((p) => (__API_ORIGIN__ || self.location.origin) + p);
-const WARM_MAP = ["https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -65,19 +64,15 @@ self.addEventListener("activate", (event) => {
 });
 
 async function warm(): Promise<void> {
-  for (const [urls, name] of [
-    [WARM, DATA],
-    [WARM_MAP, MAP],
-  ] as const) {
-    const cache = await caches.open(name);
-    for (const url of urls) {
-      try {
-        if (await cache.match(url)) continue;
-        const res = await fetch(url);
-        if (res.status === 200) await cache.put(url, res);
-      } catch {
-        // Offline or blocked: the page's own request will fill it later.
-      }
+  // Country outlines ship with the app (public/geo), so the precache already has them.
+  const cache = await caches.open(DATA);
+  for (const url of WARM) {
+    try {
+      if (await cache.match(url)) continue;
+      const res = await fetch(url);
+      if (res.status === 200) await cache.put(url, res);
+    } catch {
+      // Offline or blocked: the page's own request will fill it later.
     }
   }
 }
