@@ -1,10 +1,10 @@
 import { countryKey } from "../../lib/countryNames";
 
-// Natural Earth 1:110m country polygons: the basemap's land layer, the seasons tint,
-// and the continent lookup the city panel uses to find regional news. Loaded once.
+// Natural Earth 1:50m country polygons, with islands it lacks taken from 1:10m: the basemap's
+// land layer, the seasons tint, and the continent lookup the city panel uses to find regional
+// news. Built by scripts/build-countries.ts and served with the app. Loaded once.
 
-export const COUNTRIES_URL =
-  "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson";
+export const COUNTRIES_URL = "/geo/countries.json";
 
 export type CountryCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, Record<string, unknown>>;
 
