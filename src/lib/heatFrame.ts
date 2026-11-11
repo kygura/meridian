@@ -2,7 +2,7 @@
 // greenery) over one timeframe (12 months or 4 seasons). Pure: no React, no fetch.
 
 import { lushIndex, type ClimateMode } from "./climate";
-import { comfortBreakdown, monthOfWeek, weeklyComfortBreakdown } from "./comfort";
+import { annualRain, comfortBreakdown, monthOfWeek, weeklyComfortBreakdown } from "./comfort";
 import { MONTH_NAMES, MONTH_SHORT } from "./repeatCopy";
 
 export type Timeframe = "months" | "seasons" | "weeks";
@@ -99,16 +99,30 @@ export function frameBreakdown(
   tf: Timeframe,
   col: number,
   weeks?: FrameMonth[] | null
-): { temp: number; rain: number; air: number; airKnown: boolean; score: number; tempC: number; precipMm: number; pm25?: number; per: "month" | "week" } | null {
+): {
+  temp: number;
+  rain: number;
+  air: number;
+  airKnown: boolean;
+  desert: number;
+  annualPrecipMm?: number;
+  score: number;
+  tempC: number;
+  precipMm: number;
+  pm25?: number;
+  per: "month" | "week";
+} | null {
   const usable = (m: FrameMonth | undefined): m is FrameMonth & { tempC: number; precipMm: number } => !!m && finite(m.tempC) && finite(m.precipMm);
   if (tf === "weeks" && weeks && weeks.length === 52) {
     const w = weeks[col];
     if (!usable(w)) return null;
-    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
+    const wYear = annualRain(weeks.map((x) => x.precipMm));
+    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25, wYear), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
   }
+  const year = annualRain(months.map((m) => m.precipMm));
   const picked = frameColumns(tf)[col]!.months.map((i) => months[i]);
   if (!picked.every(usable)) return null;
-  const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25));
+  const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25, year));
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
   const air = picked.filter((m) => finite(m.pm25)).map((m) => m.pm25 as number);
   const airKnown = air.length === picked.length;
@@ -117,6 +131,8 @@ export function frameBreakdown(
     rain: mean(parts.map((p) => p.rain)),
     air: mean(parts.map((p) => p.air)),
     airKnown,
+    desert: mean(parts.map((p) => p.desert)),
+    ...(year !== undefined ? { annualPrecipMm: year } : {}),
     score: Math.round(mean(parts.map((p) => p.score))),
     tempC: mean(picked.map((m) => m.tempC)),
     precipMm: mean(picked.map((m) => m.precipMm)),

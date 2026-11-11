@@ -8,7 +8,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { getDataPath } from "./paths.js";
-import { comfortScore, weeklyComfortBreakdown, WEEKS_PER_MONTH } from "../../src/lib/comfort.js";
+import { annualRain, comfortScore, weeklyComfortBreakdown, WEEKS_PER_MONTH } from "../../src/lib/comfort.js";
 
 export const CELL_DEG = 0.25;
 export const WEEKS = 52;
@@ -162,24 +162,26 @@ export function encodeWeekly(temp: DailyValue[], rain: DailyValue[], pm25?: Dail
 export function decodeMonths(cell: ClimateCell | undefined): Array<{ score: number; tempC: number; precipMm: number; pm25?: number }> | null {
   const m = cell?.m;
   if (!m || m.t.length !== 12 || m.p.length !== 12) return null;
+  const year = annualRain(m.p);
   return m.t.map((t, i) => {
     const tempC = t / 10;
     const precipMm = m.p[i]!;
     const a = m.a?.[i];
     const pm25 = typeof a === "number" ? a / 10 : undefined;
-    return { score: comfortScore(tempC, precipMm, pm25), tempC, precipMm, ...(pm25 !== undefined ? { pm25 } : {}) };
+    return { score: comfortScore(tempC, precipMm, pm25, year), tempC, precipMm, ...(pm25 !== undefined ? { pm25 } : {}) };
   });
 }
 
 export function decodeWeeks(cell: ClimateCell | undefined): WeekSeasonality[] | null {
   const w = cell?.w;
   if (!w || w.t.length !== WEEKS || w.p.length !== WEEKS) return null;
+  const year = annualRain(w.p.map((p) => p / 10));
   return w.t.map((t, i) => {
     const tempC = t / 10;
     const precipMm = w.p[i]! / 10;
     const a = w.a?.[i];
     const pm25 = typeof a === "number" ? a / 10 : undefined;
-    return { score: weeklyComfortBreakdown(tempC, precipMm, pm25).score, tempC, precipMm: Math.round(precipMm * 10) / 10, ...(pm25 !== undefined ? { pm25 } : {}) };
+    return { score: weeklyComfortBreakdown(tempC, precipMm, pm25, year).score, tempC, precipMm: Math.round(precipMm * 10) / 10, ...(pm25 !== undefined ? { pm25 } : {}) };
   });
 }
 

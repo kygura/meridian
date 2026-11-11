@@ -9,15 +9,20 @@ export interface ComfortBreakdownProps {
   /** Monthly (or weekly) mean PM2.5 in ug/m3; omit when the place has no air-quality data yet. */
   pm25?: number | null;
   per?: "month" | "week";
+  /** The place's yearly rain (mm); adds the desert term when given. */
+  annualPrecipMm?: number;
   className?: string;
 }
 
 /**
  * How the Comfort Index is made up: temperature comfort, minus the rain penalty, minus the
- * air-quality penalty. Used wherever the index is explained (city panel, When to go, Repeat a trip).
+ * air-quality penalty, minus the desert penalty for very dry places. Used wherever the index is explained (city panel, When to go, Repeat a trip).
  */
-export function ComfortBreakdown({ tempC, precipMm, pm25, per = "month", className }: ComfortBreakdownProps) {
-  const b = per === "week" ? weeklyComfortBreakdown(tempC, precipMm, pm25) : comfortBreakdown(tempC, precipMm, pm25);
+export function ComfortBreakdown({ tempC, precipMm, pm25, per = "month", annualPrecipMm, className }: ComfortBreakdownProps) {
+  const b =
+    per === "week"
+      ? weeklyComfortBreakdown(tempC, precipMm, pm25, annualPrecipMm)
+      : comfortBreakdown(tempC, precipMm, pm25, annualPrecipMm);
   const rows = breakdownRows(b, tempC, precipMm, pm25, per === "week" ? "mm a week" : "mm a month");
   return (
     <dl className={cx("ui-comfort-bd", className)} aria-label="How the Comfort Index is made up">
