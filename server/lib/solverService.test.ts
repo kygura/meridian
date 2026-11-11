@@ -54,7 +54,9 @@ describe("solver service", () => {
     if ("error" in eu) throw new Error(eu.error);
     expect(eu.input.constraints.schengen).toBe(false);
     expect(eu.notes.some((n) => /Schengen buffer/.test(n))).toBe(false);
-  });
+    // The first prepareSolve cold-loads the place, visa and climate datasets (~0.8s alone);
+    // under the full parallel suite on a CI runner that ran past vitest's 5s default.
+  }, 30000);
 
   it("uncovered keeps the nights no other range holds", () => {
     expect(uncovered("2027-01-31", "2027-03-15", [{ start: "2027-01-01", end: "2027-02-01" }])).toEqual([{ start: "2027-02-01", end: "2027-03-15" }]);
