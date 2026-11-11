@@ -6,8 +6,6 @@ import {
   bookedLegCount,
   copyTripName,
   displayTripName,
-  formatFlightTime,
-  formatKm,
   STATUS_LABEL,
   tripDateRange,
   tripRoute,
@@ -23,21 +21,25 @@ import {
   Input,
   PageHeader,
   Segmented,
-  Stat,
+  Select,
   toast,
   useIsDesktop,
 } from "../../../ui";
 import { IconCopy, IconMap, IconSparkle, IconTrash, IconTrips } from "../../../ui/icons";
 import type { Trip } from "../../../types";
-import { MockBadge, useHubs } from "./parts";
+import { useCityIndex, useHubs, useLandmass } from "./parts";
+import { ItineraryCard } from "./itinerary";
+import { SharingCard } from "./sharing";
+import { CostsCard } from "./costs";
+import { findLegBooking } from "../../../lib/bookingApi";
 import StopList from "./StopList";
 import { dismissCandidate } from "./suggestions";
 import "./upcoming.css";
-import { useTripMoney } from "./money";
 import { SeasonCard } from "./season";
 import { seasonText } from "../../../lib/season";
 import { DepartureCard } from "./departure";
 import { RiskCard } from "./risk";
+import { EntryCard } from "./entry";
 
 export interface TripEditorProps {
   /** Trip id from #/trips/plan/<tripId> (useMeridianStore.trips[].id). */
@@ -63,10 +65,11 @@ const STATUSES: Trip["status"][] = ["draft", "scouting", "confirmed"];
 
 /** Planned trip editor (#/trips/plan/<tripId>). Owns its PageHeader. Remounts per tripId. */
 export default function TripEditor({ tripId }: TripEditorProps) {
-  const money = useTripMoney();
   const trip = useMeridianStore((s) => s.trips.find((t) => t.id === tripId));
   const bookings = useMeridianStore((s) => s.bookings);
   const hubs = useHubs();
+  const landmassOf = useLandmass();
+  const cityIdx = useCityIndex();
   const home = useMeridianStore((s) => s.homeDeparture);
   const isDesktop = useIsDesktop();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -77,7 +80,7 @@ export default function TripEditor({ tripId }: TripEditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId, Boolean(trip)]);
 
-  const route = useMemo(() => (trip ? tripRoute(trip, home, hubs) : null), [trip, home, hubs]);
+  const route = useMemo(() => (trip ? tripRoute(trip, home, hubs, landmassOf) : null), [trip, home, hubs, landmassOf]);
   const totals = tripTotals(route?.all ?? []);
 
   if (!trip || !route) {
@@ -98,6 +101,9 @@ export default function TripEditor({ tripId }: TripEditorProps) {
   const name = displayTripName(trip.name);
   const suggested = trip.origin === "agent";
   const booked = bookedLegCount(trip, bookings, route.all);
+  // Real bookings are the ones recorded by hand; test bookings are counted apart.
+  const recorded = route.all.filter((l) => l.record).length;
+  const testBooked = route.all.filter((l) => !l.record && findLegBooking(bookings, trip.id, l.index)?.status === "booked").length;
   const range = seasonText(trip) ?? tripDateRange(trip);
 
   const duplicate = () => {
@@ -190,6 +196,14 @@ export default function TripEditor({ tripId }: TripEditorProps) {
             </div>
             <StopList trip={trip} route={route} />
           </Card>
+
+          <Card className="trips-ed-card">
+            <div className="trips-ed-card-head">
+              <h2 className="ui-section-title">Day by day</h2>
+              {trip.year ? <span className="trips-ed-card-sub tabular">{trip.year}</span> : null}
+            </div>
+            <ItineraryCard trip={trip} route={route} cityIdx={cityIdx} />
+          </Card>
         </div>
 
         <div className="trips-ed-side">
@@ -212,6 +226,13 @@ export default function TripEditor({ tripId }: TripEditorProps) {
                 options={STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
               />
             </div>
+            <Field label="Travellers" hint="Used to fill in flight and stay searches.">
+              <Select
+                value={String(trip.travellers ?? 1)}
+                options={[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ value: String(n), label: String(n) }))}
+                onChange={(e) => useMeridianStore.getState().setTripTravellers(trip.id, Number(e.target.value))}
+              />
+            </Field>
           </Card>
 
           <Card className="trips-ed-card">
@@ -225,37 +246,25 @@ export default function TripEditor({ tripId }: TripEditorProps) {
           </Card>
 
           <Card className="trips-ed-card">
+            <h2 className="ui-section-title">Entry and visas</h2>
+            <EntryCard trip={trip} />
+          </Card>
+
+          <Card className="trips-ed-card">
             <h2 className="ui-section-title">Season</h2>
             <SeasonCard trip={trip} />
           </Card>
 
+          {!suggested ? (
+            <Card className="trips-ed-card">
+              <h2 className="ui-section-title">Calendar and sharing</h2>
+              <SharingCard trip={trip} route={route} cityIdx={cityIdx} />
+            </Card>
+          ) : null}
+
           <Card className="trips-ed-card">
-            <h2 className="ui-section-title">Estimates</h2>
-            <div className="trips-ed-stats">
-              <Stat
-                label="Flights"
-                value={totals.legs > 0 ? money(totals.cost) : "—"}
-                hint={`Rough economy fares from ${route.departure.iata ?? route.departure.name}${route.inbound ? ", return included" : ""}`}
-              />
-              <Stat label="Time in the air" value={totals.legs > 0 ? formatFlightTime(totals.hours) : "—"} />
-              <Stat label="Distance" value={totals.legs > 0 ? formatKm(totals.km) : "—"} />
-              <Stat
-                label="Booked"
-                value={
-                  <span className="tabular">
-                    {booked} of {totals.legs}
-                  </span>
-                }
-                hint={totals.legs === 1 ? "flight" : "flights"}
-              />
-              {trip.estimate ? (
-                <Stat
-                  label="Suggested price"
-                  value={money(trip.estimate.priceEstimate, trip.estimate.currency)}
-                  hint={<MockBadge trip={trip} />}
-                />
-              ) : null}
-            </div>
+            <h2 className="ui-section-title">Costs</h2>
+            <CostsCard trip={trip} route={route} totals={totals} recorded={recorded} testBooked={testBooked} cityIdx={cityIdx} />
           </Card>
         </div>
       </div>

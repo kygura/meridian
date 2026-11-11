@@ -13,12 +13,20 @@ import { join } from "path";
 import { z } from "zod";
 import { getCities, getCityById } from "../cities.js";
 import { computeFullScore } from "../scoring.js";
+import { placeDataInfo, placeFacts, type Fact, type FactGranularity, type PlaceFacts } from "../placeData.js";
 import { ensureDataDir } from "../paths.js";
 import {
   getFlightEstimate as getRealFlightEstimate,
   hasFlightProvider,
 } from "../flightSearch.js";
 import { haversineKm } from "../../../src/lib/geo.js";
+import { getVisaData } from "../visaData.js";
+import { getVisaSettings } from "../visaStore.js";
+import { ownerStays } from "../visaService.js";
+import { checkStays, schengenSummary, type StayInput } from "../../../src/lib/visa/engine.js";
+import { STATUS_LABEL, limitLabel } from "../../../src/lib/visa/rules.js";
+import { VISA_DISCLAIMER, isoOf } from "../../../src/lib/visa/data.js";
+import { expiryByPassport, passportCodes } from "../../../src/lib/visa/settings.js";
 import type {
   City,
   PlaceResult,
@@ -48,21 +56,30 @@ export const REGION_COUNTRIES: Record<string, string[]> = {
   equator: ["Indonesia", "Kenya", "Ecuador", "Colombia", "Brazil", "Uganda", "Singapore", "Malaysia"],
 };
 
-function budgetTierFromEconomics(economics: number): "budget" | "mid" | "premium" {
-  if (economics >= 65) return "budget";
-  if (economics >= 35) return "mid";
+/** Monthly cost for one person, EUR: below this is "budget", at or above BUDGET_PREMIUM_EUR is "premium". */
+export const BUDGET_MID_EUR = 1300;
+export const BUDGET_PREMIUM_EUR = 2300;
+
+/** Budget tier from the estimated monthly cost (ADR 0013); null when there is no cost data. */
+export function budgetTier(monthlyEur: number | null | undefined): "budget" | "mid" | "premium" | null {
+  if (typeof monthlyEur !== "number") return null;
+  if (monthlyEur < BUDGET_MID_EUR) return "budget";
+  if (monthlyEur < BUDGET_PREMIUM_EUR) return "mid";
   return "premium";
 }
 
-function tierLabel(tier: "budget" | "mid" | "premium"): string {
-  if (tier === "budget") return "Budget-friendly";
-  if (tier === "premium") return "Premium cost";
-  return "Mid-range cost";
-}
+const GRAIN_WORDS: Record<FactGranularity, string> = { city: "city figure", region: "regional figure", country: "country figure" };
 
-function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>): PlaceResult {
-  const tier = budgetTierFromEconomics(score.economics);
+function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>, facts: PlaceFacts): PlaceResult {
   const popLabel = city.population > 0 ? `${city.population.toLocaleString()} people` : "population unknown";
+  const cost = facts.cost.monthlyEur;
+  const net = facts.internet.fixed ?? facts.internet.mobile;
+  const bits = [
+    popLabel,
+    score.overall === null ? "not enough data for a score" : `score ${score.overall} of 100 (${score.parts} of 6 measures)`,
+    cost ? `about €${cost.value.toLocaleString("en-US")} a month (estimate, ${GRAIN_WORDS[cost.granularity]})` : "no cost data",
+    net ? `${net.downMbps} Mbps${facts.internet.fixed ? "" : " mobile"}` : "no internet data",
+  ];
   return {
     cityId: city.id,
     name: city.name,
@@ -72,7 +89,7 @@ function toPlaceResult(city: City, score: ReturnType<typeof computeFullScore>): 
     lng: city.lng,
     population: city.population,
     score: score.overall,
-    summaryLine: `${popLabel} · score ${score.overall} of 100 · ${tierLabel(tier)}`,
+    summaryLine: bits.join(" · "),
   };
 }
 
@@ -107,23 +124,132 @@ export async function searchPlaces(params: SearchPlacesParams): Promise<PlaceRes
       if (countries) pool = pool.filter((c) => countries.includes(c.country));
     }
 
-    let scored = pool.map((c) => ({ city: c, score: computeFullScore(c) }));
+    let scored = pool.map((c) => ({ city: c, score: computeFullScore(c), facts: placeFacts(c) }));
 
+    // Cities without the data a filter needs are left out of that filter, not guessed into it.
     if (params.budgetTier) {
-      scored = scored.filter((e) => budgetTierFromEconomics(e.score.economics) === params.budgetTier);
+      scored = scored.filter((e) => budgetTier(e.facts.cost.monthlyEur?.value) === params.budgetTier);
     }
     if (typeof params.minScore === "number") {
       const minScore = params.minScore;
-      scored = scored.filter((e) => e.score.overall >= minScore);
+      scored = scored.filter((e) => e.score.overall !== null && e.score.overall >= minScore);
     }
 
-    scored.sort((a, b) => b.score.overall - a.score.overall || a.city.name.localeCompare(b.city.name));
+    // Scored cities first (best first); cities with too little data for a score go last, by name.
+    scored.sort((a, b) => (b.score.overall ?? -1) - (a.score.overall ?? -1) || a.city.name.localeCompare(b.city.name));
 
-    return scored.slice(0, limit).map((e) => toPlaceResult(e.city, e.score));
+    return scored.slice(0, limit).map((e) => toPlaceResult(e.city, e.score, e.facts));
   } catch (err) {
     console.error("[agent/tools] searchPlaces error:", err instanceof Error ? err.message : String(err));
     return [];
   }
+}
+
+// ── get_place_facts ──────────────────────────────────────────────────
+
+export const getPlaceFactsParams = z.object({ cityId: z.string() });
+export type GetPlaceFactsParams = z.infer<typeof getPlaceFactsParams>;
+
+export interface PlaceFactLine {
+  /** What the figure is ("Monthly cost for one person"). */
+  label: string;
+  /** The figure in words, or "No data". */
+  value: string;
+  /** "city", "region" or "country": how local the figure is. Absent when there is no data. */
+  granularity?: FactGranularity;
+  /** The named source and year. Absent when there is no data. */
+  source?: string;
+  estimate?: boolean;
+}
+
+export interface PlaceFactsResult {
+  available: boolean;
+  cityId?: string;
+  name?: string;
+  country?: string;
+  facts?: PlaceFactLine[];
+  /** Labels of the figures there is no data for. */
+  gaps?: string[];
+  note?: string;
+}
+
+/**
+ * Measured cost, rent, internet, healthcare, stability and visitor figures for a city, each with
+ * its source, year and how local it is. Figures the sources don't have come back as "No data".
+ */
+export async function getPlaceFacts(params: GetPlaceFactsParams): Promise<PlaceFactsResult> {
+  try {
+    const city = getCityById(params.cityId);
+    if (!city) return { available: false };
+    const f = placeFacts(city, (id) => getCityById(id)?.name);
+    const { sources, anchor } = placeDataInfo();
+    const src = (key: string, year?: number) => `${sources[key]?.name ?? key}${year ? `, ${year}` : ""}`;
+    const lines: PlaceFactLine[] = [];
+    const add = (label: string, fact: Fact | null, text: (f: Fact) => string) =>
+      lines.push(
+        fact
+          ? { label, value: text(fact), granularity: fact.granularity, source: src(fact.source, fact.year || undefined), ...(fact.estimate ? { estimate: true } : {}) }
+          : { label, value: "No data" }
+      );
+    const eur = (n: number) => `€${n.toLocaleString("en-US")}`;
+    add("Monthly cost for one person", f.cost.monthlyEur, (x) => `about ${eur(x.value)} a month, housing included`);
+    add("Price level", f.cost.index, (x) => `${x.value} (Belgium = 100, country level)`);
+    add("Rent, 1-bedroom flat", f.cost.rent1br, (x) => `${eur(x.value)} a month on average`);
+    if (!f.cost.rent1br && f.cost.rentReference)
+      add(`Rent, 1-bedroom flat in ${f.cost.rentReference.place}`, f.cost.rentReference, (x) => `${eur(x.value)} a month on average (the capital, not this city)`);
+    for (const [label, s] of [["Fixed internet", f.internet.fixed], ["Mobile internet", f.internet.mobile]] as const)
+      lines.push(
+        s
+          ? {
+              label,
+              value: `${s.downMbps} Mbps down, ${s.upMbps} up, ${s.latencyMs} ms latency (${s.tests.toLocaleString("en-US")} tests within ${s.radiusKm} km)`,
+              granularity: "city",
+              source: src("internet"),
+            }
+          : { label, value: "No data" }
+      );
+    add("Healthcare coverage", f.health.uhc, (x) => `${x.value} of 100 on the WHO service coverage index`);
+    add("Physicians", f.health.physicians, (x) => `${x.value} per 1,000 people`);
+    add("Hospital beds", f.health.beds, (x) => `${x.value} per 1,000 people`);
+    add("Political stability", f.stability.estimate, (x) => `${x.value} on a scale from about -2.5 (worst) to 2.5 (best)`);
+    add("Homicides", f.stability.homicides, (x) => `${x.value} per 100,000 people a year`);
+    add("Visitors from abroad", f.crowds.arrivalsPerResident, (x) => `${x.value} arrivals per resident a year`);
+    add("Tourist nights", f.crowds.nightsPerResident, (x) => `${x.value} nights per resident a year in ${x.place}`);
+    const m = f.crowds.months;
+    lines.push(
+      m
+        ? {
+            label: "Busiest months",
+            value: busiestMonths(m.index),
+            granularity: m.granularity,
+            source: src(m.source),
+          }
+        : { label: "Busiest months", value: "No data" }
+    );
+    return {
+      available: true,
+      cityId: city.id,
+      name: city.name,
+      country: city.country,
+      facts: lines,
+      gaps: lines.filter((l) => l.value === "No data").map((l) => l.label),
+      note: anchor
+        ? `Monthly cost is an estimate: what a resident of ${anchor.place} spends a month (€${anchor.monthlyEur.toLocaleString("en-US")}, Eurostat ${anchor.y}) repriced at local prices. Country figures apply to every city in the country.`
+        : undefined,
+    };
+  } catch (err) {
+    console.error("[agent/tools] getPlaceFacts error:", err instanceof Error ? err.message : String(err));
+    return { available: false };
+  }
+}
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Jul, Aug, Jun (Jul is 2.1x an average month)". */
+export function busiestMonths(index: number[]): string {
+  const ranked = index.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+  const top = ranked.slice(0, 3);
+  return `${top.map((t) => MONTH_SHORT[t.i]).join(", ")} (${MONTH_SHORT[top[0]!.i]} is ${(top[0]!.v / 100).toFixed(1)}x an average month)`;
 }
 
 // ── get_place_images ─────────────────────────────────────────────────
@@ -417,4 +543,74 @@ export async function getFlightEstimate(params: GetFlightEstimateParams): Promis
   }
 
   return mockFlightEstimate(originIata, destinationIata, departureDate);
+}
+
+
+// ── check_visa (ADR 0012) ────────────────────────────────────────────
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const checkVisaParams = z.object({
+  /** Passports as ISO-2 codes or country names. Omit to use the owner's (needs sign-in). */
+  passports: z.array(z.string().min(2).max(60)).max(5).optional(),
+  /** Stays to check: country (name or ISO-2), arrival and departure dates. */
+  stays: z.array(z.object({ country: z.string().min(2).max(60), start: isoDate, end: isoDate })).max(40).optional(),
+  /** Also count the owner's journal, dated trips and rotation (needs sign-in). */
+  includeMyStays: z.boolean().optional(),
+  today: isoDate.optional(),
+});
+export type CheckVisaParams = z.infer<typeof checkVisaParams>;
+
+export const VISA_LOCKED = { error: "owner_only", message: "Sign in as the owner to check against your own passports and stays, or name the passports." } as const;
+
+/**
+ * Entry requirements, days allowed against days planned, passport validity, yellow fever and
+ * whole-plan violations (Schengen 90/180, rolling and per-entry limits) for a set of stays.
+ * The owner's passports and stays are personal: they are used only when signed in.
+ */
+export async function checkVisa(raw: CheckVisaParams, ctx: { unlocked: boolean }) {
+  const p = checkVisaParams.safeParse(raw ?? {});
+  if (!p.success) return { error: "invalid_params", issues: p.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`) };
+  try {
+    const data = getVisaData();
+    if (!data) return { error: "no_data", message: "The visa data file is missing on this server." };
+    const needsOwner = !p.data.passports?.length || p.data.includeMyStays;
+    if (needsOwner && !ctx.unlocked) return { ...VISA_LOCKED };
+    const settings = needsOwner ? await getVisaSettings() : null;
+    const passports = p.data.passports?.length ? p.data.passports.map((x) => isoOf(data, x)).filter((x): x is string => !!x) : passportCodes(settings);
+    if (!passports.length) return { error: "no_passport", message: "No passport given and none set in Settings › Visas." };
+    const today = p.data.today ?? new Date().toISOString().slice(0, 10);
+    const given: StayInput[] = (p.data.stays ?? []).map((s, i) => ({ id: `ask-${i}`, country: s.country, start: s.start, end: s.end, label: s.country }));
+    const mine: StayInput[] = p.data.includeMyStays ? await ownerStays(today) : [];
+    const all = [...mine, ...given];
+    if (!all.length) return { error: "no_stays", message: "Give stays to check, or ask to include your own plans." };
+    const r = checkStays(data, passports, all, { today, expiry: expiryByPassport(settings) });
+    const sch = schengenSummary(data, passports, all, today);
+    return {
+      passports,
+      stays: r.verdicts
+        .filter((v) => !p.data.includeMyStays || v.id.startsWith("ask-") || !all.find((x) => x.id === v.id)?.past)
+        .map((v) => ({
+          country: v.countryName,
+          from: all.find((x) => x.id === v.id)?.start,
+          to: all.find((x) => x.id === v.id)?.end,
+          verdict: v.level,
+          summary: v.message,
+          requirement: v.rule ? STATUS_LABEL[v.rule.status] : null,
+          limit: v.rule?.limit ? limitLabel(v.rule.limit) : null,
+          passportUsed: v.rule?.passport ?? null,
+          passportValidity: v.validity ? { rule: v.validity.rule, validUntilAtLeast: v.validity.requiredUntil, yoursOk: v.validity.ok, source: v.validity.url } : null,
+          yellowFever: v.yellowFever ? v.yellowFever.message : null,
+          notes: v.rule?.notes.slice(0, 3) ?? [],
+          sources: (v.rule?.sources ?? []).slice(0, 3).map((x) => ({ title: x.title, url: x.url, checked: x.checked })),
+        })),
+      violations: r.violations.map((v) => ({ limit: v.label, rule: v.limit, firstDayOver: v.firstOver, days: v.days, what: v.message, source: v.source })),
+      schengen: sch.applies ? { usedToday: sch.today.used, leftToday: sch.today.left, firstOverstay: sch.firstOverstay, earliestEntry: sch.earliestEntry } : { applies: false, why: sch.reason },
+      dataset: { name: data.sources.requirements?.name, datasetOf: data.sources.requirements?.datasetUpdated, fetched: data.sources.requirements?.fetchedAt },
+      disclaimer: VISA_DISCLAIMER,
+    };
+  } catch (err) {
+    console.error("[agent/tools] check_visa error:", err instanceof Error ? err.message : String(err));
+    return { error: "check_visa_failed" };
+  }
 }

@@ -210,6 +210,9 @@
 .shell-settings-popover {
   width: 320px;
   padding: var(--space-4);
+  /* Settings grew sections (Inbox, Notion); scroll inside rather than run off the screen. */
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
 }
 .shell-settings {
   display: flex;

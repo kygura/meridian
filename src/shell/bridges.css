@@ -1,0 +1,89 @@
+/* Notion and Gmail bridges (ADR 0017): Settings sections and the import sheet. Tokens only. */
+.bridge-note {
+  color: var(--muted);
+}
+.bridge-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.bridge-actions,
+.bridge-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.bridge-muted {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.bridge-error {
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+.bridge-sum {
+  font-weight: var(--weight-medium);
+}
+.bridge-h {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.bridge-diff,
+.bridge-review ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.bridge-diff ul {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-3);
+  font-size: var(--text-sm);
+}
+.bridge-diff > li > span {
+  margin-left: var(--space-2);
+}
+.bridge-add {
+  color: var(--success);
+}
+.bridge-chg {
+  color: var(--warning);
+}
+.bridge-del {
+  color: var(--danger);
+}
+.bridge-review li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--rule);
+  border-radius: var(--radius-card);
+}
+.bridge-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.bridge-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+.bridge-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.bridge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+}

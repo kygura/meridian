@@ -1,0 +1,196 @@
+/* Offline indicator, the Alerts list and Settings › Alerts (ADR 0016). */
+
+/* ── Offline / update pill ──────────────────────────────── */
+.shell-conn {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.shell-conn--sidebar {
+  padding: var(--space-1) var(--space-3) var(--space-2);
+}
+.shell-conn--floating {
+  position: fixed;
+  left: var(--space-3);
+  bottom: calc(var(--tabbar-h) + var(--space-2) + env(safe-area-inset-bottom));
+  z-index: var(--z-nav);
+  max-width: calc(100vw - 2 * var(--space-3));
+}
+.shell-conn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: var(--border-width) solid var(--rule);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shell-conn-pill:hover {
+  background: var(--surface-2);
+}
+.shell-conn--floating .shell-conn-pill {
+  box-shadow: var(--shadow-sm);
+}
+.shell-conn-pill--offline {
+  border-color: var(--warning);
+}
+.shell-conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+@media (max-width: 899.98px) {
+  /* A comfortable target without a taller pill: the hit area grows, the look doesn't. */
+  .shell-conn-pill {
+    position: relative;
+    min-height: 32px;
+  }
+  .shell-conn-pill::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+}
+
+/* ── Alerts in the nav ──────────────────────────────────── */
+.shell-more-link .shell-nav-badge {
+  margin-left: auto;
+}
+
+/* ── Alerts sheet ───────────────────────────────────────── */
+.shell-notices {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shell-notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  border-bottom: var(--border-width) solid var(--border);
+  border-left: 2px solid transparent;
+}
+.shell-notice:last-child {
+  border-bottom: 0;
+}
+.shell-notice--new {
+  border-left-color: var(--accent);
+}
+.shell-notice-meta,
+.shell-notice-foot {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+}
+.shell-notice-new {
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+.shell-notice-title {
+  margin: 0;
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+.shell-notice-body {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.shell-notice-sent {
+  flex: 1;
+  min-width: 0;
+}
+.shell-notice-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  color: var(--accent-text);
+  font-weight: var(--weight-semibold);
+}
+@media (max-width: 899.98px) {
+  .shell-notice-link {
+    min-height: var(--touch);
+    padding: 0 var(--space-3);
+  }
+}
+
+/* ── Settings › Alerts ──────────────────────────────────── */
+.shell-settings-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.shell-settings-inline {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.shell-settings-row--wrap {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+.shell-channels {
+  display: flex;
+  flex-direction: column;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-width) solid var(--border);
+}
+.shell-channel {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: var(--border-width) solid var(--border);
+  font-size: var(--text-xs);
+}
+.shell-channel-name {
+  flex: none;
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+.shell-channel-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--muted);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.shell-channel[data-on] .shell-channel-state {
+  color: var(--success);
+  font-weight: var(--weight-medium);
+}

@@ -2,9 +2,10 @@
 // greenery) over one timeframe (12 months or 4 seasons). Pure: no React, no fetch.
 
 import { lushIndex, type ClimateMode } from "./climate";
+import { comfortBreakdown, monthOfWeek, weeklyComfortBreakdown } from "./comfort";
 import { MONTH_NAMES, MONTH_SHORT } from "./repeatCopy";
 
-export type Timeframe = "months" | "seasons";
+export type Timeframe = "months" | "seasons" | "weeks";
 
 export interface FrameColumn {
   /** Header text on wide screens. */
@@ -33,8 +34,16 @@ const SEASON_COLUMNS: FrameColumn[] = [
   { short: "Sep–Nov", tiny: "SON", name: "September to November", months: [8, 9, 10] },
 ];
 
+// 52 week-of-year columns. The header names the month on its first week and stays quiet on the rest.
+const WEEK_COLUMNS: FrameColumn[] = Array.from({ length: 52 }, (_, i) => {
+  const week = i + 1;
+  const month = monthOfWeek(week) - 1;
+  const first = i === 0 || monthOfWeek(week - 1) - 1 !== month;
+  return { short: first ? MONTH_SHORT[month]! : "", tiny: first ? MONTH_SHORT[month]![0]! : "", name: `Week ${week}, ${MONTH_NAMES[month]}`, months: [month] };
+});
+
 export function frameColumns(tf: Timeframe): FrameColumn[] {
-  return tf === "months" ? MONTH_COLUMNS : SEASON_COLUMNS;
+  return tf === "months" ? MONTH_COLUMNS : tf === "weeks" ? WEEK_COLUMNS : SEASON_COLUMNS;
 }
 
 /** Column holding the given 0-based month. */
@@ -47,6 +56,7 @@ export interface FrameMonth {
   score: number;
   tempC?: number;
   precipMm?: number;
+  pm25?: number;
 }
 
 const finite = (v: number | undefined): v is number => typeof v === "number" && Number.isFinite(v);
@@ -56,6 +66,7 @@ export function monthValues(months: FrameMonth[], metric: ClimateMode): (number 
   if (metric === "comfort") return months.map((m) => (finite(m.score) ? m.score : null));
   if (metric === "temperature") return months.map((m) => (finite(m.tempC) ? m.tempC : null));
   if (metric === "rainfall") return months.map((m) => (finite(m.precipMm) ? m.precipMm : null));
+  if (metric === "air") return months.map((m) => (finite(m.pm25) ? m.pm25 : null));
   // Greenery reads rain from the months before, so it needs the whole year.
   if (months.length !== 12 || !months.every((m) => finite(m.tempC) && finite(m.precipMm))) {
     return months.map(() => null);
@@ -64,14 +75,54 @@ export function monthValues(months: FrameMonth[], metric: ClimateMode): (number 
   return full.map((_, i) => lushIndex(full, i));
 }
 
-/** Values per column: the mean of the column's months, null if any month is missing. */
-export function frameValues(months: FrameMonth[], metric: ClimateMode, tf: Timeframe): (number | null)[] {
+/**
+ * Values per column: the mean of the column's months, null if any month is missing. In the weeks
+ * timeframe a place with 52 weekly normals uses them; a place without falls back to its month's
+ * figure for each week of that month (a monthly value shown flat, not interpolated). Greenery
+ * reads a whole year of months, so it is always the month's.
+ */
+export function frameValues(months: FrameMonth[], metric: ClimateMode, tf: Timeframe, weeks?: FrameMonth[] | null): (number | null)[] {
+  if (tf === "weeks" && weeks && weeks.length === 52 && metric !== "greenery") {
+    return weeks.map((w) => monthValues([w], metric)[0] ?? null);
+  }
   const vals = monthValues(months, metric);
   return frameColumns(tf).map((c) => {
     const xs = c.months.map((m) => vals[m]);
     if (xs.some((x) => x === null || x === undefined)) return null;
     return (xs as number[]).reduce((a, b) => a + b, 0) / xs.length;
   });
+}
+
+/** The Comfort Index terms for a column, averaged over its months or taken from the week; null where temperature or rain is missing. */
+export function frameBreakdown(
+  months: FrameMonth[],
+  tf: Timeframe,
+  col: number,
+  weeks?: FrameMonth[] | null
+): { temp: number; rain: number; air: number; airKnown: boolean; score: number; tempC: number; precipMm: number; pm25?: number; per: "month" | "week" } | null {
+  const usable = (m: FrameMonth | undefined): m is FrameMonth & { tempC: number; precipMm: number } => !!m && finite(m.tempC) && finite(m.precipMm);
+  if (tf === "weeks" && weeks && weeks.length === 52) {
+    const w = weeks[col];
+    if (!usable(w)) return null;
+    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
+  }
+  const picked = frameColumns(tf)[col]!.months.map((i) => months[i]);
+  if (!picked.every(usable)) return null;
+  const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25));
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const air = picked.filter((m) => finite(m.pm25)).map((m) => m.pm25 as number);
+  const airKnown = air.length === picked.length;
+  return {
+    temp: mean(parts.map((p) => p.temp)),
+    rain: mean(parts.map((p) => p.rain)),
+    air: mean(parts.map((p) => p.air)),
+    airKnown,
+    score: Math.round(mean(parts.map((p) => p.score))),
+    tempC: mean(picked.map((m) => m.tempC)),
+    precipMm: mean(picked.map((m) => m.precipMm)),
+    pm25: airKnown ? mean(air) : undefined,
+    per: "month",
+  };
 }
 
 /** Cell text: "82", "24°", "85", "63". */
@@ -91,6 +142,8 @@ export function describeMetric(metric: ClimateMode, v: number): string {
       return `${Math.round(v)} mm of rain a month`;
     case "greenery":
       return `greenery ${Math.round(v)}`;
+    case "air":
+      return `PM2.5 ${Math.round(v)} µg/m³`;
   }
 }
 
@@ -140,6 +193,11 @@ export function bestRunLabel(run: BestRun | null, tf: Timeframe): string {
   if (!run) return "";
   const cols = frameColumns(tf);
   if (run.cols.length === cols.length) return "All year";
+  if (tf === "weeks") {
+    const first = cols[run.start]!.months[0]!;
+    const last = cols[run.end]!.months[0]!;
+    return first === last ? `${MONTH_SHORT[first]}` : `${MONTH_SHORT[first]}–${MONTH_SHORT[last]}`;
+  }
   if (tf === "seasons") {
     const first = cols[run.start]!.months[0]!;
     const last = cols[run.end]!.months[2]!;

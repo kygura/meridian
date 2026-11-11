@@ -8,6 +8,7 @@ import { setFxFetch } from "../lib/fx";
 import { createJourney } from "../lib/journal";
 import { gateRoutes } from "../middleware/auth";
 import importRoutes from "./import";
+import { resetAuthMemory } from "../lib/authStore";
 
 const TOKEN = "test-token";
 let TMP: string;
@@ -17,6 +18,12 @@ const app = new Hono();
 gateRoutes(app);
 app.route("/api/import", importRoutes);
 
+
+/** Wrong tokens count toward the store-backed lockout (ADR 0009); clear it between checks. */
+function forgetWrongTokens() {
+  rmSync(join(TMP, "auth.json"), { force: true });
+  resetAuthMemory();
+}
 function req(method: string, path: string, body?: unknown, token: string | null = TOKEN) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -54,6 +61,7 @@ describe("auth", () => {
     for (const [m, p] of routes) {
       expect((await req(m, p, m === "GET" ? undefined : [], null)).status, `${m} ${p}`).toBe(401);
       expect((await req(m, p, m === "GET" ? undefined : [], "wrong")).status, `${m} ${p}`).toBe(401);
+      forgetWrongTokens(); // each route is checked on its own, not after a lockout
     }
   });
 

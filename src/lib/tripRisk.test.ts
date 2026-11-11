@@ -150,3 +150,42 @@ describe("assessTrip", () => {
     expect(risk2.level).toBe("avoid");
   });
 });
+
+describe("tripEntryChecks", async () => {
+  const { tripEntryChecks } = await import("./tripRisk");
+  const DEST = ["US", "FR", "ES", "TH", "BR"];
+  const data = {
+    version: 1,
+    builtAt: "2026-11-10",
+    sources: { requirements: { name: "Test data", url: "https://example.org", fetchedAt: "2026-11-10", licence: "test" } },
+    countries: { US: { name: "United States" }, FR: { name: "France" }, ES: { name: "Spain" }, TH: { name: "Thailand" }, BR: { name: "Brazil" } },
+    destinations: DEST,
+    matrix: { US: "- vf90 vf90 vf60 vf90" },
+    validity: {},
+  };
+  const country: Record<string, string> = { paris: "France", madrid: "Spain", bkk: "Thailand", rio: "Brazil" };
+  const node = (cityId: string, arrive?: string, depart?: string, months?: { start: number; end: number }) => ({ cityId, name: cityId, lat: 0, lng: 0, arrive, depart, months });
+
+  it("checks dated stops together and gives undated stops their entry rule", () => {
+    const trip = { year: 2027, nodes: [node("paris", "2027-01-01", "2027-02-15"), node("madrid", "2027-02-15", "2027-04-05"), node("bkk", undefined, undefined, { start: 11, end: 12 })] };
+    const r = tripEntryChecks(trip, data, ["US"], (id) => country[id]);
+    expect(r.stops[0].verdict?.level).toBe("ok");
+    // Paris and Madrid share the Schengen 90: Madrid goes over.
+    expect(r.stops[1].verdict?.level).toBe("over");
+    expect(r.check?.violations[0].key).toBe("schengen");
+    expect(r.stops[2].verdict).toBeNull();
+    // November 2027 is after Thailand's 15 September 2026 change: 30 days.
+    expect(r.stops[2].rule?.limit).toEqual({ kind: "per-entry", days: 30 });
+  });
+
+  it("flags yellow fever on a stop after one in a risk country", () => {
+    const trip = { year: 2027, nodes: [node("rio", "2027-01-01", "2027-01-20"), node("bkk", "2027-01-20", "2027-02-10")] };
+    const r = tripEntryChecks(trip, data, ["US"], (id) => country[id]);
+    expect(r.stops[1].verdict?.yellowFever?.triggeredBy).toBe("Brazil");
+  });
+
+  it("says nothing it cannot know without a passport", () => {
+    const r = tripEntryChecks({ nodes: [node("bkk", undefined, undefined, { start: 1, end: 2 })] }, data, [], (id) => country[id]);
+    expect(r.stops[0].rule).toBeNull();
+  });
+});

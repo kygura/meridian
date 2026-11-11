@@ -1,10 +1,11 @@
 // The city metric surfaces (GET /api/metrics/surface/:id) the map can colour and filter
-// cities by: the original social, political, infrastructure and economic signals.
+// cities by. Each is computed from measured data (ADR 0008, ADR 0013); `basis` says what from
+// and how local it is. A city the data doesn't cover has no value on that surface.
 // Pure: no React, no fetch.
 
 import type { MetricSurface } from "../types";
 
-export type MetricId = "stability" | "quality" | "beauty" | "connectivity" | "cost" | "tourism";
+export type MetricId = "stability" | "quality" | "beauty" | "connectivity" | "cost" | "tourism" | "health";
 
 export interface MetricDef {
   id: MetricId;
@@ -15,15 +16,74 @@ export interface MetricDef {
   direction: "min" | "max";
   low: string;
   high: string;
+  /** Where the numbers come from and how local they are, in one line. */
+  basis: string;
 }
 
 export const METRICS: MetricDef[] = [
-  { id: "stability", label: "Safety", theme: "Political stability", direction: "min", low: "Unsettled", high: "Very stable" },
-  { id: "quality", label: "Quality of life", theme: "How good it is to live there", direction: "min", low: "Low", high: "High" },
-  { id: "beauty", label: "Beauty", theme: "Natural setting and built character", direction: "min", low: "Plain", high: "Striking" },
-  { id: "connectivity", label: "Internet", theme: "Infrastructure", direction: "min", low: "Poor", high: "Excellent" },
-  { id: "cost", label: "Affordability", theme: "Economic", direction: "min", low: "Pricey", high: "Affordable" },
-  { id: "tourism", label: "Crowds", theme: "Tourism pressure", direction: "max", low: "Quiet", high: "Crowded" },
+  {
+    id: "stability",
+    label: "Safety",
+    theme: "Political stability",
+    direction: "min",
+    low: "Unsettled",
+    high: "Very stable",
+    basis: "Country figures: World Bank political stability and the homicide rate.",
+  },
+  {
+    id: "quality",
+    label: "Quality of life",
+    theme: "How good it is to live there",
+    direction: "min",
+    low: "Low",
+    high: "High",
+    basis: "Mostly country figures (human development, life satisfaction, homicides); air is measured at major cities.",
+  },
+  {
+    id: "beauty",
+    label: "Beauty",
+    theme: "Natural setting and built character",
+    direction: "min",
+    low: "Plain",
+    high: "Striking",
+    basis: "City figures: terrain, water, heritage sites, photos and notable places nearby.",
+  },
+  {
+    id: "connectivity",
+    label: "Internet",
+    theme: "Download speed",
+    direction: "min",
+    low: "Slow",
+    high: "Fast",
+    basis: "City figures: Ookla speed tests within 5 to 20 km of the centre. 5 Mbps scores 0, 300 Mbps scores 100.",
+  },
+  {
+    id: "cost",
+    label: "Affordability",
+    theme: "Monthly cost",
+    direction: "min",
+    low: "Pricey",
+    high: "Affordable",
+    basis: "An estimate of monthly cost for one person. City prices for about 170 cities (Eurostat), the country’s price level elsewhere (World Bank).",
+  },
+  {
+    id: "tourism",
+    label: "Crowds",
+    theme: "Tourism pressure",
+    direction: "max",
+    low: "Quiet",
+    high: "Crowded",
+    basis: "Country figures: visitors from abroad per resident a year (UN Tourism). The same for every city in a country.",
+  },
+  {
+    id: "health",
+    label: "Healthcare",
+    theme: "Service coverage",
+    direction: "min",
+    low: "Limited",
+    high: "Strong",
+    basis: "Country figures: the WHO index of essential health service coverage.",
+  },
 ];
 
 export const METRIC_BY_ID = new Map(METRICS.map((m) => [m.id, m]));

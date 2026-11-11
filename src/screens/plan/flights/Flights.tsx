@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { searchOffers, type Offer, type OfferSource } from "../../../lib/bookingApi";
+import { BookingLockedError, searchOffers, type Offer, type OfferSource } from "../../../lib/bookingApi";
 import { useMeridianStore } from "../../../store";
 import type { TripNode } from "../../../types";
 import { Button, Card, SectionHeader } from "../../../ui";
@@ -7,6 +7,7 @@ import { IconSearch } from "../../../ui/icons";
 import { BookingsList } from "./BookingsList";
 import { OfferList } from "./OfferList";
 import { SearchForm } from "./SearchForm";
+import { TestModeBanner, searchLinks } from "./HandOff";
 import { emptySearch, searchParams, searchReady, searchSummary, useCheckoutHandoff, type RouteEnd, type SearchDraft } from "./search";
 import "./flights.css";
 
@@ -14,7 +15,7 @@ import "./flights.css";
 interface FlightsPageState {
   draft: SearchDraft;
   showErrors: boolean;
-  status: "idle" | "searching" | "ready" | "error";
+  status: "idle" | "searching" | "ready" | "error" | "locked";
   offers: Offer[];
   source: OfferSource | null;
   searched: SearchDraft | null;
@@ -47,9 +48,9 @@ export default function Flights() {
       // Ignore a late answer for a search that has since been replaced.
       if (useFlightsPage.getState().searched !== d) return;
       patch({ status: "ready", offers: res.offers, source: res.source });
-    } catch {
+    } catch (err) {
       if (useFlightsPage.getState().searched !== d) return;
-      patch({ status: "error" });
+      patch({ status: err instanceof BookingLockedError ? "locked" : "error" });
     }
   };
 
@@ -74,6 +75,7 @@ export default function Flights() {
 
   return (
     <div className="plan-flights">
+      <TestModeBanner />
       <Card padding="md" className="plan-flights-search">
         <SearchForm
           idPrefix="fl"
@@ -94,9 +96,10 @@ export default function Flights() {
         <section className="plan-flights-section" aria-labelledby="plan-flights-results-h" aria-live="polite">
           <SectionHeader id="plan-flights-results-h" title="Flights" meta={searchSummary(searched)} />
           <OfferList
-            status={status === "searching" ? "searching" : status === "error" ? "error" : "ready"}
+            status={status}
             offers={offers}
             source={source}
+            realLinks={searchLinks(searched)}
             onSelect={choose}
             onRetry={() => void run(searched)}
           />

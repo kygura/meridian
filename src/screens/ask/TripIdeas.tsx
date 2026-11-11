@@ -3,14 +3,13 @@ import { Badge, Button, ErrorState, SectionHeader } from "../../ui";
 import { IconCheck, IconClose } from "../../ui/icons";
 import { useMeridianStore } from "../../store";
 import { resolveTripColor } from "../../lib/tripColors";
+import { tripDays } from "../../lib/tripPlan";
 import type { Trip } from "../../types";
 import { dismissIdea, useTripIdeas } from "./tripIdeas";
 
 function days(t: Trip): number | null {
-  if (!t.estimate) return null;
-  const { start, end } = t.estimate.dateRange;
-  const d = Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000);
-  return Number.isFinite(d) && d > 0 ? d : null;
+  const d = tripDays(t);
+  return d !== null && d > 0 ? d : null;
 }
 
 function price(t: Trip): string | null {

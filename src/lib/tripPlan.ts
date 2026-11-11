@@ -1,92 +1,24 @@
 // Pure helpers for planned trips (Trips › Upcoming, trip editor).
 // Leg estimates come from lib/geo; booking matching from lib/bookingApi.
 
-import { flightPath, estimateFlightHours, estimateLegCostUSD, type FlightHub } from "./geo";
+import type { FlightHub } from "./geo";
 import { findLegBooking, type Booking } from "./bookingApi";
+import type { LandmassOf, TripLeg } from "./legs";
 import type { City, ShortlistEntry, Trip, TripNode } from "../types";
 
-export interface TripLeg {
-  index: number;
-  from: TripNode;
-  to: TripNode;
-  km: number;
-  hours: number;
-  cost: number;
-  via?: string;
-  /** Both ends have an airport code, so the leg can be booked. */
-  bookable: boolean;
-}
-
-/** Leg index of the flight from the departure to the first stop (bookings key on it). */
-export const OUTBOUND_LEG = -1;
-/** Leg index of the flight from the last stop back to the departure. */
-export const RETURN_LEG = -2;
-
-/** Default departure for every trip until the user picks another: Las Palmas de Gran Canaria. */
-export const DEFAULT_DEPARTURE: TripNode = {
-  cityId: "las-palmas-spain",
-  name: "Las Palmas",
-  iata: "LPA",
-  lat: 28.1,
-  lng: -15.43,
-};
-
-/** The trip's own departure, else the user's home departure, else LPA. */
-export function tripDeparture(trip: Pick<Trip, "departure">, home?: TripNode | null): TripNode {
-  return trip.departure ?? home ?? DEFAULT_DEPARTURE;
-}
-
-export interface TripRoute {
-  departure: TripNode;
-  /** Departure → first stop; absent with no stops or when the trip starts at home. */
-  outbound?: TripLeg;
-  /** Stop-to-stop legs (index 0..n-2). */
-  legs: TripLeg[];
-  /** Last stop → departure; absent when returnHome is false or the trip already ends at home. */
-  inbound?: TripLeg;
-  /** Every leg in flying order: outbound, stop legs, return. */
-  all: TripLeg[];
-}
-
-function leg(index: number, from: TripNode, to: TripNode, hubs: FlightHub[]): TripLeg {
-  const path = flightPath([from.lng, from.lat], [to.lng, to.lat], hubs);
-  return {
-    index,
-    from,
-    to,
-    km: Math.round(path.distanceKm),
-    hours: estimateFlightHours(path.distanceKm),
-    cost: estimateLegCostUSD(path.distanceKm),
-    via: path.via,
-    bookable: Boolean(from.iata && to.iata),
-  };
-}
-
-/** The full route flown from the departure: out to the first stop, between stops, and home. */
-export function tripRoute(
-  trip: Pick<Trip, "nodes" | "departure" | "returnHome">,
-  home?: TripNode | null,
-  hubs: FlightHub[] = []
-): TripRoute {
-  const departure = tripDeparture(trip, home);
-  const nodes = trip.nodes;
-  const legs = tripLegs(nodes, hubs);
-  if (nodes.length === 0) return { departure, legs, all: legs };
-  const first = nodes[0];
-  const last = nodes[nodes.length - 1];
-  const outbound = first.cityId !== departure.cityId ? leg(OUTBOUND_LEG, departure, first, hubs) : undefined;
-  const inbound =
-    trip.returnHome !== false && last.cityId !== departure.cityId ? leg(RETURN_LEG, last, departure, hubs) : undefined;
-  const all = [...(outbound ? [outbound] : []), ...legs, ...(inbound ? [inbound] : [])];
-  return { departure, outbound, legs, inbound, all };
-}
-
-export interface TripTotals {
-  km: number;
-  hours: number;
-  cost: number;
-  legs: number;
-}
+// Legs, routes, modes and totals live in lib/legs (pure, shared with the server).
+export {
+  OUTBOUND_LEG,
+  RETURN_LEG,
+  DEFAULT_DEPARTURE,
+  tripDeparture,
+  tripRoute,
+  tripLegs,
+  tripTotals,
+  type TripLeg,
+  type TripRoute,
+  type TripTotals,
+} from "./legs";
 
 /** Large airport hubs used to route legs that are too long for a nonstop. */
 export function hubsFromCities(cities: City[]): FlightHub[] {
@@ -95,32 +27,28 @@ export function hubsFromCities(cities: City[]): FlightHub[] {
     .map((c) => ({ coord: [c.lng, c.lat] as [number, number], label: c.iata! }));
 }
 
-/** One leg per pair of consecutive stops, with time, distance and a cost estimate. */
-export function tripLegs(nodes: TripNode[], hubs: FlightHub[] = []): TripLeg[] {
-  const out: TripLeg[] = [];
-  for (let i = 0; i < nodes.length - 1; i++) out.push(leg(i, nodes[i], nodes[i + 1], hubs));
-  return out;
-}
-
-export function tripTotals(legs: TripLeg[]): TripTotals {
-  return {
-    km: legs.reduce((a, l) => a + l.km, 0),
-    hours: legs.reduce((a, l) => a + l.hours, 0),
-    cost: legs.reduce((a, l) => a + l.cost, 0),
-    legs: legs.length,
-  };
+/** City id → landmass group, for defaulting a leg's transport mode (lib/legs). */
+export function landmassFromCities(cities: City[]): LandmassOf {
+  const map = new Map<string, number>();
+  for (const c of cities) if (c.landmass !== undefined) map.set(c.id, c.landmass);
+  return (id) => map.get(id);
 }
 
 /**
- * Legs of a trip that have a live (not cancelled) booking. Pass the route's legs to count
- * the flights to and from the departure too; without them only stop-to-stop legs count.
+ * Legs of a trip that are booked: a live (not cancelled) test booking, or a booking made
+ * elsewhere and recorded on the leg. Pass the route's legs to count the legs to and from
+ * the departure too; without them only stop-to-stop legs count.
  */
-export function bookedLegCount(trip: Trip, bookings: Booking[], legs?: Pick<TripLeg, "index">[]): number {
-  const indices = legs ? legs.map((l) => l.index) : trip.nodes.slice(1).map((_, i) => i);
+export function bookedLegCount(
+  trip: Trip,
+  bookings: Booking[],
+  legs?: (Pick<TripLeg, "index"> & Partial<Pick<TripLeg, "record">>)[]
+): number {
+  const list = legs ?? trip.nodes.slice(1).map((_, i) => ({ index: i }));
   let n = 0;
-  for (const i of indices) {
-    const b = findLegBooking(bookings, trip.id, i);
-    if (b && b.status === "booked") n++;
+  for (const l of list) {
+    const b = findLegBooking(bookings, trip.id, l.index);
+    if ((b && b.status === "booked") || ("record" in l && l.record)) n++;
   }
   return n;
 }
@@ -135,8 +63,18 @@ export function stopChain(nodes: TripNode[], max = 4): string {
 }
 
 /** Whole days between the estimate's start and end dates, or null without dates. */
+/**
+ * The estimate's dates, or null. A mock estimate's dates are invented (seeded from the trip id,
+ * server/routes/agent.ts), so they are not shown as the trip's dates at all.
+ */
+function estimateDates(trip: Trip): { start: string; end: string } | null {
+  const e = trip.estimate;
+  if (!e || e.source === "mock") return null;
+  return e.dateRange ?? null;
+}
+
 export function tripDays(trip: Trip): number | null {
-  const r = trip.estimate?.dateRange;
+  const r = estimateDates(trip);
   if (!r) return null;
   const ms = new Date(r.end).getTime() - new Date(r.start).getTime();
   if (!Number.isFinite(ms)) return null;
@@ -145,7 +83,7 @@ export function tripDays(trip: Trip): number | null {
 
 /** "Mar 4 – Mar 12", or null without dates. */
 export function tripDateRange(trip: Trip, locale?: string): string | null {
-  const r = trip.estimate?.dateRange;
+  const r = estimateDates(trip);
   if (!r) return null;
   const s = new Date(r.start);
   const e = new Date(r.end);

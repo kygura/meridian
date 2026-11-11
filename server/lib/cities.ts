@@ -156,6 +156,23 @@ export function loadCities(): void {
     console.warn("[cities] data/native-names.json missing — run scripts/build-native-names.ts");
   }
 
+  // Time zone and landmass (scripts/build-city-geo.ts), for the calendar export and
+  // for choosing ground transport, a ferry or a flight on a trip leg.
+  try {
+    const geo = JSON.parse(readFileSync(join(process.cwd(), "data/city-geo.json"), "utf-8")) as {
+      zones: string[];
+      cities: Record<string, [number, number]>;
+    };
+    for (const city of base) {
+      const g = geo.cities[city.id];
+      if (!g) continue;
+      if (g[0] >= 0) city.landmass = g[0];
+      if (geo.zones[g[1]]) city.timezone = geo.zones[g[1]];
+    }
+  } catch {
+    console.warn("[cities] data/city-geo.json missing — run scripts/build-city-geo.ts");
+  }
+
   cities = base;
   console.log(
     `[cities] Loaded ${cities.length} cities (${cities.filter((c) => c.iata).length} with airports)`

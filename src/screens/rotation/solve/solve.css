@@ -1,0 +1,533 @@
+/* Solve flow and re-plan proposals (ADR 0015). Tokens only. */
+
+.solve {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+@media (min-width: 1100px) {
+  .solve {
+    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+    align-items: start;
+  }
+  .solve-config {
+    position: sticky;
+    top: var(--space-4);
+    max-height: calc(100vh - 2 * var(--space-4));
+    overflow-y: auto;
+  }
+}
+
+.solve-config,
+.solve-results {
+  min-width: 0;
+}
+.solve-results > * + * {
+  margin-top: var(--space-4);
+}
+
+.solve-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+.solve-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.solve-h {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.solve-fine {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  margin: 0;
+}
+.solve-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-2);
+  align-items: end;
+}
+.solve-row > * {
+  min-width: 0;
+}
+.solve-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.solve-source {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.solve-pool {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+.solve-pool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.solve-pool-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.solve-pool-more {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.solve-pref {
+  border: 1px solid var(--border);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.solve-pref-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+.solve-pref-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.solve-weights,
+.solve-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.solve-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.solve-slider-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--text-sm);
+}
+.solve-slider-top .num {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.solve-slider input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.solve-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(to right, var(--accent) 0 var(--solve-fill), var(--surface-3) var(--solve-fill) 100%);
+}
+.solve-slider input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: linear-gradient(to right, var(--accent) 0 var(--solve-fill), var(--surface-3) var(--solve-fill) 100%);
+}
+.solve-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 18px;
+  margin-top: -8px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-sm);
+}
+.solve-slider input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 16px;
+  border-radius: 0;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+.solve-slider input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.solve-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.solve-check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+.solve-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* ── Side-by-side timeline ── */
+.solve-cmp {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.solve-cmp-row {
+  display: grid;
+  grid-template-columns: 96px minmax(520px, 1fr);
+  border-bottom: 1px solid var(--border);
+  min-height: 40px;
+}
+.solve-cmp-row:last-child {
+  border-bottom: 0;
+}
+.solve-cmp-row--axis {
+  min-height: 24px;
+}
+.solve-cmp-row--on {
+  background: var(--accent-soft);
+}
+.solve-cmp-label {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.solve-cmp-row--on .solve-cmp-label {
+  font-weight: var(--weight-semibold);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.solve-cmp-label:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.solve-cmp-row--axis .solve-cmp-label {
+  cursor: default;
+}
+.solve-cmp-track {
+  position: relative;
+}
+.solve-cmp-month {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  padding: 5px 0 0 3px;
+  border-left: 1px solid var(--border);
+  box-sizing: border-box;
+}
+.solve-cmp-month--year {
+  border-left-color: var(--border-strong);
+}
+.solve-cmp-year {
+  margin-left: 2px;
+  color: var(--ink-2);
+}
+.solve-cmp-bar {
+  all: unset;
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  box-sizing: border-box;
+  border-right: 2px solid var(--surface);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.solve-cmp-bar--fixed {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.solve-cmp-bar--short {
+  top: 12px;
+  bottom: 12px;
+}
+.solve-cmp-bar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.solve-cmp-name {
+  font-size: var(--text-2xs);
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  margin-left: 2px;
+}
+
+.solve-notes {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.solve-map {
+  height: 320px;
+}
+
+/* ── Proposal cards ── */
+.solve-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+.solve-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.solve-card--on {
+  border-color: var(--accent);
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+.solve-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+.solve-card-title {
+  all: unset;
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+}
+.solve-card-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.solve-card-total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+.solve-card-total .num {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.solve-comps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.solve-comps li {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 28px;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--text-xs);
+}
+.solve-comp-bar {
+  height: 6px;
+  background: var(--surface-3);
+  position: relative;
+}
+.solve-comp-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+}
+.solve-comp-val {
+  text-align: right;
+  font-family: var(--font-mono);
+}
+.solve-why {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.solve-stays {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.solve-stay {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: start;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.solve-stay .rotation-swatch {
+  margin-top: 4px;
+}
+.solve-stay-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.solve-stay-main .ui-select,
+.solve-stay-main select {
+  margin-top: var(--space-1);
+  max-width: 100%;
+}
+.solve-stay-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+.solve-note {
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-2);
+}
+.solve-replaced {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+/* ── Re-plan proposals ── */
+.replan-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.replan-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.replan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.replan-title {
+  font-weight: var(--weight-semibold);
+}
+.replan-evidence,
+.replan-diff {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-xs);
+}
+.replan-diff li {
+  margin: 2px 0;
+}
+.replan-impact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-2);
+}
+.replan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 899px) {
+  .solve-pool-more {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .solve-map {
+    height: 240px;
+  }
+}
+
+.rotation-mode {
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 899px) {
+  .replan-impact .ui-stat-value {
+    font-size: var(--text-md);
+  }
+}
+
+/* What the visa checks covered, on each proposal (ADR 0012). */
+.solve-checked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--border);
+}
+.solve-checked ul {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

@@ -16,7 +16,7 @@ import { IconPlane, IconPlus, IconTrips } from "../../../ui/icons";
 import type { Trip } from "../../../types";
 import type { FlightHub } from "../../../lib/geo";
 import type { Booking } from "../../../lib/bookingApi";
-import { StatusBadge, TripDot, useHubs } from "./parts";
+import { StatusBadge, TripDot, useHubs, useLandmass } from "./parts";
 import { seasonText } from "../../../lib/season";
 import Suggested from "./Suggested";
 import SavedPlaces from "./SavedPlaces";
@@ -92,10 +92,13 @@ export default function UpcomingList() {
 
 function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; bookings: Booking[] }) {
   const home = useMeridianStore((s) => s.homeDeparture);
-  const route = useMemo(() => tripRoute(trip, home, hubs), [trip, home, hubs]);
+  const landmassOf = useLandmass();
+  const route = useMemo(() => tripRoute(trip, home, hubs, landmassOf), [trip, home, hubs, landmassOf]);
   const totals = tripTotals(route.all);
   const money = useTripMoney();
-  const booked = bookedLegCount(trip, bookings, route.all);
+  // "Booked" means a real booking recorded on the leg; test bookings are named as such.
+  const booked = route.all.filter((l) => l.record).length;
+  const tests = bookedLegCount(trip, bookings, route.all) - booked;
   const range = tripDateRange(trip);
   const days = tripDays(trip);
   const season = seasonText(trip);
@@ -125,7 +128,7 @@ function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; boo
         </span>
         {totals.legs > 0 ? (
           <span>
-            About <span className="tabular">{money(totals.cost)}</span> in flights
+            About <span className="tabular">{money(totals.cost)}</span> {totals.groundLegs > 0 ? "in transport" : "in flights"}
           </span>
         ) : null}
         {totals.legs > 0 ? (
@@ -135,6 +138,7 @@ function TripCard({ trip, hubs, bookings }: { trip: Trip; hubs: FlightHub[]; boo
               {booked} of {totals.legs}
             </span>{" "}
             booked
+            {tests > 0 ? ` · ${tests} test` : ""}
           </span>
         ) : null}
       </div>

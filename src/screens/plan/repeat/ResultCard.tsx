@@ -5,6 +5,7 @@ import {
   crowdText,
   matchWord,
   monthName,
+  resultWhen,
   priceDelta,
   priceText,
   scoreStep,
@@ -74,7 +75,7 @@ export const ResultCard = forwardRef<HTMLLIElement, ResultCardProps>(function Re
               <span className="plan-repeat-name is-static">{name}</span>
             )}
             <span className="plan-repeat-sub">
-              {[city?.country, monthName(r.month)].filter(Boolean).join(" · ")}
+              {[city?.country, resultWhen(r)].filter(Boolean).join(" · ")}
               {" · "}
               {r.visitedBefore ? "Been before" : "New to you"}
             </span>
@@ -117,7 +118,7 @@ export const ResultCard = forwardRef<HTMLLIElement, ResultCardProps>(function Re
             variant="ghost"
             icon={watched ? <IconCheck size={16} /> : <IconBell size={16} />}
             onClick={onWatch}
-            aria-label={`Watch prices for ${name} in ${monthName(r.month)}`}
+            aria-label={`Watch prices for ${name} in ${resultWhen(r)}`}
           >
             {watched ? "Watching" : "Watch"}
           </Button>

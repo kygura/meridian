@@ -227,7 +227,7 @@ function QuickLog({ journeyId, prefillStops }: { journeyId?: string; prefillStop
   if (!unlocked) {
     return (
       <Sheet open onClose={closeQuickLog} title={title} desktop="center">
-        <UnlockCard compact title="Unlock your journal to log trips" />
+        <UnlockCard compact title="Sign in to log trips" />
       </Sheet>
     );
   }

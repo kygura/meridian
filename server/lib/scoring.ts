@@ -1,62 +1,70 @@
+// The Meridian score: six parts, each computed from a measured dataset (ADR 0008, ADR 0013).
+// A part with no data for the city is null, never a stand-in number. The overall score is the
+// weighted mean of the parts that exist, and is itself null when fewer than MIN_PARTS do.
+
 import type { City, MeridianScore } from "../../src/types.js";
 import { livabilityFor } from "./livability.js";
+import { placeFacts } from "./placeData.js";
+import { peekCitySeasonality } from "./seasonality.js";
 
-/**
- * Simple deterministic hash from a string, returns a number 0-1.
- */
-function hashStr(s: string, seed: number = 0): number {
-  let h = seed | 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h * 31 + s.charCodeAt(i)) | 0;
-  }
-  // Map to 0-1
-  return ((h >>> 0) % 10000) / 10000;
-}
+/** Weights of the overall score. They sum to 1; missing parts are left out and the rest reweighted. */
+export const SCORE_WEIGHTS = {
+  economics: 0.25,
+  quality: 0.2,
+  stability: 0.2,
+  health: 0.15,
+  nomadInfra: 0.1,
+  climate: 0.1,
+} as const;
 
-/**
- * Generate a pseudo-score in a range, deterministic by city name + metric key.
- */
-function pseudoScore(city: City, metric: string, min = 30, max = 95): number {
-  const val = hashStr(`${city.name}-${city.country}-${metric}`, metric.length);
-  return Math.round(min + val * (max - min));
-}
+export type ScorePart = keyof typeof SCORE_WEIGHTS;
 
-/**
- * Climate comfort approximation based on latitude.
- * Closer to equator = warmer; mid-latitudes score highest for comfort.
- */
-function climateFromLat(lat: number): number {
-  const absLat = Math.abs(lat);
-  // Peak comfort around 20-30 degrees latitude
-  if (absLat <= 30) return Math.round(70 + (30 - absLat));
-  if (absLat <= 50) return Math.round(90 - (absLat - 30) * 1.5);
-  return Math.round(60 - (absLat - 50));
+/** Fewest parts an overall score is worked out from. */
+export const MIN_PARTS = 3;
+
+/** Year-round Comfort Index: mean of the twelve monthly scores, when climate data is already on hand. */
+function climateScore(cityId: string): number | null {
+  const peek = peekCitySeasonality(cityId);
+  if (peek.kind !== "hit" || peek.months.length !== 12) return null;
+  return Math.round(peek.months.reduce((a, m) => a + m.score, 0) / 12);
 }
 
 export function computeScore(city: City): MeridianScore {
-  const economics = pseudoScore(city, "economics", 35, 90);
-  // Real quality of life where the livability dataset covers the city; the old placeholder otherwise.
-  const quality = livabilityFor(city.id)?.quality ?? pseudoScore(city, "quality", 30, 95);
-  const climate = Math.min(100, Math.max(0, climateFromLat(city.lat)));
-  const stability = pseudoScore(city, "stability", 25, 95);
-  const nomadInfra = pseudoScore(city, "nomadInfra", 20, 90);
-
-  return { overall: 0, economics, quality, climate, stability, nomadInfra };
+  const facts = placeFacts(city);
+  return {
+    overall: null,
+    // Affordability from the estimated monthly cost (Eurostat city coefficient or World Bank price level).
+    economics: facts.scores.cost,
+    // Quality of life from data/livability.json.
+    quality: livabilityFor(city.id)?.quality ?? null,
+    climate: climateScore(city.id),
+    // Political stability (World Bank WGI) and the homicide rate.
+    stability: facts.scores.stability,
+    // Internet speed measured in the city (Ookla).
+    nomadInfra: facts.scores.connectivity,
+    // Healthcare coverage (WHO UHC index).
+    health: facts.scores.health,
+    parts: 0,
+  };
 }
 
-export function computeNormalized(score: MeridianScore): number {
-  const weighted =
-    score.economics * 0.3 +
-    score.quality * 0.25 +
-    score.climate * 0.15 +
-    score.stability * 0.2 +
-    score.nomadInfra * 0.1;
-
-  return Math.round(weighted);
+export function computeNormalized(score: MeridianScore): number | null {
+  let sum = 0;
+  let weight = 0;
+  let parts = 0;
+  for (const key of Object.keys(SCORE_WEIGHTS) as ScorePart[]) {
+    const v = score[key];
+    if (typeof v !== "number") continue;
+    sum += v * SCORE_WEIGHTS[key];
+    weight += SCORE_WEIGHTS[key];
+    parts++;
+  }
+  return parts >= MIN_PARTS && weight > 0 ? Math.round(sum / weight) : null;
 }
 
 export function computeFullScore(city: City): MeridianScore {
   const score = computeScore(city);
+  score.parts = (Object.keys(SCORE_WEIGHTS) as ScorePart[]).filter((k) => typeof score[k] === "number").length;
   score.overall = computeNormalized(score);
   return score;
 }

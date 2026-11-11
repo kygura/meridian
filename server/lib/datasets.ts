@@ -1,303 +1,239 @@
-import type { MetricSurface, MetricValue } from "../../src/types.js";
+// Metric surfaces: one value per city for the map's colour-and-filter layers, the city panel
+// and the World screen. Every surface is computed from a measured dataset (ADR 0008, ADR 0013):
+// a city the dataset doesn't cover has no value on that surface, and the client shows the gap.
+
+import type { City, MetricSurface, MetricValue } from "../../src/types.js";
 import { beautySurface, qualitySurface } from "./livability.js";
-import { getCities } from "./cities.js";
+import { getCities, getCityById } from "./cities.js";
+import { placeDataInfo, placeFacts, type PlaceFacts } from "./placeData.js";
+import { getAllCitySeasonality } from "./seasonality.js";
 
-const TOP_STABLE_COUNTRIES: Record<string, number> = {
-  Iceland: 95,
-  "New Zealand": 93,
-  Denmark: 92,
-  Portugal: 91,
-  Austria: 90,
-  Slovenia: 89,
-  Japan: 88,
-  Switzerland: 87,
-  Ireland: 86,
-  "Czech Republic": 85,
-  Canada: 84,
-  Singapore: 83,
-  Finland: 82,
-  Australia: 81,
-  Norway: 80,
-  Germany: 79,
-  Netherlands: 78,
-  Belgium: 77,
-  Sweden: 76,
-  Spain: 75,
-};
+type Extra = Pick<MetricValue, "granularity" | "year" | "source" | "estimate" | "note">;
 
-function now(): string {
-  return new Date().toISOString();
+function value(c: City, raw: number, unit: string, normalized: number, label: string, extra: Extra): MetricValue {
+  return { locationId: c.id, lat: c.lat, lng: c.lng, raw, unit, normalized, label, ...extra };
 }
 
-/**
- * Weather comfort by latitude approximation.
- */
-export function getWeatherSurface(): MetricSurface {
-  const cities = getCities();
-  const values: MetricValue[] = cities.map((c) => {
-    const absLat = Math.abs(c.lat);
-    let comfort: number;
-    if (absLat <= 25) comfort = 75 + Math.random() * 10;
-    else if (absLat <= 40) comfort = 65 + Math.random() * 20;
-    else if (absLat <= 55) comfort = 45 + Math.random() * 25;
-    else comfort = 20 + Math.random() * 30;
+const eur = (n: number) => `€${n.toLocaleString("en-US")}`;
 
-    // Make deterministic: use lat as pseudo-seed
-    const seed = Math.abs(Math.round(c.lat * 100 + c.lng * 10)) % 20;
-    comfort = Math.round(comfort + seed * 0.1);
-    comfort = Math.min(100, Math.max(0, comfort));
-
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: comfort,
-      unit: "comfort-index",
-      normalized: comfort,
-      label: comfort >= 70 ? "Pleasant" : comfort >= 45 ? "Moderate" : "Harsh",
-    };
+function costValue(c: City, f: PlaceFacts): MetricValue | undefined {
+  const m = f.cost.monthlyEur;
+  if (!m || f.scores.cost === null) return undefined;
+  const s = f.scores.cost;
+  return value(c, m.value, "EUR per month", s, s >= 70 ? "Affordable" : s >= 45 ? "Moderate" : "Pricey", {
+    granularity: m.granularity,
+    year: m.year,
+    source: m.source,
+    estimate: true,
+    note: `About ${eur(m.value)} a month for one person`,
   });
+}
 
-  return {
-    id: "weather",
-    label: "Weather Comfort",
-    category: "weather",
-    source: "latitude-approximation",
-    updatedAt: now(),
+function connectivityValue(c: City, f: PlaceFacts): MetricValue | undefined {
+  const s = f.scores.connectivity;
+  const net = f.internet.fixed ?? f.internet.mobile;
+  if (s === null || !net) return undefined;
+  return value(c, net.downMbps, "Mbps", s, s >= 75 ? "Excellent" : s >= 50 ? "Good" : s >= 30 ? "Fair" : "Poor", {
     granularity: "city",
-    confidence: "low",
+    source: "internet",
+    note: `${net.downMbps} Mbps down, ${net.upMbps} up${f.internet.fixed ? "" : " (mobile)"}`,
+  });
+}
+
+function stabilityValue(c: City, f: PlaceFacts): MetricValue | undefined {
+  const s = f.scores.stability;
+  if (s === null) return undefined;
+  const e = f.stability.estimate;
+  return value(c, e?.value ?? f.stability.homicides!.value, e ? "stability estimate" : "homicides per 100,000", s, s >= 80 ? "Very Stable" : s >= 60 ? "Stable" : s >= 40 ? "Mixed" : "Unsettled", {
+    granularity: "country",
+    year: e?.year,
+    source: e ? "stability" : "homicides",
+  });
+}
+
+function tourismValue(c: City, f: PlaceFacts): MetricValue | undefined {
+  const s = f.scores.tourism;
+  const a = f.crowds.arrivalsPerResident;
+  if (s === null || !a) return undefined;
+  return value(c, a.value, "arrivals per resident", s, s >= 70 ? "Crowded" : s >= 45 ? "Active" : "Quiet", {
+    granularity: "country",
+    year: a.year,
+    source: "arrivals",
+    note: `${a.value} visitors from abroad per resident a year`,
+  });
+}
+
+function healthValue(c: City, f: PlaceFacts): MetricValue | undefined {
+  const s = f.scores.health;
+  const u = f.health.uhc;
+  if (s === null || !u) return undefined;
+  return value(c, u.value, "UHC index", s, s >= 80 ? "Strong" : s >= 60 ? "Adequate" : "Limited", { granularity: "country", year: u.year, source: "uhc" });
+}
+
+function densityValue(c: City, maxPop: number): MetricValue | undefined {
+  if (!(c.population > 0)) return undefined;
+  return value(
+    c,
+    c.population,
+    "population",
+    Math.round((c.population / maxPop) * 100),
+    c.population >= 10_000_000 ? "Megacity" : c.population >= 1_000_000 ? "Major City" : "City",
+    { granularity: "city", source: "worldcities-dataset" }
+  );
+}
+
+/** Year-round Comfort Index: the mean of the city's twelve monthly scores, where climate data covers it. */
+function weatherValue(c: City, months: { score: number }[] | undefined): MetricValue | undefined {
+  if (!months || months.length !== 12) return undefined;
+  const comfort = Math.round(months.reduce((a, m) => a + m.score, 0) / 12);
+  return value(c, comfort, "comfort-index", comfort, comfort >= 70 ? "Pleasant" : comfort >= 45 ? "Moderate" : "Harsh", {
+    granularity: "city",
+    source: "comfort-index",
+  });
+}
+
+type FactSurfaceId = "stability" | "connectivity" | "tourism" | "cost" | "health";
+
+const FACT_SURFACES: Record<
+  FactSurfaceId,
+  { label: string; pick: (c: City, f: PlaceFacts) => MetricValue | undefined; granularity: MetricSurface["granularity"]; sourceKeys: string[] }
+> = {
+  stability: { label: "Safety and Stability", pick: stabilityValue, granularity: "country", sourceKeys: ["stability"] },
+  connectivity: { label: "Internet Speed", pick: connectivityValue, granularity: "city", sourceKeys: ["internet"] },
+  tourism: { label: "Tourism Pressure", pick: tourismValue, granularity: "country", sourceKeys: ["arrivals"] },
+  cost: { label: "Living Cost", pick: costValue, granularity: "country", sourceKeys: ["costCountry", "costAnchor"] },
+  health: { label: "Healthcare", pick: healthValue, granularity: "country", sourceKeys: ["uhc"] },
+};
+
+const HOMICIDE_SOURCE = "World Bank VC.IHR.PSRC.P5 (UNODC), homicides per 100,000";
+
+function sourceText(keys: string[]): string {
+  const { sources } = placeDataInfo();
+  const names = keys.map((k) => sources[k]?.name).filter(Boolean) as string[];
+  return names.length ? names.join("; ") : "unavailable";
+}
+
+function factSurface(id: FactSurfaceId): MetricSurface {
+  const def = FACT_SURFACES[id];
+  const values: MetricValue[] = [];
+  for (const c of getCities()) {
+    const v = def.pick(c, placeFacts(c));
+    if (v) values.push(v);
+  }
+  const info = placeDataInfo();
+  return {
+    id,
+    label: def.label,
+    category: id,
+    source: id === "stability" ? `${sourceText(def.sourceKeys)}; ${HOMICIDE_SOURCE}` : sourceText(def.sourceKeys),
+    updatedAt: info.builtAt ?? new Date(0).toISOString(),
+    granularity: def.granularity,
+    confidence: values.length ? (id === "cost" ? "medium" : "high") : "low",
     values,
   };
 }
 
-/**
- * Peace/stability by country.
- */
-export function getStabilitySurface(): MetricSurface {
-  const cities = getCities();
-  const values: MetricValue[] = cities.map((c) => {
-    const score = TOP_STABLE_COUNTRIES[c.country] ?? 50;
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: score,
-      unit: "stability-index",
-      normalized: score,
-      label: score >= 80 ? "Very Stable" : score >= 60 ? "Stable" : "Moderate",
-    };
-  });
-
+function weatherSurface(): MetricSurface {
+  const all = getAllCitySeasonality();
+  const values: MetricValue[] = [];
+  for (const c of getCities()) {
+    const v = weatherValue(c, all[c.id]);
+    if (v) values.push(v);
+  }
   return {
-    id: "stability",
-    label: "Political Stability",
-    category: "stability",
-    source: "gpi-approximation",
-    updatedAt: now(),
-    granularity: "country",
+    id: "weather",
+    label: "Year-round Comfort",
+    category: "weather",
+    source: "Comfort Index from Open-Meteo climate data, mean of the twelve months",
+    updatedAt: new Date().toISOString(),
+    granularity: "city",
     confidence: "medium",
     values,
   };
 }
 
-/**
- * Population density from population field.
- */
-export function getDensitySurface(): MetricSurface {
+function densitySurface(): MetricSurface {
   const cities = getCities();
   const maxPop = Math.max(...cities.map((c) => c.population), 1);
-
-  const values: MetricValue[] = cities.map((c) => {
-    const normalized = Math.round((c.population / maxPop) * 100);
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: c.population,
-      unit: "population",
-      normalized,
-      label:
-        c.population >= 10_000_000
-          ? "Megacity"
-          : c.population >= 1_000_000
-            ? "Major City"
-            : "City",
-    };
-  });
-
+  const values: MetricValue[] = [];
+  for (const c of cities) {
+    const v = densityValue(c, maxPop);
+    if (v) values.push(v);
+  }
   return {
     id: "density",
-    label: "Population Density",
+    label: "Population",
     category: "density",
     source: "worldcities-dataset",
-    updatedAt: now(),
+    updatedAt: new Date(0).toISOString(),
     granularity: "city",
     confidence: "high",
     values,
   };
 }
 
-/**
- * Synthesized internet speed / connectivity.
- */
-export function getConnectivitySurface(): MetricSurface {
-  const cities = getCities();
-  const values: MetricValue[] = cities.map((c) => {
-    let h = 7;
-    for (let i = 0; i < c.country.length; i++) {
-      h = (h * 37 + c.country.charCodeAt(i)) | 0;
-    }
-    const base = ((h >>> 0) % 70) + 25; // 25-95
-    const score = Math.min(100, Math.max(0, base));
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: score,
-      unit: "mbps-index",
-      normalized: score,
-      label:
-        score >= 75
-          ? "Excellent"
-          : score >= 50
-            ? "Good"
-            : score >= 30
-              ? "Fair"
-              : "Poor",
-    };
-  });
-
-  return {
-    id: "connectivity",
-    label: "Internet Connectivity",
-    category: "connectivity",
-    source: "synthesized",
-    updatedAt: now(),
-    granularity: "city",
-    confidence: "low",
-    values,
-  };
-}
-
-/**
- * Synthesized tourism pressure / seasonal activity.
- */
-export function getTourismSurface(): MetricSurface {
-  const cities = getCities();
-  const maxPop = Math.max(...cities.map((c) => c.population), 1);
-  const values: MetricValue[] = cities.map((c) => {
-    let h = 13;
-    for (let i = 0; i < c.name.length; i++) {
-      h = (h * 29 + c.name.charCodeAt(i)) | 0;
-    }
-    const noise = ((h >>> 0) % 40) - 20;
-    const popPull = Math.round((c.population / maxPop) * 60);
-    const score = Math.min(100, Math.max(0, 35 + popPull + noise));
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: score,
-      unit: "tourism-index",
-      normalized: score,
-      label: score >= 70 ? "Crowded" : score >= 45 ? "Active" : "Quiet",
-    };
-  });
-
-  return {
-    id: "tourism",
-    label: "Tourism Pressure",
-    category: "tourism",
-    source: "synthesized",
-    updatedAt: now(),
-    granularity: "city",
-    confidence: "low",
-    values,
-  };
-}
-
-/**
- * Synthesized cost of living (higher normalized = more affordable).
- */
-export function getCostSurface(): MetricSurface {
-  const cities = getCities();
-  const values: MetricValue[] = cities.map((c) => {
-    let h = 5;
-    for (let i = 0; i < c.country.length; i++) {
-      h = (h * 41 + c.country.charCodeAt(i)) | 0;
-    }
-    const base = ((h >>> 0) % 65) + 20; // 20-85 affordability
-    const score = Math.min(100, Math.max(0, base));
-    return {
-      locationId: c.id,
-      lat: c.lat,
-      lng: c.lng,
-      raw: score,
-      unit: "affordability-index",
-      normalized: score,
-      label: score >= 70 ? "Affordable" : score >= 45 ? "Moderate" : "Pricey",
-    };
-  });
-
-  return {
-    id: "cost",
-    label: "Living Cost",
-    category: "cost",
-    source: "synthesized",
-    updatedAt: now(),
-    granularity: "country",
-    confidence: "low",
-    values,
-  };
-}
-
-const ALL_SURFACES = [
-  "weather",
-  "stability",
-  "density",
-  "quality",
-  "beauty",
-  "connectivity",
-  "tourism",
-  "cost",
-] as const;
+const ALL_SURFACES = ["weather", "stability", "density", "quality", "beauty", "connectivity", "tourism", "cost", "health"] as const;
 
 const SURFACE_GETTERS: Record<string, () => MetricSurface> = {
-  weather: getWeatherSurface,
-  stability: getStabilitySurface,
-  density: getDensitySurface,
-  // Real data from data/livability.json (server/lib/livability.ts), not the old hash.
+  weather: weatherSurface,
+  stability: () => factSurface("stability"),
+  density: densitySurface,
   quality: qualitySurface,
   beauty: beautySurface,
-  connectivity: getConnectivitySurface,
-  tourism: getTourismSurface,
-  cost: getCostSurface,
+  connectivity: () => factSurface("connectivity"),
+  tourism: () => factSurface("tourism"),
+  cost: () => factSurface("cost"),
+  health: () => factSurface("health"),
 };
+
+// The datasets are read-only files, so a built surface is good for the life of the process.
+// Weather is the exception: on-demand climate fetches add cities at runtime.
+const surfaceCache = new Map<string, MetricSurface>();
+
+/** Test seam. */
+export function resetSurfaceCache(): void {
+  surfaceCache.clear();
+}
 
 export function getSurfaceById(id: string): MetricSurface | undefined {
   const getter = SURFACE_GETTERS[id];
-  return getter ? getter() : undefined;
-}
-
-export function listSurfaces(): Array<{
-  id: string;
-  label: string;
-  category: string;
-}> {
-  return ALL_SURFACES.map((id) => {
-    const surface = SURFACE_GETTERS[id]!();
-    return { id: surface.id, label: surface.label, category: surface.category };
-  });
-}
-
-export function getCityMetrics(
-  cityId: string
-): Record<string, MetricValue> | undefined {
-  const result: Record<string, MetricValue> = {};
-  for (const id of ALL_SURFACES) {
-    const surface = SURFACE_GETTERS[id]!();
-    const val = surface.values.find((v) => v.locationId === cityId);
-    if (val) result[id] = val;
+  if (!getter) return undefined;
+  if (id === "weather") return getter();
+  let s = surfaceCache.get(id);
+  if (!s) {
+    s = getter();
+    surfaceCache.set(id, s);
   }
+  return s;
+}
+
+const SURFACE_LABELS: Record<(typeof ALL_SURFACES)[number], string> = {
+  weather: "Year-round Comfort",
+  stability: "Safety and Stability",
+  density: "Population",
+  quality: "Quality of Life",
+  beauty: "Beauty",
+  connectivity: "Internet Speed",
+  tourism: "Tourism Pressure",
+  cost: "Living Cost",
+  health: "Healthcare",
+};
+
+export function listSurfaces(): Array<{ id: string; label: string; category: string }> {
+  return ALL_SURFACES.map((id) => ({ id, label: SURFACE_LABELS[id], category: id }));
+}
+
+/** One city's value on every surface that has one. Surfaces with no data for the city are absent. */
+export function getCityMetrics(cityId: string): Record<string, MetricValue> | undefined {
+  const city = getCityById(cityId);
+  if (!city) return undefined;
+  const facts = placeFacts(city);
+  const result: Record<string, MetricValue> = {};
+  const put = (id: string, v: MetricValue | undefined) => {
+    if (v) result[id] = v;
+  };
+  put("weather", weatherValue(city, getAllCitySeasonality()[cityId]));
+  for (const id of Object.keys(FACT_SURFACES) as FactSurfaceId[]) put(id, FACT_SURFACES[id].pick(city, facts));
+  for (const id of ["quality", "beauty"] as const) put(id, getSurfaceById(id)?.values.find((v) => v.locationId === cityId));
   return Object.keys(result).length > 0 ? result : undefined;
 }

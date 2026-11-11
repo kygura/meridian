@@ -10,4 +10,17 @@ data/settings.json
 data/watches.json
 data/alerts.json
 data/bookings.json
+data/trips.json
+data/tripLinks.json
 .vercel
+data/rotation.json
+data/notices.json
+data/push-subscriptions.json
+data/daily-jobs.json
+data/notion.json
+data/gmail.json
+data/solver.json
+data/visa.json
+data/auth.json
+.env
+.env.local

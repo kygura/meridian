@@ -65,3 +65,36 @@ describe("tripTransfer", () => {
     }
   });
 });
+
+describe("tripTransfer and itineraries (ADR 0010)", () => {
+  it("round-trips dates, the stay, activities, notes, leg plans and travellers", () => {
+    const full = trip("it", {
+      year: 2027,
+      travellers: 2,
+      homeLeg: { fromCityId: "lima-peru", mode: "flight", booked: { reference: "HOME1" } },
+      nodes: [
+        {
+          ...node,
+          months: { start: 3, end: 3 },
+          arrive: "2027-03-01",
+          depart: "2027-03-05",
+          lodging: { name: "Casa", address: "Rua A", checkIn: "2027-03-01", checkOut: "2027-03-05", cost: { amount: 400, currency: "EUR" }, bookingRef: "R1", link: "https://example.com/r" },
+          activities: [{ id: "a", title: "Tour", date: "2027-03-02", time: "10:30", cost: { amount: 20, currency: "USD" }, note: "bring water" }],
+          notes: "late check-in",
+          travel: { fromCityId: "home", mode: "ferry", booked: { carrier: "Armas", departAt: "2027-03-01T08:00" } },
+        },
+      ],
+    });
+    expect(parseTripFile(serializeTrips([full]))).toEqual([{ ...full, origin: "manual" }]);
+  });
+
+  it("imports an old file unchanged and drops malformed itinerary parts", () => {
+    const old = parseTripFile(JSON.stringify([{ id: "o", name: "Old", nodes: [{ ...node, months: { start: 2, end: 3 } }] }]));
+    expect(old[0].nodes[0]).toEqual({ ...node, months: { start: 2, end: 3 } });
+    const messy = parseTripFile(
+      JSON.stringify([{ id: "m", name: "Messy", travellers: 99, nodes: [{ ...node, arrive: "soon", lodging: { name: "Casa", link: "javascript:alert(1)" }, travel: { mode: "train" } }] }])
+    );
+    expect(messy[0].travellers).toBeUndefined();
+    expect(messy[0].nodes[0]).toEqual({ ...node, lodging: { name: "Casa" } });
+  });
+});

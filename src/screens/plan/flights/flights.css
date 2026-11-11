@@ -804,3 +804,71 @@
     flex: 1;
   }
 }
+
+/* The booking flow inside the sheet; hidden while the unlock card is shown. */
+.plan-flights-sheet-flow:not([hidden]) {
+  display: contents;
+}
+
+/* ── Test mode and the hand-off to real booking sites (HandOff.tsx) ── */
+.plan-flights-testmode {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--warning);
+  background: var(--warning-soft);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--leading);
+}
+.plan-flights-testmode svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warning);
+}
+.plan-flights-testmode p {
+  margin: 0;
+}
+.plan-flights-sheet .plan-flights-testmode {
+  margin-bottom: var(--space-4);
+}
+.plan-flights-real {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+.plan-flights-real-label {
+  font-weight: var(--weight-semibold);
+}
+.plan-flights-real-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.plan-flights-real-list a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 28px;
+  color: var(--accent-text);
+  font-weight: var(--weight-medium);
+}
+.plan-flights-real-sub {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+@media (max-width: 899.98px) {
+  .plan-flights-real-list a {
+    min-height: var(--touch);
+  }
+}

@@ -18,6 +18,8 @@ export interface ReplayControls {
   /** null = the server's home city. */
   fromCityId: string | null;
   tags: string[];
+  /** "week" matches week-of-year normals where a city has them and months elsewhere (ADR 0014). */
+  resolution: "month" | "week";
 }
 
 export const DEFAULT_WEIGHTS: ReplayWeights = { climate: 0.45, spend: 0.2, crowd: 0.2, flight: 0.15 };
@@ -35,6 +37,7 @@ export const DEFAULT_CONTROLS: ReplayControls = {
   maxFlightHours: null,
   fromCityId: null,
   tags: [],
+  resolution: "month",
 };
 
 export function resetBend(c: ReplayControls): ReplayControls {
@@ -59,6 +62,7 @@ export function buildQuery(c: ReplayControls, t: ReplayTemplateRef): ReplayQuery
     bend: { tempC: c.tempC, spendPct: c.spendPct, crowd: c.crowd, monthShift: c.anyMonth ? null : c.monthShift },
     weights: c.weights,
     ...(Object.keys(constraints).length ? { constraints } : {}),
+    ...(c.resolution === "week" ? { resolution: "week" as const } : {}),
   };
 }
 
@@ -79,12 +83,14 @@ export function controlsFromQuery(q: ReplayQuery, month?: number): ReplayControl
     maxFlightHours: c.maxFlightHours ?? null,
     fromCityId: c.fromCityId ?? null,
     tags: [...(c.tags ?? [])],
+    resolution: q.resolution === "week" ? "week" : "month",
   };
 }
 
 /** Row-level watch: the same query narrowed to one city and month (spec R7 cityIds). */
-export function narrowQuery(q: ReplayQuery, cityId: string, month: number): ReplayQuery {
-  return { ...q, constraints: { ...q.constraints, cityIds: [cityId], months: [month] } };
+export function narrowQuery(q: ReplayQuery, cityId: string, month: number, week?: number): ReplayQuery {
+  const { weeks: _weeks, ...rest } = q.constraints ?? {};
+  return { ...q, constraints: { ...rest, cityIds: [cityId], months: [month], ...(week !== undefined ? { weeks: [week] } : {}) } };
 }
 
 // ── Template ─────────────────────────────────────────────────────────

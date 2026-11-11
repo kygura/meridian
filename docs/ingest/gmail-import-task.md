@@ -5,6 +5,13 @@ connectors. It finds past travel records and POSTs them to Meridian's import end
 they land in the review inbox. Nothing is written as a Journey directly. Source: spec-journal.md
 §7 (source 3), D4 (LLM-heavy ingestion runs outside the app) and D6 (imports land as drafts).
 
+> **In-app alternative (ADR 0017).** With `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+> `GMAIL_TOKEN_KEY` set, Settings › Inbox connects Gmail directly and syncs daily with the
+> queries below, reading only schema.org reservation markup. This stored prompt remains for mail
+> without that markup (an LLM reads it) and for Calendar. Without any of it, upload `.eml` or
+> `.mbox` files in the Inbox (Gmail: open a message, "Download message", or Google Takeout for
+> the whole mailbox).
+
 Two modes: a one-time **backfill** over all mail history, then a **weekly** run.
 
 ## Configuration

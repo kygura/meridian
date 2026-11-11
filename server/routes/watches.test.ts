@@ -6,6 +6,7 @@ import { Hono } from "hono";
 import { gateRoutes } from "../middleware/auth";
 import watches, { setWatchDepsFactory } from "./watches";
 import type { Alert, ReplayQuery, ReplayResponse, Watch } from "../../src/types";
+import { resetAuthMemory } from "../lib/authStore";
 
 const TOKEN = "test-token";
 let TMP: string;
@@ -14,6 +15,12 @@ const app = new Hono();
 gateRoutes(app);
 app.route("/api/watches", watches);
 
+
+/** Wrong tokens count toward the store-backed lockout (ADR 0009); clear it between checks. */
+function forgetWrongTokens() {
+  rmSync(join(TMP, "auth.json"), { force: true });
+  resetAuthMemory();
+}
 function req(method: string, path: string, body?: unknown, token: string | null = TOKEN) {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -56,6 +63,7 @@ describe("auth", () => {
     for (const [m, p] of routes) {
       expect((await req(m, p, undefined, null)).status, `${m} ${p}`).toBe(401);
       expect((await req(m, p, undefined, "wrong")).status, `${m} ${p} wrong`).toBe(401);
+      forgetWrongTokens(); // each route is checked on its own, not after a lockout
     }
   });
   it("fails closed when MERIDIAN_TOKEN is unset", async () => {

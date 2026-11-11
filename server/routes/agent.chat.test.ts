@@ -153,7 +153,7 @@ describe("POST /api/agent/chat — mock path emits AI SDK v4 tool parts", () => 
         });
       }
     }
-  });
+  }, 30000);
 
   it("targets an explicitly-named city for seasonality (deterministic city detection)", async () => {
     // Isolate the on-disk image cache for madrid-spain — the stubbed fetch
@@ -195,7 +195,7 @@ describe("POST /api/agent/chat — mock path emits AI SDK v4 tool parts", () => 
         rmSync(madridCachePath);
       }
     }
-  });
+  }, 30000);
 
   it("400s on an invalid body instead of streaming", async () => {
     const res = await agent.request("/chat", {

@@ -45,7 +45,9 @@ export const replayQuerySchema = z.object({
       fromCityId: z.string().min(1).optional(),
       tags: z.array(z.string().min(1).max(50)).max(20).optional(),
       cityIds: z.array(z.string().min(1)).max(500).optional(),
+      weeks: z.array(z.number().int().min(1).max(52)).max(52).optional(),
     })
     .optional(),
   limit: z.number().int().min(1).max(100).optional(),
+  resolution: z.enum(["month", "week"]).optional(),
 });

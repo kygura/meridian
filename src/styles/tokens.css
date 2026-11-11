@@ -175,6 +175,14 @@
   --green-4: #6a9a55;
   --green-5: #457f42;
   --green-6: #2a5f30;
+  /* Air quality ramp (map Seasons layer, PM2.5): clean -> smoky. */
+  --smoke-0: #dbe8ea;
+  --smoke-1: #dfe0c4;
+  --smoke-2: #d8c98f;
+  --smoke-3: #c9a368;
+  --smoke-4: #a8764f;
+  --smoke-5: #7d5043;
+  --smoke-6: #4d3340;
 
   color-scheme: light;
 }
@@ -274,6 +282,13 @@ html[data-theme="dark"] {
   --green-4: #4f7233;
   --green-5: #5f8f3f;
   --green-6: #7fb257;
+  --smoke-0: #1f2d33;
+  --smoke-1: #2f3a2a;
+  --smoke-2: #4b4524;
+  --smoke-3: #6d5a2a;
+  --smoke-4: #94683a;
+  --smoke-5: #bf7f4e;
+  --smoke-6: #e59a72;
 
   color-scheme: dark;
 }
@@ -373,6 +388,13 @@ html[data-theme="dark"] {
     --green-4: #4f7233;
     --green-5: #5f8f3f;
     --green-6: #7fb257;
+    --smoke-0: #1f2d33;
+    --smoke-1: #2f3a2a;
+    --smoke-2: #4b4524;
+    --smoke-3: #6d5a2a;
+    --smoke-4: #94683a;
+    --smoke-5: #bf7f4e;
+    --smoke-6: #e59a72;
 
     color-scheme: dark;
   }

@@ -7,7 +7,8 @@
 // Bookings are server-persisted; the Zustand cache (store.ts) is fed by the
 // list/create/cancel helpers below.
 
-import { apiUrl } from "./api";
+import { apiCredentials, apiUrl } from "./api";
+import { isSignedIn, noteUnauthorized } from "./session";
 import type { TripNode } from "../types";
 
 // ── Server-mirrored types ───────────────────────────────────────────
@@ -139,14 +140,26 @@ export class BookingApiValidationError extends Error {
 
 // ── Fetch helpers (live server contract — see server/routes/bookings.ts) ────
 
-async function postJson(path: string, body: unknown): Promise<{ status: number; data: any }> {
+/** 401: bookings (and flight search, once it spends a provider key) need the owner's session (ADR 0009). */
+export class BookingLockedError extends Error {
+  constructor() {
+    super("Sign in to see and make bookings");
+    this.name = "BookingLockedError";
+  }
+}
+
+/** Throws BookingLockedError on 401, after telling the session it has ended. */
+function checkLocked(status: number, data: any): void {
+  if (status !== 401) return;
+  const notConfigured = data?.reason === "token_not_configured";
+  if (isSignedIn() || notConfigured) noteUnauthorized(notConfigured ? "token_not_configured" : undefined);
+  throw new BookingLockedError();
+}
+
+async function request(path: string, init: RequestInit = {}): Promise<{ status: number; data: any }> {
   let res: Response;
   try {
-    res = await fetch(apiUrl(path), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    res = await fetch(apiUrl(path), { ...init, credentials: apiCredentials });
   } catch {
     throw new BookingNetworkError();
   }
@@ -156,7 +169,12 @@ async function postJson(path: string, body: unknown): Promise<{ status: number; 
   } catch {
     // no body / non-JSON — leave data null
   }
+  checkLocked(res.status, data);
   return { status: res.status, data };
+}
+
+function postJson(path: string, body: unknown): Promise<{ status: number; data: any }> {
+  return request(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 }
 
 export async function searchOffers(
@@ -181,40 +199,24 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
   throw new BookingNetworkError(data?.message ?? "Could not create the booking");
 }
 
+/** Signed out: no request is made (the list is owner-only). */
 export async function listBookings(): Promise<Booking[]> {
-  let res: Response;
-  try {
-    res = await fetch(apiUrl("/api/bookings"));
-  } catch {
-    throw new BookingNetworkError();
-  }
-  if (!res.ok) throw new BookingNetworkError("Couldn't load bookings");
-  const data = await res.json().catch(() => ({}));
+  if (!isSignedIn()) throw new BookingLockedError();
+  const { status, data } = await request("/api/bookings");
+  if (status !== 200) throw new BookingNetworkError("Couldn't load bookings");
   return (data?.bookings ?? []) as Booking[];
 }
 
 export async function getBookingById(id: string): Promise<Booking | null> {
-  let res: Response;
-  try {
-    res = await fetch(apiUrl(`/api/bookings/${id}`));
-  } catch {
-    throw new BookingNetworkError();
-  }
-  if (res.status === 404) return null;
-  if (!res.ok) throw new BookingNetworkError("Couldn't load booking");
-  const data = await res.json().catch(() => ({}));
+  const { status, data } = await request(`/api/bookings/${id}`);
+  if (status === 404) return null;
+  if (status !== 200) throw new BookingNetworkError("Couldn't load booking");
   return (data?.booking ?? null) as Booking | null;
 }
 
 export async function cancelBooking(id: string): Promise<Booking> {
-  let res: Response;
-  try {
-    res = await fetch(apiUrl(`/api/bookings/${id}`), { method: "DELETE" });
-  } catch {
-    throw new BookingNetworkError();
-  }
-  if (!res.ok) throw new BookingNetworkError("Could not cancel the booking");
-  const data = await res.json().catch(() => ({}));
+  const { status, data } = await request(`/api/bookings/${id}`, { method: "DELETE" });
+  if (status !== 200) throw new BookingNetworkError("Could not cancel the booking");
   return data.booking as Booking;
 }
 

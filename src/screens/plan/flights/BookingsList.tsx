@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cancelBooking, listBookings, type Booking } from "../../../lib/bookingApi";
 import { useMeridianStore } from "../../../store";
-import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Sheet, Skeleton, cx, toast, SectionHeader } from "../../../ui";
+import { Badge, Button, Card, Dialog, EmptyState, ErrorState, Sheet, Skeleton, UnlockCard, cx, toast, SectionHeader, useJournalToken } from "../../../ui";
 import { IconArrowRight, IconChevronRight, IconPlane } from "../../../ui/icons";
 import { BookingTicket } from "./BookingTicket";
 import { ProvenanceBadge } from "./ProvenanceBadge";
@@ -51,8 +51,9 @@ function BookingRow({ booking, onOpen }: { booking: Booking; onOpen: () => void 
   );
 }
 
-/** "Your bookings": list, ticket view and cancel. */
+/** "Your bookings": list, ticket view and cancel. Owner only: signed out, it shows the unlock card. */
 export function BookingsList() {
+  const { token, unlocked } = useJournalToken();
   const bookings = useMeridianStore((s) => s.bookings);
   const setBookings = useMeridianStore((s) => s.setBookings);
   const applyBookingCancelled = useMeridianStore((s) => s.applyBookingCancelled);
@@ -62,6 +63,7 @@ export function BookingsList() {
   const [cancelling, setCancelling] = useState(false);
 
   const load = async () => {
+    if (!unlocked) return;
     if (!useMeridianStore.getState().bookings.length) setStatus("loading");
     try {
       setBookings(await listBookings());
@@ -74,7 +76,7 @@ export function BookingsList() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token, unlocked]);
 
   const sorted = useMemo(() => sortBookings(bookings), [bookings]);
   const active = openId ? bookings.find((b) => b.id === openId) ?? null : null;
@@ -100,10 +102,12 @@ export function BookingsList() {
       <SectionHeader
         id="plan-flights-bookings-h"
         title="Your bookings"
-        meta={status === "ready" && bookings.length ? (live === bookings.length ? String(live) : `${live} active`) : null}
+        meta={unlocked && status === "ready" && bookings.length ? (live === bookings.length ? String(live) : `${live} active`) : null}
       />
 
-      {status === "loading" ? (
+      {!unlocked ? (
+        <UnlockCard title="Your bookings are private" />
+      ) : status === "loading" ? (
         <ul className="plan-flights-booking-list" aria-busy="true">
           {[0, 1].map((i) => (
             <li key={i}>

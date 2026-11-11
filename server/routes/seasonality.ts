@@ -1,13 +1,19 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import {
+  climateCoverage,
+  getAirWindow,
   getAllCitySeasonality,
+  getCityWeeks,
+  type WeekSeasonality,
   getRegionAggregates,
   getSeasonalityWindow,
   peekCitySeasonality,
   resolveCitySeasonality,
   type MonthSeasonality,
 } from "../lib/seasonality.js";
+import { clientIp } from "../lib/clientIp.js";
+import { seasonalityFetchLimiter, tooManyRequests } from "../middleware/rateLimit.js";
 
 const seasonality = new Hono();
 
@@ -45,7 +51,30 @@ seasonality.get("/regions", (c) => {
  */
 seasonality.get("/cities", (c) => {
   c.header("Cache-Control", "public, max-age=3600");
-  return c.json({ cities: getAllCitySeasonality(), window: getSeasonalityWindow() });
+  return c.json({ cities: getAllCitySeasonality(), window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
+});
+
+/**
+ * GET /api/seasonality/coverage - how many cities have monthly, weekly and air-quality normals.
+ */
+seasonality.get("/coverage", (c) => c.json({ ...climateCoverage(), window: getSeasonalityWindow(), airWindow: getAirWindow() || null }));
+
+/**
+ * GET /api/seasonality/weekly?cityIds=a,b - 52 week-of-year normals per city (index 0 = week 1,
+ * `precipMm` per 7 days). Cache-only; null where a city has no weekly profile yet, so the client
+ * falls back to months.
+ */
+seasonality.get("/weekly", (c) => {
+  const ids = (c.req.query("cityIds") ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (ids.length === 0 || ids.length > MAX_BATCH) {
+    return c.json({ error: "Invalid request", details: [{ message: `cityIds must contain 1-${MAX_BATCH} ids` }] }, 400);
+  }
+  const cities: Record<string, WeekSeasonality[] | null> = {};
+  for (const id of ids) cities[id] = getCityWeeks(id) ?? null;
+  return c.json({ cities, window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
 });
 
 /**
@@ -90,13 +119,16 @@ seasonality.get("/", async (c) => {
     }
   }
 
-  const capped = toFetch.slice(0, MAX_ON_DEMAND_FETCHES);
+  // Each on-demand fetch counts against the client's limit; once it is used up the
+  // remaining misses stay null, which the client already treats as "ask again later".
+  const ip = clientIp(c);
+  const capped = toFetch.slice(0, MAX_ON_DEMAND_FETCHES).filter(() => seasonalityFetchLimiter.take(ip).ok);
   await mapWithConcurrency(capped, ON_DEMAND_CONCURRENCY, async (id) => {
     const result = await resolveCitySeasonality(id);
     cities[id] = result.kind === "hit" ? result.months : null;
   });
 
-  return c.json({ cities, window: getSeasonalityWindow() });
+  return c.json({ cities, window: getSeasonalityWindow(), airWindow: getAirWindow() || null });
 });
 
 /**
@@ -107,6 +139,11 @@ seasonality.get("/", async (c) => {
  */
 seasonality.get("/:cityId", async (c) => {
   const cityId = c.req.param("cityId");
+  // Only a miss goes out to the climate provider, so only a miss is rate-limited.
+  if (peekCitySeasonality(cityId).kind === "miss") {
+    const v = seasonalityFetchLimiter.take(clientIp(c));
+    if (!v.ok) return tooManyRequests(c, "seasonality_fetch", v.retryAfterSeconds);
+  }
   const result = await resolveCitySeasonality(cityId);
 
   if (result.kind === "unknown") {
