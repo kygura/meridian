@@ -78,6 +78,29 @@ that a place's own headlines keep raising: once with deaths, or repeatedly with 
 Shown in the city panel under the curated advisories.
 _Avoid_: incident, disaster (too narrow)
 
+**Likeness** (ADR 0019):
+How alike two places are in experience: whether the same traits stand out (mountains, water,
+sea, heritage, how photographed, notable places, size), whatever their size. Measured, not rated.
+_Avoid_: similarity score, match
+
+**Vibe**:
+A named experience to look for ("Old towns", "Mountain lakes", "Winter sun"): levels on a few
+experience axes, set at the data's 95th percentile, and sometimes a climate or latitude range.
+_Avoid_: tag, category
+
+**Strength**:
+How much of an experience a place carries: its projection onto what was asked for, over the
+traits that stand out. Shown against the strongest alike place (100).
+
+**Source**:
+An alike place with (nearly) the most of the experience: the real thing.
+_Avoid_: original, best
+
+**Echo**:
+An alike place with clearly less of it than a Source, linked to the Source it most resembles
+("a lighter Venice"), with what it lacks and what it offers instead (cheaper, fewer visitors).
+_Avoid_: copy, knock-off, dupe
+
 ### Trips and booking
 
 **Trip**:
