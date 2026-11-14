@@ -29,6 +29,7 @@ import { TOPIC_LABELS, useCitySeasonality, useNewsBrief, usePlaceNews, type News
 import { countryInfo } from "./countries";
 import { annualRain } from "../../lib/comfort";
 import CityPlacesToLive from "./CityPlacesToLive";
+import CityLikeness from "./CityLikeness";
 import CityFacts from "./CityFacts";
 import { MONTH_NAMES, MONTH_SHORT } from "./basemap";
 import { useNews } from "../world/useNews";
@@ -100,6 +101,7 @@ export default function CityPanel({ cityId, onClose }: CityPanelProps) {
         <AtAGlance city={city} />
         <CityFacts city={city} />
         <CityPlacesToLive city={city} />
+        <CityLikeness city={city} />
         <Visits city={city} />
         <Briefing city={city} />
       </div>

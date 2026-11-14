@@ -25,6 +25,7 @@ describe("parseHash: v3 routes", () => {
     expect(parseHash("#/plan/watches")).toEqual({ view: "plan", tab: "watches" });
     expect(parseHash("#/plan/flights")).toEqual({ view: "plan", tab: "flights" });
     expect(parseHash("#/plan/days")).toEqual({ view: "plan", tab: "days" });
+    expect(parseHash("#/plan/sources")).toEqual({ view: "plan", tab: "sources" });
     expect(parseHash("#/plan/repeat/j1")).toEqual({ view: "plan", tab: "repeat", journeyId: "j1" });
     expect(parseHash("#/plan/repeat/j1/2")).toEqual({ view: "plan", tab: "repeat", journeyId: "j1", stopIndex: 2 });
     expect(parseHash("#/plan/repeat/j1/0")).toMatchObject({ stopIndex: 0 });

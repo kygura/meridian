@@ -129,6 +129,14 @@ export function safetyScore(stability: number | null, homicideSafety: number | n
   return Math.round(STABILITY_WEIGHT * stability + HOMICIDE_WEIGHT * homicideSafety);
 }
 
+/** The NUTS 2 region a city sits in (Europe only), from the visitor-nights build. */
+export function regionOf(cityId: string): { code: string; name: string } | null {
+  const d = load();
+  const code = d?.city.cities[cityId]?.r;
+  const row = code ? d?.country.regions[code] : undefined;
+  return code && row ? { code, name: row.name } : null;
+}
+
 /** Everything measured about one city. Fields are null where there is no data. */
 export function placeFacts(city: Pick<City, "id" | "population">, cityName?: (id: string) => string | undefined): PlaceFacts {
   const d = load();
