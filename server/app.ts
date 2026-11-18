@@ -28,6 +28,7 @@ import visaRoutes from "./routes/visa.js";
 import notionRoutes from "./routes/notion.js";
 import gmailRoutes from "./routes/gmail.js";
 import atlasRoutes from "./routes/atlas.js";
+import atlasTelegramRoutes from "./routes/atlasTelegram.js";
 // Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
 import "./lib/bridgesJob.js";
 import { gateRoutes } from "./middleware/auth.js";
@@ -79,6 +80,8 @@ app.route("/api/visa", visaRoutes);
 app.route("/api/notion", notionRoutes);
 app.route("/api/gmail", gmailRoutes);
 app.route("/api/atlas", atlasRoutes);
+// Public by design: Telegram cannot send the Bearer token, so the webhook checks its own secret and chat (ADR 0020).
+app.route("/api/telegram/atlas", atlasTelegramRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).
 app.route("/api/shared", sharedRoutes);
 

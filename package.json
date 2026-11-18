@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "atlas": "tsx scripts/atlas/cli.ts",
     "test": "vitest run",
     "build:data": "bun scripts/build-airports.mjs",
     "build:place-data": "tsx scripts/build-place-data.ts",

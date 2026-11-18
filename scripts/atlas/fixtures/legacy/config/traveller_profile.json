@@ -1,0 +1,6 @@
+{
+  "persona": "Low-profile, adventurous traveller drawn to coastal and remote places. Core interests: surfing, ocean, nature, local culture. Nomadic at heart — values authenticity over tourist infrastructure. Occasionally splurges on a high-end tropical resort when conditions are right for the season. Avoids peak crowds and tourist traps. Prefers small towns, hidden beaches, and places with real character over well-trodden destinations.",
+  "intent_tags": ["surf", "coastal", "remote", "ocean", "nomadic", "local-culture", "nature"],
+  "luxury_exceptions": "High-end tropical resorts are valid when: the season is peak-quality for surf or diving, the destination is genuinely remote or exclusive, and the price is justified by the experience.",
+  "avoid": ["over-touristed", "peak crowds", "generic package holiday", "party destination"]
+}

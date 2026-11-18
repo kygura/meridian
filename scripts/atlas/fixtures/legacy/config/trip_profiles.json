@@ -1,0 +1,72 @@
+[
+  {
+    "id": "surf",
+    "label": "Warm-water surf",
+    "aliases": ["surfing", "surf trip", "waves"],
+    "criteria": ["consistent swell", "warm water", "reef or point break"],
+    "sample_origins": ["AGP", "MAD", "LPA"],
+    "max_results": 3,
+    "relevant_months": [3, 4, 5, 9, 10, 11]
+  },
+  {
+    "id": "natural-adventure",
+    "label": "Natural adventure",
+    "aliases": ["adventure", "outdoors", "wilderness", "nature trip"],
+    "criteria": [
+      "national parks or wild landscapes",
+      "trekking, diving, or expedition access",
+      "low infrastructure saturation"
+    ],
+    "sample_origins": ["MAD", "AGP"],
+    "max_results": 3,
+    "relevant_months": [3, 4, 5, 9, 10, 11]
+  },
+  {
+    "id": "hiking",
+    "label": "Spring / autumn hiking",
+    "aliases": ["trekking", "trail", "mountains"],
+    "criteria": ["good trail weather", "low crowds", "scenic"],
+    "sample_origins": ["AGP", "MAD"],
+    "max_results": 3,
+    "relevant_months": [3, 4, 5, 9, 10]
+  },
+  {
+    "id": "relax",
+    "label": "Relax / slow travel",
+    "aliases": ["chill", "beach relax", "unwind", "recovery"],
+    "criteria": [
+      "calm coastline or quiet countryside",
+      "minimal itinerary pressure",
+      "reliable good-weather window"
+    ],
+    "sample_origins": ["MAD", "AGP", "LPA"],
+    "max_results": 3,
+    "relevant_months": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+  {
+    "id": "cultural-travel",
+    "label": "Cultural travel",
+    "aliases": ["culture", "history", "heritage", "cities"],
+    "criteria": [
+      "historic centers or living local culture",
+      "shoulder-season crowd levels",
+      "walkable without mass tourism"
+    ],
+    "sample_origins": ["MAD", "AGP"],
+    "max_results": 3,
+    "relevant_months": [3, 4, 5, 9, 10, 11]
+  },
+  {
+    "id": "wildlife",
+    "label": "Wildlife and nature encounters",
+    "aliases": ["safari", "diving with wildlife", "nature reserve"],
+    "criteria": [
+      "seasonal wildlife activity window",
+      "genuine remoteness",
+      "low visitor density"
+    ],
+    "sample_origins": ["MAD"],
+    "max_results": 2,
+    "relevant_months": [1, 2, 6, 7, 8, 12]
+  }
+]

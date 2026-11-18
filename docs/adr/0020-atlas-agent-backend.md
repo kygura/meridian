@@ -50,9 +50,17 @@ Unchanged from Atlas (`src/scoring/engine.ts`, `discovery.ts`), moved into `serv
 - Distorted fares (an event drives the price) are stored on the run but kept out of baselines and rankings.
 - Discovery composite: weather, tourism season, conditions and price signal (900 EUR reference, 5 when there is none), weighted, minus the repeat penalty for a place scouted within the repeat window.
 
-## What stays in Atlas
+## Where Atlas lives
 
-The routine prompt (`CLAUDE.md`), the Telegram trigger that fires it (`api/trigger.ts`) and the command parser, and `atlas`, a terminal client for this API (`bun run atlas context`, `wishlist add`, `scan`, `trip`, `notify` and so on) that the routine and the owner both use.
+Everything Atlas needs is in this repository:
+
+- The routine prompt: `docs/routines/atlas-scout.md`, copied into the scheduled "Atlas Scout" routine on claude.ai. It calls `/api/atlas` with curl; the routine's environment injects the owner token for the production host.
+- The terminal client: `npm run atlas -- <command>` (`scripts/atlas/`), for the owner and for scripts. `MERIDIAN_URL` and `MERIDIAN_TOKEN` point it at a server.
+- The Telegram bot: `/api/telegram/atlas` (public, checked against `TELEGRAM_WEBHOOK_SECRET` and the owner's `TELEGRAM_CHAT_ID`) parses `/scout`, `/discover`, `/watch` and free text and starts the routine.
+- Starting a run: `POST /api/atlas/run`, from the Scout screen, the client or the bot, through the routine's API trigger (`ATLAS_ROUTINE_FIRE_URL`, `ATLAS_ROUTINE_TOKEN`).
+- Season research: `POST /api/atlas/signals`, per place and month (quiet, conditions, dated events, sources), which feeds the trip ideas in `/context`.
+
+The old `kygura/atlas` repository is only needed once, for `npm run atlas -- import --dir <its legacy folder>`.
 
 ## Rejected
 
