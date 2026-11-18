@@ -98,9 +98,10 @@ export function sourceOfQuery(q: string): WikidataSource {
 }
 
 /** The source a request belongs to, by host. */
-export function sourceOfRequest(req: FakeRequest): "wikidata" | "inaturalist" | "swpc" | "other" {
+export function sourceOfRequest(req: FakeRequest): "wikidata" | "inaturalist" | "mediawiki" | "swpc" | "other" {
   if (req.host === "query.wikidata.org") return "wikidata";
   if (req.host === "api.inaturalist.org") return "inaturalist";
+  if (["en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org"].includes(req.host)) return "mediawiki";
   if (req.host === "services.swpc.noaa.gov") return "swpc";
   return "other";
 }
@@ -122,9 +123,35 @@ export const INAT_FIXTURE_CITIES: Record<string, { file: string; lat: number; ln
 
 const EMPTY_PAGE = { total_results: 0, page: 1, per_page: 100, results: [] };
 
-/** The recorded species_counts answer for a request; a place or month with no recording has no observations. */
+/** Recorded answers that are not month pages (taxon names, Wikipedia, Wikivoyage, Wikidata), by request URL, one file per city. */
+const PLACE_FILES: Record<string, string> = {
+  "kyoto-japan": "events/place-kyoto.json",
+  "sydney-australia": "events/place-sydney.json",
+  "honolulu-united-states": "events/place-honolulu.json",
+};
+let placeAnswers: Record<string, unknown> | undefined;
+let taxa: Map<number, unknown> | undefined;
+function recordedPlaceAnswer(url: string): unknown {
+  const all = (placeAnswers ??= Object.assign({}, ...Object.values(PLACE_FILES).map((f) => fixtureJson(f) as Record<string, unknown>)) as Record<string, unknown>);
+  return all[url];
+}
+
+/** The recorded answer for an iNaturalist request: a month page, or the names of taxa. A place with no recording has no observations. */
 export function recordedInat(url: string): FakeResponse {
   const u = new URL(url);
+  if (u.pathname.includes("/taxa/")) {
+    // The ids asked for depend on the candidates, so the answer is built from every recorded taxon.
+    const ids = new Set(u.pathname.split("/taxa/")[1]!.split(",").map(Number));
+    taxa ??= new Map();
+    if (taxa.size === 0) {
+      for (const f of Object.values(PLACE_FILES)) {
+        for (const [k, v] of Object.entries(fixtureJson(f) as Record<string, { results?: { id: number }[] }>)) {
+          if (k.includes("/taxa/")) for (const r of v.results ?? []) taxa.set(r.id, r);
+        }
+      }
+    }
+    return { body: { results: [...ids].map((id) => taxa!.get(id)).filter(Boolean) } };
+  }
   const lat = Number(u.searchParams.get("lat"));
   const lng = Number(u.searchParams.get("lng"));
   const hit = Object.values(INAT_FIXTURE_CITIES).find((c) => Math.abs(c.lat - lat) < 0.5 && Math.abs(c.lng - lng) < 0.5);
@@ -135,6 +162,13 @@ export function recordedInat(url: string): FakeResponse {
   return { body: pages[`${kind}-${u.searchParams.get("month")}`] ?? EMPTY_PAGE };
 }
 
+/** The recorded answer for a Wikipedia, Wikivoyage or Wikidata request; an unrecorded one finds nothing. */
+export function recordedMediaWiki(url: string): FakeResponse {
+  const hit = recordedPlaceAnswer(url);
+  if (hit !== undefined) return { body: hit };
+  return { body: new URL(url).host === "www.wikidata.org" ? { entities: {}, claims: {} } : { query: { pages: [] } } };
+}
+
 /** Answers every source's requests with its recorded fixture. */
 export const recordedRequest = (req: FakeRequest): FakeResponse => {
   switch (sourceOfRequest(req)) {
@@ -142,6 +176,8 @@ export const recordedRequest = (req: FakeRequest): FakeResponse => {
       return { body: fixtureJson(WIKIDATA_FILES[sourceOfQuery(req.query)]) };
     case "inaturalist":
       return recordedInat(req.url);
+    case "mediawiki":
+      return recordedMediaWiki(req.url);
     case "swpc":
       return { body: fixtureJson("events/swpc-kp-forecast.json") };
     default:

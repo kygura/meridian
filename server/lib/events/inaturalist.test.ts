@@ -160,18 +160,24 @@ async function runSource(opts: { owner: string[]; fetch?: ReturnType<typeof fake
   return out;
 }
 
+const monthCalls = (calls: string[]) => calls.filter((u) => new URL(u).pathname.endsWith("/observations/species_counts"));
+
 describe("the inaturalist source", () => {
   const owner = Object.keys(INAT_FIXTURE_CITIES);
 
   it("checks a city in 24 requests, twelve months for each of the two kinds, and saves after each city", async () => {
     const r = await runSource({ owner: ["kyoto-japan"] });
     expect(r.error).toBeUndefined();
-    expect(r.calls).toHaveLength(REQUESTS_PER_CITY);
-    const months = (kind: "Plantae" | "animals") => r.calls.filter((u) => (kind === "Plantae" ? new URL(u).searchParams.get("iconic_taxa") === "Plantae" : new URL(u).searchParams.get("iconic_taxa") !== "Plantae")).map((u) => Number(new URL(u).searchParams.get("month"))).sort((a, b) => a - b);
+    expect(monthCalls(r.calls)).toHaveLength(24);
+    // The rest are genus names, then Wikipedia, Wikidata and Wikivoyage; the whole check stays within its allowance.
+    expect(r.calls.length).toBeGreaterThan(24);
+    expect(r.calls.length).toBeLessThanOrEqual(REQUESTS_PER_CITY);
+    const months = (kind: "Plantae" | "animals") => monthCalls(r.calls).filter((u) => (kind === "Plantae" ? new URL(u).searchParams.get("iconic_taxa") === "Plantae" : new URL(u).searchParams.get("iconic_taxa") !== "Plantae")).map((u) => Number(new URL(u).searchParams.get("month"))).sort((a, b) => a - b);
     expect(months("Plantae")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     expect(months("animals")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     expect(r.saves).toHaveLength(1);
-    expect(r.result!.detail).toMatchObject({ checked: 1, ranThisRun: 1, requests: 24, owners: 1 });
+    expect(r.result!.detail).toMatchObject({ checked: 1, ranThisRun: 1, owners: 1 });
+    expect(r.result!.detail!.requests).toBe(r.calls.length);
   });
 
   it("spaces request starts by the host pause", async () => {
@@ -182,23 +188,23 @@ describe("the inaturalist source", () => {
     });
     // The fake sleep does not wait, so the clock stands still and each planned start is one pause after the last.
     const r = await runSource({ owner: ["kyoto-japan"], fetch: net, hostPauseMs: 1000 });
-    expect(r.sleeps.length).toBe(23);
+    expect(r.sleeps.length).toBe(r.calls.length - 1);
     const sorted = [...r.sleeps].sort((a, b) => a - b);
     sorted.slice(1).forEach((ms, i) => expect(ms - sorted[i]!).toBeGreaterThanOrEqual(900));
-    expect(sorted.at(-1)!).toBeGreaterThanOrEqual(22_000);
+    expect(sorted.at(-1)!).toBeGreaterThanOrEqual(1000 * (r.calls.length - 2));
   });
 
   it("finds seasonal species from the recorded answers for each city, with a title, months and numbers", async () => {
     const r = await runSource({ owner });
     expect(r.error).toBeUndefined();
-    expect(r.result!.detail).toMatchObject({ checked: 3, ranThisRun: 3, requests: 72 });
+    expect(r.result!.detail).toMatchObject({ checked: 3, ranThisRun: 3 });
     const events = r.result!.events;
     expect(events.length).toBeGreaterThan(0);
     for (const e of events) {
       expect(e).toMatchObject({ kind: "nature", recurring: true, source: "inaturalist", feed: "inaturalist" });
       expect(e.id).toMatch(/^inat-\d+-/);
-      expect(e.title).toMatch(/ (in bloom|season|migration)$/);
-      expect(e.note).toMatch(/iNaturalist observations within 30 km fall in/);
+      expect(e.title).toMatch(/ (in bloom|season|migration|blossom)$/);
+      expect(e.note).toMatch(/iNaturalist observations( of \d+ species of one genus)? within 30 km fall in/);
       expect(e.sourceUrl).toMatch(/^https:\/\/www\.inaturalist\.org\/observations\?taxon_id=\d+/);
     }
     for (const id of owner) expect(events.filter((e) => e.cityIds[0] === id).length).toBeLessThanOrEqual(3);
@@ -219,9 +225,51 @@ describe("the inaturalist source", () => {
     expect(e.sourceUrl).toContain("month=9%2C10");
   });
 
+  it("puts what the place's own text mentions first: Kyoto's cherry blossom, from the genus name in the text", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"] });
+    const e = r.result!.events.find((x) => x.title === "Cherry blossom")!;
+    expect(e).toMatchObject({ kind: "nature", month: 3, months: [3, 4], tags: ["bloom", "cherry"] });
+    expect(e.note).toContain("of 2 species of one genus");
+    expect(r.result!.events[0]!.id).toBe(e.id);
+    const stored = (r.result!.state as InatState).checks["kyoto-japan"]!.highlights.filter((h) => h.w);
+    expect(stored.map((h) => h.c)).toEqual(expect.arrayContaining(["Japanese Cherry", "Yoshino cherry"]));
+    expect(stored.find((h) => h.c === "Japanese Cherry")).toMatchObject({ w: 2, g: "Prunus", gc: "cherry" });
+  });
+
+  it("keeps only the mentions and iNaturalist's genus names, never the articles", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"] });
+    const state = r.result!.state as InatState;
+    expect(JSON.stringify(state)).not.toMatch(/papal|extract|Kyoto Prefecture/);
+    expect(JSON.stringify(state).length).toBeLessThan(20_000);
+    expect(Object.keys(state.taxa ?? {}).length).toBeGreaterThan(10);
+    expect(state.taxa!["47351"]).toBe("plums, cherries, and allies");
+    expect(state.checks["kyoto-japan"]!.t).toBeUndefined();
+  });
+
+  it("reads each place's text with serial requests to Wikipedia, Wikivoyage and Wikidata, and sends a User-Agent", async () => {
+    const net = fakeNetwork(recordedRequest);
+    const r = await runSource({ owner: ["kyoto-japan"], fetch: net });
+    const wiki = net.calls.filter((c) => ["en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org"].includes(c.host));
+    expect(wiki.length).toBeGreaterThanOrEqual(7);
+    expect(wiki.length).toBeLessThanOrEqual(9);
+    expect(wiki.every((c) => /Meridian/.test(c.headers["User-Agent"] ?? ""))).toBe(true);
+    expect(r.calls.indexOf(wiki[0]!.url)).toBeGreaterThan(23);
+  });
+
+  it("falls back to volume when no text of the place is found, and checks the place again in a week", async () => {
+    const r = await runSource({ owner: ["sydney-australia"], fetch: fakeNetwork((req) => (req.host === "api.inaturalist.org" ? recordedRequest(req) : { status: 500 })) });
+    expect(r.error).toBeUndefined();
+    const state = r.result!.state as InatState;
+    expect(state.checks["sydney-australia"]!.t).toBe(0);
+    expect(r.result!.events.length).toBeGreaterThan(0);
+    const later = (days: number) => new Date(NOW.getTime() + days * 86_400_000);
+    expect(dueChecks([city("sydney-australia")], state, later(6))).toHaveLength(0);
+    expect(dueChecks([city("sydney-australia")], state, later(8))).toHaveLength(1);
+  });
+
   it("stops at maxChecks and reports the cities still pending", async () => {
     const r = await runSource({ owner, maxChecks: 1 });
-    expect(r.calls).toHaveLength(24);
+    expect(monthCalls(r.calls)).toHaveLength(24);
     expect(r.result!.detail).toMatchObject({ checked: 1, ranThisRun: 1 });
     expect(Number(r.result!.detail!["pending"])).toBeGreaterThan(5000);
   });
@@ -260,8 +308,9 @@ describe("the inaturalist source", () => {
     });
     const r = await runSource({ owner: ["kyoto-japan"], fetch: net, hostPauseMs: 1000 });
     expect(r.error).toBeUndefined();
-    // The third request is repeated: 25 requests for one city.
-    expect(r.calls).toHaveLength(25);
+    // The third request is repeated.
+    const base = await runSource({ owner: ["kyoto-japan"] });
+    expect(r.calls).toHaveLength(base.calls.length + 1);
   });
 
   it("gives up after two retries of a request that keeps getting 429", async () => {

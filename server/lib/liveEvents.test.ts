@@ -282,7 +282,7 @@ describe("refreshLiveEvents", () => {
     expect(w.maxActive()).toBeGreaterThanOrEqual(2);
     expect(w.maxActive()).toBeLessThanOrEqual(3);
     const hosts = new Set(w.calls.map((c) => c.host));
-    expect(hosts).toEqual(new Set(["query.wikidata.org", "api.inaturalist.org", "services.swpc.noaa.gov"]));
+    expect(hosts).toEqual(new Set(["query.wikidata.org", "api.inaturalist.org", "en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org", "services.swpc.noaa.gov"]));
   });
 
   it("runs every source one at a time when asked, merges them and writes the store", async () => {
@@ -298,7 +298,8 @@ describe("refreshLiveEvents", () => {
     expect(count("festivities")).toMatchObject({ count: 16, unmatched: 2 });
     expect(count("national-festivities")).toMatchObject({ count: 14, unmatched: 1 });
     expect(count("eclipses")).toMatchObject({ count: 5, unplaced: 3 });
-    expect(count("inaturalist")).toMatchObject({ detail: { checked: 4, ranThisRun: 4, requests: 96 } });
+    expect(count("inaturalist")).toMatchObject({ detail: { checked: 4, ranThisRun: 4 } });
+    expect(Number(count("inaturalist").detail!.requests)).toBeGreaterThanOrEqual(96);
     expect(count("inaturalist").count).toBeGreaterThan(0);
     expect(count("aurora").count).toBe(1);
     const total = 16 + 14 + 5 + count("inaturalist").count + 1;
@@ -790,8 +791,8 @@ describe("refreshing only what is due", () => {
     resetLiveEventsForTests();
     const w = fakeNetwork(recordedRequest);
     await run(w.fetch, { onlyDue: true, maxChecks: 1 });
-    expect(new Set(w.calls.map((c) => c.host))).toEqual(new Set(["api.inaturalist.org"]));
-    expect(w.calls).toHaveLength(24);
+    expect(new Set(w.calls.map((c) => c.host))).toEqual(new Set(["api.inaturalist.org", "en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org"]));
+    expect(w.calls.filter((c) => c.url.includes("species_counts"))).toHaveLength(24);
   });
 
   it("runs only sources that never landed or are older than their own interval", async () => {

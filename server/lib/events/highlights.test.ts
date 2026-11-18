@@ -3,7 +3,12 @@ import type { City } from "../../../src/types";
 import {
   compactHighlight,
   expandHighlight,
+  aggregateByGenus,
+  credibleMention,
+  genericGenusNames,
   highlightEvent,
+  selectStored,
+  seasonalPool,
   highlightScore,
   highlightTags,
   highlightTitle,
@@ -112,11 +117,11 @@ describe("seasonalCandidates", () => {
     expect(seasonalCandidates(pagesFor([0, 0, 0, 40, 0, 0, 0, 0, 0, 0, 0, 0], { rankLevel: 20, rank: "genus" }), "plant", 100)).toHaveLength(0);
   });
 
-  it("keeps fifteen at most, the largest count x share first", () => {
-    const pages: SpeciesPage[] = Array.from({ length: 12 }, (_, mi) => page(mi === 5 ? Array.from({ length: 20 }, (_, i) => row({ taxonId: 100 + i, count: 20 + i })) : []));
+  it("keeps thirty at most, the largest count x share first", () => {
+    const pages: SpeciesPage[] = Array.from({ length: 12 }, (_, mi) => page(mi === 5 ? Array.from({ length: 50 }, (_, i) => row({ taxonId: 100 + i, count: 20 + i })) : []));
     const out = seasonalCandidates(pages, "plant", 100);
-    expect(out).toHaveLength(15);
-    expect(out[0]!.t).toBe(119);
+    expect(out).toHaveLength(30);
+    expect(out[0]!.t).toBe(149);
   });
 });
 
@@ -227,5 +232,105 @@ describe("titles, tags and events", () => {
     expect(new URL(e.sourceUrl!).searchParams.get("verifiable")).toBe("true");
     expect(new URL(e.sourceUrl!).searchParams.has("quality_grade")).toBe(false);
     expect(e.note).toMatch(/fall in Jul\.$/);
+  });
+});
+
+describe("the place's own text", () => {
+  const cherry = (t: number, total: number, over: Partial<Highlight> = {}): Highlight =>
+    hl({ t, c: `Cherry ${t}`, n: `Prunus s${t}`, total, w: 2, g: "Prunus", gc: "cherry", m: [0, 0, total / 2, total / 2, 0, 0, 0, 0, 0, 0, 0, 0], months: [3, 4], ...over });
+  const weed = (t: number, total: number) => hl({ t, c: `Weed ${t}`, total, share: 0.9, m: [0, 0, total / 2, total / 2, 0, 0, 0, 0, 0, 0, 0, 0], months: [3, 4] });
+
+  it("ranks a mentioned species above unmentioned ones, whatever their counts", () => {
+    const list = [weed(1, 1000), weed(2, 900), weed(3, 800), hl({ t: 4, c: "Famous", total: 25, w: 1 })];
+    const out = rankHighlights(list, tallyHighlights([list]));
+    expect(out[0]!.t).toBe(4);
+    expect(out).toHaveLength(3);
+  });
+
+  it("shows an unmentioned species only when strongly seasonal, unless the city has no text", () => {
+    const flat = hl({ t: 5, total: 500, share: 0.65 });
+    expect(rankHighlights([flat], tallyHighlights([[flat]]))).toEqual([]);
+    expect(rankHighlights([flat], tallyHighlights([[flat]]), false).map((h) => h.t)).toEqual([5]);
+    const sharp = hl({ t: 6, total: 500, share: 0.8 });
+    expect(rankHighlights([sharp], tallyHighlights([[sharp]])).map((h) => h.t)).toEqual([6]);
+  });
+
+  it("keeps an unmentioned species out when more than 5% of 40 checked cities share it", () => {
+    const sharp = hl({ t: 6, total: 500, share: 0.9 });
+    const cities: Highlight[][] = Array.from({ length: 40 }, (_, i) => (i < 3 ? [sharp] : []));
+    expect(rankHighlights([sharp], tallyHighlights(cities))).toEqual([]);
+    expect(rankHighlights([{ ...sharp, w: 1 }], tallyHighlights(cities)).map((h) => h.t)).toEqual([6]);
+  });
+
+  it("makes one highlight of the species of a genus the text mentions through the genus", () => {
+    const out = aggregateByGenus([cherry(1, 100), cherry(2, 60), cherry(3, 40), weed(9, 500)]);
+    expect(out).toHaveLength(2);
+    const agg = out.find((h) => h.agg)!;
+    expect(agg).toMatchObject({ t: 1, total: 200, months: [3, 4], agg: { ids: [1, 2, 3], species: 3 } });
+    expect(highlightTitle(agg)).toBe("Cherry in bloom");
+    expect(highlightTitle({ ...agg, b: 1 })).toBe("Cherry blossom");
+    expect(highlightTags(agg)).toEqual(["bloom", "cherry"]);
+  });
+
+  it("leaves a lone mentioned species with its own name, and species of one genus in other seasons apart", () => {
+    const lone = aggregateByGenus([cherry(1, 100)]);
+    expect(lone[0]!.agg).toBeUndefined();
+    expect(highlightTitle(lone[0]!)).toBe("Cherry 1 in bloom");
+    const apart = aggregateByGenus([cherry(1, 100), cherry(2, 60, { months: [9, 10], m: [0, 0, 0, 0, 0, 0, 0, 0, 30, 30, 0, 0] })]);
+    expect(apart.filter((h) => h.agg)).toHaveLength(0);
+    expect(apart).toHaveLength(2);
+  });
+
+  it("links an aggregate to the observations of all its species, and says how many", () => {
+    const agg = aggregateByGenus([cherry(1, 100), cherry(2, 60)]).find((h) => h.agg)!;
+    const e = highlightEvent(agg, city);
+    expect(new URL(e.sourceUrl!).searchParams.get("taxon_id")).toBe("1,2");
+    expect(e.note).toContain("of 2 species of one genus");
+  });
+
+  it("looks up a mentioned species with fewer observations than the usual minimum, and stores the mentioned first", () => {
+    const pages = pagesFor([0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0], { parentIds: [7] });
+    expect(seasonalCandidates(pages, "plant", 100)).toHaveLength(0);
+    const pool = seasonalPool(pages, "plant", 100);
+    expect(pool).toHaveLength(1);
+    expect(pool[0]!.parentIds).toEqual([7]);
+    expect(selectStored(pool, "plant")).toHaveLength(0);
+    expect(selectStored([{ ...pool[0]!, w: 1 }], "plant")).toHaveLength(1);
+  });
+
+  it("stores the mention, the genus and the genus name", () => {
+    const stored = compactHighlight(cherry(1, 60, { b: 1 }));
+    expect(stored).toMatchObject({ w: 2, g: "Prunus", gc: "cherry", b: 1 });
+    expect(compactHighlight(hl({ w: 1 }))).toMatchObject({ w: 1 });
+    expect(compactHighlight(hl({ w: 1 }))).not.toHaveProperty("g");
+    expect(compactHighlight(hl())).not.toHaveProperty("w");
+  });
+});
+
+describe("credible mentions", () => {
+  const alts = (c: string) => c.split(",").map((x) => x.trim());
+  it("finds the words that end many genus names", () => {
+    const names = ["blue flower", "red flower", "wild flower", "sun flower", "may flower", "bell flower", "cherry"];
+    const generic = genericGenusNames(names, alts);
+    expect(generic.has("flower")).toBe(true);
+    expect(generic.has("cherry")).toBe(false);
+  });
+
+  it("does not believe a mention through a generic or very short name, or a short one-word species name", () => {
+    const generic = new Set(["flower"]);
+    expect(credibleMention(hl({ w: 2, gc: "cherry" }), generic)).toBe(true);
+    expect(credibleMention(hl({ w: 2, gc: "flower" }), generic)).toBe(false);
+    expect(credibleMention(hl({ w: 2, gc: "map" }), generic)).toBe(false);
+    expect(credibleMention(hl({ w: 2, gc: "prickly pear" }), generic)).toBe(true);
+    expect(credibleMention(hl({ w: 1, c: "Stars" }), generic)).toBe(false);
+    expect(credibleMention(hl({ w: 1, c: "Humpback Whale" }), generic)).toBe(true);
+    expect(credibleMention(hl({ w: 1, c: "waratah" }), generic)).toBe(true);
+  });
+
+  it("ranks a mention that is not believed as no mention", () => {
+    const flowerish = hl({ t: 3, c: "Ox Knee", total: 30, share: 0.6, w: 2, g: "Genus", gc: "flower" });
+    const weed = hl({ t: 4, c: "Weed", total: 900, share: 0.9 });
+    const out = rankHighlights([flowerish, weed], tallyHighlights([[flowerish, weed]]), true, new Set(["flower"]));
+    expect(out.map((h) => h.t)).toEqual([4]);
   });
 });

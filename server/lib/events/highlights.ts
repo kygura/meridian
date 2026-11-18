@@ -19,8 +19,17 @@ export const MAX_WINDOW = 3;
 export const MIN_COUNT: Record<Kind, number> = { plant: 20, animal: 30 };
 /** Taxa with fewer observations on iNaturalist as a whole are too obscure to recognise. */
 export const MIN_GLOBAL_OBSERVATIONS = 1000;
-/** Candidates kept per city and kind. More than the three that are shown: species found to be everywhere are dropped later, and the next ones take their place. */
-export const KEEP_PER_KIND = 15;
+/** Candidates kept per city and kind. More than the three that are shown: species found to be everywhere are dropped later, and the next ones take their place; the ones the place's text mentions are kept first. */
+export const KEEP_PER_KIND = 30;
+/** Candidates per kind that get their names looked up in the place's text. */
+export const POOL_PER_KIND = 80;
+/** A species the place's own text mentions needs only this share of the usual minimum count. */
+export const MENTIONED_MIN_FACTOR = 0.5;
+/** Mentioned highlights rank this many times higher than their score says. */
+export const MENTION_BOOST = 20;
+/** An unmentioned highlight is shown only when this much of its observations fall in the window and few other cities share it. */
+export const UNMENTIONED_MIN_SHARE = 0.75;
+export const UNMENTIONED_MAX_CITY_SHARE = 0.05;
 /** A species that is a highlight in more than this share of the checked cities is not special anywhere. */
 export const COMMON_SHARE = 0.15;
 /** The share rule applies once this many cities are checked. */
@@ -41,6 +50,8 @@ export interface SpeciesRow {
   globalCount: number;
   rank: string;
   rankLevel: number;
+  /** The two taxa above the species, nearest first (genus, and subgenus or family): their common names are what the genus is called. */
+  parentIds?: number[];
   /** Observations within the radius (in the month asked for, when one was). */
   count: number;
 }
@@ -62,6 +73,14 @@ export interface StoredHighlight {
   i: string;
   /** Local observations per month, January first. Months a page cut off are estimates (see monthlyTable). */
   m: number[];
+  /** What the place's own text says: 1 mentions the species, 2 mentions its genus or kind. Absent: not mentioned, or no text was found. */
+  w?: 1 | 2;
+  /** Genus (scientific), kept when mentioned through the genus, to group species of one genus. */
+  g?: string;
+  /** The genus name as the text has it (singular), for a mention of 2. */
+  gc?: string;
+  /** The text speaks of "<gc> blossom". */
+  b?: 1;
 }
 
 /** A stored highlight with its season worked out from the monthly counts. */
@@ -73,12 +92,14 @@ export interface Highlight extends StoredHighlight {
   months: number[];
   /** Share of the local observations inside the window, 0 to 1. */
   share: number;
+  /** Set on a highlight that stands for several species of one genus (see rankHighlights). */
+  agg?: { ids: number[]; species: number };
 }
 
 export const kindOf = (iconic: string): Kind => (iconic === "Plantae" ? "plant" : "animal");
 
 export function compactHighlight(h: Highlight): StoredHighlight {
-  return { t: h.t, c: h.c, ...(h.c ? {} : h.n ? { n: h.n } : {}), i: h.i, m: h.m };
+  return { t: h.t, c: h.c, ...(h.c ? {} : h.n ? { n: h.n } : {}), i: h.i, m: h.m, ...(h.w ? { w: h.w } : {}), ...(h.w === 2 && h.g ? { g: h.g } : {}), ...(h.w === 2 && h.gc ? { gc: h.gc } : {}), ...(h.b ? { b: 1 as const } : {}) };
 }
 
 /** The season of a stored highlight, or undefined when its counts show none (they always do for what was stored). */
@@ -105,6 +126,7 @@ export function parseSpeciesCounts(json: unknown): SpeciesPage | undefined {
       globalCount: typeof t.observations_count === "number" ? t.observations_count : 0,
       rank: typeof t.rank === "string" ? t.rank : "",
       rankLevel: typeof t.rank_level === "number" ? t.rank_level : 10,
+      ...(Array.isArray(t.ancestor_ids) ? { parentIds: (t.ancestor_ids as unknown[]).filter((x): x is number => typeof x === "number").slice(-3, -1).reverse() } : typeof t.parent_id === "number" ? { parentIds: [t.parent_id] } : {}),
       count: r.count,
     });
   }
@@ -165,18 +187,40 @@ export function monthlyTable(pages: SpeciesPage[], perPage: number): Map<number,
   return out;
 }
 
-/** The seasonal species of one kind at one place: recognisable, enough observations, and a short season. Best first, `KEEP_PER_KIND` at most. */
-export function seasonalCandidates(pages: SpeciesPage[], kind: Kind, perPage: number): Highlight[] {
-  const out: Highlight[] = [];
+/** A candidate before its mention is known: the taxa above it are what iNaturalist's genus names are looked up by. */
+export interface Candidate extends Highlight {
+  parentIds?: number[];
+}
+
+/**
+ * The seasonal species of one kind at one place that are worth reading the place's text for:
+ * recognisable, a short season and at least half the usual minimum count (a species the text
+ * mentions needs fewer). Best first by count times concentration, `POOL_PER_KIND` at most.
+ */
+export function seasonalPool(pages: SpeciesPage[], kind: Kind, perPage: number): Candidate[] {
+  const out: Candidate[] = [];
   for (const { row, m } of monthlyTable(pages, perPage).values()) {
     if (row.rankLevel > 10 || row.globalCount < MIN_GLOBAL_OBSERVATIONS) continue;
     const total = m.reduce((a, b) => a + b, 0);
-    if (total < MIN_COUNT[kind]) continue;
+    if (total < MIN_COUNT[kind] * MENTIONED_MIN_FACTOR) continue;
     const w = seasonWindow(m);
     if (!w) continue;
-    out.push({ t: row.taxonId, n: row.name, c: row.common ?? "", i: row.iconic, k: kind, m, total, months: w.months, share: Number(w.share.toFixed(3)) });
+    out.push({ t: row.taxonId, n: row.name, c: row.common ?? "", i: row.iconic, k: kind, m, total, months: w.months, share: Number(w.share.toFixed(3)), ...(row.parentIds?.length ? { parentIds: row.parentIds } : {}) });
   }
-  return out.sort((a, b) => b.total * b.share - a.total * a.share || a.t - b.t).slice(0, KEEP_PER_KIND);
+  return out.sort((a, b) => b.total * b.share - a.total * a.share || a.t - b.t).slice(0, POOL_PER_KIND);
+}
+
+/** What is stored for a kind: the mentioned species first (ten at most), then the others that reach the usual minimum, `KEEP_PER_KIND` in all. */
+export function selectStored(pool: Candidate[], kind: Kind): Candidate[] {
+  const byScore = (a: Candidate, b: Candidate) => b.total * b.share - a.total * a.share || a.t - b.t;
+  const mentioned = pool.filter((h) => h.w).sort(byScore).slice(0, 10);
+  const rest = pool.filter((h) => !h.w && h.total >= MIN_COUNT[kind]).sort(byScore).slice(0, KEEP_PER_KIND - mentioned.length);
+  return [...mentioned, ...rest];
+}
+
+/** The seasonal species of one kind at one place with no text to read: the pool at the usual minimum, `KEEP_PER_KIND` at most. */
+export function seasonalCandidates(pages: SpeciesPage[], kind: Kind, perPage: number): Highlight[] {
+  return selectStored(seasonalPool(pages, kind, perPage), kind);
 }
 
 // Uniqueness across the checked cities
@@ -209,20 +253,98 @@ export function highlightScore(h: Highlight, tally: Tally): number {
   return h.total * h.share * Math.log(1 + Math.max(1, tally.cities) / n);
 }
 
+/** A word that ends this many different iNaturalist genus names is an everyday word, not the name of a genus. */
+export const GENERIC_NAME_TAXA = 6;
+
 /**
- * A city's highlights worth showing: common species dropped, the rest ranked, at most three.
- * Plants and animals are ranked against their own kind: iNaturalist holds many times more animal
- * observations than flowering-plant ones, so raw scores would leave no plant in the list. Each
- * highlight is scored relative to the best of its kind in the city (1 for the best), so the best
- * plant and the best animal come first and the remaining place goes to the next strongest.
+ * Words too ordinary to name a genus: the last word of a genus common name is generic when it ends
+ * that many of iNaturalist's genus names ("flower", "tree", "plant"), counted over the names cached so far.
  */
-export function rankHighlights(list: Highlight[], tally: Tally): Highlight[] {
-  const scored = list.filter((h) => !isCommon(h, tally)).map((h) => ({ h, s: highlightScore(h, tally) }));
+export function genericGenusNames(genusCommonNames: Iterable<string>, genusAlternatives: (c: string) => string[]): Set<string> {
+  const df = new Map<string, Set<string>>();
+  for (const c of genusCommonNames) {
+    for (const a of genusAlternatives(c)) {
+      const head = a.split(" ").pop()!;
+      df.set(head, (df.get(head) ?? new Set()).add(a));
+    }
+  }
+  return new Set([...df].filter(([, names]) => names.size >= GENERIC_NAME_TAXA).map(([w]) => w));
+}
+
+/** The shortest single-word name believed to be a genus or species name in a text. */
+export const MIN_NAME_LETTERS = 5;
+
+/**
+ * Whether a mention is worth believing. A mention through the genus fails when the name is a
+ * generic word or a short single word ("map", "flag", "tree"). A mention of the species by a
+ * one-word common name fails when that name is short (an ordinary word such as "stars").
+ */
+export function credibleMention(h: Highlight, genericNames: ReadonlySet<string>): boolean {
+  if (h.w === 2) {
+    if (!h.gc) return false;
+    const words = h.gc.split(" ");
+    return !genericNames.has(words[words.length - 1]!) && (words.length > 1 || h.gc.length >= MIN_NAME_LETTERS);
+  }
+  if (h.w === 1 && h.c && !h.c.includes(" ") && h.c.length < MIN_NAME_LETTERS + 1) return false;
+  return true;
+}
+
+const unmention = (h: Highlight): Highlight => {
+  const { w: _w, g: _g, gc: _gc, b: _b, ...rest } = h;
+  return rest;
+};
+
+/**
+ * Species of one genus that the place's text mentions through the genus, with overlapping
+ * seasons, become one highlight with their counts added (several cherry species are one cherry
+ * season). The strongest species stands for the group.
+ */
+export function aggregateByGenus(list: Highlight[]): Highlight[] {
+  const out: Highlight[] = [];
+  const groups = new Map<string, Highlight[]>();
+  for (const h of list) {
+    if (h.w === 2 && h.g) groups.set(`${h.k}|${h.g}`, [...(groups.get(`${h.k}|${h.g}`) ?? []), h]);
+    else out.push(h);
+  }
+  for (const members of groups.values()) {
+    const rest = [...members].sort((a, b) => b.total * b.share - a.total * a.share || a.t - b.t);
+    while (rest.length) {
+      const rep = rest.shift()!;
+      const cluster = [rep, ...rest.filter((x) => x.months.some((mo) => rep.months.includes(mo)))];
+      for (const x of cluster.slice(1)) rest.splice(rest.indexOf(x), 1);
+      const m = rep.m.map((_, i) => cluster.reduce((a, x) => a + x.m[i]!, 0));
+      const w = cluster.length > 1 ? seasonWindow(m) : undefined;
+      if (!w) {
+        out.push(...cluster.length > 1 ? [rep, ...cluster.slice(1)] : [rep]);
+        continue;
+      }
+      out.push({ ...rep, m, total: m.reduce((a, b) => a + b, 0), months: w.months, share: Number(w.share.toFixed(3)), agg: { ids: cluster.map((x) => x.t), species: cluster.length }, ...(cluster.some((x) => x.b) ? { b: 1 as const } : {}) });
+    }
+  }
+  return out;
+}
+
+/**
+ * A city's highlights worth showing, at most three. Species the city's own text mentions come
+ * first (ahead of every unmentioned one, and among themselves by score times 20); the rest fill the remaining places only when strongly
+ * seasonal and shared by few cities, unless no text was found for the city. Species found to be
+ * everywhere are dropped. Plants and animals are scored against their own kind: iNaturalist holds
+ * many times more animal observations, so raw scores left no plant in the list. Each score is
+ * divided by the best of its kind in the city.
+ */
+export function rankHighlights(list: Highlight[], tally: Tally, textFound = true, genericNames: ReadonlySet<string> = new Set()): Highlight[] {
+  const live = aggregateByGenus(list.filter((h) => !isCommon(h, tally)).map((h) => (credibleMention(h, genericNames) ? h : unmention(h))));
+  const eligible = live.filter((h) => {
+    if (h.w || !textFound) return true;
+    const cityShare = tally.cities >= COMMON_AFTER_CITIES ? (tally.byTaxon.get(h.t) ?? 0) / tally.cities : 0;
+    return h.share >= UNMENTIONED_MIN_SHARE && cityShare <= UNMENTIONED_MAX_CITY_SHARE;
+  });
+  const scored = eligible.map((h) => ({ h, s: highlightScore(h, tally) }));
   const best: Record<Kind, number> = { plant: 0, animal: 0 };
   for (const x of scored) best[x.h.k] = Math.max(best[x.h.k], x.s);
   return scored
-    .map((x) => ({ ...x, rel: best[x.h.k] > 0 ? x.s / best[x.h.k] : 0 }))
-    .sort((a, b) => b.rel - a.rel || b.s - a.s || a.h.t - b.h.t)
+    .map((x) => ({ ...x, f: (best[x.h.k] > 0 ? x.s / best[x.h.k] : 0) * (x.h.w ? MENTION_BOOST : 1) }))
+    .sort((a, b) => Number(!!b.h.w) - Number(!!a.h.w) || b.f - a.f || b.s - a.s || a.h.t - b.h.t)
     .slice(0, MAX_EVENTS_PER_CITY)
     .map((x) => x.h);
 }
@@ -253,15 +375,17 @@ export const displayName = (h: Highlight) => cap(h.c || h.n || `Taxon ${h.t}`);
 
 /** "X in bloom" for plants, "X migration" for a bird absent outside its window, else "X season". */
 export function highlightTitle(h: Highlight): string {
-  if (h.k === "plant") return `${displayName(h)} in bloom`;
-  if (h.i === "Aves" && h.share >= ABSENT_SHARE) return `${displayName(h)} migration`;
-  return `${displayName(h)} season`;
+  // Several species of one genus: titled with the genus name the place's text uses ("Cherry blossom" where the text says so).
+  const name = h.agg && h.gc ? cap(h.gc) : displayName(h);
+  if (h.k === "plant") return h.agg && h.b ? `${name} blossom` : `${name} in bloom`;
+  if (h.i === "Aves" && h.share >= ABSENT_SHARE) return `${name} migration`;
+  return `${name} season`;
 }
 
 export function highlightTags(h: Highlight): string[] {
   const tags = [GROUP_TAGS[h.i] ?? (h.k === "plant" ? "bloom" : "wildlife")];
   if (h.k === "animal") tags.push("wildlife");
-  const name = kebab(h.c || h.n || "");
+  const name = kebab(h.agg && h.gc ? h.gc : h.c || h.n || "");
   if (name && !tags.includes(name)) tags.push(name);
   return tags;
 }
@@ -270,7 +394,7 @@ const short = (m: number) => cap(MONTH_NAMES[m - 1]!).slice(0, 3);
 
 /** The iNaturalist observations search that matches a highlight: the species, the radius, the peak months. */
 export function observationsSearchUrl(h: Highlight, lat: number, lng: number): string {
-  const q = new URLSearchParams({ taxon_id: String(h.t), lat: lat.toFixed(4), lng: lng.toFixed(4), radius: String(RADIUS_KM), month: h.months.join(",") });
+  const q = new URLSearchParams({ taxon_id: (h.agg?.ids ?? [h.t]).join(","), lat: lat.toFixed(4), lng: lng.toFixed(4), radius: String(RADIUS_KM), month: h.months.join(",") });
   // Plants count cultivated and unverified observations too (see inaturalist.ts); animals only verifiable ones.
   if (h.k === "plant") q.set("quality_grade", "any");
   else q.set("verifiable", "true");
@@ -290,7 +414,7 @@ export function highlightEvent(h: Highlight, city: City): StoredEvent {
     ...(h.months.length > 1 ? { months: h.months } : {}),
     recurring: true,
     tags: highlightTags(h),
-    note: `${Math.round(h.share * 100)}% of ${h.total} iNaturalist observations within ${RADIUS_KM} km fall in ${when}.`,
+    note: `${Math.round(h.share * 100)}% of ${h.total} iNaturalist observations${h.agg ? ` of ${h.agg.species} species of one genus` : ""} within ${RADIUS_KM} km fall in ${when}.`,
     source: "inaturalist",
     sourceUrl: observationsSearchUrl(h, city.lat, city.lng),
     feed: "inaturalist",
