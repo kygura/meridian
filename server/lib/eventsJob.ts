@@ -1,6 +1,6 @@
 // The live events' share of the daily jobs (ADR 0021, ADR 0016). Registered as the daily
 // job "events": the one scheduler (in-process on a long-running server, Vercel Cron
-// through /api/jobs/daily) refreshes the Wikidata events with the watches and the bridges.
+// through /api/jobs/daily) refreshes the live events (every source) with the watches and the bridges.
 // server/app.ts imports this module so the job exists on every host.
 
 import { registerDailyJob } from "./dailyJobs.js";

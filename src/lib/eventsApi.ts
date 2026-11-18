@@ -1,4 +1,4 @@
-// GET /api/overlays/events/tags: the tags the live events (Wikidata, ADR 0021) carry,
+// GET /api/overlays/events/tags: the tags the live events (ADR 0021) carry,
 // for the "Happening while you're there" filter.
 
 import { apiUrl } from "./api";
@@ -8,7 +8,7 @@ export interface EventTag {
   count: number;
 }
 
-/** "film-festival" as "Film festival". */
+/** "cherry-blossom" as "Cherry blossom". */
 export function eventTagLabel(tag: string): string {
   const words = tag.replace(/-/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);

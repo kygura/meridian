@@ -27,7 +27,7 @@ export async function eurOf(amount: number, currency: string, date: string): Pro
 }
 
 /**
- * Every live event (Wikidata, see liveEvents.ts), dated ones from every year. Never
+ * Every live event (see liveEvents.ts), dated ones from every year. Never
  * throws: when nothing is stored and the fetch fails the list is empty, and event
  * markers and tag constraints simply find nothing.
  */
