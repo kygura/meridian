@@ -1,5 +1,5 @@
 // Test helpers for the live events store: seed events-live.json in the current DATA_DIR,
-// and answer the sources' requests (Wikidata, JMA, iNaturalist, NOAA SWPC) from recorded
+// and answer the sources' requests (Wikidata, iNaturalist, NOAA SWPC) from recorded
 // responses. No network.
 
 import { readFileSync, writeFileSync } from "fs";
@@ -10,10 +10,6 @@ import type { MeridianEvent } from "../../../src/types.js";
 
 export function fixtureJson(name: string): unknown {
   return JSON.parse(readFileSync(new URL(`./${name}`, import.meta.url), "utf-8"));
-}
-
-export function fixtureText(name: string): string {
-  return readFileSync(new URL(`./${name}`, import.meta.url), "utf-8");
 }
 
 /** Writes a fresh events-live.json into DATA_DIR (which the caller has set) and drops the in-memory copy. */
@@ -102,9 +98,8 @@ export function sourceOfQuery(q: string): WikidataSource {
 }
 
 /** The source a request belongs to, by host. */
-export function sourceOfRequest(req: FakeRequest): "wikidata" | "jma" | "inaturalist" | "swpc" | "other" {
+export function sourceOfRequest(req: FakeRequest): "wikidata" | "inaturalist" | "swpc" | "other" {
   if (req.host === "query.wikidata.org") return "wikidata";
-  if (req.host === "www.data.jma.go.jp") return "jma";
   if (req.host === "api.inaturalist.org") return "inaturalist";
   if (req.host === "services.swpc.noaa.gov") return "swpc";
   return "other";
@@ -118,42 +113,26 @@ const WIKIDATA_FILES: Record<WikidataSource, string> = {
   "lunar-eclipses": "events/wikidata-lunar-eclipses.json",
 };
 
-const JMA_FILES: Record<string, string> = {
-  "index.html": "events/jma-index.html",
-  "sakura003_07.html": "events/jma-sakura-flowering.html",
-  "sakura004_07.html": "events/jma-sakura-fullbloom.html",
-  "phn_014.html": "events/jma-maple.html",
+/** Where the recorded iNaturalist species_counts answers were taken: one file per city, pages keyed "plant-3" or "animal-11" (kind and month). */
+export const INAT_FIXTURE_CITIES: Record<string, { file: string; lat: number; lng: number }> = {
+  "kyoto-japan": { file: "events/inat-species-counts-kyoto.json", lat: 35.0116, lng: 135.7681 },
+  "sydney-australia": { file: "events/inat-species-counts-sydney.json", lat: -33.8688, lng: 151.2093 },
+  "honolulu-united-states": { file: "events/inat-species-counts-honolulu.json", lat: 21.3069, lng: -157.8583 },
 };
 
-/** Taxon ids the recorded iNaturalist answers use. */
-export const TAXON = { prunus: 125742, jacaranda: 77541, humpback: 41566, chelonia: 39659, caretta: 39665 } as const;
+const EMPTY_PAGE = { total_results: 0, page: 1, per_page: 100, results: [] };
 
-const TAXA_FILES: Record<string, string> = {
-  "prunus serrulata": "events/inat-taxa-prunus-serrulata.json",
-  "jacaranda mimosifolia": "events/inat-taxa-jacaranda.json",
-  "megaptera novaeangliae": "events/inat-taxa-humpback.json",
-  "caretta caretta": "events/inat-taxa-caretta.json",
-};
-
-const EMPTY_HISTOGRAM = { total_results: 12, page: 1, per_page: 12, results: { month_of_year: Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), 0])) } };
-
-/** The recorded iNaturalist answer for a taxa or histogram request; places with no recording have no observations. */
+/** The recorded species_counts answer for a request; a place or month with no recording has no observations. */
 export function recordedInat(url: string): FakeResponse {
   const u = new URL(url);
-  if (u.pathname.endsWith("/taxa")) {
-    const file = TAXA_FILES[(u.searchParams.get("q") ?? "").toLowerCase()];
-    return file ? { body: fixtureJson(file) } : { body: { total_results: 0, results: [] } };
-  }
-  const taxon = u.searchParams.get("taxon_id");
   const lat = Number(u.searchParams.get("lat"));
   const lng = Number(u.searchParams.get("lng"));
-  const near = (a: number, b: number) => Math.abs(lat - a) < 0.2 && Math.abs(lng - b) < 0.2;
-  if (taxon === String(TAXON.prunus) && near(35.68, 139.69)) return { body: fixtureJson("events/inat-histogram-prunus-tokyo.json") };
-  if (taxon === String(TAXON.prunus) && near(38.9, -77.04)) return { body: fixtureJson("events/inat-histogram-prunus-washington.json") };
-  if (taxon === String(TAXON.jacaranda) && near(-25.75, 28.23)) return { body: fixtureJson("events/inat-histogram-jacaranda-pretoria.json") };
-  if (taxon === String(TAXON.jacaranda) && near(48.86, 2.35)) return { body: fixtureJson("events/inat-histogram-jacaranda-paris.json") };
-  if (taxon === String(TAXON.humpback) && near(-33.87, 151.21)) return { body: fixtureJson("events/inat-histogram-humpback-sydney.json") };
-  return { body: EMPTY_HISTOGRAM };
+  const hit = Object.values(INAT_FIXTURE_CITIES).find((c) => Math.abs(c.lat - lat) < 0.5 && Math.abs(c.lng - lng) < 0.5);
+  if (!u.pathname.endsWith("/observations/species_counts")) throw new Error(`unexpected iNaturalist request ${u.pathname}`);
+  if (!hit) return { body: EMPTY_PAGE };
+  const kind = u.searchParams.get("iconic_taxa") === "Plantae" ? "plant" : "animal";
+  const pages = fixtureJson(hit.file) as Record<string, unknown>;
+  return { body: pages[`${kind}-${u.searchParams.get("month")}`] ?? EMPTY_PAGE };
 }
 
 /** Answers every source's requests with its recorded fixture. */
@@ -161,10 +140,6 @@ export const recordedRequest = (req: FakeRequest): FakeResponse => {
   switch (sourceOfRequest(req)) {
     case "wikidata":
       return { body: fixtureJson(WIKIDATA_FILES[sourceOfQuery(req.query)]) };
-    case "jma": {
-      const file = JMA_FILES[new URL(req.url).pathname.split("/").pop() ?? ""];
-      return file ? { text: fixtureText(file) } : { status: 404 };
-    }
     case "inaturalist":
       return recordedInat(req.url);
     case "swpc":

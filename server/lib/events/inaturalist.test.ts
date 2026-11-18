@@ -1,319 +1,286 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import type { City } from "../../../src/types";
 import { getCities, loadCities } from "../cities";
-import { refreshLiveEvents, resetLiveEventsForTests, liveEventsStatus } from "../liveEvents";
-import {
-  dueChecks,
-  emptyInatState,
-  eventsFromChecks,
-  histogramUrl,
-  observationsUrl,
-  parseHistogram,
-  parseTaxon,
-  peakMonths,
-  RECHECK_MS,
-  type InatState,
-} from "./inaturalist";
-import { PHENOMENA } from "./phenomena";
-import { fakeNetwork, fixtureJson, recordedRequest, TAXON } from "../__fixtures__/liveEvents";
+import { cityIndexFor, type SourceContext, type SourceResult } from "./common";
+import { emptyInatState, dueChecks, eventsFromChecks, inaturalistSource, orderCities, readInatState, RECHECK_MS, REQUESTS_PER_CITY, speciesCountsUrl, type InatState } from "./inaturalist";
+import { expandHighlight, type StoredHighlight } from "./highlights";
+import { fakeNetwork, INAT_FIXTURE_CITIES, recordedRequest } from "../__fixtures__/liveEvents";
 
 const NOW = new Date("2026-11-18T12:00:00Z");
-const noSleep = async () => undefined;
-const histogram = (name: string) => parseHistogram(fixtureJson(`events/${name}`))!;
-const phen = (id: string) => PHENOMENA.find((p) => p.id === id)!;
+loadCities();
+const cities: City[] = getCities();
+afterEach(() => vi.restoreAllMocks());
 
-let cities: City[];
-let TMP: string;
-beforeAll(() => {
-  loadCities();
-  cities = getCities();
-});
-beforeEach(() => {
-  TMP = mkdtempSync(join(tmpdir(), "meridian-inat-"));
-  process.env.DATA_DIR = TMP;
-  resetLiveEventsForTests();
-  vi.spyOn(console, "warn").mockImplementation(() => undefined);
-});
-afterEach(() => {
-  rmSync(TMP, { recursive: true, force: true });
-  delete process.env.DATA_DIR;
-  resetLiveEventsForTests();
-  vi.restoreAllMocks();
-});
+const city = (id: string) => cities.find((c) => c.id === id)!;
+/** A stored highlight with `total` observations in March and April. */
+const hl = (t: number, over: { total?: number; i?: string } = {}): StoredHighlight => ({ t, c: `Species ${t}`, i: over.i ?? "Plantae", m: [0, 0, (over.total ?? 60) / 2, (over.total ?? 60) / 2, 0, 0, 0, 0, 0, 0, 0, 0] });
 
-describe("phenomenon definitions", () => {
-  it("are definitions of what to look up, not events: no dates, months or places", () => {
-    expect(PHENOMENA.map((p) => p.id)).toEqual(["cherry-blossom", "jacaranda", "lavender", "tulips", "bluebells", "humpback-whales", "grey-whales", "sea-turtles", "monarch-butterflies", "fireflies", "wildebeest"]);
-    for (const p of PHENOMENA) {
-      expect(Object.keys(p).sort()).toEqual(expect.arrayContaining(["id", "title", "taxonNames", "tags", "minObservations"]));
-      expect(p.taxonNames.length).toBeGreaterThan(0);
-    }
-    expect(phen("sea-turtles").taxonNames).toEqual(["Chelonia mydas", "Caretta caretta"]);
-    expect(phen("jacaranda").annotation).toEqual({ termId: 12, termValueId: 13 });
-    expect(phen("humpback-whales").annotation).toBeUndefined();
+describe("the species_counts request", () => {
+  it("asks for a month at a time, within 30 km, plants of every grade (planted trees and gardens count)", () => {
+    const u = new URL(speciesCountsUrl("plant", 35.68, 139.69, 3));
+    expect(u.origin + u.pathname).toBe("https://api.inaturalist.org/v1/observations/species_counts");
+    expect(Object.fromEntries(u.searchParams)).toEqual({ lat: "35.6800", lng: "139.6900", radius: "30", per_page: "100", month: "3", iconic_taxa: "Plantae", quality_grade: "any" });
+  });
+
+  it("asks for conspicuous animals by iconic taxon, verifiable observations only", () => {
+    const u = new URL(speciesCountsUrl("animal", -33.87, 151.21, 12));
+    expect(u.searchParams.get("iconic_taxa")).toBe("Aves,Mammalia,Insecta,Reptilia,Amphibia,Actinopterygii,Mollusca");
+    expect(u.searchParams.get("verifiable")).toBe("true");
+    expect(u.searchParams.has("quality_grade")).toBe(false);
+    expect(u.searchParams.get("per_page")).toBe("150");
+    expect(u.searchParams.get("month")).toBe("12");
   });
 });
 
-describe("histogram and taxon parsing (recorded iNaturalist answers)", () => {
-  it("reads Prunus serrulata flowering near Tokyo: March 11, April 15", () => {
-    const c = histogram("inat-histogram-prunus-tokyo.json");
-    expect(c).toEqual([0, 0, 11, 15, 0, 0, 0, 0, 0, 1, 0, 0]);
-    expect(peakMonths(c)).toEqual([3, 4]);
+describe("stored state", () => {
+  it("starts empty, and drops the state of the earlier phenomenon-list version", () => {
+    expect(readInatState(undefined)).toEqual(emptyInatState());
+    const old = { taxa: { "Prunus serrulata": { id: 125742, resolvedAt: "2026-11-01T00:00:00Z" } }, checks: { "kyoto-japan|cherry-blossom": { at: "2026-11-01T00:00:00Z", counts: new Array(12).fill(1), total: 12 } }, zeroCountries: {} };
+    expect(readInatState(old)).toEqual(emptyInatState());
   });
-
-  it("finds the humpback whale season off Sydney: June and July", () => {
-    const c = histogram("inat-histogram-humpback-sydney.json");
-    expect(c.reduce((a, b) => a + b, 0)).toBe(599);
-    expect(peakMonths(c)).toEqual([6, 7]);
-  });
-
-  it("reads a body that is not a histogram as undefined", () => {
-    expect(parseHistogram({ results: {} })).toBeUndefined();
-    expect(parseHistogram({ results: { month_of_year: { "1": -3 } } })).toBeUndefined();
-    expect(parseHistogram(null)).toBeUndefined();
-  });
-
-  it("picks the exact name with the most observations, not the first result", () => {
-    expect(parseTaxon(fixtureJson("events/inat-taxa-jacaranda.json"), "Jacaranda mimosifolia")).toBe(TAXON.jacaranda);
-    // The recorded answer for "Caretta caretta" lists Chelonia mydas first.
-    expect(parseTaxon(fixtureJson("events/inat-taxa-caretta.json"), "Caretta caretta")).toBe(TAXON.caretta);
-    expect(parseTaxon(fixtureJson("events/inat-taxa-prunus-serrulata.json"), "Prunus serrulata")).toBe(TAXON.prunus);
-    expect(parseTaxon({ results: [] }, "x")).toBeNull();
-    expect(parseTaxon(null, "x")).toBeNull();
-  });
-
-  it("builds the histogram request with the radius, the month interval and the flowering annotation", () => {
-    const u = new URL(histogramUrl([TAXON.prunus], phen("cherry-blossom"), 35.68, 139.69));
-    expect(u.origin + u.pathname).toBe("https://api.inaturalist.org/v1/observations/histogram");
-    expect(Object.fromEntries(u.searchParams)).toEqual({ taxon_id: "125742", lat: "35.6800", lng: "139.6900", radius: "50", interval: "month_of_year", verifiable: "true", term_id: "12", term_value_id: "13" });
-    const whales = new URL(histogramUrl([TAXON.humpback], phen("humpback-whales"), 1, 2));
-    expect(whales.searchParams.has("term_id")).toBe(false);
-    const turtles = new URL(histogramUrl([TAXON.chelonia, TAXON.caretta], phen("sea-turtles"), 1, 2));
-    expect(turtles.searchParams.get("taxon_id")).toBe("39659,39665");
-    expect(observationsUrl([TAXON.prunus], phen("cherry-blossom"), 1, 2).startsWith("https://www.inaturalist.org/observations?")).toBe(true);
+  it("keeps a state of the current version", () => {
+    const s: InatState = { version: 2, checks: { "x-y": { at: "2026-11-01T00:00:00.000Z", highlights: [hl(1)] } } };
+    expect(readInatState(JSON.parse(JSON.stringify(s)))).toEqual(s);
   });
 });
 
-describe("peak months", () => {
-  it("takes the run of months holding at least 15% of the year around the busiest month", () => {
-    expect(peakMonths([0, 0, 0, 0, 0, 20, 30, 7, 0, 0, 0, 0])).toEqual([6, 7]);
-    // 10/60 is 16.7%, so August joins; 5/60 is 8%, so September does not.
-    expect(peakMonths([0, 0, 0, 0, 0, 20, 25, 10, 5, 0, 0, 0])).toEqual([6, 7, 8]);
+describe("coverage order", () => {
+  it("lists the owner's places, then the cities by attention, then the other airport cities by population, each once", () => {
+    const ordered = orderCities(cities, ["kyoto-japan", "no-such-city", "tokyo-japan"], ["lisbon-portugal", "tokyo-japan", "reykjav-k-iceland"]);
+    expect(ordered.slice(0, 5).map((c) => c.id)).toEqual(["kyoto-japan", "tokyo-japan", "lisbon-portugal", "reykjav-k-iceland", expect.any(String)]);
+    expect(new Set(ordered.map((c) => c.id)).size).toBe(ordered.length);
+    const rest = ordered.slice(4);
+    expect(rest.every((c) => c.iata)).toBe(true);
+    const pops = rest.map((c) => c.population);
+    expect(pops).toEqual([...pops].sort((a, b) => b - a));
   });
 
-  it("does not join a second, separate burst to the main run", () => {
-    expect(peakMonths([20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30])).toEqual([11, 12, 1].filter((m) => m === 12 || m === 1));
-    expect(peakMonths([0, 0, 40, 0, 0, 0, 0, 0, 0, 20, 0, 0])).toEqual([3]);
+  it("includes an owner's place or a city with attention that has no airport", () => {
+    const noAirport = cities.find((c) => !c.iata)!;
+    expect(orderCities(cities, [noAirport.id], []).map((c) => c.id)).toContain(noAirport.id);
+    expect(orderCities(cities, [], [noAirport.id])[0]!.id).toBe(noAirport.id);
   });
 
-  it("runs across the new year, starting at the first month of the run", () => {
-    expect(peakMonths([10, 5, 0, 0, 0, 0, 0, 0, 0, 0, 20, 25])).toEqual([11, 12, 1]);
-  });
-
-  it("finds no season in a flat year or an empty one", () => {
-    expect(peakMonths(new Array(12).fill(10))).toEqual([]);
-    expect(peakMonths(new Array(12).fill(0))).toEqual([]);
-    expect(peakMonths([1, 2, 3])).toEqual([]);
+  it("leaves a city that has no airport and no attention out", () => {
+    const noAirport = cities.find((c) => !c.iata)!;
+    expect(orderCities(cities, [], []).some((c) => c.id === noAirport.id)).toBe(false);
   });
 });
 
-describe("which checks are due", () => {
-  const byId = (id: string) => cities.find((c) => c.id === id)!;
+describe("what is due", () => {
+  const order = ["tokyo-japan", "kyoto-japan", "lisbon-portugal", "pretoria-south-africa"].map(city);
+  const checked = (id: string, daysAgo: number): [string, { at: string; highlights: StoredHighlight[] }] => [id, { at: new Date(NOW.getTime() - daysAgo * 86_400_000).toISOString(), highlights: [] }];
 
-  it("lists never-checked pairs first in place rank and phenomenon order, and skips places outside a latitude band", () => {
-    const { tasks } = dueChecks([byId("sydney-australia"), byId("lisbon-portugal")], emptyInatState(), NOW);
-    const first = tasks[0]!;
-    expect(first.city.id).toBe("sydney-australia");
-    // Sydney at -34 is outside the cherry blossom (20 to 65) and lavender bands, inside the jacaranda one.
-    expect(tasks.filter((t) => t.city.id === "sydney-australia").map((t) => t.phenomenon.id)).toEqual(expect.arrayContaining(["jacaranda", "humpback-whales"]));
-    expect(tasks.some((t) => t.city.id === "sydney-australia" && t.phenomenon.id === "cherry-blossom")).toBe(false);
-    expect(tasks.some((t) => t.city.id === "lisbon-portugal" && t.phenomenon.id === "wildebeest")).toBe(false);
+  it("makes every city due when nothing is stored, in the given order", () => {
+    expect(dueChecks(order, emptyInatState(), NOW).map((t) => t.city.id)).toEqual(order.map((c) => c.id));
   });
 
-  it("leaves cherry blossom in Japan to the JMA source", () => {
-    expect(dueChecks([byId("tokyo-japan")], emptyInatState(), NOW).tasks.some((t) => t.phenomenon.id === "cherry-blossom")).toBe(false);
+  it("re-checks a city after 60 days, not before", () => {
+    const state: InatState = { version: 2, checks: Object.fromEntries([checked("tokyo-japan", 59), checked("kyoto-japan", 61)]) };
+    expect(RECHECK_MS).toBe(60 * 86_400_000);
+    expect(dueChecks(order, state, NOW).map((t) => t.city.id)).toEqual(["lisbon-portugal", "pretoria-south-africa", "kyoto-japan"]);
   });
 
-  it("keeps a check for 30 days, then puts it back, oldest first", () => {
-    const state: InatState = emptyInatState();
-    const day = 86_400_000;
-    state.checks["lisbon-portugal|jacaranda"] = { at: new Date(NOW.getTime() - 10 * day).toISOString(), counts: new Array(12).fill(0), total: 0 };
-    state.checks["lisbon-portugal|tulips"] = { at: new Date(NOW.getTime() - 31 * day).toISOString(), counts: new Array(12).fill(0), total: 0 };
-    state.checks["lisbon-portugal|lavender"] = { at: new Date(NOW.getTime() - 45 * day).toISOString(), counts: new Array(12).fill(0), total: 0 };
-    const { tasks } = dueChecks([byId("lisbon-portugal")], state, NOW);
-    expect(tasks.some((t) => t.key === "lisbon-portugal|jacaranda")).toBe(false);
-    // Never-checked pairs (empty timestamp) sort before checked ones, and the oldest check before the newer.
-    const ids = tasks.map((t) => t.key);
-    expect(ids.indexOf("lisbon-portugal|lavender")).toBeLessThan(ids.indexOf("lisbon-portugal|tulips"));
-    expect(tasks[0]!.checkedAt).toBe("");
-    expect(RECHECK_MS).toBe(30 * day);
-  });
-
-  it("skips a phenomenon in a country where it has come back empty twice", () => {
-    const state = emptyInatState();
-    state.zeroCountries["wildebeest|portugal"] = { n: 2, at: NOW.toISOString() };
-    const africa: City = { id: "x-portugal", name: "X", country: "Portugal", lat: -5, lng: 30, population: 1 };
-    const r = dueChecks([africa], state, NOW);
-    expect(r.tasks.some((t) => t.phenomenon.id === "wildebeest")).toBe(false);
-    expect(r.skippedZero).toBe(1);
-    // An old zero record no longer skips.
-    state.zeroCountries["wildebeest|portugal"] = { n: 2, at: new Date(NOW.getTime() - 40 * 86_400_000).toISOString() };
-    expect(dueChecks([africa], state, NOW).tasks.some((t) => t.phenomenon.id === "wildebeest")).toBe(true);
+  it("puts never-checked cities before the oldest re-checks, and the oldest re-check first", () => {
+    const state: InatState = { version: 2, checks: Object.fromEntries([checked("tokyo-japan", 90), checked("kyoto-japan", 120)]) };
+    expect(dueChecks(order, state, NOW).map((t) => t.city.id)).toEqual(["lisbon-portugal", "pretoria-south-africa", "kyoto-japan", "tokyo-japan"]);
   });
 });
 
 describe("events from stored checks", () => {
-  it("makes one event per place and phenomenon with enough observations and a season", () => {
-    const map = new Map(getCities().map((c) => [c.id, c]));
-    const state: InatState = emptyInatState();
-    state.taxa["Megaptera novaeangliae"] = { id: TAXON.humpback, resolvedAt: NOW.toISOString() };
-    state.checks["sydney-australia|humpback-whales"] = { at: NOW.toISOString(), counts: histogram("inat-histogram-humpback-sydney.json"), total: 599 };
-    state.checks["paris-france|jacaranda"] = { at: NOW.toISOString(), counts: new Array(12).fill(0), total: 0 };
-    state.checks["lisbon-portugal|tulips"] = { at: NOW.toISOString(), counts: [0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0], total: 6 };
-    state.checks["lisbon-portugal|lavender"] = { at: NOW.toISOString(), counts: new Array(12).fill(2), total: 24 };
-    const events = eventsFromChecks(state, map);
-    expect(events.map((e) => e.id)).toEqual(["inat-humpback-whales-sydney-australia"]);
-    const e = events[0]!;
-    expect(e).toMatchObject({ title: "Humpback whale season", kind: "nature", cityIds: ["sydney-australia"], month: 6, months: [6, 7], recurring: true, source: "inaturalist", feed: "inaturalist" });
-    expect(e.tags).toEqual(["whales", "humpback-whales", "wildlife", "nature"]);
-    expect(e.note).toContain("Jun to Jul");
-    expect(e.note).toContain("599 verifiable iNaturalist observations");
-    expect(e.sourceUrl).toContain("taxon_id=41566");
+  const tokyo = city("tokyo-japan");
+  const kyoto = city("kyoto-japan");
+  const map = new Map(cities.map((c) => [c.id, c]));
+
+  it("ranks each city's highlights against the tally of all checked cities and keeps three", () => {
+    const shared = hl(1, { total: 500 });
+    const state: InatState = {
+      version: 2,
+      checks: {
+        [tokyo.id]: { at: NOW.toISOString(), highlights: [shared, hl(2, { total: 100 }), hl(3, { total: 90 }), hl(4, { total: 80 }), hl(5, { total: 70 })] },
+        [kyoto.id]: { at: NOW.toISOString(), highlights: [shared] },
+      },
+    };
+    const ev = eventsFromChecks(state, map);
+    const inTokyo = ev.filter((e) => e.cityIds[0] === tokyo.id).map((e) => e.id);
+    expect(inTokyo).toHaveLength(3);
+    // Species 1 is a highlight in both cities, so its inverse-frequency factor is lower; 500 x ln(1+1) still beats 100 x ln(1+2).
+    expect(inTokyo).toContain(`inat-1-${tokyo.id}`);
+    expect(ev.filter((e) => e.cityIds[0] === kyoto.id).map((e) => e.id)).toEqual([`inat-1-${kyoto.id}`]);
   });
 
-  it("ignores checks for a place or phenomenon that no longer exists", () => {
-    const state = emptyInatState();
-    state.checks["atlantis|jacaranda"] = { at: NOW.toISOString(), counts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0], total: 20 };
-    state.checks["sydney-australia|retired"] = { at: NOW.toISOString(), counts: [20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], total: 20 };
-    expect(eventsFromChecks(state, new Map(getCities().map((c) => [c.id, c])))).toEqual([]);
+  it("drops a species that is a highlight in more than 15% of 40 checked cities", () => {
+    const common = hl(9, { total: 900 });
+    const checks: InatState["checks"] = {};
+    cities.slice(0, 40).forEach((c, i) => (checks[c.id] = { at: NOW.toISOString(), highlights: i < 7 ? [common, hl(100 + i, { total: 50 })] : [hl(100 + i, { total: 50 })] }));
+    const ev = eventsFromChecks({ version: 2, checks }, map);
+    expect(ev.some((e) => e.id.startsWith("inat-9-"))).toBe(false);
+    expect(ev).toHaveLength(40);
+  });
+
+  it("skips a stored city the dataset no longer has", () => {
+    expect(eventsFromChecks({ version: 2, checks: { gone: { at: NOW.toISOString(), highlights: [hl(1)] } } }, map)).toEqual([]);
   });
 });
 
-describe("the rolling source", () => {
-  const places = (ids: string[]) => ({ ownerCityIds: async () => ids, busiestCityIds: () => [] as string[] });
-  const base = { now: NOW, sleep: noSleep, pauseMs: 0, hostPauseMs: 0 };
-  const OWNER = ["sydney-australia", "pretoria-south-africa", "paris-france", "washington-united-states"];
+// The source run, with recorded answers for Kyoto, Honolulu and Sydney.
 
-  it("runs at most the check budget, saves after each check, and finds the recorded seasons", async () => {
-    const w = fakeNetwork(recordedRequest);
-    const file = await refreshLiveEvents({ ...base, fetch: w.fetch, places: places(OWNER), maxChecks: 10 });
-    const inat = file.sources.find((s) => s.id === "inaturalist")!;
-    expect(inat).toMatchObject({ ok: true });
-    expect(inat.detail).toMatchObject({ ranThisRun: 10, checked: 10, owners: 4 });
-    const state = file.state!["inaturalist"] as InatState;
-    expect(Object.keys(state.checks)).toHaveLength(10);
-    // Sydney is first in rank: its checks (jacaranda, humpback whales, grey whales, sea turtles, monarchs, fireflies) run before Pretoria's.
-    expect(Object.keys(state.checks).slice(0, 5).every((k) => k.startsWith("sydney-australia"))).toBe(true);
-    expect(file.events.filter((e) => e.feed === "inaturalist").map((e) => e.id)).toContain("inat-humpback-whales-sydney-australia");
+interface Run {
+  result?: SourceResult;
+  error?: Error;
+  saves: SourceResult[];
+  sleeps: number[];
+  calls: string[];
+}
+
+async function runSource(opts: { owner: string[]; fetch?: ReturnType<typeof fakeNetwork>; maxChecks?: number; prev?: InatState; hostPauseMs?: number; deadline?: number }): Promise<Run> {
+  const net = opts.fetch ?? fakeNetwork(recordedRequest);
+  const out: Run = { saves: [], sleeps: [], calls: [] };
+  const ctx: SourceContext = {
+    fetch: net.fetch,
+    sleep: async (ms) => void out.sleeps.push(ms),
+    now: NOW,
+    cities,
+    index: cityIndexFor(cities),
+    prev: { version: 1, sources: [], events: [], ...(opts.prev ? { state: { inaturalist: opts.prev } } : {}) },
+    places: { ownerCityIds: async () => opts.owner, attentionCityIds: () => [] },
+    maxChecks: opts.maxChecks ?? opts.owner.length,
+    hostPauseMs: opts.hostPauseMs ?? 0,
+    ...(opts.deadline !== undefined ? { deadline: opts.deadline } : {}),
+    async checkpoint(r) {
+      out.saves.push(structuredClone(r));
+    },
+  };
+  try {
+    out.result = await inaturalistSource.run(ctx);
+  } catch (err) {
+    out.error = err as Error;
+  }
+  out.calls = net.calls.map((c) => c.url);
+  return out;
+}
+
+describe("the inaturalist source", () => {
+  const owner = Object.keys(INAT_FIXTURE_CITIES);
+
+  it("checks a city in 24 requests, twelve months for each of the two kinds, and saves after each city", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"] });
+    expect(r.error).toBeUndefined();
+    expect(r.calls).toHaveLength(REQUESTS_PER_CITY);
+    const months = (kind: "Plantae" | "animals") => r.calls.filter((u) => (kind === "Plantae" ? new URL(u).searchParams.get("iconic_taxa") === "Plantae" : new URL(u).searchParams.get("iconic_taxa") !== "Plantae")).map((u) => Number(new URL(u).searchParams.get("month"))).sort((a, b) => a - b);
+    expect(months("Plantae")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(months("animals")).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(r.saves).toHaveLength(1);
+    expect(r.result!.detail).toMatchObject({ checked: 1, ranThisRun: 1, requests: 24, owners: 1 });
   });
 
-  it("resolves each taxon once and keeps it in the store", async () => {
-    const w = fakeNetwork(recordedRequest);
-    await refreshLiveEvents({ ...base, fetch: w.fetch, places: places(OWNER), maxChecks: 40 });
-    const taxaCalls = w.calls.filter((c) => c.url.includes("/taxa?"));
-    const names = taxaCalls.map((c) => new URL(c.url).searchParams.get("q"));
-    expect(new Set(names).size).toBe(names.length);
-    const second = fakeNetwork(recordedRequest);
-    await refreshLiveEvents({ ...base, now: new Date(NOW.getTime() + 2 * 3_600_000), fetch: second.fetch, places: places(OWNER), maxChecks: 5 });
-    expect(second.calls.filter((c) => c.url.includes("/taxa?"))).toHaveLength(0);
-  });
-
-  it("paces its requests with the host pause", async () => {
-    const sleeps: number[] = [];
-    const w = fakeNetwork(recordedRequest);
-    await refreshLiveEvents({ ...base, hostPauseMs: 1000, sleep: async (ms) => void sleeps.push(ms), fetch: w.fetch, places: places(["sydney-australia"]), maxChecks: 3 });
-    const inatCalls = w.calls.filter((c) => c.host === "api.inaturalist.org").length;
-    expect(inatCalls).toBeGreaterThan(3);
-    expect(sleeps.filter((ms) => ms === 1000)).toHaveLength(inatCalls - 1);
-  });
-
-  it("continues where it stopped: the next run checks the pairs the first did not, then nothing until 30 days pass", async () => {
-    const ids = ["sydney-australia", "pretoria-south-africa"];
-    const w1 = fakeNetwork(recordedRequest);
-    await refreshLiveEvents({ ...base, fetch: w1.fetch, places: places(ids), maxChecks: 6 });
-    const w2 = fakeNetwork(recordedRequest);
-    const f2 = await refreshLiveEvents({ ...base, now: new Date(NOW.getTime() + 3_600_000), fetch: w2.fetch, places: places(ids), maxChecks: 100 });
-    const state = f2.state!["inaturalist"] as InatState;
-    // Sydney: jacaranda, humpback, grey whales, sea turtles, monarch, fireflies. Pretoria: jacaranda, humpback, grey, turtles, monarch, fireflies, wildebeest.
-    expect(Object.keys(state.checks).length).toBeGreaterThanOrEqual(12);
-    const w3 = fakeNetwork(recordedRequest);
-    const f3 = await refreshLiveEvents({ ...base, now: new Date(NOW.getTime() + 2 * 3_600_000), fetch: w3.fetch, places: places(ids), maxChecks: 100 });
-    expect(w3.calls.filter((c) => c.host === "api.inaturalist.org")).toHaveLength(0);
-    expect(f3.sources.find((s) => s.id === "inaturalist")!.detail).toMatchObject({ ranThisRun: 0, due: 0 });
-    // 31 days later every check is due again, oldest first.
-    const w4 = fakeNetwork(recordedRequest);
-    const f4 = await refreshLiveEvents({ ...base, now: new Date(NOW.getTime() + 31 * 86_400_000), fetch: w4.fetch, places: places(ids), maxChecks: 4 });
-    expect(f4.sources.find((s) => s.id === "inaturalist")!.detail).toMatchObject({ ranThisRun: 4 });
-    // The oldest checks go first: the ones the first run made.
-    const first = Object.entries((f3.state!["inaturalist"] as InatState).checks).sort((a, b) => a[1].at.localeCompare(b[1].at))[0]!;
-    expect((f4.state!["inaturalist"] as InatState).checks[first[0]]!.at).toBe(new Date(NOW.getTime() + 31 * 86_400_000).toISOString());
-  });
-
-  it("stops at the soft deadline instead of the check budget", async () => {
-    const w = fakeNetwork(recordedRequest);
-    const realNow = Date.now;
-    let t = realNow();
-    const spy = vi.spyOn(Date, "now").mockImplementation(() => (t += 400));
-    try {
-      await refreshLiveEvents({ ...base, fetch: w.fetch, places: places(OWNER), maxChecks: 100, budgetMs: 12_000, concurrency: 1 });
-    } finally {
-      spy.mockRestore();
-    }
-    const checks = w.calls.filter((c) => c.url.includes("/histogram")).length;
-    expect(checks).toBeGreaterThan(0);
-    expect(checks).toBeLessThan(10);
-  });
-
-  it("skips a phenomenon in a country after two empty checks there", async () => {
-    // Two Australian places, none with recorded wildebeest answers (all empty): the third is skipped for it.
-    const aus = getCities().filter((c) => c.country === "Australia" && c.iata).slice(0, 4).map((c) => c.id);
-    const w = fakeNetwork(recordedRequest);
-    const f = await refreshLiveEvents({ ...base, fetch: w.fetch, places: places(aus), maxChecks: 200 });
-    const state = f.state!["inaturalist"] as InatState;
-    const jac = Object.keys(state.checks).filter((k) => k.endsWith("|jacaranda"));
-    expect(jac.length).toBeLessThan(aus.length);
-    expect((f.sources.find((s) => s.id === "inaturalist")!.detail as Record<string, number>).skippedZeroCountry).toBeGreaterThan(0);
-  });
-
-  it("keeps what it saved and records the error when iNaturalist answers 429", async () => {
-    let histograms = 0;
-    const w = fakeNetwork((req) => {
-      if (req.url.includes("/histogram") && ++histograms === 3) return { status: 429, headers: { "retry-after": "60" } };
+  it("spaces request starts by the host pause", async () => {
+    const times: number[] = [];
+    const net = fakeNetwork((req) => {
+      times.push(Date.now());
       return recordedRequest(req);
     });
-    const file = await refreshLiveEvents({ ...base, fetch: w.fetch, places: places(OWNER), maxChecks: 20 });
-    const inat = file.sources.find((s) => s.id === "inaturalist")!;
-    expect(inat.ok).toBe(false);
-    const done = Number(/stopped after (\d+) checks \(429\)/.exec(inat.error ?? "")?.[1]);
-    expect(done).toBeGreaterThan(0);
-    // Every check before the 429 was saved; none after it.
-    expect(Object.keys((file.state!["inaturalist"] as InatState).checks)).toHaveLength(done);
-    expect(w.calls.filter((c) => c.url.includes("/histogram"))).toHaveLength(3);
-    expect((await liveEventsStatus()).sources.find((s) => s.id === "inaturalist")!.ok).toBe(false);
+    // The fake sleep does not wait, so the clock stands still and each planned start is one pause after the last.
+    const r = await runSource({ owner: ["kyoto-japan"], fetch: net, hostPauseMs: 1000 });
+    expect(r.sleeps.length).toBe(23);
+    const sorted = [...r.sleeps].sort((a, b) => a - b);
+    sorted.slice(1).forEach((ms, i) => expect(ms - sorted[i]!).toBeGreaterThanOrEqual(900));
+    expect(sorted.at(-1)!).toBeGreaterThanOrEqual(22_000);
   });
 
-  it("checks only the owner's places and the busiest cities, each once", async () => {
-    const w = fakeNetwork(recordedRequest);
-    const f = await refreshLiveEvents({ ...base, fetch: w.fetch, places: { ownerCityIds: async () => ["sydney-australia", "nowhere-land"], busiestCityIds: (n) => (n === 150 ? ["sydney-australia", "pretoria-south-africa"] : []) }, maxChecks: 100 });
-    expect(f.sources.find((s) => s.id === "inaturalist")!.detail).toMatchObject({ places: 2, owners: 2 });
+  it("finds seasonal species from the recorded answers for each city, with a title, months and numbers", async () => {
+    const r = await runSource({ owner });
+    expect(r.error).toBeUndefined();
+    expect(r.result!.detail).toMatchObject({ checked: 3, ranThisRun: 3, requests: 72 });
+    const events = r.result!.events;
+    expect(events.length).toBeGreaterThan(0);
+    for (const e of events) {
+      expect(e).toMatchObject({ kind: "nature", recurring: true, source: "inaturalist", feed: "inaturalist" });
+      expect(e.id).toMatch(/^inat-\d+-/);
+      expect(e.title).toMatch(/ (in bloom|season|migration)$/);
+      expect(e.note).toMatch(/iNaturalist observations within 30 km fall in/);
+      expect(e.sourceUrl).toMatch(/^https:\/\/www\.inaturalist\.org\/observations\?taxon_id=\d+/);
+    }
+    for (const id of owner) expect(events.filter((e) => e.cityIds[0] === id).length).toBeLessThanOrEqual(3);
   });
 
-  it("survives a failing owner lookup", async () => {
-    const w = fakeNetwork(recordedRequest);
-    const f = await refreshLiveEvents({
-      ...base,
-      fetch: w.fetch,
-      places: {
-        ownerCityIds: async () => {
-          throw new Error("store down");
-        },
-        busiestCityIds: () => ["sydney-australia"],
-      },
-      maxChecks: 3,
+  it("finds the cherry blossom season of Kyoto, Mar to Apr, from the monthly counts and no species name", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"] });
+    const stored = (r.result!.state as InatState).checks["kyoto-japan"]!.highlights;
+    const cherry = stored.map(expandHighlight).find((h) => h?.c === "Japanese Cherry");
+    expect(cherry).toMatchObject({ k: "plant", months: [3, 4] });
+    expect(cherry!.share).toBeGreaterThan(0.8);
+  });
+
+  it("finds the Bogong Moth season of Sydney, Sep to Oct, and titles it from the common name", async () => {
+    const r = await runSource({ owner: ["sydney-australia"] });
+    const e = r.result!.events.find((x) => x.title === "Bogong Moth season")!;
+    expect(e).toMatchObject({ month: 9, months: [9, 10], tags: ["insects", "wildlife", "bogong-moth"], kind: "nature" });
+    expect(e.sourceUrl).toContain("month=9%2C10");
+  });
+
+  it("stops at maxChecks and reports the cities still pending", async () => {
+    const r = await runSource({ owner, maxChecks: 1 });
+    expect(r.calls).toHaveLength(24);
+    expect(r.result!.detail).toMatchObject({ checked: 1, ranThisRun: 1 });
+    expect(Number(r.result!.detail!["pending"])).toBeGreaterThan(5000);
+  });
+
+  it("reports no pending cities once every city in the order is checked or fresh", async () => {
+    const fresh: InatState = { version: 2, checks: Object.fromEntries(orderCities(cities, owner, []).map((c) => [c.id, { at: NOW.toISOString(), highlights: [] }])) };
+    const r = await runSource({ owner, prev: fresh });
+    expect(r.calls).toHaveLength(0);
+    expect(r.result!.detail).toMatchObject({ pending: 0, ranThisRun: 0 });
+  });
+
+  it("does not start a city that cannot finish before the run's limit", async () => {
+    const r = await runSource({ owner, hostPauseMs: 1000, deadline: Date.now() + 5_000 });
+    expect(r.calls).toHaveLength(0);
+    expect(r.result!.detail).toMatchObject({ ranThisRun: 0 });
+  });
+
+  it("keeps the cities it saved and throws a short error when iNaturalist stops answering", async () => {
+    let n = 0;
+    const net = fakeNetwork((req) => {
+      n++;
+      return n > 24 + 5 ? { status: 429 } : recordedRequest(req);
     });
-    expect(f.sources.find((s) => s.id === "inaturalist")).toMatchObject({ ok: true });
+    const r = await runSource({ owner, fetch: net });
+    expect(r.error?.message).toMatch(/iNaturalist stopped after 1 cities \(429\)/);
+    // One save after the first city, one more with the error.
+    expect(r.saves.length).toBeGreaterThanOrEqual(2);
+    expect(r.saves.at(-1)!.detail).toMatchObject({ checked: 1 });
+  });
+
+  it("waits out a 429 (Retry-After) and retries the request before giving up", async () => {
+    let n = 0;
+    const net = fakeNetwork((req) => {
+      n++;
+      return n === 3 ? { status: 429, headers: { "retry-after": "7" } } : recordedRequest(req);
+    });
+    const r = await runSource({ owner: ["kyoto-japan"], fetch: net, hostPauseMs: 1000 });
+    expect(r.error).toBeUndefined();
+    // The third request is repeated: 25 requests for one city.
+    expect(r.calls).toHaveLength(25);
+  });
+
+  it("gives up after two retries of a request that keeps getting 429", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"], fetch: fakeNetwork(() => ({ status: 429, headers: { "retry-after": "1" } })) });
+    expect(r.error?.message).toMatch(/\(429\)/);
+    // Two workers each try their first request three times.
+    expect(r.calls).toHaveLength(6);
+  });
+
+  it("never fabricates a species for a place with no observations: an empty answer makes no event", async () => {
+    const r = await runSource({ owner: ["lisbon-portugal"] });
+    expect(r.error).toBeUndefined();
+    expect(r.result!.events).toEqual([]);
+    expect((r.result!.state as InatState).checks["lisbon-portugal"]!.highlights).toEqual([]);
+  });
+
+  it("rejects a body that is not a species_counts answer", async () => {
+    const r = await runSource({ owner: ["kyoto-japan"], fetch: fakeNetwork(() => ({ body: { nope: true } })) });
+    expect(r.error?.message).toMatch(/unexpected species_counts body/);
   });
 });
+

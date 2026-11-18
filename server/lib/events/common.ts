@@ -315,7 +315,7 @@ export interface LiveEventsFile {
   attemptedAt?: string;
   sources: SourceStatus[];
   events: StoredEvent[];
-  /** Per-source working state that is not events (the iNaturalist taxon ids and monthly counts). */
+  /** Per-source working state that is not events (the iNaturalist highlights found per city). */
   state?: Record<string, unknown>;
 }
 
@@ -328,12 +328,12 @@ export interface SourceResult {
   state?: unknown;
 }
 
-/** Where a source finds the owner's places and the busiest cities. Replaced in tests. */
+/** Where a source finds the owner's places and the cities people look at. Replaced in tests. */
 export interface PlaceDeps {
   /** City ids the owner cares about: wishlist, shortlist, rotation, trip stops. */
   ownerCityIds(): Promise<string[]>;
-  /** The n cities with the most measured attention, best first. */
-  busiestCityIds(n: number): string[];
+  /** Every city with measured attention (page views), the most looked at first. */
+  attentionCityIds(): string[];
 }
 
 export interface SourceContext {
@@ -349,7 +349,7 @@ export interface SourceContext {
   /** The stored file when this refresh began. */
   prev: LiveEventsFile;
   places: PlaceDeps;
-  /** Checks one rolling source may run in this refresh (the iNaturalist source). */
+  /** City checks one rolling source may run in this refresh (the iNaturalist source). */
   maxChecks: number;
   /** Pause between requests to one polite host, ms. */
   hostPauseMs: number;

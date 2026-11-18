@@ -6,7 +6,7 @@ import type { Hono } from "hono";
 import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
 
 let app: Hono;
-const SOURCE = "Wikidata (CC0), Japan Meteorological Agency, iNaturalist, NOAA SWPC";
+const SOURCE = "Wikidata (CC0), iNaturalist, NOAA SWPC";
 
 beforeAll(async () => {
   // Empty DATA_DIR: anomalies fall back to the committed seed in data/; events come from a seeded live store.
@@ -19,7 +19,7 @@ beforeAll(async () => {
     ev("wd-songkran", { title: "Songkran", cityIds: ["bangkok-thailand"], month: 4, tags: ["festival", "water-festival"] }),
     ev("wd-old", { title: "Old", cityIds: ["bangkok-thailand"], month: 8, recurring: false, date: "2001-08-01", tags: ["sport"] }),
     ev("wd-aug", { title: "August thing", cityIds: ["hanoi-vietnam", "bangkok-thailand"], month: 8, tags: ["sport", "marathon"] }),
-    ev("jma-bloom", { title: "Cherry blossom", kind: "nature", cityIds: ["tokyo-japan"], month: 3, months: [3, 4], tags: ["cherry-blossom", "nature"], note: "Normal: first flowers Mar 24." }),
+    ev("inat-bloom", { title: "Japanese flowering cherry in bloom", kind: "nature", cityIds: ["tokyo-japan"], month: 3, months: [3, 4], tags: ["bloom", "japanese-flowering-cherry"], note: "Most observations fall in Mar to Apr." }),
     ev("season-peak-bkk", { title: "Peak season", kind: "season", cityIds: ["bangkok-thailand"], month: 12, months: [12, 1, 2], tags: ["peak-season"] }),
   ]);
   app = (await import("./overlays.js")).default;
@@ -63,10 +63,10 @@ describe("GET /api/overlays/events", () => {
 describe("GET /api/overlays/events for a multi-month event and a tourism season", () => {
   it("matches the month against every month of the event and carries the months and the note", async () => {
     const apr = (await (await app.request("/events?month=4")).json()) as { events: MapEventPoint[] };
-    const bloom = apr.events.find((e) => e.eventId === "jma-bloom")!;
-    expect(bloom).toMatchObject({ kind: "nature", months: [3, 4], note: "Normal: first flowers Mar 24.", cityId: "tokyo-japan" });
+    const bloom = apr.events.find((e) => e.eventId === "inat-bloom")!;
+    expect(bloom).toMatchObject({ kind: "nature", months: [3, 4], note: "Most observations fall in Mar to Apr.", cityId: "tokyo-japan" });
     const may = (await (await app.request("/events?month=5")).json()) as { events: MapEventPoint[] };
-    expect(may.events.some((e) => e.eventId === "jma-bloom")).toBe(false);
+    expect(may.events.some((e) => e.eventId === "inat-bloom")).toBe(false);
   });
 
   it("leaves tourism seasons off the map points unless seasons=1, and keeps them in a city's list", async () => {
@@ -85,7 +85,7 @@ describe("GET /api/overlays/events/tags", () => {
     expect(body.source).toBe(SOURCE);
     expect(body.tags.find((t) => t.tag === "festival")).toEqual({ tag: "festival", count: 2 });
     expect(body.tags.find((t) => t.tag === "peak-season")).toEqual({ tag: "peak-season", count: 1 });
-    expect(body.tags.find((t) => t.tag === "cherry-blossom")).toEqual({ tag: "cherry-blossom", count: 1 });
+    expect(body.tags.find((t) => t.tag === "japanese-flowering-cherry")).toEqual({ tag: "japanese-flowering-cherry", count: 1 });
     expect(body.tags.find((t) => t.tag === "marathon")).toEqual({ tag: "marathon", count: 1 });
     expect(body.tags.find((t) => t.tag === "sport")).toEqual({ tag: "sport", count: 1 }); // the 2001 one is past
   });

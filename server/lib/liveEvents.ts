@@ -1,16 +1,16 @@
 // Live events (ADR 0021). Replaces the hand-kept data/events.json.
 //
-// What the owner means by events: local festivities, eclipses, nature seasons (cherry
-// blossom, whales, jacaranda), tourism seasons and the sky. Each is a source, fetched or
-// computed at run time; no event list lives in the codebase.
+// What the owner means by events: local festivities, eclipses, the seasonal highlights of each
+// place (found from observations), climate and tourism seasons, and the sky. Each is a source,
+// fetched or computed at run time; no event list and no species list lives in the codebase.
 //
 //   festivities           Wikidata    recurring local festivals, not film, music, arts or pride   7 days
 //   national-festivities  Wikidata    country-wide festivals on a capital and big airport cities  7 days
 //   eclipses              Wikidata    solar eclipses, and total lunar eclipses                    7 days
-//   jma                   JMA         cherry blossom and autumn leaves in Japan                   7 days
-//   inaturalist           iNaturalist rolling nature seasons by place, 30 days per check          rolling
+//   inaturalist           iNaturalist rolling seasonal highlights by place, 60 days per check    rolling
 //   aurora                NOAA SWPC   northern lights season (computed) and live Kp alerts        3 hours
 //   tourism-seasons       computed    peak and shoulder seasons from measured visitor nights      at read
+//   climate-seasons       computed    rainy, dry and snow seasons from monthly climate normals    at read
 //
 // The result is cached in the document store (events-live.json) with one status line per
 // source. A source that fails keeps its previous events, so a transient error never empties
@@ -24,7 +24,6 @@ import { cityIndexFor, DAY_MS, realSleep, type Fetch, type FetchResponse, type L
 import { auroraSource } from "./events/aurora.js";
 import { COMPUTED, computedStatus, type ComputedSource } from "./events/computed.js";
 import { DEFAULT_MAX_CHECKS, inaturalistSource } from "./events/inaturalist.js";
-import { jmaSource } from "./events/jma.js";
 import { defaultPlaceDeps } from "./events/places.js";
 import { eclipsesSource, festivitiesSource, nationalFestivitiesSource } from "./events/wikidata.js";
 
@@ -47,7 +46,7 @@ export {
   type StoredEvent,
 } from "./events/common.js";
 
-export const SOURCE_LABEL = "Wikidata (CC0), Japan Meteorological Agency, iNaturalist, NOAA SWPC";
+export const SOURCE_LABEL = "Wikidata (CC0), iNaturalist, NOAA SWPC";
 
 const PAUSE_BETWEEN_QUERIES_MS = 1000;
 const FILE_CACHE_MS = 60_000;
@@ -61,7 +60,7 @@ const emptyFile = (): LiveEventsFile => ({ version: 1, sources: [], events: [] }
 const store = createJsonStore<LiveEventsFile>("events-live.json", emptyFile);
 
 /** Order matters: when two sources carry the same item, the earlier one wins. */
-export const SOURCES: SourceDef[] = [festivitiesSource, nationalFestivitiesSource, eclipsesSource, jmaSource, inaturalistSource, auroraSource];
+export const SOURCES: SourceDef[] = [festivitiesSource, nationalFestivitiesSource, eclipsesSource, inaturalistSource, auroraSource];
 
 const sourceRank = (id: string) => {
   const i = SOURCES.findIndex((s) => s.id === id);
@@ -89,9 +88,9 @@ export interface RefreshOptions {
   onlyDue?: boolean;
   /** With onlyDue: no source counts as fresh for longer than this many days, whatever its own interval. */
   maxAgeDays?: number;
-  /** Test seam: where the owner's places and the busiest cities come from. */
+  /** Test seam: where the owner's places and the cities by attention come from. */
   places?: PlaceDeps;
-  /** Checks the iNaturalist source may run in one refresh. Default 35. */
+  /** City checks the iNaturalist source may run in one refresh. Default 60. */
   maxChecks?: number;
   /** Pause between requests to iNaturalist and the like, ms. Default 1000. */
   hostPauseMs?: number;
@@ -140,8 +139,20 @@ export function applySource(file: LiveEventsFile, status: SourceStatus, events: 
   if (status.ok && status.fetchedAt && (!file.fetchedAt || status.fetchedAt > file.fetchedAt)) file.fetchedAt = status.fetchedAt;
 }
 
+/**
+ * True when a source's last run succeeded and said work is left (`detail.pending`, the rolling
+ * iNaturalist source with cities still to check). Such a source is retried on the short backoff
+ * and runs whenever a refresh of the due sources starts, so ordinary use keeps it filling.
+ */
+export function hasPendingWork(id: string, file: LiveEventsFile): boolean {
+  const s = file.sources.find((x) => x.id === id);
+  const pending = s?.detail?.["pending"];
+  return s?.ok === true && typeof pending === "number" && pending > 0;
+}
+
 /** When a source's last fetch is old enough to repeat. `maxAgeDays` caps the interval. */
 function sourceDue(src: SourceDef, file: LiveEventsFile, now: Date, maxAgeDays?: number): boolean {
+  if (hasPendingWork(src.id, file)) return true;
   const at = Date.parse(file.sources.find((x) => x.id === src.id && x.fetchedAt)?.fetchedAt ?? "");
   if (!Number.isFinite(at)) return true;
   const interval = maxAgeDays === undefined ? src.intervalMs : Math.min(src.intervalMs, maxAgeDays * DAY_MS);
@@ -286,7 +297,7 @@ function computedSourcesFor(opts: { computed?: ComputedSource[] }): ComputedSour
   return opts.computed ?? (process.env.VITEST !== undefined ? [] : COMPUTED);
 }
 
-/** Events computed from Meridian's own data (tourism seasons), kept for an hour. */
+/** Events computed from Meridian's own data (tourism and climate seasons), kept for an hour. */
 function computedEvents(sources: ComputedSource[]): { events: StoredEvent[]; statuses: SourceStatus[] } {
   if (computedMemo && computedMemo.sources === sources && Date.now() - computedMemo.at < COMPUTED_CACHE_MS) return computedMemo;
   const events: StoredEvent[] = [];
@@ -327,8 +338,10 @@ function validEvent(e: unknown): e is StoredEvent {
     Array.isArray(x.tags) && x.tags.every((t) => typeof t === "string") &&
     (x.date === undefined || typeof x.date === "string") &&
     typeof x.feed === "string" &&
-    // A copy stored by an earlier version can hold feeds no source produces now (film festivals, sports).
-    SOURCES.some((s) => s.id === x.feed)
+    // A copy stored by an earlier version can hold feeds no source produces now (film festivals, sports, jma).
+    SOURCES.some((s) => s.id === x.feed) &&
+    // ... and nature events of the earlier phenomenon list (inat-jacaranda-...), where today's carry a taxon id.
+    (x.feed !== "inaturalist" || /^inat-\d+-/.test(x.id))
   );
 }
 
@@ -340,8 +353,8 @@ function validEvent(e: unknown): e is StoredEvent {
  */
 export function isStale(file: LiveEventsFile, now: Date, maxAgeDays?: number): boolean {
   const landed = (id: string) => file.sources.find((x) => x.id === id && x.fetchedAt)?.fetchedAt;
-  // Never landed and never failed: a run was cut short before reaching it.
-  const missing = SOURCES.some((src) => !landed(src.id) && !file.sources.some((x) => x.id === src.id && x.error));
+  // Never landed and never failed (a run was cut short before reaching it), or work is left over.
+  const missing = SOURCES.some((src) => (!landed(src.id) && !file.sources.some((x) => x.id === src.id && x.error)) || hasPendingWork(src.id, file));
   const old = SOURCES.some((src) => sourceDue(src, file, now, maxAgeDays));
   if (!missing && !old) return false;
   // `old` includes sources that failed and never landed: those wait the hour like any failure.
@@ -377,7 +390,8 @@ export async function liveEventsStatus(opts: { computed?: ComputedSource[] } = {
   const f = await readCached();
   const c = computedEvents(computedSourcesFor(opts));
   const stored = f.events.filter(validEvent);
-  return { fetchedAt: f.fetchedAt ?? null, attemptedAt: f.attemptedAt ?? null, total: stored.length + c.events.length, sources: [...f.sources, ...c.statuses] };
+  const known = new Set(SOURCES.map((s) => s.id));
+  return { fetchedAt: f.fetchedAt ?? null, attemptedAt: f.attemptedAt ?? null, total: stored.length + c.events.length, sources: [...f.sources.filter((x) => known.has(x.id)), ...c.statuses] };
 }
 
 /**

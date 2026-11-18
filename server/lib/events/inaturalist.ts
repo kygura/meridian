@@ -1,173 +1,131 @@
-// Seasonal nature from iNaturalist observations (ADR 0021). For a place and a phenomenon
-// (flowering jacaranda, humpback whales), the observations within 50 km, counted by month of
-// the year, show when it happens there. Meridian stores only the twelve monthly counts per
-// check, not the observations (the observations are CC BY-NC per observer).
+// Seasonal highlights from iNaturalist (ADR 0021). For a city, the species whose observations
+// within 30 km bunch into a short season are found from the data itself: nothing says in advance
+// which species or which countries matter. highlights.ts holds the detection and ranking.
 //
-// iNaturalist asks for about one request per second and at most 10,000 a day, so the check is
-// rolling: each run does a bounded number of place and phenomenon checks, the ones never
-// checked or checked longest ago first, and each result is kept for 30 days.
+// A check is 24 requests: GET /v1/observations/species_counts for each month of the year, once
+// for plants and once for conspicuous animals. iNaturalist asks for about one request
+// a second and at most 10,000 a day, so the source is rolling: each run checks as many cities as
+// its time allows, the owner's places first, and a result is kept for 60 days. Meridian stores the
+// monthly counts of the few seasonal species per city, not observations (CC BY-NC per observer).
 
 import type { City } from "../../../src/types.js";
-import { MONTH_NAMES, countryKey, httpGet, HttpError, DAY_MS, type SourceContext, type SourceDef, type SourceResult, type StoredEvent } from "./common.js";
-import { orderMonths } from "../../../src/lib/eventKinds.js";
-import { PHENOMENA, type Phenomenon } from "./phenomena.js";
+import { httpGet, HttpError, DAY_MS, type SourceContext, type SourceDef, type SourceResult, type StoredEvent } from "./common.js";
+import {
+  compactHighlight,
+  expandHighlight,
+  highlightEvent,
+  parseSpeciesCounts,
+  RADIUS_KM,
+  rankHighlights,
+  seasonalCandidates,
+  tallyHighlights,
+  type Highlight,
+  type StoredHighlight,
+  type Kind,
+  type SpeciesPage,
+} from "./highlights.js";
 
 export const INAT_API = "https://api.inaturalist.org/v1";
-export const RADIUS_KM = 50;
 /** A check is kept this long before it is repeated. */
-export const RECHECK_MS = 30 * DAY_MS;
-/** Months holding at least this share of the year's observations are peak months. */
-export const PEAK_SHARE = 0.15;
-/** Checks one refresh runs, at about one request a second. */
-export const DEFAULT_MAX_CHECKS = 35;
-/** After this many zero-observation checks in a country, its other places are skipped for that phenomenon. */
-export const ZERO_SKIP_AFTER = 2;
-export const BUSIEST_CITIES = 150;
+export const RECHECK_MS = 60 * DAY_MS;
+/** Cities one refresh may check. Off Vercel a run has no time budget, so this bounds it (about 24 s each, 24 minutes for 60). */
+export const DEFAULT_MAX_CHECKS = 60;
+/** Rows one month page asks for. */
+export const PAGE_SIZE: Record<Kind, number> = { plant: 100, animal: 150 };
+/** Requests in one city check: twelve months, two kinds. */
+export const REQUESTS_PER_CITY = 24;
+/** Requests in flight at once. With the one-second start spacing this stays at about one request a second. */
+const IN_FLIGHT = 2;
+/** A request that gets a 429 is retried this many times, after waiting. */
+const MAX_RETRIES = 2;
+const RETRY_CAP_MS = 30_000;
+const ANIMAL_TAXA = "Aves,Mammalia,Insecta,Reptilia,Amphibia,Actinopterygii,Mollusca";
+const STATE_VERSION = 2;
 
 export interface InatCheck {
   at: string;
-  /** Observations per month of the year, January first. */
-  counts: number[];
-  total: number;
+  /** Seasonal species found at the place, best first (at most 15 per kind). */
+  highlights: StoredHighlight[];
 }
 
 export interface InatState {
-  taxa: Record<string, { id: number | null; resolvedAt: string }>;
+  version: number;
   checks: Record<string, InatCheck>;
-  /** `${phenomenon}|${country}` -> zero-observation checks so far, and when the last one ran. */
-  zeroCountries: Record<string, { n: number; at: string }>;
 }
 
-export const emptyInatState = (): InatState => ({ taxa: {}, checks: {}, zeroCountries: {} });
+export const emptyInatState = (): InatState => ({ version: STATE_VERSION, checks: {} });
 
+/** The stored state, or an empty one when it is missing or was written by the earlier phenomenon-list version. */
 export function readInatState(raw: unknown): InatState {
   const r = raw as Partial<InatState> | null | undefined;
-  if (!r || typeof r !== "object") return emptyInatState();
-  return { taxa: r.taxa && typeof r.taxa === "object" ? r.taxa : {}, checks: r.checks && typeof r.checks === "object" ? r.checks : {}, zeroCountries: r.zeroCountries && typeof r.zeroCountries === "object" ? r.zeroCountries : {} };
+  if (!r || typeof r !== "object" || r.version !== STATE_VERSION || !r.checks || typeof r.checks !== "object") return emptyInatState();
+  return { version: STATE_VERSION, checks: r.checks };
 }
 
-/** Months (1-12) of the run of peak months around the busiest month: the months holding at least 15% of the year's observations. Empty when no month reaches 15%. */
-export function peakMonths(counts: number[]): number[] {
-  const total = counts.reduce((a, b) => a + b, 0);
-  if (counts.length !== 12 || total <= 0) return [];
-  const hot = counts.map((c) => c / total >= PEAK_SHARE);
-  const max = Math.max(...counts);
-  const top = counts.indexOf(max);
-  if (!hot[top]) return [];
-  const run = new Set<number>([top]);
-  for (let i = (top + 11) % 12; hot[i] && !run.has(i); i = (i + 11) % 12) run.add(i);
-  for (let i = (top + 1) % 12; hot[i] && !run.has(i); i = (i + 1) % 12) run.add(i);
-  return orderMonths([...run].map((i) => i + 1));
-}
-
-/** The monthly counts from a histogram response (interval=month_of_year), or undefined when the body is not one. */
-export function parseHistogram(json: unknown): number[] | undefined {
-  const m = (json as { results?: { month_of_year?: Record<string, unknown> } } | null)?.results?.month_of_year;
-  if (!m || typeof m !== "object") return undefined;
-  const counts: number[] = [];
-  for (let i = 1; i <= 12; i++) {
-    const v = Number(m[String(i)] ?? 0);
-    if (!Number.isFinite(v) || v < 0) return undefined;
-    counts.push(v);
+export function speciesCountsUrl(kind: Kind, lat: number, lng: number, month: number): string {
+  const q = new URLSearchParams({ lat: lat.toFixed(4), lng: lng.toFixed(4), radius: String(RADIUS_KM), per_page: String(PAGE_SIZE[kind]), month: String(month) });
+  // Plants: every grade, so planted trees and gardens count. The spectacles people travel for
+  // (cherries, jacaranda, tulips) are cultivated, and iNaturalist grades cultivated observations
+  // casual and rarely annotates them as flowering. Animals: verifiable only, which leaves out zoos.
+  if (kind === "plant") {
+    q.set("iconic_taxa", "Plantae");
+    q.set("quality_grade", "any");
+  } else {
+    q.set("iconic_taxa", ANIMAL_TAXA);
+    q.set("verifiable", "true");
   }
-  return counts;
-}
-
-/** The taxon id for a scientific name: the exact name match with the most observations, else the first result. */
-export function parseTaxon(json: unknown, name: string): number | null {
-  const results = (json as { results?: { id?: number; name?: string; observations_count?: number }[] } | null)?.results;
-  if (!Array.isArray(results) || results.length === 0) return null;
-  const exact = results.filter((r) => typeof r.name === "string" && r.name.toLowerCase() === name.toLowerCase());
-  const pool = exact.length ? exact : results;
-  const best = [...pool].sort((a, b) => (b.observations_count ?? 0) - (a.observations_count ?? 0))[0];
-  return typeof best?.id === "number" ? best.id : null;
-}
-
-export function histogramUrl(taxonIds: number[], p: Phenomenon, lat: number, lng: number): string {
-  const q = new URLSearchParams({ taxon_id: taxonIds.join(","), lat: lat.toFixed(4), lng: lng.toFixed(4), radius: String(RADIUS_KM), interval: "month_of_year", verifiable: "true" });
-  if (p.annotation) {
-    q.set("term_id", String(p.annotation.termId));
-    q.set("term_value_id", String(p.annotation.termValueId));
-  }
-  return `${INAT_API}/observations/histogram?${q}`;
-}
-
-export function observationsUrl(taxonIds: number[], p: Phenomenon, lat: number, lng: number): string {
-  const q = new URLSearchParams({ taxon_id: taxonIds.join(","), lat: lat.toFixed(4), lng: lng.toFixed(4), radius: String(RADIUS_KM), verifiable: "true" });
-  if (p.annotation) {
-    q.set("term_id", String(p.annotation.termId));
-    q.set("term_value_id", String(p.annotation.termValueId));
-  }
-  return `https://www.inaturalist.org/observations?${q}`;
+  return `${INAT_API}/observations/species_counts?${q}`;
 }
 
 export interface CheckTask {
   city: City;
-  phenomenon: Phenomenon;
-  key: string;
   /** Last check time; "" when never checked. */
   checkedAt: string;
   rank: number;
-  order: number;
 }
-
-const keyOf = (cityId: string, phenId: string) => `${cityId}|${phenId}`;
 
 /**
- * The checks that are due, never-checked and longest-ago first, then by place rank (the owner's
- * places, then the busiest cities) and phenomenon order. Places outside a phenomenon's latitude
- * band or in a country another source covers are left out, and so are places in a country where
- * the phenomenon has come back empty twice in the last 30 days.
+ * The cities due for a check, never-checked first and then the longest ago, each group in the
+ * order given (the owner's places, the cities people look at, the other airport cities). A city
+ * checked less than 60 days ago is not due.
  */
-export function dueChecks(cities: City[], state: InatState, now: Date, phenomena: Phenomenon[] = PHENOMENA): { tasks: CheckTask[]; skippedZero: number } {
+export function dueChecks(ordered: City[], state: InatState, now: Date): CheckTask[] {
   const tasks: CheckTask[] = [];
-  let skippedZero = 0;
-  cities.forEach((city, rank) => {
-    phenomena.forEach((phenomenon, order) => {
-      if (phenomenon.latBand && (city.lat < phenomenon.latBand[0] || city.lat > phenomenon.latBand[1])) return;
-      if (phenomenon.skipCountries?.some((c) => countryKey(c) === countryKey(city.country))) return;
-      const key = keyOf(city.id, phenomenon.id);
-      const prev = state.checks[key];
-      if (prev && now.getTime() - Date.parse(prev.at) < RECHECK_MS) return;
-      const zero = state.zeroCountries[`${phenomenon.id}|${countryKey(city.country)}`];
-      if (!prev && zero && zero.n >= ZERO_SKIP_AFTER && now.getTime() - Date.parse(zero.at) < RECHECK_MS) {
-        skippedZero++;
-        return;
-      }
-      tasks.push({ city, phenomenon, key, checkedAt: prev?.at ?? "", rank, order });
-    });
+  ordered.forEach((city, rank) => {
+    const prev = state.checks[city.id];
+    if (prev && now.getTime() - Date.parse(prev.at) < RECHECK_MS) return;
+    tasks.push({ city, checkedAt: prev?.at ?? "", rank });
   });
-  tasks.sort((a, b) => a.checkedAt.localeCompare(b.checkedAt) || a.rank - b.rank || a.order - b.order);
-  return { tasks, skippedZero };
+  return tasks.sort((a, b) => a.checkedAt.localeCompare(b.checkedAt) || a.rank - b.rank);
 }
 
-/** One event per place and phenomenon whose observations reach the minimum and show a season. */
-export function eventsFromChecks(state: InatState, cities: Map<string, City>, phenomena: Phenomenon[] = PHENOMENA): StoredEvent[] {
+/** The cities in checking order: the owner's, then by attention, then the remaining airport cities by population. */
+export function orderCities(cities: City[], owner: string[], attention: string[]): City[] {
+  const byId = new Map(cities.map((c) => [c.id, c]));
+  const out: City[] = [];
+  const seen = new Set<string>();
+  const add = (c: City | undefined) => {
+    if (c && !seen.has(c.id)) {
+      seen.add(c.id);
+      out.push(c);
+    }
+  };
+  for (const id of owner) add(byId.get(id));
+  for (const id of attention) add(byId.get(id));
+  for (const c of cities.filter((x) => x.iata).sort((a, b) => b.population - a.population || a.id.localeCompare(b.id))) add(c);
+  return out;
+}
+
+/** The events of every checked city: highlights ranked against the tally of all checked cities, three a city at most. */
+export function eventsFromChecks(state: InatState, cities: Map<string, City>): StoredEvent[] {
+  const entries = Object.entries(state.checks);
+  const tally = tallyHighlights(entries.map(([, c]) => c.highlights));
   const events: StoredEvent[] = [];
-  const byId = new Map(phenomena.map((p) => [p.id, p]));
-  for (const [key, check] of Object.entries(state.checks)) {
-    const [cityId, phenId] = key.split("|");
-    const city = cityId ? cities.get(cityId) : undefined;
-    const p = phenId ? byId.get(phenId) : undefined;
-    if (!city || !p || check.total < p.minObservations) continue;
-    const months = peakMonths(check.counts);
-    if (!months.length) continue;
-    const ids = p.taxonNames.map((n) => state.taxa[n]?.id).filter((x): x is number => typeof x === "number");
-    const names = months.map((m) => MONTH_NAMES[m - 1]!.replace(/^./, (c) => c.toUpperCase()).slice(0, 3));
-    events.push({
-      id: `inat-${p.id}-${city.id}`,
-      title: p.title,
-      kind: "nature",
-      cityIds: [city.id],
-      month: months[0]!,
-      ...(months.length > 1 ? { months } : {}),
-      recurring: true,
-      tags: [...p.tags],
-      note: `Most observations ${names.length > 1 ? `${names[0]} to ${names[names.length - 1]}` : names[0]}: ${check.total} verifiable iNaturalist observations within ${RADIUS_KM} km.`,
-      source: "inaturalist",
-      ...(ids.length ? { sourceUrl: observationsUrl(ids, p, city.lat, city.lng) } : {}),
-      feed: "inaturalist",
-    });
+  for (const [cityId, check] of entries) {
+    const city = cities.get(cityId);
+    if (!city) continue;
+    const list = check.highlights.map(expandHighlight).filter((h): h is Highlight => h !== undefined);
+    for (const h of rankHighlights(list, tally)) events.push(highlightEvent(h, city));
   }
   return events.sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -181,78 +139,80 @@ export const inaturalistSource: SourceDef = {
     const state = readInatState(ctx.prev.state?.["inaturalist"]);
     const byId = new Map(ctx.cities.map((c) => [c.id, c]));
     const owner = await ctx.places.ownerCityIds().catch(() => [] as string[]);
-    const ordered: City[] = [];
-    const seen = new Set<string>();
-    for (const id of [...owner, ...ctx.places.busiestCityIds(BUSIEST_CITIES)]) {
-      const c = byId.get(id);
-      if (c && !seen.has(id)) {
-        seen.add(id);
-        ordered.push(c);
-      }
-    }
+    const ordered = orderCities(ctx.cities, owner, ctx.places.attentionCityIds());
     const nowIso = ctx.now.toISOString();
-    const { tasks, skippedZero: skippedAtStart } = dueChecks(ordered, state, ctx.now);
-    let skippedLater = 0;
+    const tasks = dueChecks(ordered, state, ctx.now);
     let requests = 0;
     let ran = 0;
     let error: unknown;
-    const paced = async <T>(fn: () => Promise<T>): Promise<T> => {
-      if (requests > 0) await ctx.sleep(ctx.hostPauseMs);
-      requests++;
-      return fn();
+
+    // Request starts are spaced `hostPauseMs` apart, at most two in flight.
+    let nextStart = 0;
+    const slot = async () => {
+      const now = Date.now();
+      const at = Math.max(now, nextStart);
+      nextStart = at + ctx.hostPauseMs;
+      if (at > now) await ctx.sleep(at - now);
     };
-    const save = async () => {
-      await ctx.checkpoint({ events: eventsFromChecks(state, byId), state, detail: summary() });
+    const fetchPage = async (kind: Kind, city: City, month: number): Promise<SpeciesPage> => {
+      for (let attempt = 0; ; attempt++) {
+        await slot();
+        requests++;
+        try {
+          const res = await httpGet(speciesCountsUrl(kind, city.lat, city.lng, month), ctx, "iNaturalist");
+          const page = parseSpeciesCounts(await res.json());
+          if (!page) throw new Error("iNaturalist answered with an unexpected species_counts body");
+          return page;
+        } catch (err) {
+          // A 429 is waited out (Retry-After, 10 s when absent, at most 30 s) and retried twice, for every request in flight, before the run gives up.
+          if (!(err instanceof HttpError) || err.status !== 429 || attempt >= MAX_RETRIES) throw err;
+          const secs = Number(err.retryAfter);
+          const wait = Math.min(RETRY_CAP_MS, err.retryAfter !== null && Number.isFinite(secs) && secs >= 0 ? secs * 1000 : 10_000);
+          const limit = ctx.deadline ?? ctx.softDeadline;
+          if (limit !== undefined && Date.now() + wait > limit - 1500) throw err;
+          nextStart = Math.max(nextStart, Date.now() + wait);
+        }
+      }
     };
+    const checkCity = async (city: City): Promise<StoredHighlight[]> => {
+      const jobs: { kind: Kind; month: number }[] = (["plant", "animal"] as Kind[]).flatMap((kind) => Array.from({ length: 12 }, (_, i) => ({ kind, month: i + 1 })));
+      const pages: Record<Kind, SpeciesPage[]> = { plant: new Array(12), animal: new Array(12) };
+      let next = 0;
+      let failed: unknown;
+      const worker = async () => {
+        while (failed === undefined) {
+          const job = jobs[next++];
+          if (!job) return;
+          try {
+            pages[job.kind][job.month - 1] = await fetchPage(job.kind, city, job.month);
+          } catch (err) {
+            failed = err;
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: IN_FLIGHT }, worker));
+      if (failed !== undefined) throw failed;
+      return [...seasonalCandidates(pages.plant, "plant", PAGE_SIZE.plant), ...seasonalCandidates(pages.animal, "animal", PAGE_SIZE.animal)].map(compactHighlight);
+    };
+
     const summary = (): Record<string, number | string> => ({
-      places: ordered.length,
+      cities: ordered.length,
       owners: owner.length,
-      phenomena: PHENOMENA.length,
       checked: Object.keys(state.checks).length,
       ranThisRun: ran,
-      due: tasks.length,
-      skippedZeroCountry: skippedAtStart + skippedLater,
+      // Cities never checked or last checked 60 or more days ago: while this is above zero the source keeps being retried.
+      pending: tasks.length - ran,
+      requests,
     });
-
-    const resolveTaxa = async (p: Phenomenon): Promise<number[]> => {
-      const ids: number[] = [];
-      for (const name of p.taxonNames) {
-        const cached = state.taxa[name];
-        if (cached && ctx.now.getTime() - Date.parse(cached.resolvedAt) < RECHECK_MS) {
-          if (cached.id !== null) ids.push(cached.id);
-          continue;
-        }
-        const json = await paced(async () => (await httpGet(`${INAT_API}/taxa?q=${encodeURIComponent(name)}&per_page=5`, ctx, "iNaturalist")).json());
-        const id = parseTaxon(json, name);
-        state.taxa[name] = { id, resolvedAt: nowIso };
-        if (id !== null) ids.push(id);
-      }
-      return ids;
-    };
+    const save = async () => ctx.checkpoint({ events: eventsFromChecks(state, byId), state, detail: summary() });
 
     try {
       for (const t of tasks) {
         if (ran >= ctx.maxChecks) break;
-        const stopAt = ctx.softDeadline ?? ctx.deadline;
-        if (stopAt !== undefined && Date.now() > stopAt - 1500) break;
-        const zero = state.zeroCountries[`${t.phenomenon.id}|${countryKey(t.city.country)}`];
-        if (!t.checkedAt && zero && zero.n >= ZERO_SKIP_AFTER) {
-          skippedLater++;
-          continue;
-        }
-        const ids = await resolveTaxa(t.phenomenon);
-        let counts: number[] = new Array(12).fill(0);
-        if (ids.length) {
-          const json = await paced(async () => (await httpGet(histogramUrl(ids, t.phenomenon, t.city.lat, t.city.lng), ctx, "iNaturalist")).json());
-          const parsed = parseHistogram(json);
-          if (!parsed) throw new Error("iNaturalist answered with an unexpected histogram body");
-          counts = parsed;
-        }
-        const total = counts.reduce((a, b) => a + b, 0);
-        state.checks[t.key] = { at: nowIso, counts, total };
-        const zk = `${t.phenomenon.id}|${countryKey(t.city.country)}`;
-        if (total === 0) state.zeroCountries[zk] = { n: (state.zeroCountries[zk]?.n ?? 0) + 1, at: nowIso };
-        else delete state.zeroCountries[zk];
+        // Start a city only when its requests can finish before the run's limit.
+        const limit = ctx.deadline ?? ctx.softDeadline;
+        if (limit !== undefined && Date.now() + REQUESTS_PER_CITY * ctx.hostPauseMs > limit - 1500) break;
+        state.checks[t.city.id] = { at: nowIso, highlights: await checkCity(t.city) };
         ran++;
         await save();
       }
@@ -263,7 +223,7 @@ export const inaturalistSource: SourceDef = {
     if (error) {
       await ctx.checkpoint({ events, state, detail: summary() });
       const status = error instanceof HttpError ? ` (${error.status})` : "";
-      throw new Error(`iNaturalist stopped after ${ran} checks${status}: ${error instanceof Error ? error.message : String(error)}`.slice(0, 280));
+      throw new Error(`iNaturalist stopped after ${ran} cities${status}: ${error instanceof Error ? error.message : String(error)}`.slice(0, 280));
     }
     return { events, state, detail: summary() };
   },
