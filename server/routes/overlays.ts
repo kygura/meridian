@@ -14,10 +14,11 @@ function readMonth(raw: string | undefined): number | null | undefined {
 
 /**
  * GET /api/overlays/events?month=1-12 - events in that month, one point per city.
+ *   Tourism seasons are left out of the map points unless `seasons=1` is given.
  * GET /api/overlays/events?cityIds=a,b - every upcoming event at those cities, any month
- *   (a seasonal trip's stops), with cityIds narrowed to the ones asked for.
- * Events are live from Wikidata (ADR 0021); both answers carry `asOf` (when they were fetched)
- * and `source`.
+ *   (a seasonal trip's stops), with cityIds narrowed to the ones asked for. This includes seasons.
+ * Events are live (ADR 0021: Wikidata, JMA, iNaturalist, NOAA SWPC, and Meridian's own seasons);
+ * both answers carry `asOf` (when they were fetched) and `source`.
  */
 overlays.get("/events", async (c) => {
   const cityParam = c.req.query("cityIds");
@@ -29,7 +30,7 @@ overlays.get("/events", async (c) => {
   }
   const month = readMonth(c.req.query("month"));
   if (!month) return c.json({ error: "month must be 1-12" }, 400);
-  const events = await eventPointsFor(month);
+  const events = await eventPointsFor(month, new Date(), { includeSeasons: c.req.query("seasons") === "1" });
   return c.json({ month, asOf: (await liveEventsStatus()).fetchedAt, source: SOURCE_LABEL, events });
 });
 

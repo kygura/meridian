@@ -5,40 +5,42 @@ import { join } from "path";
 import type { City, Journey, MeridianEvent } from "../../src/types";
 import { getCities, loadCities } from "./cities";
 import {
+  applySource,
   bindingsOf,
   buildCityIndex,
-  buildEvents,
-  classify,
   cityIndexFor,
   countryKey,
-  datedQuery,
   dedupeAndSort,
   getLiveEvents,
+  isStale,
   liveEventsStatus,
   monthOf,
-  parseDated,
-  parseEclipses,
   parsePoint,
-  parseRecurring,
   refreshLiveEvents,
   resetLiveEventsForTests,
   runSparql,
-  tagOf,
-  USER_AGENT,
-  type StoredEvent,
-  isStale,
   SOURCES,
+  USER_AGENT,
+  type LiveEventsFile,
+  type StoredEvent,
 } from "./liveEvents";
+import type { ComputedSource } from "./events/computed";
 import { eventPointsFor, eventsForCities, eventTagCounts } from "./phenomena";
 import { loadEvents } from "./replayService";
 import { runReplay } from "./replay";
 import { fixtureFingerprintDeps, lisbonJourney, getCity, SEASONALITY, NOW } from "./__fixtures__/journal";
 import { computeFingerprint } from "./fingerprint";
-import { ev, fakeWikidata, fixtureJson, recorded, seedLiveEvents, sourceOfQuery } from "./__fixtures__/liveEvents";
+import { ev, fakeNetwork, fakeWikidata, fixtureJson, recordedRequest, seedLiveEvents, sourceOfRequest } from "./__fixtures__/liveEvents";
 
-const fx = (name: string) => bindingsOf(fixtureJson(name));
 const noSleep = async () => undefined;
 const NOW_FETCH = new Date("2026-11-18T12:00:00Z");
+/** The owner's places for the nature check: a fixed handful, with a recorded answer for some of them. */
+const PLACES = {
+  ownerCityIds: async () => ["sydney-australia", "pretoria-south-africa", "paris-france", "washington-united-states", "lisbon-portugal"],
+  busiestCityIds: () => [] as string[],
+};
+const run = (fetch: ReturnType<typeof fakeNetwork>["fetch"], over: Parameters<typeof refreshLiveEvents>[0] = {}) =>
+  refreshLiveEvents({ fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, hostPauseMs: 0, places: PLACES, ...over });
 
 let TMP: string;
 beforeAll(() => loadCities());
@@ -56,6 +58,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+const nowOpts2 = { sleep: noSleep, pauseMs: 0, hostPauseMs: 0, places: PLACES };
 describe("month mapping", () => {
   it("maps the twelve Wikidata month items to 1-12", () => {
     const qids = ["Q108", "Q109", "Q110", "Q118", "Q119", "Q120", "Q121", "Q122", "Q123", "Q124", "Q125", "Q126"];
@@ -69,6 +72,7 @@ describe("month mapping", () => {
   });
 });
 
+
 describe("parsePoint", () => {
   it("reads WKT as lat and lng, longitude first in the text", () => {
     expect(parsePoint("Point(7.018055555 43.550833333)")).toEqual({ lat: 43.550833333, lng: 7.018055555 });
@@ -81,113 +85,6 @@ describe("parsePoint", () => {
   });
 });
 
-describe("recurring festivals (fixture)", () => {
-  const raws = parseRecurring(fx("wikidata-festivals.json"));
-
-  it("keeps one row per item and month and skips rows whose month is not a month item", () => {
-    expect(raws).toHaveLength(6); // 8 recorded rows: Haifa (Q217782) and Oxegen (Q1998) have no month item
-    expect(raws.map((r) => `${r.title}/${r.month}`).sort()).toEqual([
-      "Berlin International Film Festival/2",
-      "Cannes Film Festival/5",
-      "Oktoberfest/10",
-      "Oktoberfest/9",
-      "Zanzibar International Film Festival/6",
-      "Zanzibar International Film Festival/7",
-    ]);
-    expect(raws.every((r) => r.recurring && r.date === undefined)).toBe(true);
-  });
-
-  it("places events on cities, splits multi-month items into -m<month> ids and tags them", () => {
-    const built = buildEvents("festivals", "festival", raws, cityIndexFor(getCities()));
-    expect(built.unmatched).toBe(0);
-    const byId = new Map(built.events.map((e) => [e.id, e]));
-    expect([...byId.keys()].sort()).toEqual(["wd-Q102400-m10", "wd-Q102400-m9", "wd-Q130871", "wd-Q4023821-m6", "wd-Q4023821-m7", "wd-Q42369"]);
-    expect(byId.get("wd-Q130871")).toMatchObject({ title: "Berlin International Film Festival", kind: "culture", month: 2, recurring: true, cityIds: ["berlin-germany"], source: "wikidata", sourceUrl: "https://www.wikidata.org/wiki/Q130871" });
-    expect(byId.get("wd-Q130871")!.tags).toEqual(["festival", "culture", "film-festival"]);
-    expect(byId.get("wd-Q102400-m9")).toMatchObject({ kind: "festival", cityIds: ["munich-germany"], tags: ["festival", "folk-festival"] });
-    // Cannes is not a city in the dataset; Nice is the nearest city within 40 km.
-    expect(byId.get("wd-Q42369")!.cityIds).toEqual(["nice-france"]);
-  });
-});
-
-describe("recurring sports (fixture)", () => {
-  it("classifies sporting events and tags marathons", () => {
-    const built = buildEvents("sports", "sport", parseRecurring(fx("wikidata-sports.json")), cityIndexFor(getCities()));
-    const byId = new Map(built.events.map((e) => [e.id, e]));
-    expect(byId.get("wd-Q578794")).toMatchObject({ title: "London Marathon", kind: "sport", month: 4, tags: ["sport", "marathon"], cityIds: ["london-united-kingdom"] });
-    expect(byId.get("wd-Q60874")!.tags).toEqual(["sport", "tennis-tournament"]);
-    expect(built.events.every((e) => e.kind === "sport")).toBe(true);
-    expect(built.unmatched).toBe(1); // the Dakar Rally has no fixed city
-  });
-});
-
-describe("dated events (fixture)", () => {
-  const raws = parseDated(fx("wikidata-dated-sports.json"));
-  it("reads a 1 January date as a year and keeps the real date; one event per item", () => {
-    const wwc = raws.find((r) => r.title.includes("Women's World Cup"))!;
-    expect(wwc.date).toBe("2027-06-24");
-    expect(wwc.month).toBe(6);
-    expect(raws.map((r) => r.title).sort()).toEqual(["2027 FIFA Women's World Cup", "2027 Pan American Games", "2027 Rugby World Cup", "UFC 335"]);
-    expect(raws.every((r) => !r.recurring && /^\d{4}-\d{2}-\d{2}$/.test(r.date!))).toBe(true);
-  });
-  it("builds non-recurring events with their date and month", () => {
-    const built = buildEvents("dated-sports", "sport", raws, cityIndexFor(getCities()));
-    const ufc = built.events.find((e) => e.id === "wd-Q141219932")!;
-    expect(ufc).toMatchObject({ date: "2026-12-12", month: 12, recurring: false, kind: "sport", cityIds: ["las-vegas-united-states"], tags: ["sport", "mixed-martial-arts-event"] });
-    expect(built.events.every((e) => e.month === Number(e.date!.slice(5, 7)))).toBe(true);
-  });
-  it("drops an item whose only date is 1 January", () => {
-    const rows = [{ e: { value: "http://www.wikidata.org/entity/Q1" }, eLabel: { value: "Year only" }, date: { value: "2027-01-01T00:00:00Z" }, coord: { value: "Point(1 1)" }, types: { value: "" }, sl: { value: "9" } }];
-    expect(parseDated(rows)).toEqual([]);
-  });
-  it("builds a query window from today, 18 months ahead", () => {
-    const q = datedQuery("Q16510064", new Date("2026-11-18T10:00:00Z"));
-    expect(q).toContain('"2026-11-18T00:00:00Z"');
-    expect(q).toContain('"2028-05-18T00:00:00Z"');
-  });
-});
-
-describe("eclipses (fixture)", () => {
-  const raws = parseEclipses(fx("wikidata-eclipses.json"));
-  it("skips partial eclipses", () => {
-    expect(raws).toHaveLength(4);
-    expect(raws.some((r) => r.title.includes("2029"))).toBe(false);
-  });
-  it("places an eclipse on its greatest-eclipse points and on each listed country's hub city", () => {
-    const built = buildEvents("eclipses", "eclipse", raws, cityIndexFor(getCities()));
-    const aug = built.events.find((e) => e.date === "2027-08-02")!;
-    expect(aug).toMatchObject({ kind: "eclipse", tags: ["eclipse", "solar-eclipse", "total-solar-eclipse"], recurring: false });
-    expect(aug.cityIds).toContain("luxor-egypt"); // near the point of greatest eclipse
-    expect(aug.cityIds).toContain("cairo-egypt"); // the listed country's capital
-    expect(built.events.find((e) => e.date === "2028-07-22")!.cityIds).toEqual(["canberra-australia"]);
-  });
-  it("keeps an eclipse with no city (annular, over the ocean) and counts it", () => {
-    const built = buildEvents("eclipses", "eclipse", raws, cityIndexFor(getCities()));
-    expect(built.unplaced).toBe(2);
-    expect(built.events.filter((e) => e.cityIds.length === 0).map((e) => e.date)).toEqual(["2027-02-06", "2028-01-26"]);
-    expect(built.unmatched).toBe(0);
-  });
-});
-
-describe("classification", () => {
-  it("normalizes type labels to kebab tags", () => {
-    expect(tagOf("annual film festival")).toBe("film-festival");
-    expect(tagOf("Recurring sporting event edition")).toBe("sporting-event");
-    expect(tagOf("edition of the UEFA European Championship")).toBe("uefa-european-championship");
-    expect(tagOf("Café  Fête")).toBe("cafe-fete");
-  });
-  it("calls film, music and arts festivals culture, the rest festival", () => {
-    expect(classify("festival", ["film festival"]).kind).toBe("culture");
-    expect(classify("festival", ["music festival"]).kind).toBe("culture");
-    expect(classify("festival", ["carnival"]).kind).toBe("festival");
-    expect(classify("festival", ["religious festival", "organization"])).toEqual({ kind: "festival", tags: ["festival", "religious-festival"] });
-    expect(classify("festival", []).kind).toBe("festival");
-  });
-  it("drops generic labels and caps the tag count", () => {
-    expect(classify("sport", ["organization", "recurring event", "sports season", "annual event", "award", "article"]).tags).toEqual(["sport"]);
-    expect(classify("sport", Array.from({ length: 12 }, (_, i) => `kind ${i}`)).tags).toHaveLength(6);
-  });
-});
 
 describe("city matching", () => {
   const city = (id: string, lat: number, lng: number, population: number, extra: Partial<City> = {}): City => ({ id, name: id, country: "Testland", lat, lng, population, ...extra });
@@ -238,21 +135,23 @@ describe("city matching", () => {
   });
 });
 
+
 describe("dedupe", () => {
   it("keeps the first of equal ids and sorts by month, then title", () => {
     const e = (id: string, title: string, month: number, feed: string): StoredEvent => ({ ...ev(id, { title, month }), feed });
-    const out = dedupeAndSort([e("wd-Q2", "B", 3, "festivals"), e("wd-Q1", "A", 3, "eclipses"), e("wd-Q2", "B again", 3, "sports"), e("wd-Q3", "C", 1, "sports")]);
-    expect(out.map((x) => `${x.id}/${x.feed}`)).toEqual(["wd-Q3/sports", "wd-Q1/eclipses", "wd-Q2/festivals"]);
+    const out = dedupeAndSort([e("wd-Q2", "B", 3, "festivities"), e("wd-Q1", "A", 3, "eclipses"), e("wd-Q2", "B again", 3, "jma"), e("wd-Q3", "C", 1, "jma")]);
+    expect(out.map((x) => `${x.id}/${x.feed}`)).toEqual(["wd-Q3/jma", "wd-Q1/eclipses", "wd-Q2/festivities"]);
   });
 });
 
+
 describe("runSparql", () => {
-  const ok = { body: fixtureJson("wikidata-sports.json") };
+  const ok = { body: fixtureJson("events/wikidata-festivities.json") };
 
   it("sends the Wikidata etiquette headers and returns the bindings", async () => {
     const w = fakeWikidata(() => ok);
     const rows = await runSparql("SELECT 1", { fetch: w.fetch, sleep: noSleep });
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(30);
     expect(w.calls[0]!.headers).toEqual({ "User-Agent": USER_AGENT, Accept: "application/sparql-results+json" });
     expect(USER_AGENT).toBe("Meridian/2.0 (personal travel planner; https://github.com/kygura/meridian)");
     expect(w.calls[0]!.url.startsWith("https://query.wikidata.org/sparql?")).toBe(true);
@@ -262,7 +161,7 @@ describe("runSparql", () => {
     const sleeps: number[] = [];
     const w = fakeWikidata((_q, n) => (n === 1 ? { status: 429, headers: { "retry-after": "7" } } : ok));
     const rows = await runSparql("q", { fetch: w.fetch, sleep: async (ms) => void sleeps.push(ms) });
-    expect(rows).toHaveLength(5);
+    expect(rows).toHaveLength(30);
     expect(w.calls).toHaveLength(2);
     expect(sleeps).toEqual([7000]);
   });
@@ -289,224 +188,6 @@ describe("runSparql", () => {
   });
 });
 
-describe("refreshLiveEvents", () => {
-  it("runs two sources at a time by default", async () => {
-    const w = fakeWikidata(async (q) => {
-      await new Promise((r) => setTimeout(r, 5));
-      return recorded(q);
-    });
-    await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0 });
-    expect(w.maxActive()).toBe(2);
-    expect(w.calls).toHaveLength(5);
-  });
-
-  it("saves each source as it finishes and stops starting sources when the budget runs out", async () => {
-    let calls = 0;
-    const w = fakeWikidata((q) => {
-      calls += 1;
-      if (calls > 1) throw new Error("should not start after the budget");
-      return recorded(q);
-    });
-    // The clock moves 400 ms per read, so a 1 s budget is spent once the first source has run.
-    const realNow = Date.now;
-    let t = realNow();
-    const spy = vi.spyOn(Date, "now").mockImplementation(() => (t += 400));
-    try {
-      await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, budgetMs: 1000, concurrency: 1 });
-    } finally {
-      spy.mockRestore();
-    }
-    const status = await liveEventsStatus();
-    expect(status.sources.map((x) => x.id)).toEqual(["eclipses"]);
-    expect(status.total).toBe(4);
-    expect(status.attemptedAt).not.toBeNull();
-  });
-
-  it("runs the five sources one at a time when asked, merges them and writes the store", async () => {
-    const w = fakeWikidata(recorded);
-    const sleeps: number[] = [];
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: async (ms) => void sleeps.push(ms), concurrency: 1 });
-    expect(w.calls.map((c) => sourceOfQuery(c.query))).toEqual(["eclipses", "dated-sports", "dated-festivals", "festivals", "sports"]);
-    expect(w.maxActive()).toBe(1);
-    expect(sleeps).toEqual([1000, 1000, 1000, 1000]);
-    expect(file.fetchedAt).toBe("2026-11-18T12:00:00.000Z");
-    expect(file.sources.map((s) => [s.id, s.ok, s.count, s.unmatched ?? 0])).toEqual([
-      ["eclipses", true, 4, 0],
-      ["dated-sports", true, 3, 1],
-      ["dated-festivals", true, 0, 0],
-      ["festivals", true, 6, 0],
-      ["sports", true, 4, 1],
-    ]);
-    expect(file.sources.find((s) => s.id === "eclipses")!.unplaced).toBe(2);
-    expect(file.events).toHaveLength(17);
-    expect(new Set(file.events.map((e) => e.id)).size).toBe(17);
-    expect(file.events.every((e) => e.source === "wikidata" && e.sourceUrl!.startsWith("https://www.wikidata.org/wiki/Q"))).toBe(true);
-    expect(file.events.map((e) => e.month)).toEqual([...file.events.map((e) => e.month)].sort((a, b) => a - b));
-    const onDisk = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
-    expect(onDisk.events).toHaveLength(17);
-    expect(onDisk.sources).toHaveLength(5);
-  });
-
-  it("keeps a failed source's previous events and fetchedAt, and records the error", async () => {
-    await refreshLiveEvents({ fetch: fakeWikidata(recorded).fetch, now: new Date("2026-11-18T12:00:00Z"), sleep: noSleep, pauseMs: 0 });
-    const w = fakeWikidata((q) => (sourceOfQuery(q) === "eclipses" ? { status: 500 } : recorded(q)));
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: new Date("2026-11-19T12:00:00Z"), sleep: noSleep, pauseMs: 0 });
-    const ecl = file.sources.find((s) => s.id === "eclipses")!;
-    expect(ecl).toMatchObject({ ok: false, count: 4, fetchedAt: "2026-11-18T12:00:00.000Z" });
-    expect(ecl.error).toMatch(/500/);
-    expect(file.events.filter((e) => e.kind === "eclipse")).toHaveLength(4);
-    expect(file.sources.find((s) => s.id === "festivals")).toMatchObject({ ok: true, fetchedAt: "2026-11-19T12:00:00.000Z" });
-    expect(file.fetchedAt).toBe("2026-11-19T12:00:00.000Z");
-  });
-
-  it("treats an empty answer from a source that had events as a failure and keeps them", async () => {
-    await refreshLiveEvents({ fetch: fakeWikidata(recorded).fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0 });
-    const w = fakeWikidata((q) => (sourceOfQuery(q) === "festivals" ? { body: { results: { bindings: [] } } } : recorded(q)));
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0 });
-    expect(file.sources.find((s) => s.id === "festivals")).toMatchObject({ ok: false, count: 6 });
-    expect(file.events.filter((e) => e.tags.includes("film-festival"))).toHaveLength(4);
-  });
-
-  it("does not wipe the store or advance fetchedAt when every source fails", async () => {
-    await refreshLiveEvents({ fetch: fakeWikidata(recorded).fetch, now: new Date("2026-11-18T12:00:00Z"), sleep: noSleep, pauseMs: 0 });
-    const down = fakeWikidata(() => ({ status: 500 }));
-    const file = await refreshLiveEvents({ fetch: down.fetch, now: new Date("2026-11-20T12:00:00Z"), sleep: noSleep, pauseMs: 0 });
-    expect(file.events).toHaveLength(17);
-    expect(file.sources.every((s) => !s.ok)).toBe(true);
-    expect(file.fetchedAt).toBe("2026-11-18T12:00:00.000Z");
-    expect(file.attemptedAt).toBe("2026-11-20T12:00:00.000Z");
-  });
-
-  it("retries a 429 on one source and carries on", async () => {
-    const sleeps: number[] = [];
-    let limited = false;
-    const w = fakeWikidata((q) => {
-      if (sourceOfQuery(q) === "festivals" && !limited) {
-        limited = true;
-        return { status: 429, headers: { "retry-after": "3" } };
-      }
-      return recorded(q);
-    });
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, pauseMs: 0, sleep: async (ms) => void sleeps.push(ms) });
-    expect(sleeps).toEqual([3000]);
-    expect(w.calls).toHaveLength(6);
-    expect(file.sources.every((s) => s.ok)).toBe(true);
-  });
-
-  it("gives up on a source that keeps answering 429, without stopping the others", async () => {
-    const w = fakeWikidata((q) => (sourceOfQuery(q) === "sports" ? { status: 429, headers: { "retry-after": "1" } } : recorded(q)));
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, pauseMs: 0, sleep: noSleep });
-    expect(w.calls.filter((c) => sourceOfQuery(c.query) === "sports")).toHaveLength(3);
-    expect(file.sources.find((s) => s.id === "sports")).toMatchObject({ ok: false, count: 0 });
-    expect(file.sources.find((s) => s.id === "festivals")!.ok).toBe(true);
-  });
-
-  it("fails every source, and keeps what it had, when the cities are not loaded", async () => {
-    const file = await refreshLiveEvents({ fetch: fakeWikidata(recorded).fetch, now: NOW_FETCH, pauseMs: 0, sleep: noSleep, cities: [] });
-    expect(file.sources.every((s) => !s.ok && /cities/.test(s.error!))).toBe(true);
-    expect(file.events).toEqual([]);
-  });
-
-  it("refuses to run in a test without an injected fetch", async () => {
-    await expect(refreshLiveEvents()).rejects.toThrow(/disabled/);
-  });
-});
-
-describe("getLiveEvents", () => {
-  const old = "2026-01-01T00:00:00.000Z";
-
-  it("with an empty store, waits for one refresh and returns its events without the internal feed field", async () => {
-    const w = fakeWikidata(recorded);
-    const events = await getLiveEvents({ fetch: w.fetch, sleep: noSleep, pauseMs: 0 });
-    expect(events).toHaveLength(17);
-    expect(events.every((e) => !("feed" in e))).toBe(true);
-    expect(w.calls).toHaveLength(5);
-    // A second call is served from the fresh store with no new request.
-    expect(await getLiveEvents({ fetch: w.fetch, sleep: noSleep, pauseMs: 0 })).toHaveLength(17);
-    expect(w.calls).toHaveLength(5);
-  });
-
-  it("shares one refresh between concurrent callers", async () => {
-    const w = fakeWikidata(recorded);
-    const opts = { fetch: w.fetch, sleep: noSleep, pauseMs: 0 };
-    const [a, b, c] = await Promise.all([getLiveEvents(opts), getLiveEvents(opts), getLiveEvents(opts)]);
-    expect(w.calls).toHaveLength(5);
-    expect(a).toHaveLength(17);
-    expect(b).toHaveLength(17);
-    expect(c).toHaveLength(17);
-  });
-
-  it("serves a stale copy at once and refreshes in the background", async () => {
-    seedLiveEvents([ev("old-1")], { fetchedAt: old, attemptedAt: old });
-    let release: () => void = () => undefined;
-    const gate = new Promise<void>((r) => (release = r));
-    const w = fakeWikidata(async (q) => {
-      await gate;
-      return recorded(q);
-    });
-    const served = await getLiveEvents({ fetch: w.fetch, sleep: noSleep, pauseMs: 0 });
-    expect(served.map((e) => e.id)).toEqual(["old-1"]);
-    expect(w.calls.length).toBeLessThanOrEqual(2);
-    release();
-    await vi.waitFor(async () => expect((await liveEventsStatus()).total).toBe(17), { timeout: 3000 });
-    expect((await getLiveEvents({ fetch: w.fetch })).length).toBe(17);
-  });
-
-  it("does not refresh a fresh copy, and not within an hour of a failed attempt", async () => {
-    seedLiveEvents([ev("fresh")]);
-    const w = fakeWikidata(recorded);
-    expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["fresh"]);
-    expect(w.calls).toHaveLength(0);
-
-    const now = new Date();
-    seedLiveEvents([ev("stale")], { fetchedAt: old, attemptedAt: new Date(now.getTime() - 10 * 60_000).toISOString() });
-    expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["stale"]);
-    expect(w.calls).toHaveLength(0);
-  });
-
-  it("honours maxAgeDays", async () => {
-    const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000).toISOString();
-    const hourAgo = new Date(Date.now() - 2 * 3_600_000).toISOString();
-    seedLiveEvents([ev("a")], { fetchedAt: twoDaysAgo, attemptedAt: hourAgo });
-    const w = fakeWikidata(recorded);
-    await getLiveEvents({ fetch: w.fetch, maxAgeDays: 7 });
-    expect(w.calls).toHaveLength(0);
-    await getLiveEvents({ fetch: w.fetch, maxAgeDays: 1, sleep: noSleep, pauseMs: 0 });
-    await vi.waitFor(() => expect(w.calls.length).toBe(5), { timeout: 3000 });
-  });
-
-  it("never throws: an empty store and a dead Wikidata give []", async () => {
-    const w = fakeWikidata(() => {
-      throw new Error("network down");
-    });
-    expect(await getLiveEvents({ fetch: w.fetch, sleep: noSleep, pauseMs: 0 })).toEqual([]);
-  });
-
-  it("never throws: a corrupt store file gives [] (or fresh data) and a missing DATA_DIR is survivable", async () => {
-    writeFileSync(join(TMP, "events-live.json"), "{ not json");
-    expect(await getLiveEvents()).toEqual([]);
-    resetLiveEventsForTests();
-    const events = await getLiveEvents({ fetch: fakeWikidata(recorded).fetch, sleep: noSleep, pauseMs: 0 });
-    expect(events).toHaveLength(17);
-  });
-
-  it("drops malformed stored entries instead of throwing", async () => {
-    seedLiveEvents([ev("ok")]);
-    const raw = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
-    raw.events.push({ id: "no-cities", month: 6, recurring: true, tags: [] }, { id: "bad-month", title: "x", month: 13, cityIds: [], tags: [], recurring: true }, null);
-    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(raw));
-    resetLiveEventsForTests();
-    expect((await getLiveEvents()).map((e) => e.id)).toEqual(["ok"]);
-  });
-
-  it("reports sources and totals for diagnostics", async () => {
-    await getLiveEvents({ fetch: fakeWikidata(recorded).fetch, sleep: noSleep, pauseMs: 0, now: NOW_FETCH });
-    const s = await liveEventsStatus();
-    expect(s.total).toBe(17);
-    expect(s.sources).toHaveLength(5);
-    expect(s.fetchedAt).toBe("2026-11-18T12:00:00.000Z");
-  });
-});
 
 describe("consumers read the live store", () => {
   const list: MeridianEvent[] = [
@@ -576,26 +257,463 @@ describe("eclipse tag constraint in replay", () => {
   });
 });
 
+
+const IDS = ["festivities", "national-festivities", "eclipses", "jma", "inaturalist", "aurora"];
+
+describe("the source list", () => {
+  it("lists the sources the owner asked for, with their own due intervals", () => {
+    expect(SOURCES.map((s) => s.id)).toEqual(IDS);
+    const hours = Object.fromEntries(SOURCES.map((s) => [s.id, s.intervalMs / 3_600_000]));
+    expect(hours).toEqual({ festivities: 168, "national-festivities": 168, eclipses: 168, jma: 168, inaturalist: 1, aurora: 3 });
+  });
+});
+
+describe("refreshLiveEvents", () => {
+  it("runs two sources at a time by default and asks each host for what it needs", async () => {
+    const w = fakeNetwork(async (req) => {
+      await new Promise((r) => setTimeout(r, 5));
+      return recordedRequest(req);
+    });
+    await run(w.fetch);
+    expect(w.maxActive()).toBe(2);
+    const hosts = new Set(w.calls.map((c) => c.host));
+    expect(hosts).toEqual(new Set(["query.wikidata.org", "www.data.jma.go.jp", "api.inaturalist.org", "services.swpc.noaa.gov"]));
+  });
+
+  it("runs every source one at a time when asked, merges them and writes the store", async () => {
+    const w = fakeNetwork(recordedRequest);
+    const sleeps: number[] = [];
+    const file = await run(w.fetch, { concurrency: 1, pauseMs: 1000, sleep: async (ms) => void sleeps.push(ms) });
+    expect(w.maxActive()).toBe(1);
+    expect(sleeps.filter((ms) => ms === 1000)).toHaveLength(5);
+    expect(file.fetchedAt).toBe("2026-11-18T12:00:00.000Z");
+    expect(file.sources.map((s) => [s.id, s.ok])).toEqual(IDS.map((id) => [id, true]));
+    const count = (id: string) => file.sources.find((s) => s.id === id)!;
+    expect(count("festivities")).toMatchObject({ count: 16, unmatched: 2 });
+    expect(count("national-festivities")).toMatchObject({ count: 14, unmatched: 1 });
+    expect(count("eclipses")).toMatchObject({ count: 5, unplaced: 3 });
+    expect(count("jma")).toMatchObject({ count: 47, unmatched: 4 });
+    expect(count("inaturalist").count).toBe(2);
+    expect(count("aurora").count).toBe(1);
+    expect(file.events).toHaveLength(85);
+    expect(new Set(file.events.map((e) => e.id)).size).toBe(85);
+    expect(file.events.map((e) => e.month)).toEqual([...file.events.map((e) => e.month)].sort((a, b) => a - b));
+    const onDisk = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
+    expect(onDisk.events).toHaveLength(85);
+    expect(onDisk.sources).toHaveLength(6);
+    expect(Object.keys(onDisk.state)).toEqual(["inaturalist"]);
+  });
+
+  it("never fetches film festivals, music festivals, sports or dated festivals any more", async () => {
+    const w = fakeNetwork(recordedRequest);
+    await run(w.fetch);
+    const queries = w.calls.filter((c) => c.host === "query.wikidata.org").map((c) => c.query);
+    expect(queries).toHaveLength(5);
+    expect(queries.some((q) => q.includes("wd:Q16510064 ;") || q.includes("VALUES ?class") || q.includes("wdt:P580"))).toBe(false);
+  });
+
+  it("saves each source as it finishes and stops starting sources when the budget runs out", async () => {
+    let calls = 0;
+    const w = fakeNetwork((req) => {
+      calls += 1;
+      if (calls > 2) throw new Error("should not start after the budget");
+      return recordedRequest(req);
+    });
+    // The clock moves 400 ms per read, so a 1 s budget is spent once the first source has run.
+    const realNow = Date.now;
+    let t = realNow();
+    const spy = vi.spyOn(Date, "now").mockImplementation(() => (t += 400));
+    try {
+      await run(w.fetch, { budgetMs: 1000, concurrency: 1 });
+    } finally {
+      spy.mockRestore();
+    }
+    const status = await liveEventsStatus();
+    expect(status.sources.map((x) => x.id)).toEqual(["festivities"]);
+    expect(status.total).toBe(16);
+    expect(status.attemptedAt).not.toBeNull();
+  });
+
+  it("keeps a failed source's previous events and fetchedAt, and records the error", async () => {
+    await run(fakeNetwork(recordedRequest).fetch, { now: new Date("2026-11-18T12:00:00Z") });
+    const w = fakeNetwork((req) => (req.host === "www.data.jma.go.jp" ? { status: 500 } : recordedRequest(req)));
+    const file = await run(w.fetch, { now: new Date("2026-11-19T12:00:00Z") });
+    const jma = file.sources.find((s) => s.id === "jma")!;
+    expect(jma).toMatchObject({ ok: false, count: 47, fetchedAt: "2026-11-18T12:00:00.000Z" });
+    expect(jma.error).toMatch(/JMA pages unavailable/);
+    expect(file.events.filter((e) => e.feed === "jma")).toHaveLength(47);
+    expect(file.sources.find((s) => s.id === "festivities")).toMatchObject({ ok: true, fetchedAt: "2026-11-19T12:00:00.000Z" });
+    expect(file.fetchedAt).toBe("2026-11-19T12:00:00.000Z");
+  });
+
+  it("treats an empty answer from a source that had events as a failure and keeps them", async () => {
+    await run(fakeNetwork(recordedRequest).fetch);
+    const w = fakeNetwork((req) => (sourceOfRequest(req) === "wikidata" && req.query.includes("Q132241") && !req.query.includes("VALUES ?e") && !req.query.includes("P837") ? { body: { results: { bindings: [] } } } : recordedRequest(req)));
+    const file = await run(w.fetch);
+    expect(file.sources.find((s) => s.id === "festivities")).toMatchObject({ ok: false, count: 16 });
+    expect(file.events.filter((e) => e.feed === "festivities")).toHaveLength(16);
+  });
+
+  it("lets a source that may be empty (nature checks, aurora) be empty without an error", async () => {
+    const w = fakeNetwork(recordedRequest);
+    const file = await run(w.fetch, { places: { ownerCityIds: async () => ["lisbon-portugal"], busiestCityIds: () => [] } });
+    expect(file.sources.find((s) => s.id === "inaturalist")).toMatchObject({ ok: true, count: 0 });
+  });
+
+  it("does not wipe the store or advance fetchedAt when every source fails", async () => {
+    await run(fakeNetwork(recordedRequest).fetch, { now: new Date("2026-11-18T12:00:00Z") });
+    const down = fakeNetwork(() => ({ status: 500 }));
+    const file = await run(down.fetch, { now: new Date("2026-11-20T12:00:00Z") });
+    expect(file.events).toHaveLength(85);
+    // The aurora seasons are computed, so that source still lands when SWPC is down; the others fail.
+    expect(file.sources.filter((s) => !s.ok).map((s) => s.id)).toEqual(["festivities", "national-festivities", "eclipses", "jma", "inaturalist"]);
+    expect(file.sources.find((s) => s.id === "aurora")!.detail).toMatchObject({ liveError: expect.stringMatching(/500/) });
+    expect(file.attemptedAt).toBe("2026-11-20T12:00:00.000Z");
+  });
+
+  it("retries a 429 on one Wikidata source and carries on", async () => {
+    const sleeps: number[] = [];
+    let limited = false;
+    const w = fakeNetwork((req) => {
+      if (req.host === "query.wikidata.org" && req.query.includes("P837") && !limited) {
+        limited = true;
+        return { status: 429, headers: { "retry-after": "3" } };
+      }
+      return recordedRequest(req);
+    });
+    const file = await run(w.fetch, { sleep: async (ms) => void sleeps.push(ms) });
+    expect(sleeps.filter((ms) => ms >= 1000)).toEqual([3000]);
+    expect(file.sources.every((s) => s.ok)).toBe(true);
+  });
+
+  it("gives up on a source that keeps answering 429, without stopping the others", async () => {
+    const w = fakeNetwork((req) => (req.host === "query.wikidata.org" && req.query.includes("wd:Q3887") ? { status: 429, headers: { "retry-after": "1" } } : recordedRequest(req)));
+    const file = await run(w.fetch);
+    expect(w.calls.filter((c) => c.query.includes("wd:Q3887"))).toHaveLength(3);
+    expect(file.sources.find((s) => s.id === "eclipses")).toMatchObject({ ok: false, count: 0 });
+    expect(file.sources.find((s) => s.id === "festivities")!.ok).toBe(true);
+  });
+
+  it("keeps the solar eclipses when only the lunar query fails", async () => {
+    const w = fakeNetwork((req) => (req.query.includes("wd:Q19693318") ? { status: 500 } : recordedRequest(req)));
+    const file = await run(w.fetch);
+    const ecl = file.sources.find((s) => s.id === "eclipses")!;
+    expect(ecl).toMatchObject({ ok: true, count: 4 });
+    expect(ecl.detail).toMatchObject({ solar: 4, lunar: 0 });
+    expect(String(ecl.detail?.lunarError)).toMatch(/500/);
+  });
+
+  it("fails every source, and keeps what it had, when the cities are not loaded", async () => {
+    const file = await run(fakeNetwork(recordedRequest).fetch, { cities: [] });
+    expect(file.sources.every((s) => !s.ok && /cities/.test(s.error!))).toBe(true);
+    expect(file.events).toEqual([]);
+  });
+
+  it("refuses to run in a test without an injected fetch", async () => {
+    await expect(refreshLiveEvents()).rejects.toThrow(/disabled/);
+  });
+});
+
+describe("applySource", () => {
+  const file = (): LiveEventsFile => ({ version: 1, sources: [], events: [] });
+  const e = (id: string, feed: string, month = 6): StoredEvent => ({ ...ev(id, { month }), feed });
+
+  it("replaces a source's events and keeps another source's, and the earlier source wins a duplicate id", () => {
+    const f = file();
+    applySource(f, { id: "jma", ok: true, count: 0, fetchedAt: "2026-11-18T00:00:00.000Z" }, [e("a", "jma"), e("dup", "jma")]);
+    applySource(f, { id: "festivities", ok: true, count: 0, fetchedAt: "2026-11-18T00:00:00.000Z" }, [e("dup", "festivities"), e("b", "festivities")]);
+    expect(f.events.map((x) => `${x.id}/${x.feed}`).sort()).toEqual(["a/jma", "b/festivities", "dup/festivities"]);
+    applySource(f, { id: "jma", ok: true, count: 0, fetchedAt: "2026-11-19T00:00:00.000Z" }, []);
+    expect(f.events.map((x) => x.id).sort()).toEqual(["b", "dup"]);
+    expect(f.sources.map((s) => [s.id, s.count])).toEqual([["festivities", 2], ["jma", 0]]);
+  });
+
+  it("drops events and statuses of feeds no source produces any more (film festivals, sports)", () => {
+    const f: LiveEventsFile = { version: 1, sources: [{ id: "sports", ok: true, count: 3 }], events: [e("old-sport", "sports"), e("old-dated", "dated-sports"), e("keep", "jma")] };
+    applySource(f, { id: "jma", ok: true, count: 0, fetchedAt: "2026-11-18T00:00:00.000Z" }, [e("keep", "jma")]);
+    expect(f.events.map((x) => x.id)).toEqual(["keep"]);
+    expect(f.sources.map((s) => s.id)).toEqual(["jma"]);
+  });
+
+  it("stores a source's working state under its id without touching the others", () => {
+    const f = file();
+    applySource(f, { id: "inaturalist", ok: true, count: 0 }, [], { checks: 1 });
+    applySource(f, { id: "jma", ok: true, count: 0 }, []);
+    expect(f.state).toEqual({ inaturalist: { checks: 1 } });
+  });
+});
+
+describe("getLiveEvents", () => {
+  const old = "2026-01-01T00:00:00.000Z";
+  const nowOpts = { sleep: noSleep, pauseMs: 0, hostPauseMs: 0, places: PLACES };
+
+  it("with an empty store, waits for one refresh and returns its events without the internal feed field", async () => {
+    const w = fakeNetwork(recordedRequest);
+    const events = await getLiveEvents({ fetch: w.fetch, ...nowOpts });
+    expect(events).toHaveLength(85);
+    expect(events.every((e) => !("feed" in e))).toBe(true);
+    const calls = w.calls.length;
+    // A second call is served from the fresh store with no new request.
+    expect(await getLiveEvents({ fetch: w.fetch, ...nowOpts })).toHaveLength(85);
+    expect(w.calls).toHaveLength(calls);
+  });
+
+  it("shares one refresh between concurrent callers", async () => {
+    const w = fakeNetwork(recordedRequest);
+    const opts = { fetch: w.fetch, ...nowOpts };
+    const [a, b, c] = await Promise.all([getLiveEvents(opts), getLiveEvents(opts), getLiveEvents(opts)]);
+    expect(w.calls.filter((x) => x.query.includes("wd:Q3887"))).toHaveLength(1);
+    expect([a.length, b.length, c.length]).toEqual([85, 85, 85]);
+  });
+
+  it("serves a stale copy at once and refreshes in the background", async () => {
+    seedLiveEvents([ev("old-1")], { fetchedAt: old, attemptedAt: old });
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => (release = r));
+    const w = fakeNetwork(async (req) => {
+      await gate;
+      return recordedRequest(req);
+    });
+    const served = await getLiveEvents({ fetch: w.fetch, ...nowOpts });
+    expect(served.map((e) => e.id)).toEqual(["old-1"]);
+    expect(w.calls.length).toBeLessThanOrEqual(2);
+    release();
+    // Wait for the whole refresh, not only the first events, so it does not run on into the next test.
+    await vi.waitFor(async () => expect((await liveEventsStatus()).sources).toHaveLength(6), { timeout: 5000 });
+    expect((await liveEventsStatus()).total).toBe(85);
+  });
+
+  it("does not refresh a fresh copy, and not within an hour of a failed attempt", async () => {
+    seedLiveEvents([ev("fresh")], { fetchedAt: new Date().toISOString() });
+    const w = fakeNetwork(recordedRequest);
+    // Seeded files carry no per-source lines, so mark every source as landed just now.
+    const raw = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
+    raw.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: new Date().toISOString() }));
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(raw));
+    resetLiveEventsForTests();
+    expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["fresh"]);
+    expect(w.calls).toHaveLength(0);
+
+    const now = new Date();
+    seedLiveEvents([ev("stale")], { fetchedAt: old, attemptedAt: new Date(now.getTime() - 10 * 60_000).toISOString() });
+    // Every source landed long ago and the last attempt, ten minutes ago, failed: wait the hour.
+    const failed = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
+    failed.sources = SOURCES.map((s) => ({ id: s.id, ok: false, count: 0, error: "timeout", fetchedAt: old }));
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(failed));
+    resetLiveEventsForTests();
+    expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["stale"]);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(w.calls).toHaveLength(0);
+  });
+
+  it("never throws: an empty store and dead services give only what is computed locally (the aurora seasons)", async () => {
+    const w = fakeNetwork(() => {
+      throw new Error("network down");
+    });
+    const events = await getLiveEvents({ fetch: w.fetch, ...nowOpts });
+    expect(events.map((e) => e.id)).toEqual(["aurora-season-north"]);
+  });
+
+  it("never throws: a corrupt store file gives [] (or fresh data)", async () => {
+    writeFileSync(join(TMP, "events-live.json"), "{ not json");
+    expect(await getLiveEvents()).toEqual([]);
+    resetLiveEventsForTests();
+    const events = await getLiveEvents({ fetch: fakeNetwork(recordedRequest).fetch, ...nowOpts });
+    expect(events).toHaveLength(85);
+  });
+
+  it("drops malformed stored entries instead of throwing", async () => {
+    seedLiveEvents([ev("ok")]);
+    const raw = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
+    raw.events.push(
+      { id: "no-cities", month: 6, recurring: true, tags: [], feed: "festivities" },
+      { id: "bad-month", title: "x", month: 13, cityIds: [], tags: [], recurring: true, feed: "festivities" },
+      { id: "bad-months", title: "x", month: 6, months: [6, 14], cityIds: [], tags: [], recurring: true, feed: "festivities" },
+      null
+    );
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(raw));
+    resetLiveEventsForTests();
+    expect((await getLiveEvents()).map((e) => e.id)).toEqual(["ok"]);
+  });
+
+  it("filters out events of feeds that no source produces (a stored copy from before the refocus)", async () => {
+    seedLiveEvents([ev("keeps")]);
+    const raw = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
+    raw.events.push(
+      { ...ev("old-film"), feed: "festivals", tags: ["film-festival"] },
+      { ...ev("old-sport"), feed: "sports", kind: "sport" },
+      { ...ev("old-dated-sport"), feed: "dated-sports", kind: "sport" },
+      { ...ev("no-feed") }
+    );
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(raw));
+    resetLiveEventsForTests();
+    expect((await getLiveEvents()).map((e) => e.id)).toEqual(["keeps"]);
+    expect((await liveEventsStatus()).total).toBe(1);
+  });
+
+  it("adds events computed from Meridian's own data, with a status line, without storing them", async () => {
+    seedLiveEvents([ev("stored")]);
+    const computed: ComputedSource = {
+      id: "tourism-seasons",
+      compute: () => ({ events: [{ ...ev("season-peak-x", { kind: "season", tags: ["peak-season"] }), feed: "tourism-seasons" }], detail: { measuredCities: 1 } }),
+    };
+    expect((await getLiveEvents({ computed: [computed] })).map((e) => e.id)).toEqual(["stored", "season-peak-x"]);
+    const s = await liveEventsStatus({ computed: [computed] });
+    expect(s.total).toBe(2);
+    expect(s.sources.find((x) => x.id === "tourism-seasons")).toMatchObject({ ok: true, count: 1, detail: { measuredCities: 1 } });
+    expect(JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8")).events).toHaveLength(1);
+  });
+
+  it("survives a computed source that throws", async () => {
+    seedLiveEvents([ev("stored")]);
+    const bad: ComputedSource = { id: "tourism-seasons", compute: () => { throw new Error("no place data"); } };
+    expect((await getLiveEvents({ computed: [bad] })).map((e) => e.id)).toEqual(["stored"]);
+    expect((await liveEventsStatus({ computed: [bad] })).sources.find((x) => x.id === "tourism-seasons")).toMatchObject({ ok: false, error: "no place data" });
+  });
+
+  it("reports sources and totals for diagnostics", async () => {
+    await getLiveEvents({ fetch: fakeNetwork(recordedRequest).fetch, ...nowOpts, now: NOW_FETCH });
+    const s = await liveEventsStatus();
+    expect(s.total).toBe(85);
+    expect(s.sources.map((x) => x.id)).toEqual(IDS);
+    expect(s.fetchedAt).toBe("2026-11-18T12:00:00.000Z");
+  });
+});
+
+
+describe("multi-month events in the consumers", () => {
+  const list: MeridianEvent[] = [
+    ev("bloom", { kind: "nature", cityIds: ["lisbon-portugal"], month: 3, months: [3, 4], tags: ["cherry-blossom", "nature"] }),
+    ev("wrap", { kind: "sky", cityIds: ["lisbon-portugal"], month: 12, months: [12, 1, 2], tags: ["aurora"] }),
+    ev("peak", { kind: "season", cityIds: ["lisbon-portugal"], month: 7, months: [7, 8], tags: ["peak-season"] }),
+  ];
+  beforeEach(() => seedLiveEvents(list));
+
+  it("matches the map month against every month of the event, not only the first", async () => {
+    expect((await eventPointsFor(4, new Date("2026-11-18T00:00:00Z"))).map((p) => p.eventId)).toEqual(["bloom"]);
+    expect((await eventPointsFor(1, new Date("2026-11-18T00:00:00Z"))).map((p) => p.eventId)).toEqual(["wrap"]);
+    expect((await eventPointsFor(12, new Date("2026-11-18T00:00:00Z"))).map((p) => p.eventId)).toEqual(["wrap"]);
+  });
+
+  it("carries the months on the map point", async () => {
+    const [p] = await eventPointsFor(3, new Date("2026-11-18T00:00:00Z"));
+    expect(p).toMatchObject({ eventId: "bloom", months: [3, 4], kind: "nature" });
+  });
+
+  it("leaves tourism seasons off the map unless asked, and keeps them in a city's list", async () => {
+    expect(await eventPointsFor(7, new Date("2026-11-18T00:00:00Z"))).toEqual([]);
+    expect((await eventPointsFor(8, new Date("2026-11-18T00:00:00Z"), { includeSeasons: true })).map((p) => p.eventId)).toEqual(["peak"]);
+    expect((await eventsForCities(["lisbon-portugal"], new Date("2026-11-18T00:00:00Z"))).map((e) => e.id).sort()).toEqual(["bloom", "peak", "wrap"]);
+  });
+
+  it("still lists the season tags for the Repeat a trip chips", async () => {
+    const tags = (await eventTagCounts(new Date("2026-11-18T00:00:00Z"))).map((t) => t.tag);
+    expect(tags).toEqual(expect.arrayContaining(["peak-season", "cherry-blossom", "aurora"]));
+  });
+
+  it("tags a Replay month with an event that covers it in any of its months", async () => {
+    const lisbon = await computeFingerprint(lisbonJourney(), fixtureFingerprintDeps().deps);
+    const r = await runReplay(
+      { template: { journeyId: lisbon.journey.id }, bend: { monthShift: null }, weights: { climate: 1, spend: 0, crowd: 0, flight: 0 }, constraints: { tags: ["cherry-blossom"] }, limit: 50 },
+      {
+        journeys: [lisbon.journey],
+        settings: { homeCityId: "berlin-germany" },
+        seasonality: SEASONALITY,
+        getCity,
+        flightEstimate: async () => ({ priceAmount: 100, currency: "EUR", source: "mock" }),
+        eurOf: (a) => a,
+        now: () => NOW,
+        events: await loadEvents(new Date("2026-11-18T00:00:00Z")),
+      }
+    );
+    expect(r.results.length).toBeGreaterThan(0);
+    for (const x of r.results) {
+      expect([3, 4]).toContain(x.month);
+      expect(x.cityId).toBe("lisbon-portugal");
+    }
+  });
+});
+
+describe("eclipse tag constraint in replay", () => {
+  async function eclipseCells(today: string): Promise<string[]> {
+    seedLiveEvents([
+      ev("wd-eclipse-2027", { kind: "eclipse", month: 8, date: "2027-08-02", recurring: false, tags: ["eclipse"], cityIds: ["athens-greece"] }),
+      ev("wd-eclipse-2028", { kind: "eclipse", month: 1, date: "2028-01-26", recurring: false, tags: ["eclipse"], cityIds: ["seville-spain"] }),
+      ev("wd-eclipse-2030", { kind: "eclipse", month: 6, date: "2030-06-01", recurring: false, tags: ["eclipse"], cityIds: ["oslo-norway"] }),
+    ]);
+    let lisbon: Journey = lisbonJourney();
+    lisbon = (await computeFingerprint(lisbon, fixtureFingerprintDeps().deps)).journey;
+    const r = await runReplay(
+      { template: { journeyId: lisbon.id }, bend: { monthShift: null }, weights: { climate: 1, spend: 0, crowd: 0, flight: 0 }, constraints: { tags: ["eclipse"] }, limit: 50 },
+      {
+        journeys: [lisbon],
+        settings: { homeCityId: "berlin-germany" },
+        seasonality: SEASONALITY,
+        getCity,
+        flightEstimate: async () => ({ priceAmount: 100, currency: "EUR", source: "mock" }),
+        eurOf: (a) => a,
+        now: () => NOW,
+        events: await loadEvents(new Date(`${today}T00:00:00Z`)),
+      }
+    );
+    for (const x of r.results) expect(x.events!.some((e) => e.tags.includes("eclipse"))).toBe(true);
+    return r.results.map((x) => `${x.cityId}/${x.month}`).sort();
+  }
+
+  it("tags a month only with the eclipse in its next occurrence, never one years away", async () => {
+    // 2027-10-01: the 2028-01 eclipse is January's next occurrence (Seville); the 2030-06 one is not June's.
+    expect(await eclipseCells("2027-10-01")).toEqual(["seville-spain/1"]);
+    // 2026-10-30: only the 2027-08 eclipse (Athens) is ahead for August; the 2028 and 2030 ones tag no 2027 month.
+    expect(await eclipseCells("2026-10-30")).toEqual(["athens-greece/8"]);
+  });
+});
+
 describe("isStale", () => {
   const now = new Date("2026-11-18T12:00:00Z");
   const at = (ms: number) => new Date(now.getTime() - ms).toISOString();
   const allSources = (fetchedAt: string) => SOURCES.map((s) => ({ id: s.id, ok: true, count: 1, fetchedAt }));
 
-  it("is fresh when every source landed within maxAgeDays", () => {
-    expect(isStale({ version: 1, sources: allSources(at(86_400_000)), events: [], attemptedAt: at(86_400_000) }, now, 7)).toBe(false);
+  it("is fresh when every source landed within its own interval", () => {
+    expect(isStale({ version: 1, sources: allSources(at(30 * 60_000)), events: [], attemptedAt: at(30 * 60_000) }, now)).toBe(false);
+  });
+
+  it("treats the three-hour aurora source and the hourly nature check as due sooner than the weekly ones", () => {
+    const sources = allSources(at(60_000));
+    const aurora = sources.find((s) => s.id === "aurora")!;
+    aurora.fetchedAt = at(4 * 3_600_000);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(30 * 60_000) }, now)).toBe(false);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(61 * 60_000) }, now)).toBe(true);
+    aurora.fetchedAt = at(2 * 3_600_000);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(61 * 60_000) }, now)).toBe(false);
+  });
+
+  it("keeps the weekly sources fresh for six days and stale after eight", () => {
+    const sources = allSources(at(60_000));
+    sources.find((s) => s.id === "jma")!.fetchedAt = at(6 * 86_400_000);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(2 * 3_600_000) }, now)).toBe(false);
+    sources.find((s) => s.id === "jma")!.fetchedAt = at(8 * 86_400_000);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(2 * 3_600_000) }, now)).toBe(true);
+  });
+
+  it("honours maxAgeDays as a cap on every interval", () => {
+    const sources = allSources(at(2 * 86_400_000));
+    const file = { version: 1 as const, sources, events: [], attemptedAt: at(2 * 3_600_000) };
+    expect(isStale(file, now, 7)).toBe(true); // the hourly and three-hour sources are long overdue
+    const weeklyOnly = { ...file, sources: sources.map((s) => ({ ...s, fetchedAt: ["inaturalist", "aurora"].includes(s.id) ? at(60_000) : s.fetchedAt })) };
+    expect(isStale(weeklyOnly, now, 7)).toBe(false);
+    expect(isStale(weeklyOnly, now, 1)).toBe(true);
   });
 
   it("retries a source that never landed after two minutes, not an hour", () => {
     const some = allSources(at(60_000)).slice(0, 2);
-    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(60_000) }, now, 7)).toBe(false);
-    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(3 * 60_000) }, now, 7)).toBe(true);
+    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(60_000) }, now)).toBe(false);
+    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(3 * 60_000) }, now)).toBe(true);
   });
 
-  it("waits an hour after an attempt when every source landed but one is old", () => {
-    const sources = allSources(at(60_000));
-    sources[0].fetchedAt = at(8 * 86_400_000);
-    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(30 * 60_000) }, now, 7)).toBe(false);
-    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(61 * 60_000) }, now, 7)).toBe(true);
+  it("waits an hour, not two minutes, before retrying a source that failed", () => {
+    const tenMinAgo = at(10 * 60_000);
+    const sources = SOURCES.map((s) => (s.id === "jma" ? { id: s.id, ok: false, count: 0, error: "timeout" } : { id: s.id, ok: true, count: 1, fetchedAt: tenMinAgo }));
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: tenMinAgo }, now)).toBe(false);
   });
 });
 
@@ -606,7 +724,7 @@ describe("keeping a background refresh alive on Vercel", () => {
     const key = Symbol.for("@vercel/request-context");
     (globalThis as Record<symbol, unknown>)[key] = { get: () => ({ waitUntil: (p: Promise<unknown>) => waited.push(p) }) };
     try {
-      await getLiveEvents({ fetch: fakeWikidata(recorded).fetch, sleep: noSleep, pauseMs: 0 });
+      await getLiveEvents({ fetch: fakeNetwork(recordedRequest).fetch, ...nowOpts2 });
       expect(waited).toHaveLength(1);
       await waited[0];
     } finally {
@@ -616,23 +734,32 @@ describe("keeping a background refresh alive on Vercel", () => {
 });
 
 describe("refreshing only what is due", () => {
-  it("runs only sources that never landed or are older than olderThanDays", async () => {
+  it("runs only sources that never landed or are older than their own interval", async () => {
     const recent = new Date(NOW_FETCH.getTime() - 3_600_000).toISOString();
     seedLiveEvents([], { fetchedAt: recent, attemptedAt: recent });
-    // Seed sources: all but dated-sports landed an hour ago.
+    // Seed sources: all but eclipses landed an hour ago.
     const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
-    seeded.sources = SOURCES.filter((s) => s.id !== "dated-sports").map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent }));
+    seeded.sources = SOURCES.filter((s) => s.id !== "eclipses").map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
     resetLiveEventsForTests();
-    const w = fakeWikidata(recorded);
-    await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, olderThanDays: 1 });
-    expect(w.calls.map((c) => sourceOfQuery(c.query))).toEqual(["dated-sports"]);
+    const w = fakeNetwork(recordedRequest);
+    await run(w.fetch, { onlyDue: true });
+    // The eclipse source never landed; the hourly source is not yet due after exactly an hour (it is due after more).
+    expect(w.calls.filter((c) => c.host === "query.wikidata.org").map((c) => c.query.includes("Q19693318") ? "lunar" : "solar")).toEqual(["solar", "lunar"]);
+    expect(w.calls.some((c) => c.host === "www.data.jma.go.jp")).toBe(false);
+    expect(w.calls.some((c) => c.host === "services.swpc.noaa.gov")).toBe(false);
   });
 
-  it("waits an hour, not two minutes, before retrying a source that failed", () => {
-    const now = new Date("2026-11-18T12:00:00Z");
-    const tenMinAgo = new Date(now.getTime() - 10 * 60_000).toISOString();
-    const sources = SOURCES.map((s) => (s.id === "dated-sports" ? { id: s.id, ok: false, count: 0, error: "timeout" } : { id: s.id, ok: true, count: 1, fetchedAt: tenMinAgo }));
-    expect(isStale({ version: 1, sources, events: [], attemptedAt: tenMinAgo }, now, 7)).toBe(false);
+  it("refreshes the aurora source every three hours and leaves the weekly sources alone", async () => {
+    const lastWeek = new Date(NOW_FETCH.getTime() - 3_600_000).toISOString();
+    const stale = new Date(NOW_FETCH.getTime() - 4 * 3_600_000).toISOString();
+    seedLiveEvents([], { fetchedAt: lastWeek, attemptedAt: stale });
+    const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
+    seeded.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: s.id === "aurora" ? stale : lastWeek }));
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
+    resetLiveEventsForTests();
+    const w = fakeNetwork(recordedRequest);
+    await run(w.fetch, { onlyDue: true });
+    expect(w.calls.map((c) => c.host)).toEqual(["services.swpc.noaa.gov"]);
   });
 });

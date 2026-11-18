@@ -1,0 +1,52 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "whys"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q153606"
+    },
+    "whys": {
+     "type": "literal",
+     "value": "class"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2322517"
+    },
+    "whys": {
+     "type": "literal",
+     "value": "class"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1284693"
+    },
+    "whys": {
+     "type": "literal",
+     "value": "class"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1127473"
+    },
+    "whys": {
+     "type": "literal",
+     "value": "class"
+    }
+   }
+  ]
+ }
+}

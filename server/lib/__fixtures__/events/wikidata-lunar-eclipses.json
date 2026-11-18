@@ -1,0 +1,34 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "eLabel",
+   "date",
+   "countries"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q6312134"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "June 2029 lunar eclipse"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2029-06-26T00:00:00Z"
+    },
+    "countries": {
+     "type": "literal",
+     "value": ""
+    }
+   }
+  ]
+ }
+}

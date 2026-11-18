@@ -257,3 +257,13 @@ export function measuredBusyness(cityId: string, month: number): number | undefi
   const m = visitorMonthsFor(cityId);
   return m ? monthBusyness(m.index, month) : undefined;
 }
+
+/** City ids with measured Wikipedia page views (data/city-data.json), most viewed first. */
+export function cityIdsByAttention(): string[] {
+  const rows = load()?.city.cities;
+  if (!rows) return [];
+  return Object.entries(rows)
+    .filter(([, r]) => (r.views?.n ?? 0) > 0)
+    .sort((a, b) => (b[1].views?.n ?? 0) - (a[1].views?.n ?? 0))
+    .map(([id]) => id);
+}
