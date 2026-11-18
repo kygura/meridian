@@ -4,7 +4,7 @@ Today's date: run `date -u`. User-facing dates in the owner's time zone (Atlanti
 
 ## 0. How to talk to Meridian
 
-First run `export BASE="${ATLAS_URL:-https://meridian-mocha-iota.vercel.app}"`. Every call: `curl -sS -H "Authorization: Bearer ${ATLAS_TOKEN:-proxy}" "$BASE/api/atlas/<path>"`. When `ATLAS_TOKEN` is unset, the environment's network proxy adds the real token for that host; the placeholder is replaced. For POST, write the body to a file with a script (python `json.dump`), never by pasting text into a shell string, then `curl -sS -X POST ... -H "Content-Type: application/json" --data-binary @/tmp/body.json`. Never print the token.
+First run `export BASE="${ATLAS_URL:-https://meridian-virid-nine.vercel.app}"`. Every call: `curl -sS -H "Authorization: Bearer ${ATLAS_TOKEN:-proxy}" "$BASE/api/atlas/<path>"`. When `ATLAS_TOKEN` is unset, the environment's network proxy adds the real token for that host; the placeholder is replaced. For POST, write the body to a file with a script (python `json.dump`), never by pasting text into a shell string, then `curl -sS -X POST ... -H "Content-Type: application/json" --data-binary @/tmp/body.json`. Never print the token.
 
 Answers: 200/201 stored. 400 carries `issues` saying which field is wrong: fix it and post once more. 401: the token is wrong, say so and stop. 404 on `/api/atlas/context`: this Meridian has no Atlas API yet, say so and stop. Unreachable: do not retry in a loop; finish with what you found in the final message only.
 

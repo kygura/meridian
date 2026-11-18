@@ -2,7 +2,7 @@
 
 A personal travel planner on a world map. Plan trips as routes between cities, see when each place is at its best, book test flights, keep a journal of past travel, and find new places that match trips you liked.
 
-Live: https://meridian-mocha-iota.vercel.app
+Live: https://meridian-virid-nine.vercel.app
 
 ## What's in it
 
@@ -30,7 +30,7 @@ Live: https://meridian-mocha-iota.vercel.app
 | **Settings › Account** | Sign in as the owner with the server's password, and sign out. Screens that hold personal data, and Ask and flight search once they spend a provider key, show a sign-in card until then. |
 | **Alerts** | Every Notice Meridian has raised (watch alerts, test alerts), newest first, with a badge on the sidebar and the phone's More tab. Works with no channel set up. |
 | **Settings › Alerts** | Which channels are set up (push, email, Telegram, ntfy, webhook), turn push on for this device, send a test alert. |
-| **Atlas** | Backend for Atlas, the scheduled Claude routine that scouts destinations for your season and current base, searches fares with the Claude connectors and plans trips (ADR 0020). `/api/atlas` holds its config, the wishlist (places you want to go and fare watches), fare history with per-route baselines, and run history; it scores scans and discovery runs, reads where you are from the Rotation, ranks cities by comfort and crowds for any months, and turns a planned trip into a dated Trip with status Scouting. Its alerts arrive in **Alerts** and on every configured channel. Owner only, Bearer token. |
+| **Atlas** | Backend for Atlas, the scheduled Claude routine that scouts destinations for your season and current base, searches fares with the Claude connectors and plans trips (ADR 0020). `/api/atlas` holds its config, the wishlist (places you want to go and fare watches), fare history with per-route baselines, and run history; it scores scans and discovery runs, reads where you are from the Rotation, ranks cities by comfort and crowds for any months, and turns a planned trip into a dated Trip with status Scouting. Its alerts arrive in **Alerts** and on every configured channel. Owner only, Bearer token. `npm run atlas -- help` is its terminal client, and the Telegram bot (`/scout`, `/discover`, `/watch`) starts it from your phone. |
 | **Offline** | Installable (manifest and icons). The app, its fonts, the city and climate data and the last-synced journal, bookings, watches and alerts open without a connection; trips and itineraries show this browser's copy, and edits sync when you're back. An "Offline" pill shows while it's using saved data; other changes need a connection. A new version shows a reload prompt. |
 
 `CONTEXT.md` defines the terms used throughout the code (Trip vs Journey, Leg vs Segment, Window, Watch, and so on).
@@ -107,7 +107,9 @@ To use the journal, trips sync, bookings, Repeat a trip and Watches, set `MERIDI
 | `ALERT_WEBHOOK_URL` | Where every Notice is POSTed as JSON (`text`, `kind`, `title`, `body`, `url`) |
 | `PUBLIC_URL` | The app's public address, so alerts sent by email, Telegram, ntfy and webhook can link back. Falls back to `RENDER_EXTERNAL_URL` or Vercel's production URL |
 | `RESEND_API_KEY` or `SMTP_URL`, with `ALERT_EMAIL_TO` | Email alerts. `SMTP_URL` is `smtp://user:pass@host:587` (or `smtps://` for port 465). `ALERT_EMAIL_FROM` sets the sender (Resend's test sender only delivers to your own Resend address) |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram alerts |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram alerts. `TELEGRAM_CHAT_ID` is your own chat and also the only chat the Atlas bot answers |
+| `TELEGRAM_WEBHOOK_SECRET` | Turns on the Atlas bot at `/api/telegram/atlas`. Telegram sends it back in a header and the route refuses anything else. Register the webhook with `https://api.telegram.org/bot<token>/setWebhook?url=<PUBLIC_URL>/api/telegram/atlas&secret_token=<secret>`. Without it the route answers 404 |
+| `ATLAS_ROUTINE_FIRE_URL`, `ATLAS_ROUTINE_TOKEN` | The Atlas routine's API trigger, from its settings on claude.ai. Needed to start a run from the bot, from `npm run atlas -- run` or from the Scout screen. Without them a run is recorded as failed |
 | `NTFY_TOPIC` | ntfy alerts. `NTFY_SERVER` for a self-hosted server (default `https://ntfy.sh`), `NTFY_TOKEN` for a protected topic |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push. Make keys with `node scripts/generate-vapid.mjs`; the subject is a `mailto:` or https address that push services may see. Then subscribe each device in Settings › Alerts |
 | `DAILY_JOBS_AT`, `DAILY_JOBS` | Time (UTC, `HH:MM`, default 06:17) of the in-process daily run on a long-running server; `DAILY_JOBS=off` turns it off. Vercel uses its cron instead |
