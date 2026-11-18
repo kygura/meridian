@@ -27,6 +27,7 @@ import solverRoutes from "./routes/solver.js";
 import visaRoutes from "./routes/visa.js";
 import notionRoutes from "./routes/notion.js";
 import gmailRoutes from "./routes/gmail.js";
+import atlasRoutes from "./routes/atlas.js";
 // Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
 import "./lib/bridgesJob.js";
 import { gateRoutes } from "./middleware/auth.js";
@@ -77,6 +78,7 @@ app.route("/api/visa", visaRoutes);
 // Owner-only (ADR 0017).
 app.route("/api/notion", notionRoutes);
 app.route("/api/gmail", gmailRoutes);
+app.route("/api/atlas", atlasRoutes);
 // Public by design: share and calendar links carry their own token (ADR 0010).
 app.route("/api/shared", sharedRoutes);
 
