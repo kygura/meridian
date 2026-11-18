@@ -32,6 +32,7 @@ export const PRIVATE_API_PREFIXES = [
   "/api/visa",
   "/api/notion",
   "/api/gmail",
+  "/api/atlas",
 ] as const;
 
 /**
