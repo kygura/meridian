@@ -162,7 +162,7 @@ export default function LayerMenu({ colors, years, pastLoading }: LayerMenuProps
         <SwitchRow layer="metrics" name="City metrics" hint="Safety, quality of life, internet, cost, crowds, healthcare">
           <MetricControls />
         </SwitchRow>
-        <SwitchRow layer="events" name="Events" hint={`Eclipses, festivals and fixtures in ${MONTH_NAMES[month - 1]}`} />
+        <SwitchRow layer="events" name="Events" hint={`Festivals, nature seasons, eclipses and the sky in ${MONTH_NAMES[month - 1]}`} />
         <SwitchRow layer="anomalies" name="Anomalies" hint="Conflicts, advisories, seasonal hazards and news alerts">
           <label className="map-check">
             <input type="checkbox" checked={avoidConflicts} onChange={(e) => setAvoidConflicts(e.target.checked)} />

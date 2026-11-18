@@ -2,6 +2,7 @@
 // concrete only when a year is chosen. Pure helpers; no fetching.
 
 import type { MonthSpan, Trip, TripNode } from "../types";
+import { eventMonths } from "./eventKinds";
 
 const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const LONG = [
@@ -146,6 +147,8 @@ export interface SeasonEvent {
   kind: string;
   cityIds: string[];
   month: number;
+  months?: number[];
+  note?: string;
   date?: string;
   recurring: boolean;
 }
@@ -163,7 +166,7 @@ export function stopEvents(
   if (!isMonthSpan(node.months)) return [];
   return events.filter((e) => {
     if (!e.cityIds.includes(node.cityId)) return false;
-    if (e.recurring) return spanHas(node.months!, e.month);
+    if (e.recurring) return eventMonths(e).some((m) => spanHas(node.months!, m));
     return !!(dates && e.date && e.date >= dates.start && e.date <= dates.end);
   });
 }

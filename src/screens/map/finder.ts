@@ -83,6 +83,7 @@ export function eventData(points: MapEventPoint[]): EventDatum[] {
     eventKind: p.kind,
     date: p.date,
     recurring: p.recurring,
+    ...(p.months && p.months.length > 1 ? { months: p.months } : {}),
     cityId: p.cityId,
     cityName: p.cityName,
   }));

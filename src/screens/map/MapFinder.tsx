@@ -17,6 +17,7 @@ import {
   type ConditionId,
 } from "../../lib/climate";
 import { METRIC_BY_ID, activeThresholds } from "../../lib/cityMetrics";
+import { EVENT_KIND_COLOR_VAR, eventKindLabel, type EventKind } from "../../lib/eventKinds";
 import { MONTH_NAMES } from "./basemap";
 import type { FinderResult } from "./finder";
 import type { FeedStatus } from "./useFinderData";
@@ -32,12 +33,14 @@ interface MapFinderProps {
   /** As-of month of the anomaly seed list ("2026-11"), when loaded. */
   anomaliesAsOf?: string;
   eventCount?: number;
+  /** Kinds of the events on the map, for the key. */
+  eventKinds?: string[];
 }
 
 const RESULT_LIMIT = 8;
 const GROUPS = Object.keys(GROUP_LABELS) as ConditionGroup[];
 
-export default function MapFinder({ result, regionsStatus, climateStatus, onRetry, anomaliesAsOf, eventCount }: MapFinderProps) {
+export default function MapFinder({ result, regionsStatus, climateStatus, onRetry, anomaliesAsOf, eventCount, eventKinds }: MapFinderProps) {
   const layers = useMapPrefs((s) => s.layers);
   const month = useMapPrefs((s) => s.month);
   const setMonth = useMapPrefs((s) => s.setMonth);
@@ -324,6 +327,15 @@ export default function MapFinder({ result, regionsStatus, climateStatus, onRetr
                 <span className="map-finder-dot" style={{ background: "var(--info)" }} /> News alert
               </span>
               {anomaliesAsOf ? <span className="map-finder-note">Curated list, {anomaliesAsOf}. Check advisories.</span> : null}
+            </div>
+          ) : null}
+          {layers.events && eventKinds?.length ? (
+            <div className="map-finder-key" aria-label="Event key">
+              {eventKinds.map((k) => (
+                <span className="map-finder-key-item" key={k}>
+                  <span className="map-finder-dot" style={{ background: `var(${EVENT_KIND_COLOR_VAR[k as EventKind] ?? "--accent"})` }} /> {eventKindLabel(k)}
+                </span>
+              ))}
             </div>
           ) : null}
           {layers.events && eventCount !== undefined ? (
