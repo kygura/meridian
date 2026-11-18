@@ -26,6 +26,8 @@ import {
   tagOf,
   USER_AGENT,
   type StoredEvent,
+  isStale,
+  SOURCES,
 } from "./liveEvents";
 import { eventPointsFor, eventsForCities, eventTagCounts } from "./phenomena";
 import { loadEvents } from "./replayService";
@@ -571,5 +573,44 @@ describe("eclipse tag constraint in replay", () => {
     expect(await eclipseCells("2027-10-01")).toEqual(["seville-spain/1"]);
     // 2026-10-30: only the 2027-08 eclipse (Athens) is ahead for August; the 2028 and 2030 ones tag no 2027 month.
     expect(await eclipseCells("2026-10-30")).toEqual(["athens-greece/8"]);
+  });
+});
+
+describe("isStale", () => {
+  const now = new Date("2026-11-18T12:00:00Z");
+  const at = (ms: number) => new Date(now.getTime() - ms).toISOString();
+  const allSources = (fetchedAt: string) => SOURCES.map((s) => ({ id: s.id, ok: true, count: 1, fetchedAt }));
+
+  it("is fresh when every source landed within maxAgeDays", () => {
+    expect(isStale({ version: 1, sources: allSources(at(86_400_000)), events: [], attemptedAt: at(86_400_000) }, now, 7)).toBe(false);
+  });
+
+  it("retries a source that never landed after two minutes, not an hour", () => {
+    const some = allSources(at(60_000)).slice(0, 2);
+    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(60_000) }, now, 7)).toBe(false);
+    expect(isStale({ version: 1, sources: some, events: [], attemptedAt: at(3 * 60_000) }, now, 7)).toBe(true);
+  });
+
+  it("waits an hour after an attempt when every source landed but one is old", () => {
+    const sources = allSources(at(60_000));
+    sources[0].fetchedAt = at(8 * 86_400_000);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(30 * 60_000) }, now, 7)).toBe(false);
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: at(61 * 60_000) }, now, 7)).toBe(true);
+  });
+});
+
+describe("keeping a background refresh alive on Vercel", () => {
+  it("hands the refresh to the request context's waitUntil", async () => {
+    seedLiveEvents([ev("old-1")], { fetchedAt: new Date(Date.now() - 30 * 86_400_000).toISOString(), attemptedAt: new Date(Date.now() - 2 * 3_600_000).toISOString() });
+    const waited: Promise<unknown>[] = [];
+    const key = Symbol.for("@vercel/request-context");
+    (globalThis as Record<symbol, unknown>)[key] = { get: () => ({ waitUntil: (p: Promise<unknown>) => waited.push(p) }) };
+    try {
+      await getLiveEvents({ fetch: fakeWikidata(recorded).fetch, sleep: noSleep, pauseMs: 0 });
+      expect(waited).toHaveLength(1);
+      await waited[0];
+    } finally {
+      delete (globalThis as Record<symbol, unknown>)[key];
+    }
   });
 });

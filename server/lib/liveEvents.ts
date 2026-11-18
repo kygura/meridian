@@ -720,12 +720,40 @@ function validEvent(e: unknown): e is StoredEvent {
   );
 }
 
-function isStale(file: LiveEventsFile, now: Date, maxAgeDays: number): boolean {
-  const last = file.fetchedAt ? Date.parse(file.fetchedAt) : NaN;
-  const old = !Number.isFinite(last) || now.getTime() - last > maxAgeDays * 86_400_000;
-  if (!old) return false;
+/** A source has never landed: retry it soon (another request or instance may be fetching it now). */
+const RETRY_MISSING_MS = 2 * 60 * 1000;
+
+/**
+ * Stale when any source has not landed yet or is older than `maxAgeDays`. After an attempt,
+ * waits an hour before trying again, or two minutes while some source has never landed, so a
+ * run cut short by a time limit is picked up by the next request instead of a week later.
+ */
+export function isStale(file: LiveEventsFile, now: Date, maxAgeDays: number): boolean {
+  const landed = (id: string) => file.sources.find((x) => x.id === id && x.fetchedAt)?.fetchedAt;
+  const missing = SOURCES.some((src) => !landed(src.id));
+  const old = SOURCES.some((src) => {
+    const at = Date.parse(landed(src.id) ?? "");
+    return !Number.isFinite(at) || now.getTime() - at > maxAgeDays * 86_400_000;
+  });
+  if (!missing && !old) return false;
   const attempt = file.attemptedAt ? Date.parse(file.attemptedAt) : NaN;
-  return !(Number.isFinite(attempt) && now.getTime() - attempt < RETRY_AFTER_ATTEMPT_MS);
+  const wait = missing ? RETRY_MISSING_MS : RETRY_AFTER_ATTEMPT_MS;
+  return !(Number.isFinite(attempt) && now.getTime() - attempt < wait);
+}
+
+/**
+ * Keeps a background promise running after the answer is sent. On Vercel this is the request
+ * context's waitUntil (what @vercel/functions wraps); elsewhere the process keeps running anyway.
+ */
+function keepAlive(p: Promise<unknown>): void {
+  try {
+    const ctx = (globalThis as Record<symbol, { get?: () => { waitUntil?: (p: Promise<unknown>) => void } | undefined } | undefined>)[
+      Symbol.for("@vercel/request-context")
+    ]?.get?.();
+    ctx?.waitUntil?.(p.catch(() => undefined));
+  } catch {
+    // No request context: nothing to extend.
+  }
 }
 
 export interface LiveEventsStatus {
@@ -761,6 +789,7 @@ export async function getLiveEvents(opts: { maxAgeDays?: number; waitMs?: number
           const out = await Promise.race([run, timer]);
           if (out === "late") {
             run.catch((err) => console.error("[events] refresh failed:", err instanceof Error ? err.message : String(err)));
+            keepAlive(run);
             memo = undefined;
             file = await readCached();
           } else file = out;
@@ -769,6 +798,7 @@ export async function getLiveEvents(opts: { maxAgeDays?: number; waitMs?: number
         }
       } else {
         run.catch((err) => console.error("[events] background refresh failed:", err instanceof Error ? err.message : String(err)));
+        keepAlive(run);
       }
     }
     return file.events.filter(validEvent).map(({ feed: _feed, ...e }) => e);
