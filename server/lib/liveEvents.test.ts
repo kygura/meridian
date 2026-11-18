@@ -307,12 +307,12 @@ describe("refreshLiveEvents", () => {
       if (calls > 1) throw new Error("should not start after the budget");
       return recorded(q);
     });
-    // A 5.5 s budget leaves no room to start a source after the first (sources stop 5 s before the deadline).
+    // The clock moves 400 ms per read, so a 1 s budget is spent once the first source has run.
     const realNow = Date.now;
     let t = realNow();
     const spy = vi.spyOn(Date, "now").mockImplementation(() => (t += 400));
     try {
-      await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, budgetMs: 6000, concurrency: 1 });
+      await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, budgetMs: 1000, concurrency: 1 });
     } finally {
       spy.mockRestore();
     }
@@ -612,5 +612,27 @@ describe("keeping a background refresh alive on Vercel", () => {
     } finally {
       delete (globalThis as Record<symbol, unknown>)[key];
     }
+  });
+});
+
+describe("refreshing only what is due", () => {
+  it("runs only sources that never landed or are older than olderThanDays", async () => {
+    const recent = new Date(NOW_FETCH.getTime() - 3_600_000).toISOString();
+    seedLiveEvents([], { fetchedAt: recent, attemptedAt: recent });
+    // Seed sources: all but dated-sports landed an hour ago.
+    const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
+    seeded.sources = SOURCES.filter((s) => s.id !== "dated-sports").map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent }));
+    writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
+    resetLiveEventsForTests();
+    const w = fakeWikidata(recorded);
+    await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, olderThanDays: 1 });
+    expect(w.calls.map((c) => sourceOfQuery(c.query))).toEqual(["dated-sports"]);
+  });
+
+  it("waits an hour, not two minutes, before retrying a source that failed", () => {
+    const now = new Date("2026-11-18T12:00:00Z");
+    const tenMinAgo = new Date(now.getTime() - 10 * 60_000).toISOString();
+    const sources = SOURCES.map((s) => (s.id === "dated-sports" ? { id: s.id, ok: false, count: 0, error: "timeout" } : { id: s.id, ok: true, count: 1, fetchedAt: tenMinAgo }));
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: tenMinAgo }, now, 7)).toBe(false);
   });
 });

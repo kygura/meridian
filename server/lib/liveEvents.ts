@@ -549,6 +549,8 @@ export interface RefreshOptions {
   budgetMs?: number;
   /** Sources queried at once. Wikidata allows a few parallel queries per client; default 2. */
   concurrency?: number;
+  /** Only sources that never landed or are older than this many days run. Default: all of them. */
+  olderThanDays?: number;
 }
 
 /** True when real network use is off: LIVE_EVENTS=off, or a test run that injected no fetch. */
@@ -613,11 +615,12 @@ export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<Live
   if (networkOff(opts.fetch !== undefined)) throw new Error("live events fetching is disabled (LIVE_EVENTS=off or a test run)");
   const now = opts.now ?? new Date();
   const budgetMs = opts.budgetMs ?? (process.env.VERCEL ? 45_000 : undefined);
+  // No source starts after `deadline`; one already running may use 10 s more (functions stop at 60 s).
   const deadline = budgetMs === undefined ? undefined : Date.now() + budgetMs;
   const ctx: SparqlContext = {
     fetch: opts.fetch ?? ((url, init) => fetch(url, init) as Promise<FetchResponse>),
     sleep: opts.sleep ?? realSleep,
-    ...(deadline !== undefined ? { deadline } : {}),
+    ...(deadline !== undefined ? { deadline: deadline + 10_000 } : {}),
   };
   const pauseMs = opts.pauseMs ?? PAUSE_BETWEEN_QUERIES_MS;
   const cities = opts.cities ?? getCities();
@@ -638,7 +641,12 @@ export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<Live
   }
   memo = undefined;
 
-  const queue = sourceOrder(prev);
+  const due = (src: SourceDef) => {
+    if (opts.olderThanDays === undefined) return true;
+    const at = Date.parse(prev.sources.find((x) => x.id === src.id && x.fetchedAt)?.fetchedAt ?? "");
+    return !Number.isFinite(at) || now.getTime() - at > opts.olderThanDays * 86_400_000;
+  };
+  const queue = sourceOrder(prev).filter(due);
   const runOne = async (src: SourceDef): Promise<void> => {
     const before = prev.sources.find((x) => x.id === src.id);
     const beforeEvents = prev.events.filter((e) => e.feed === src.id);
@@ -664,7 +672,7 @@ export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<Live
   const lanes = Array.from({ length: Math.max(1, Math.min(opts.concurrency ?? 2, queue.length)) }, async (_, lane) => {
     let first = true;
     for (let src = queue.shift(); src; src = queue.shift()) {
-      if (deadline !== undefined && Date.now() > deadline - 5000) {
+      if (deadline !== undefined && Date.now() > deadline) {
         queue.length = 0;
         break;
       }
@@ -700,7 +708,8 @@ async function readCached(): Promise<LiveEventsFile> {
   return file;
 }
 
-function startRefresh(opts: RefreshOptions): Promise<LiveEventsFile> {
+function startRefresh(opts: RefreshOptions & { maxAgeDays?: number }): Promise<LiveEventsFile> {
+  opts = { ...opts, olderThanDays: opts.olderThanDays ?? opts.maxAgeDays ?? 7 };
   inflight ??= refreshLiveEvents(opts).finally(() => {
     inflight = undefined;
   });
@@ -725,17 +734,19 @@ const RETRY_MISSING_MS = 2 * 60 * 1000;
 
 /**
  * Stale when any source has not landed yet or is older than `maxAgeDays`. After an attempt,
- * waits an hour before trying again, or two minutes while some source has never landed, so a
- * run cut short by a time limit is picked up by the next request instead of a week later.
+ * waits an hour before trying again, or two minutes while some source was never reached (a run
+ * cut short by a time limit), so the next request picks it up instead of a week later.
  */
 export function isStale(file: LiveEventsFile, now: Date, maxAgeDays: number): boolean {
   const landed = (id: string) => file.sources.find((x) => x.id === id && x.fetchedAt)?.fetchedAt;
-  const missing = SOURCES.some((src) => !landed(src.id));
+  // Never landed and never failed: a run was cut short before reaching it.
+  const missing = SOURCES.some((src) => !landed(src.id) && !file.sources.some((x) => x.id === src.id && x.error));
   const old = SOURCES.some((src) => {
     const at = Date.parse(landed(src.id) ?? "");
     return !Number.isFinite(at) || now.getTime() - at > maxAgeDays * 86_400_000;
   });
   if (!missing && !old) return false;
+  // `old` includes sources that failed and never landed: those wait the hour like any failure.
   const attempt = file.attemptedAt ? Date.parse(file.attemptedAt) : NaN;
   const wait = missing ? RETRY_MISSING_MS : RETRY_AFTER_ATTEMPT_MS;
   return !(Number.isFinite(attempt) && now.getTime() - attempt < wait);
