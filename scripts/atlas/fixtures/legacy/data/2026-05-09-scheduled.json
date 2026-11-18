@@ -1,0 +1,480 @@
+{
+  "scan_date": "2026-05-09",
+  "run_mode": "scheduled",
+  "origin_resolved": "MAD",
+  "query": null,
+  "results": [
+    {
+      "flight": {
+        "flight_id": "MAD-PDG-2026-05-25",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "PDG",
+        "destination_name": "Mentawai Islands",
+        "travel_window_start": "2026-05-25",
+        "travel_window_end": "2026-06-03",
+        "days_out": 16,
+        "price_economy_eur": 1237,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 19.75,
+        "booking_url": "https://on.kiwi.com/0zr3Bn",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-PDG-2026-05-25",
+        "weather_score": 4,
+        "crowd_level": "low",
+        "notable_events": [],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 4,
+        "isolation_score": 4,
+        "personal_flag": "May 25 into June: the tail of Mentawai's biggest swell window — Rifles and Bank Vaults at maximum expression, fewer boats than July, no pre-booked charter pressure.",
+        "raw_reasoning": "May 25–Jun 3 in Mentawai (Kiwi, 2 stops via DOH+CGK, 19.8h outbound). Late May peak swell window narrowing to 10 days. Same quality surf conditions as the longer lastminute window, compressed. Crowd low: fewer boat operators in May vs June–August. Isolation 4. Surf quality 4: prime May swell period. €1,237 Kiwi vs €1,022 lastminute for similar window/route — higher price, shorter outbound travel (19.8h vs 40.8h). For 10 days on the water this is a reasonable trade. First baseline data point for MAD-PDG route."
+      },
+      "price_vs_baseline_pct": null,
+      "composite_score": 6.81,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-LOP-2026-05-23",
+        "source": "lastminute",
+        "origin": "MAD",
+        "destination": "LOP",
+        "destination_name": "Lombok",
+        "travel_window_start": "2026-05-23",
+        "travel_window_end": "2026-06-06",
+        "days_out": 14,
+        "price_economy_eur": 994.44,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 41.75,
+        "booking_url": "https://www.lastminute.ie/msr/route/searching.do?departureAirport=MAD&arrivalAirport=LOP&outboundDay=23&outboundMonthYear=052026&returnDay=06&returnMonthYear=062026&adults=1&childs=0&infants=0&COBRANDED=LMNEN_LLMPROJECTEN&currency=EUR&url=search3.do&roundtrip=true&fareType=&requestId=772333333024278528&mac=772333333024278528SCHv01-982979472&acntb=flight&utm_term=MADLOP&utm_campaign=results&utm_medium=meta_search&utm_source=LMNEN_LLMPROJECTEN&bf_subsource=-----WS0S02RS01&j=994440&jC=994440_EUR&cp=0",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-LOP-2026-05-23",
+        "weather_score": 4,
+        "crowd_level": "low",
+        "notable_events": [],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 3,
+        "isolation_score": 4,
+        "personal_flag": "Pre-peak Lombok: offshore winds established, Desert Point surfable daily, lineups half-empty — all of the conditions with none of the July pilgrim pack.",
+        "raw_reasoning": "May 23–Jun 6 in Lombok (lastminute, 2 stops via EY/Garuda, 41h45m outbound — long haul). May: dry season fully established, SE trades offshore all morning. Desert Point reportedly surfable 70–80% of days in May. Selong Belanak consistent. Water 27°C. Crowd low: well before Jul 15–Aug 31 avoid window. June 1–6 sees swell strengthening as winter consolidates. Surf quality 3: building season, not peak power yet. Isolation 4: south Lombok structurally remote. At €994 lastminute this is the cheapest Lombok option — significant discount vs Kiwi options. 41h45m travel time is long but under 50h hard limit. No notable events or distortions."
+      },
+      "price_vs_baseline_pct": -13.91,
+      "composite_score": 6.52,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-PDG-2026-05-23",
+        "source": "lastminute",
+        "origin": "MAD",
+        "destination": "PDG",
+        "destination_name": "Mentawai Islands",
+        "travel_window_start": "2026-05-23",
+        "travel_window_end": "2026-06-06",
+        "days_out": 14,
+        "price_economy_eur": 1022.47,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 40.75,
+        "booking_url": "https://www.lastminute.ie/msr/route/searching.do?departureAirport=MAD&arrivalAirport=PDG&outboundDay=23&outboundMonthYear=052026&returnDay=06&returnMonthYear=062026&adults=1&childs=0&infants=0&COBRANDED=LMNEN_LLMPROJECTEN&currency=EUR&url=search3.do&roundtrip=true&fareType=&requestId=772333341169592320&mac=772333341169592320SCHv011784361815&acntb=flight&utm_term=MADPDG&utm_campaign=results&utm_medium=meta_search&utm_source=LMNEN_LLMPROJECTEN&bf_subsource=-----WS0S02RS01&j=1022470&jC=1022470_EUR&cp=0",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-PDG-2026-05-23",
+        "weather_score": 4,
+        "crowd_level": "medium",
+        "notable_events": [
+          "Mentawai peak season begins May–June: boat charters filling, resorts requiring advance booking"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 4,
+        "isolation_score": 4,
+        "personal_flag": "Late May Mentawai: historically the biggest swell month for rights — Macaronis, Rifles, Bank Vaults firing before the lineups fill with June-arrival boat charters.",
+        "raw_reasoning": "May 23–Jun 6 in Mentawai (via PDG then ferry to Sipora/Siberut, ~3h crossing). May is Mentawai's historically biggest swell month for the right-hand breaks. June: excellent barrel consistency. Combined window captures both peaks. SE swell 3–8ft, N offshore winds. Crowd medium: boat charters arriving in volume for peak season, but early May/June sees fewer boats than July–August. Resorts and boats need advance booking. Isolation 4: archipelago geography forces distance from mainland crowds. Surf quality 4: top-tier waves, not quite peak consistency of July but historically biggest individual sessions. €1,022 lastminute, 2 stops via EY+Garuda, 40h45m — cheaper than Kiwi at €1,237. No events distorting."
+      },
+      "price_vs_baseline_pct": null,
+      "composite_score": 6.17,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-PPS-2026-05-28",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "PPS",
+        "destination_name": "Palawan",
+        "travel_window_start": "2026-05-28",
+        "travel_window_end": "2026-06-03",
+        "days_out": 19,
+        "price_economy_eur": 1341,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 27.083333333333332,
+        "booking_url": "https://on.kiwi.com/g9SBAI",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-PPS-2026-05-28",
+        "weather_score": 3,
+        "crowd_level": "low",
+        "notable_events": [
+          "SW Monsoon onset expected early-to-mid June — El Nido northern island-hopping routes close for swells >1.5m from ~Jun 1",
+          "Coron is more sheltered from SW monsoon than El Nido — Jun 1–3 manageable at Coron"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": null,
+        "isolation_score": 4,
+        "personal_flag": "Last clear window before monsoon locks out northern Palawan — Coron's hidden lagoons and WWII wrecks nearly tourist-free, May mornings still crystal for snorkelling.",
+        "raw_reasoning": "May 28–Jun 3 in Palawan. Late May is the final week of workable conditions before SW monsoon arrival. Temperatures 28–31°C, some afternoon showers possible (11 rainy days/month in May but mostly short downpours). El Nido northern boat routes (Linapacan, Dimancal) risk closure from early June. Coron is significantly more sheltered from the SW monsoon — remains navigable through most of June. Crowd low: off-peak, Palawan post-Easter crowd has cleared out, monsoon-adjacent months see minimal international visitors. Water visibility still excellent. Isolation 4: Coron's geographic spread means genuine solitude on most dive/snorkel sites. Surf quality null (maritime, not surf destination). Weather 3: manageable but transitional — mornings clear, afternoon risk from Jun 1. €1,341 via AUH+MNL, 27.1h outbound. Thin baseline — no prior MAD-PPS records in data."
+      },
+      "price_vs_baseline_pct": -10.1,
+      "composite_score": 6.07,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-INH-2026-06-24",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "INH",
+        "destination_name": "Tofo",
+        "travel_window_start": "2026-06-24",
+        "travel_window_end": "2026-07-05",
+        "days_out": 46,
+        "price_economy_eur": 2037,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 21.75,
+        "booking_url": "https://www.kiwi.com/deep?affilid=alpicaialpic&currency=EUR&flightsId=0a22024650940000113d18de_0%7C0a22024650940000113d18de_1%7C02460c8b50950000ee47ab2f_0%7C0c8b0246509f00002359881b_0%7C0c8b0246509f00002359881b_1%7C02460a2250a000009992946b_0%7C02460a2250a000009992946b_1&from=MAD&lang=en&passengers=1&to=INH&booking_token=Hol0SD97UzzNX8svlnfKYHNz4mJQJJYVAVVrwylPKiTA90uXroeLRrQaNpbfcvw2NS8tcKLiOJZVgP_VP-BPpULvej7TgYSKsLrWNpjfPrG-e7W7YepirCyaCBIfhN1ralfjwu2ghAlQ79G1MvREpp40tgEvApBHuASLs_o5PKSYjRCz7lOVdxwn_5Zm7ypszSa26J6xRBv51tE6RH8UGE0bbuLt84nErDuWPgKY3BBFYX56qUrsRkIVu7U6y2ebmddv3160nBDAc3aZ9h1GBMaIciDGxqSVom1Tpih899uYhponnMrxUKCPJCpoiblArZTZnJp1wFTopmwmsZegCZSKRDp39gn86fh87xYzRR-OJtsYyxieHOsoBW9NfO7LJ8kmYdmAUK2-GIz-Q9OLzi81rxxnOVMmrHuOWKApdz_JeK_rT9PBAfoDSmfmWp6bjLYG1It5jNVnMzFiWZ6xQivuhkSgU6PdicjBdSAaoWfQ-MgaX9r-ewLe5MoHDKFbD5TuQAGs72D1avF780E9jYCkTDNCodFtGfO1z8f3DwDFv15SKErH1-afND4dTOa_BZ8XRPckDj19zZ8nfGkqZVAMeOzNXwTLJpthjsa18sZKST9hQO2A2cFLDasPAzmSRWtmgB0vvkSXnPnn4SCMJafOFBaN_tRt8wGWTy5D2Qs-LwNWgNxI63FfdTPn1zd4qw_mOejCKaA69mkp7xbnrQ-n42IQe2jofxgo8ZrCzmQw8ZNQrqWLWBLqcGVdtcX9gDxpDrrZdynWWnN3pDV5F2L7DH7Bu-9gb5wSIGrRfvaCNBno4PYumpquwCMoCVjMaHQ52rjWcsoW_AMQsxYYEJhq0yc6K7i4LumbHGAlwsf1e6HImC9dwEIatjxZU37NxRSmcOqXuhxalDS0jm2QlVcxT43DGEVFook6K9HzuD9Gu0O50OMB5NviVrONf3Q5Krqs_DFTZnjuQ6l1MX-dE_LucoizliQqBLOAUM77yT1ryhxunyDsNnQkKxftYFu0haEAQUjwG9YhLLjwhlTRRP6fdtSVfkkG-obGxj3evZL4TLyIj1f2RGG9GI_zSWupFiJhb8QieR4RD9mcIKa46s1rRyavo48dVvXC4vQo8QKVc0JjDT8l1GRkZFrIBFUJAiINVyYZC8LcNaSr2UtuWPSX7FDfvDIB012WKcAwFtWvKGAl1wVz19kMXXL3rfT5-Mp4Y9_UfgnLwRgUQnEGU8AQ3N7eGwspiPXM4AJfOyz-yL35BXusW6jy3lq7RXPUDgGu0jWbZzlsjCWUskwU6uLQgG8C8guPuiLYArIDtPLDFak3gb9W_QtBx-WBBrsJKmwe354OjuvIoV5pzuS9nkehy_5WFzsbVRgZOyCUyb3AhkXyimCZ6k2jojyLW_nrQbPBeq2aL4Ku1Nk2vBxA5hbjy04x07dq8P_kT-3NQRfA=",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-INH-2026-06-24",
+        "weather_score": 4,
+        "crowd_level": "low",
+        "notable_events": [],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 4,
+        "isolation_score": 5,
+        "personal_flag": "Peak winter swell at Tofinho — consistent powerful barrels, NW offshore winds, empty lineups, whale sharks in the channel, and not another surf tourist in sight until August.",
+        "raw_reasoning": "Jun 24–Jul 5 in Tofo. This is the heart of Mozambique's surf season: June and July are the best months, with consistent winter swells, most favourable winds (NW offshore), and longest clean windows. Tofinho Point firing reliably. Water temperature a comfortable 25–26°C despite 'winter' classification. Crowds extremely low: Tofo doesn't attract mass surf tourism the way Bali or Maldives does — lineups remain intimate even at peak season. 11 nights is a genuine surf trip. Weather 4: dry, cool, offshore. Air temp drops to 19–22°C at night, perfect for sleeping. Isolation 5. Surf quality 4: peak season reliability, solid head-to-overhead swell. €2,037 via DOH+MPM — above €1,500 sweet spot but within budget, and thin data (no prior records for this route)."
+      },
+      "price_vs_baseline_pct": null,
+      "composite_score": 6,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-PDG-2026-06-21",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "PDG",
+        "destination_name": "Mentawai Islands",
+        "travel_window_start": "2026-06-21",
+        "travel_window_end": "2026-07-05",
+        "days_out": 43,
+        "price_economy_eur": 1210,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 22.083333333333332,
+        "booking_url": "https://on.kiwi.com/TGNukL",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-PDG-2026-06-21",
+        "weather_score": 5,
+        "crowd_level": "high",
+        "notable_events": [
+          "Mentawai peak season Jun–Aug: boat charters fully booked, camps at capacity — pre-booking 12 months ahead recommended",
+          "World Surf League events may coincide with prime windows (unconfirmed)"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 5,
+        "isolation_score": 3,
+        "personal_flag": "June 21–July 5 at Mentawai peak: Macaronis, Hollow Trees, and Rifles at absolute best — but book the boat charter NOW, resorts are full and lineups will have audience.",
+        "raw_reasoning": "Jun 21–Jul 5 in Mentawai (Kiwi Window B, 2 stops via DOH+CGK, 22.1h). Peak season: consistent overhead to double-overhead swell, strongest SE swells of year, Hollow Trees (HTs) / Macaronis / Rifles world-class. Surf quality 5. Weather 5: dry season peak, offshore winds, 30°C water. Crowd high: peak season, all boats operating, lineups at capacity at famous breaks. Resorts fully booked 12 months in advance. Isolation 3: difficult to find uncrowded peaks at prime breaks without flexible boat route. €1,210 via DOH+CGK — cheapest Window B option, competitive for peak season but crowds are the cost. Traveller prefers low crowds — this window scores poorly on that axis."
+      },
+      "price_vs_baseline_pct": null,
+      "composite_score": 5.98,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-LOP-2026-06-23",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "LOP",
+        "destination_name": "Lombok",
+        "travel_window_start": "2026-06-23",
+        "travel_window_end": "2026-07-05",
+        "days_out": 45,
+        "price_economy_eur": 1266,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 25.416666666666668,
+        "booking_url": "https://on.kiwi.com/9e7pUq",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-LOP-2026-06-23",
+        "weather_score": 5,
+        "crowd_level": "medium",
+        "notable_events": [
+          "Moto GP Mandalika typically September — no conflict",
+          "Peak surf season Jun–Aug: lineups busier from Jun 25 onward, desert Point drawing serious surfers"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 5,
+        "isolation_score": 4,
+        "personal_flag": "Jun 23–Jul 5: Desert Point in its barrel window, consistent 4–8ft swell, offshore winds daily — 12 days before the Jul 15 avoid period begins and the crowds go exponential.",
+        "raw_reasoning": "Jun 23–Jul 5 in Lombok. Full peak dry season: consistent SE groundswell 4–8ft, strong offshore winds all morning, Desert Point firing regularly (advanced/expert break — powerful tubes, shallow reef). Selong Belanak classic 3–5ft for intermediate surfers. Water 27°C, air 27–30°C, zero rain. Weather 5. Crowd medium: June is high season but window closes Jul 5, safely before the Jul 15–Aug 31 avoid period when international surfers flood the lineups. Isolation 4. Surf quality 5: peak performance window. €1,266 via DOH+CGK — Kiwi Window B, competitive for peak season. Price vs prior scan (May 8): €1,266 vs €1,314 observed previously — modest downward movement, moderate deal signal with building baseline."
+      },
+      "price_vs_baseline_pct": -45.02,
+      "composite_score": 5.88,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-FNC-2026-05-24",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "FNC",
+        "destination_name": "Madeira",
+        "travel_window_start": "2026-05-24",
+        "travel_window_end": "2026-06-03",
+        "days_out": 15,
+        "price_economy_eur": 207,
+        "price_business_eur": null,
+        "stops": 0,
+        "best_layover": null,
+        "travel_time_hours": 2.6666666666666665,
+        "booking_url": "https://on.kiwi.com/KTLr0e",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-FNC-2026-05-24",
+        "weather_score": 4,
+        "crowd_level": "medium",
+        "notable_events": [
+          "Madeira Flower Festival ends May 24 — entire stay (May 24→Jun 3) is post-festival",
+          "No major events May 25–Jun 3 window"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": null,
+        "isolation_score": 3,
+        "personal_flag": "Direct €207 MAD-FNC departing the day the Flower Festival closes — land in a Funchal that's just exhaled: no festival prices, no parade crowds, levada trails to yourself for 10 days.",
+        "raw_reasoning": "May 24–Jun 3 in Madeira. Direct Iberia/Vueling flight 2h40m at €207 — exceptional value. Flower Festival ends May 24 (same day as departure), meaning the entire 10-day stay is comfortably post-festival. Late May: 20–22°C, Madeira's statistically driest period, levadas at full flow after spring rains but trails uncrowded. June 1–3: early summer onset, still very manageable visitor numbers. Weather score 4. Crowd medium (shoulder, building slowly). Isolation 3. No distortion — €207 reflects structural route pricing for late May. Strong value signal vs prior scan (€189 on May 8 scan, now €207 = slight increase but consistent range)."
+      },
+      "price_vs_baseline_pct": -7.81,
+      "composite_score": 5.67,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-INH-2026-05-29",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "INH",
+        "destination_name": "Tofo",
+        "travel_window_start": "2026-05-29",
+        "travel_window_end": "2026-06-03",
+        "days_out": 20,
+        "price_economy_eur": 1880,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 22.666666666666668,
+        "booking_url": "https://on.kiwi.com/k9QES8",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-INH-2026-05-29",
+        "weather_score": 4,
+        "crowd_level": "low",
+        "notable_events": [],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 3,
+        "isolation_score": 5,
+        "personal_flag": "Prime surf season opens at Tofinho Point — consistent winter E-SE swell, NW offshore winds, empty lineups, no tourist infrastructure to dilute the raw Mozambican coast experience.",
+        "raw_reasoning": "May 29–Jun 3 in Tofo/Inhambane area. Mozambique surf season runs May–September, peak June–July. May 29 is precisely the season opening: consistent swell from E-SE, offshore winds NW-W establishing. Tofinho Point offers advanced right-hand point break. Tofo Beach softer peaks for all levels. Water 26°C, air 26°C, 8h sun/day. Very low crowds: May is pre-peak season, few international surf travelers yet (most arrive June–August). Isolation 5: no mass tourism, genuine African coast with fishing villages, basic infrastructure. Surf quality 3 (season establishing, not peak — June/July are significantly more consistent). Note: only 5 nights due to return June 3 — minimum viable surf trip. Malaria precautions essential. €1,880 for 2-stop Kiwi routing via LIS+MPM — somewhat expensive for 5 nights but first baseline data point for route."
+      },
+      "price_vs_baseline_pct": null,
+      "composite_score": 5.63,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-LOP-2026-05-25",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "LOP",
+        "destination_name": "Lombok",
+        "travel_window_start": "2026-05-25",
+        "travel_window_end": "2026-06-03",
+        "days_out": 16,
+        "price_economy_eur": 1349,
+        "price_business_eur": null,
+        "stops": 2,
+        "best_layover": null,
+        "travel_time_hours": 23.75,
+        "booking_url": "https://on.kiwi.com/IJDxzV",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-LOP-2026-05-25",
+        "weather_score": 4,
+        "crowd_level": "low",
+        "notable_events": [],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": 3,
+        "isolation_score": 4,
+        "personal_flag": "May 25 into June: Desert Point transitioning from 'fires occasionally' to 'fires reliably' — same shoulder-season quiet, 10 days shorter travel than the lastminute option but nearly €400 more.",
+        "raw_reasoning": "May 25–Jun 3 in Lombok (Kiwi, 2 stops via AUH+CGK, 23.8h outbound). Same seasonal window as May 23 lastminute option. Conditions identical: pre-peak dry season, Desert Point establishing, Selong Belanak groomed. Crowd low, isolation 4, surf quality 3. €1,349 Kiwi vs €994 lastminute — significant price premium for essentially the same route/window. The Kiwi option has shorter outbound (23.8h vs 41.8h) which is the main advantage. Deduplication note: different travel window start dates (May 25 vs May 23), so both are surfaced — normalize script correctly retains both since dedupe key includes start date."
+      },
+      "price_vs_baseline_pct": -54.52,
+      "composite_score": 5.5,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-FNC-2026-06-24",
+        "source": "kiwi",
+        "origin": "MAD",
+        "destination": "FNC",
+        "destination_name": "Madeira",
+        "travel_window_start": "2026-06-24",
+        "travel_window_end": "2026-07-05",
+        "days_out": 46,
+        "price_economy_eur": 216,
+        "price_business_eur": null,
+        "stops": 1,
+        "best_layover": null,
+        "travel_time_hours": 8.666666666666666,
+        "booking_url": "https://www.kiwi.com/deep?affilid=alpicaialpic&currency=EUR&flightsId=0a22093e5094000021842952_0%7C093e035550940000baa7b272_0%7C0355093e509f00008e25f479_0%7C093e0a22509f000014b47f1b_0&from=MAD&lang=en&passengers=1&to=FNC&booking_token=HxvderV9tOll4nOblbZTZKLevvZEQ1rACBJxA-JobcL0AFV_HuFbgktXzVzYnpmyPJGrqlKxh_tTmR1Ql80lAL77f20kQU8wVJ0hrsvX_E6S7_xGHZKnpAxsGkytFrDL2nlGANwbxONGMFzHfW2dTHTnVExix-fARGWAssq5odDLu8V0Pbr_xvpaULshk_nicHsoBjS0wDwKA6RvTP7MuZggoVSNeUR8D_PF3QlW0cdUzPxOGJ-MWJoFFtXOkK5EVYUhhMpTToydO_Bs8nICdiOw920F12KL6T5b1sJol0-R2vrFg9T3g2qhY-nAK3IXkeJ7Z6VBOXBWbS1hAbZGGelIft_iyPG8TQop_yyvLsmpfpGHj8n3S5P3BhkzGshGiNqN6-RV4dYoIe9nuGJjWwD7bnywf87OzFI2Znn978_2lYrxT2YtQZswIrBl56UyNs4bGt64cBiMcz7t11VxEVnb_tHrOZKQITUFpzn8yccccAAJIb_9EWCZZMQNiIX0LpvOW8YJw4lWWokJulMBVSB3HSADm8lLskk3jyix1-TlFmBOdQTvIm2FLDV_ikEg52qw2CJnd_CG8UlSJOmEVi8cwcs_h1WswR12oK52cY1bUI9-8vF1Oa9WcF6Nqkgwtri4Lw4r-TvWRNruWspGtUHkru-VrUtvc2KYEwaNwG3MBZwAhBYgg5qoGd5DqmWK9PXol9lDf4ZsxNe2U7vrpihJcPxImMAIuKgYQKDSlKbrLZ75IGll5lSvDGUkIYLu3ZwHHMe8VBK7oWXNwhI3U6vY5sdTX8GGSS14WIbKhVN44l8J0_ZVZgK4mTRrrZTbfyOBu2U4YzoPDbeoJ0xNBSJb3gAwOZBLRAEBJzpnhpqSvpdwxHCsnIAQbsL-9RF3pxg7F0eKWiRITqXODs_B9MtcUKt982w9SEeVxdQw9IDM5Q77jq6Hmo46A1JeW0GhXkTl0H3a1DEvCWMFHnTAQpWSa3mqP3xgRrZ4uijXLiCR365o5bPFgqFj7r4qLc5UTLNtsqQ5AQJppifaoqF2GHsEiYHKMkZcfZ3e6i5uPt3rE0IfQTVeg4P2ln-FxVSdSuCc74lPiwKxvuLkRjVou5PYxn6xaGBlziAx6A1GXkz9UQOoKnSmcN4mmHMKgUO3teDeB7mB4-B72eMrFGFuOnPW-CVJ4DkjHVCJRGMTVALX9K6xonRmQ7-qU73I7tPrmQ38YjaT1xaaTd_8iocV_KZwanF-74VwydWalrNqS_UDGpN7TRdmpbEP9W3lq-AGQSeWHkweqPmTFT5fZkMOviwxro9Lwa10cw4jTkCOdSCU=",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-FNC-2026-06-24",
+        "weather_score": 5,
+        "crowd_level": "high",
+        "notable_events": [
+          "Atlantic Festival (fireworks over Funchal Bay) runs Jun 5–28 — final pyromusical night Jun 28 is 4 days into trip",
+          "Santos Populares street parties late June — active on arrival",
+          "July is Madeira's peak tourist month — accommodation premiums, busy beaches and trails"
+        ],
+        "distortion_flag": false,
+        "distortion_reason": null,
+        "surf_quality": null,
+        "isolation_score": 2,
+        "personal_flag": "Trip opens with Atlantic Festival's last fireworks night (Jun 28) over Funchal Bay, then pivots to full Madeira summer: whale watching, Serra d'Água valley hikes, and stable 33°C sunshine through July 5.",
+        "raw_reasoning": "Jun 24–Jul 5 in Madeira. Peak summer: temps 25–33°C, water 22–24°C, near-zero rainfall, maximum sunshine hours. Atlantic Festival ends Jun 28 (4 days into trip) — catches the finale pyromusical fireworks show. From Jul 1 full peak season: highest visitor numbers, trails and viewpoints at capacity, accommodation premium. Weather score 5: absolute best conditions. Crowd high: July is the busiest month. Isolation 2: genuinely difficult to escape crowds in standard Funchal/coastal areas. 1-stop via OPO at €216 — competitive for peak summer. Events are structural annual features, not distortion."
+      },
+      "price_vs_baseline_pct": -12.5,
+      "composite_score": 5.21,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    },
+    {
+      "flight": {
+        "flight_id": "MAD-FNC-2026-05-23",
+        "source": "lastminute",
+        "origin": "MAD",
+        "destination": "FNC",
+        "destination_name": "Madeira",
+        "travel_window_start": "2026-05-23",
+        "travel_window_end": "2026-06-06",
+        "days_out": 14,
+        "price_economy_eur": 305.21,
+        "price_business_eur": null,
+        "stops": 1,
+        "best_layover": null,
+        "travel_time_hours": 6.333333333333333,
+        "booking_url": "https://www.lastminute.ie/msr/route/searching.do?departureAirport=MAD&arrivalAirport=FNC&outboundDay=23&outboundMonthYear=052026&returnDay=06&returnMonthYear=062026&adults=1&childs=0&infants=0&COBRANDED=LMNEN_LLMPROJECTEN&currency=EUR&url=search3.do&roundtrip=true&fareType=&requestId=772333206272428032&mac=772333206272428032SCHv01-677763998&acntb=flight&utm_term=MADFNC&utm_campaign=results&utm_medium=meta_search&utm_source=LMNEN_LLMPROJECTEN&bf_subsource=-----WS0S02RS01&j=305210&jC=305210_EUR&cp=0",
+        "snapshot_date": "2026-05-09",
+        "search_error": null
+      },
+      "annotation": {
+        "flight_id": "MAD-FNC-2026-05-23",
+        "weather_score": 4,
+        "crowd_level": "medium",
+        "notable_events": [
+          "Madeira Flower Festival ends May 24 — first day of trip marginally overlaps festival close",
+          "Post-festival window May 25 onward: Funchal returns to quiet shoulder mode through June 6"
+        ],
+        "distortion_flag": true,
+        "distortion_reason": "TAP via LIS shows €305 vs €207 direct on Kiwi for similar window — 1-stop routing, not festival distortion; flag for visibility since first night lands during festival final hours",
+        "surf_quality": null,
+        "isolation_score": 3,
+        "personal_flag": "Arrive at Flower Festival's last exhale — Funchal still fragrant, then immediately quiets into perfect shoulder June hiking window through the 6th.",
+        "raw_reasoning": "May 23–Jun 6 in Madeira via TAP/LIS. Flower Festival ends May 24; first night overlaps with closing ceremony atmosphere but accommodation is post-peak from May 25. Late May–early June: 20–23°C, low rainfall, levada trails at their seasonal best (25 Fontes, Caldeirão Verde). June builds tourist numbers gradually but early June is still notably less crowded than July. Weather score 4: stable, warm, hiking-optimal. Crowd medium: post-festival but entering early summer. Isolation 3: Funchal base, north coast day trips. 1-stop TAP via LIS at €305 — significantly more expensive than Kiwi direct option for similar window."
+      },
+      "price_vs_baseline_pct": -58.96,
+      "composite_score": 4.38,
+      "opportunity_flag": false,
+      "opportunity_reason": null
+    }
+  ],
+  "itinerary_delivered": true,
+  "itinerary_text": "ATLAS — 2026-05-09 · from MAD\n\n#1 Mentawai Islands via direct\n✈ €1237 · 2 stop(s) · 19.8h · Book → https://on.kiwi.com/0zr3Bn\n📅 2026-05-25 – 2026-06-03 (9 days)\n🌤 Weather: 4/5 — strong weather window\n👥 Crowds: low\n💡 May 25 into June: the tail of Mentawai's biggest swell window — Rifles and Bank Vaults at maximum expression, fewer boats than July, no pre-booked charter pressure. Thin history for this route; baseline still forming.\n\n#2 Lombok via direct\n✈ €994 · 2 stop(s) · 41.8h · Book → https://www.lastminute.ie/msr/route/searching.do?departureAirport=MAD&arrivalAirport=LOP&outboundDay=23&outboundMonthYear=052026&returnDay=06&returnMonthYear=062026&adults=1&childs=0&infants=0&COBRANDED=LMNEN_LLMPROJECTEN&currency=EUR&url=search3.do&roundtrip=true&fareType=&requestId=772333333024278528&mac=772333333024278528SCHv01-982979472&acntb=flight&utm_term=MADLOP&utm_campaign=results&utm_medium=meta_search&utm_source=LMNEN_LLMPROJECTEN&bf_subsource=-----WS0S02RS01&j=994440&jC=994440_EUR&cp=0\n📅 2026-05-23 – 2026-06-06 (14 days)\n🌤 Weather: 4/5 — strong weather window\n👥 Crowds: low\n💡 Pre-peak Lombok: offshore winds established, Desert Point surfable daily, lineups half-empty — all of the conditions with none of the July pilgrim pack. -14% vs route median.\n\n#3 Mentawai Islands via direct\n✈ €1022 · 2 stop(s) · 40.8h · Book → https://www.lastminute.ie/msr/route/searching.do?departureAirport=MAD&arrivalAirport=PDG&outboundDay=23&outboundMonthYear=052026&returnDay=06&returnMonthYear=062026&adults=1&childs=0&infants=0&COBRANDED=LMNEN_LLMPROJECTEN&currency=EUR&url=search3.do&roundtrip=true&fareType=&requestId=772333341169592320&mac=772333341169592320SCHv011784361815&acntb=flight&utm_term=MADPDG&utm_campaign=results&utm_medium=meta_search&utm_source=LMNEN_LLMPROJECTEN&bf_subsource=-----WS0S02RS01&j=1022470&jC=1022470_EUR&cp=0\n📅 2026-05-23 – 2026-06-06 (14 days)\n🌤 Weather: 4/5 — strong weather window\n👥 Crowds: medium\n💡 Late May Mentawai: historically the biggest swell month for rights — Macaronis, Rifles, Bank Vaults firing before the lineups fill with June-arrival boat charters. Thin history for this route; baseline still forming.\n\n#4 Palawan via direct\n✈ €1341 · 2 stop(s) · 27.1h · Book → https://on.kiwi.com/g9SBAI\n📅 2026-05-28 – 2026-06-03 (6 days)\n🌤 Weather: 3/5 — mixed but workable conditions\n👥 Crowds: low\n💡 Last clear window before monsoon locks out northern Palawan — Coron's hidden lagoons and WWII wrecks nearly tourist-free, May mornings still crystal for snorkelling. -10% vs route median.\n\n#5 Tofo via direct\n✈ €2037 · 2 stop(s) · 21.8h · Book → https://www.kiwi.com/deep?affilid=alpicaialpic&currency=EUR&flightsId=0a22024650940000113d18de_0%7C0a22024650940000113d18de_1%7C02460c8b50950000ee47ab2f_0%7C0c8b0246509f00002359881b_0%7C0c8b0246509f00002359881b_1%7C02460a2250a000009992946b_0%7C02460a2250a000009992946b_1&from=MAD&lang=en&passengers=1&to=INH&booking_token=Hol0SD97UzzNX8svlnfKYHNz4mJQJJYVAVVrwylPKiTA90uXroeLRrQaNpbfcvw2NS8tcKLiOJZVgP_VP-BPpULvej7TgYSKsLrWNpjfPrG-e7W7YepirCyaCBIfhN1ralfjwu2ghAlQ79G1MvREpp40tgEvApBHuASLs_o5PKSYjRCz7lOVdxwn_5Zm7ypszSa26J6xRBv51tE6RH8UGE0bbuLt84nErDuWPgKY3BBFYX56qUrsRkIVu7U6y2ebmddv3160nBDAc3aZ9h1GBMaIciDGxqSVom1Tpih899uYhponnMrxUKCPJCpoiblArZTZnJp1wFTopmwmsZegCZSKRDp39gn86fh87xYzRR-OJtsYyxieHOsoBW9NfO7LJ8kmYdmAUK2-GIz-Q9OLzi81rxxnOVMmrHuOWKApdz_JeK_rT9PBAfoDSmfmWp6bjLYG1It5jNVnMzFiWZ6xQivuhkSgU6PdicjBdSAaoWfQ-MgaX9r-ewLe5MoHDKFbD5TuQAGs72D1avF780E9jYCkTDNCodFtGfO1z8f3DwDFv15SKErH1-afND4dTOa_BZ8XRPckDj19zZ8nfGkqZVAMeOzNXwTLJpthjsa18sZKST9hQO2A2cFLDasPAzmSRWtmgB0vvkSXnPnn4SCMJafOFBaN_tRt8wGWTy5D2Qs-LwNWgNxI63FfdTPn1zd4qw_mOejCKaA69mkp7xbnrQ-n42IQe2jofxgo8ZrCzmQw8ZNQrqWLWBLqcGVdtcX9gDxpDrrZdynWWnN3pDV5F2L7DH7Bu-9gb5wSIGrRfvaCNBno4PYumpquwCMoCVjMaHQ52rjWcsoW_AMQsxYYEJhq0yc6K7i4LumbHGAlwsf1e6HImC9dwEIatjxZU37NxRSmcOqXuhxalDS0jm2QlVcxT43DGEVFook6K9HzuD9Gu0O50OMB5NviVrONf3Q5Krqs_DFTZnjuQ6l1MX-dE_LucoizliQqBLOAUM77yT1ryhxunyDsNnQkKxftYFu0haEAQUjwG9YhLLjwhlTRRP6fdtSVfkkG-obGxj3evZL4TLyIj1f2RGG9GI_zSWupFiJhb8QieR4RD9mcIKa46s1rRyavo48dVvXC4vQo8QKVc0JjDT8l1GRkZFrIBFUJAiINVyYZC8LcNaSr2UtuWPSX7FDfvDIB012WKcAwFtWvKGAl1wVz19kMXXL3rfT5-Mp4Y9_UfgnLwRgUQnEGU8AQ3N7eGwspiPXM4AJfOyz-yL35BXusW6jy3lq7RXPUDgGu0jWbZzlsjCWUskwU6uLQgG8C8guPuiLYArIDtPLDFak3gb9W_QtBx-WBBrsJKmwe354OjuvIoV5pzuS9nkehy_5WFzsbVRgZOyCUyb3AhkXyimCZ6k2jojyLW_nrQbPBeq2aL4Ku1Nk2vBxA5hbjy04x07dq8P_kT-3NQRfA=\n📅 2026-06-24 – 2026-07-05 (11 days)\n🌤 Weather: 4/5 — strong weather window\n👥 Crowds: low\n💡 Peak winter swell at Tofinho — consistent powerful barrels, NW offshore winds, empty lineups, whale sharks in the channel, and not another surf tourist in sight until August. Thin history for this route; baseline still forming.\n\nDataset: 12 records across 5 routes · Updated 2026-05-09\n",
+  "execution_context": {
+    "trigger_source": "telegram",
+    "origin_interface": "telegram",
+    "request_text": null,
+    "defaulted_params": [],
+    "context_summary": [],
+    "resolved_origin": "MAD",
+    "user_context": {
+      "location_label": null,
+      "preferred_origins": [],
+      "max_budget_eur": null,
+      "destination_focus": [],
+      "preference_tags": [],
+      "notes": []
+    },
+    "telegram": null
+  }
+}

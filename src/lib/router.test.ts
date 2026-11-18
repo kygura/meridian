@@ -9,6 +9,8 @@ describe("parseHash: v3 routes", () => {
     expect(parseHash("#/plan")).toEqual({ view: "plan", tab: "when" });
     expect(parseHash("#/inbox")).toEqual({ view: "inbox" });
     expect(parseHash("#/world")).toEqual({ view: "world" });
+    expect(parseHash("#/scout")).toEqual({ view: "scout" });
+    expect(parseHash("#/scout/")).toEqual({ view: "scout" });
   });
 
   it("parses trips tabs and detail routes", () => {
@@ -79,6 +81,7 @@ describe("routePath / hrefFor / canonicalRedirect", () => {
     { view: "plan", tab: "flights" },
     { view: "inbox" },
     { view: "world" },
+    { view: "scout" },
   ];
 
   it("round-trips every route", () => {
@@ -87,6 +90,7 @@ describe("routePath / hrefFor / canonicalRedirect", () => {
 
   it("builds canonical paths", () => {
     expect(routePath({ view: "map" })).toBe("/");
+    expect(hrefFor({ view: "scout" })).toBe("#/scout");
     expect(hrefFor({ view: "trips", tab: "upcoming", tripId: "trip-1" })).toBe("#/trips/plan/trip-1");
     expect(hrefFor({ view: "plan", tab: "repeat", journeyId: "j1", stopIndex: 2 })).toBe("#/plan/repeat/j1/2");
   });

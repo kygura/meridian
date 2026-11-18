@@ -1,0 +1,8 @@
+{
+  "price_vs_baseline": 0.3,
+  "weather_score": 0.25,
+  "crowd_level": 0.25,
+  "surf_quality": 0.15,
+  "isolation_score": 0.05,
+  "opportunity_threshold": 7.5
+}

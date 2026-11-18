@@ -17,6 +17,7 @@ import BookingSheet from "./screens/plan/flights/BookingSheet";
 import InboxScreen from "./screens/inbox/InboxScreen";
 import WorldScreen from "./screens/world/WorldScreen";
 import RotationScreen from "./screens/rotation/RotationScreen";
+import ScoutScreen from "./screens/scout/ScoutScreen";
 
 export default function App() {
   const route = useRoute();
@@ -73,6 +74,11 @@ export default function App() {
         {route.view === "rotation" && (
           <div className="shell-screen">
             <RotationScreen />
+          </div>
+        )}
+        {route.view === "scout" && (
+          <div className="shell-screen">
+            <ScoutScreen />
           </div>
         )}
       </AppShell>

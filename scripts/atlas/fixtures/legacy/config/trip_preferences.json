@@ -1,0 +1,28 @@
+{
+  "validation_gates": {
+    "min_composite_score": 3.0,
+    "min_weather_score": 3,
+    "allow_peak_crowds": false,
+    "min_isolation_score": 2
+  },
+  "accommodation": {
+    "style": ["boutique", "guesthouse"],
+    "min_rating": 4.0,
+    "excluded_chains": ["all_inclusive"],
+    "sort_by": "BEST_VALUE"
+  },
+  "activities": {
+    "tags": ["adventure", "nature", "cultural", "off-beat"],
+    "avoid_tags": ["tourist_trap", "bus_tour", "shopping"],
+    "group_size_pref": "small_group",
+    "include_restaurants": false,
+    "include_nightlife": false,
+    "max_per_day": 2,
+    "budget_per_day_eur": 60
+  },
+  "planning": {
+    "max_candidates_full_plan": 1,
+    "max_candidates_alternative": 1,
+    "trip_budget_eur": null
+  }
+}

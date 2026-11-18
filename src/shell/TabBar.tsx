@@ -19,7 +19,7 @@ const TAB_VIEWS = new Set(["map", "trips", "plan", "inbox"]);
 /** Phone (< 900px) bottom tab bar: Map, Trips, Plan, Inbox, More. */
 export function TabBar({ route, badges }: TabBarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const moreActive = route.view === "world" || route.view === "rotation";
+  const moreActive = route.view === "world" || route.view === "rotation" || route.view === "scout";
   const noticesUnseen = useNotices((s) => s.unseen);
 
   return (
@@ -72,12 +72,13 @@ export function TabBar({ route, badges }: TabBarProps) {
   );
 }
 
-/** World, Ask, Log a trip and Settings for phones. */
+/** World, Scout, Rotation, Ask, Log a trip and Settings for phones. */
 export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const openAsk = useUIStore((s) => s.openAsk);
   const openQuickLog = useMeridianStore((s) => s.openQuickLog);
   const world = NAV_ITEMS.find((i) => i.view === "world")!;
   const rotation = NAV_ITEMS.find((i) => i.view === "rotation");
+  const scout = NAV_ITEMS.find((i) => i.view === "scout");
   const noticesUnseen = useNotices((s) => s.unseen);
   return (
     <Sheet open={open} onClose={onClose} title="More" size="sm">
@@ -86,6 +87,12 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
           {world.icon}
           <span>{world.label}</span>
         </a>
+        {scout && (
+          <a className="shell-more-link" href={scout.href} onClick={onClose}>
+            {scout.icon}
+            <span>{scout.label}</span>
+          </a>
+        )}
         {rotation && (
           <a className="shell-more-link" href={rotation.href} onClick={onClose}>
             {rotation.icon}

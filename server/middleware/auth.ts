@@ -180,6 +180,7 @@ export const GATED_PREFIXES = [
   "/api/visa",
   "/api/notion",
   "/api/gmail",
+  "/api/atlas",
 ] as const;
 
 /** Gate each prefix itself and everything under it. Call before mounting routes. */

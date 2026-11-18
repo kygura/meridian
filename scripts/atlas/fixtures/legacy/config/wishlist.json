@@ -1,0 +1,88 @@
+[
+  {
+    "destination": "Pico Island, Azores",
+    "iata": "PIX",
+    "status": "scouted",
+    "intent_tags": [
+      "wildlife",
+      "relax",
+      "ocean",
+      "remote",
+      "coastal"
+    ],
+    "avoid_periods": [
+      "Aug"
+    ],
+    "notes": "July-September peak window for sperm whales and sei whales. Calmer seas, stable weather. Low crowds vs mainland Europe. Lajes do Pico world-class whale watching. Volcanic landscapes, diving. MAD via LIS."
+  },
+  {
+    "destination": "Sal Island, Cape Verde",
+    "iata": "SAL",
+    "status": "scouted",
+    "intent_tags": [
+      "wildlife",
+      "relax",
+      "ocean",
+      "remote",
+      "coastal"
+    ],
+    "avoid_periods": [
+      "Dec",
+      "Jan",
+      "Feb"
+    ],
+    "notes": "July is shoulder season for Cape Verde (peak is Nov-Mar for Europeans). Sea turtles nesting on Santa Maria beach (Loggerhead turtles, July-Sept). Kite surfing, diving, genuinely remote Atlantic. Low crowds vs peak winter. Direct flights from MAD/AGP/LPA."
+  },
+  {
+    "destination": "Sal Island, Cape Verde",
+    "iata": "SID",
+    "status": "scouted",
+    "intent_tags": [
+      "wildlife",
+      "relax",
+      "ocean",
+      "remote",
+      "coastal"
+    ],
+    "avoid_periods": [
+      "Dec",
+      "Jan",
+      "Feb"
+    ],
+    "notes": "July shoulder season (peak is Nov-Mar for Europeans). Loggerhead sea turtles nesting July-Sept on Santa Maria beach. Kite surfing, diving, genuinely remote Atlantic. Very low crowds vs peak winter. Direct flights from MAD/AGP/LPA."
+  },
+  {
+    "destination": "São Tomé & Príncipe",
+    "iata": "TMS",
+    "status": "scouted",
+    "intent_tags": [
+      "wildlife",
+      "remote",
+      "ocean",
+      "coastal",
+      "nomadic",
+      "local-culture"
+    ],
+    "avoid_periods": [
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb"
+    ],
+    "notes": "Off the tourism radar, dubbed the 'African Galapagos'. Humpback whale watching season begins late July and runs through October off Príncipe. Turtle nesting is Nov-Feb (not in season now). Via Lisbon, 1 stop, ~12-18h total. High-end exception: Bom Bom Island Resort on Príncipe justified by genuine remoteness/exclusivity per luxury_exceptions."
+  },
+  {
+    "destination": "La Graciosa (Lanzarote), Canary Islands",
+    "iata": "ACE",
+    "status": "scouted",
+    "intent_tags": [
+      "relax",
+      "remote",
+      "coastal",
+      "ocean",
+      "nomadic"
+    ],
+    "avoid_periods": [],
+    "notes": "Car-free micro-island off Lanzarote, ~700 residents, no bars or sunbeds, virgin coves (La Cocina, Las Conchas). Stable dry summer weather. Direct flights from MAD/AGP/LPA into ACE, then short ferry from Orzola. Fills up for summer so book ahead, but genuinely low-infrastructure and quiet vs mainland Canary resorts."
+  }
+]

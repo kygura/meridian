@@ -1,0 +1,10 @@
+{
+  "weather_score": 0.3,
+  "tourism_season_score": 0.3,
+  "conditions_score": 0.25,
+  "price_signal": 0.15,
+  "min_composite_score": 3.0,
+  "repeat_penalty": 1.5,
+  "repeat_window_days": 45,
+  "max_candidates_per_run": 5
+}
