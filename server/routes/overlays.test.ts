@@ -6,7 +6,7 @@ import type { Hono } from "hono";
 import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
 
 let app: Hono;
-const SOURCE = "Wikidata (CC0), iNaturalist, NOAA SWPC";
+const SOURCE = "Wikidata (CC0), Wikivoyage and Wikipedia (CC BY-SA), NOAA SWPC";
 
 beforeAll(async () => {
   // Empty DATA_DIR: anomalies fall back to the committed seed in data/; events come from a seeded live store.

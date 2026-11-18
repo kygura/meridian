@@ -315,7 +315,7 @@ export interface LiveEventsFile {
   attemptedAt?: string;
   sources: SourceStatus[];
   events: StoredEvent[];
-  /** Per-source working state that is not events (the iNaturalist highlights found per city). */
+  /** Per-source working state that is not events (the highlights read per city). */
   state?: Record<string, unknown>;
 }
 
@@ -349,7 +349,7 @@ export interface SourceContext {
   /** The stored file when this refresh began. */
   prev: LiveEventsFile;
   places: PlaceDeps;
-  /** City checks one rolling source may run in this refresh (the iNaturalist source). */
+  /** City checks one rolling source may run in this refresh (the highlights source). */
   maxChecks: number;
   /** Pause between requests to one polite host, ms. */
   hostPauseMs: number;

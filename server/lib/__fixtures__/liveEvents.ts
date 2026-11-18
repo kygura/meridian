@@ -1,5 +1,5 @@
 // Test helpers for the live events store: seed events-live.json in the current DATA_DIR,
-// and answer the sources' requests (Wikidata, iNaturalist, NOAA SWPC) from recorded
+// and answer the sources' requests (Wikidata, Wikipedia and Wikivoyage, NOAA SWPC) from recorded
 // responses. No network.
 
 import { readFileSync, writeFileSync } from "fs";
@@ -98,9 +98,8 @@ export function sourceOfQuery(q: string): WikidataSource {
 }
 
 /** The source a request belongs to, by host. */
-export function sourceOfRequest(req: FakeRequest): "wikidata" | "inaturalist" | "mediawiki" | "swpc" | "other" {
+export function sourceOfRequest(req: FakeRequest): "wikidata" | "mediawiki" | "swpc" | "other" {
   if (req.host === "query.wikidata.org") return "wikidata";
-  if (req.host === "api.inaturalist.org") return "inaturalist";
   if (["en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org"].includes(req.host)) return "mediawiki";
   if (req.host === "services.swpc.noaa.gov") return "swpc";
   return "other";
@@ -114,52 +113,15 @@ const WIKIDATA_FILES: Record<WikidataSource, string> = {
   "lunar-eclipses": "events/wikidata-lunar-eclipses.json",
 };
 
-/** Where the recorded iNaturalist species_counts answers were taken: one file per city, pages keyed "plant-3" or "animal-11" (kind and month). */
-export const INAT_FIXTURE_CITIES: Record<string, { file: string; lat: number; lng: number }> = {
-  "kyoto-japan": { file: "events/inat-species-counts-kyoto.json", lat: 35.0116, lng: 135.7681 },
-  "sydney-australia": { file: "events/inat-species-counts-sydney.json", lat: -33.8688, lng: 151.2093 },
-  "honolulu-united-states": { file: "events/inat-species-counts-honolulu.json", lat: 21.3069, lng: -157.8583 },
-};
-
-const EMPTY_PAGE = { total_results: 0, page: 1, per_page: 100, results: [] };
-
-/** Recorded answers that are not month pages (taxon names, Wikipedia, Wikivoyage, Wikidata), by request URL, one file per city. */
+/** Recorded MediaWiki answers (Wikipedia, Wikivoyage, Wikidata) by request URL, one file per city, trimmed to the sections Claude reads. */
 const PLACE_FILES: Record<string, string> = {
-  "kyoto-japan": "events/place-kyoto.json",
-  "sydney-australia": "events/place-sydney.json",
-  "honolulu-united-states": "events/place-honolulu.json",
+  "kyoto-japan": "events/mediawiki-kyoto.json",
+  "avignon-france": "events/mediawiki-avignon.json",
 };
 let placeAnswers: Record<string, unknown> | undefined;
-let taxa: Map<number, unknown> | undefined;
 function recordedPlaceAnswer(url: string): unknown {
   const all = (placeAnswers ??= Object.assign({}, ...Object.values(PLACE_FILES).map((f) => fixtureJson(f) as Record<string, unknown>)) as Record<string, unknown>);
   return all[url];
-}
-
-/** The recorded answer for an iNaturalist request: a month page, or the names of taxa. A place with no recording has no observations. */
-export function recordedInat(url: string): FakeResponse {
-  const u = new URL(url);
-  if (u.pathname.includes("/taxa/")) {
-    // The ids asked for depend on the candidates, so the answer is built from every recorded taxon.
-    const ids = new Set(u.pathname.split("/taxa/")[1]!.split(",").map(Number));
-    taxa ??= new Map();
-    if (taxa.size === 0) {
-      for (const f of Object.values(PLACE_FILES)) {
-        for (const [k, v] of Object.entries(fixtureJson(f) as Record<string, { results?: { id: number }[] }>)) {
-          if (k.includes("/taxa/")) for (const r of v.results ?? []) taxa.set(r.id, r);
-        }
-      }
-    }
-    return { body: { results: [...ids].map((id) => taxa!.get(id)).filter(Boolean) } };
-  }
-  const lat = Number(u.searchParams.get("lat"));
-  const lng = Number(u.searchParams.get("lng"));
-  const hit = Object.values(INAT_FIXTURE_CITIES).find((c) => Math.abs(c.lat - lat) < 0.5 && Math.abs(c.lng - lng) < 0.5);
-  if (!u.pathname.endsWith("/observations/species_counts")) throw new Error(`unexpected iNaturalist request ${u.pathname}`);
-  if (!hit) return { body: EMPTY_PAGE };
-  const kind = u.searchParams.get("iconic_taxa") === "Plantae" ? "plant" : "animal";
-  const pages = fixtureJson(hit.file) as Record<string, unknown>;
-  return { body: pages[`${kind}-${u.searchParams.get("month")}`] ?? EMPTY_PAGE };
 }
 
 /** The recorded answer for a Wikipedia, Wikivoyage or Wikidata request; an unrecorded one finds nothing. */
@@ -174,8 +136,6 @@ export const recordedRequest = (req: FakeRequest): FakeResponse => {
   switch (sourceOfRequest(req)) {
     case "wikidata":
       return { body: fixtureJson(WIKIDATA_FILES[sourceOfQuery(req.query)]) };
-    case "inaturalist":
-      return recordedInat(req.url);
     case "mediawiki":
       return recordedMediaWiki(req.url);
     case "swpc":
@@ -184,3 +144,33 @@ export const recordedRequest = (req: FakeRequest): FakeResponse => {
       throw new Error(`unexpected request to ${req.host}`);
   }
 };
+
+/** The parts of a Messages request the highlights source sends, as the fake client sees them. */
+export interface FakeClaudeRequest {
+  model: string;
+  system: string;
+  max_tokens: number;
+  tool_choice: { type: string; name: string };
+  tools: { name: string; input_schema: unknown }[];
+  messages: { role: string; content: string }[];
+}
+
+/**
+ * A stand-in for the Anthropic client: answers every call with the one tool and the highlights
+ * `answer` returns for the request (the text is in the user message), and counts the calls.
+ */
+export function fakeClaude(answer: (req: FakeClaudeRequest, n: number) => unknown[] | { stop_reason: string } | Error, usage = { input_tokens: 5000, output_tokens: 400 }) {
+  const calls: FakeClaudeRequest[] = [];
+  const client = {
+    messages: {
+      create: async (req: FakeClaudeRequest) => {
+        calls.push(req);
+        const out = answer(req, calls.length);
+        if (out instanceof Error) throw out;
+        if (!Array.isArray(out)) return { stop_reason: out.stop_reason, content: [], usage };
+        return { stop_reason: "tool_use", content: [{ type: "tool_use", id: `t${calls.length}`, name: "record_highlights", input: { highlights: out } }], usage };
+      },
+    },
+  };
+  return { client: client as unknown as import("@anthropic-ai/sdk").default, calls };
+}

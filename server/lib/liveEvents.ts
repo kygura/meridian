@@ -1,13 +1,13 @@
 // Live events (ADR 0021). Replaces the hand-kept data/events.json.
 //
 // What the owner means by events: local festivities, eclipses, the seasonal highlights of each
-// place (found from observations), climate and tourism seasons, and the sky. Each is a source,
+// place (read from its Wikivoyage and Wikipedia text by Claude), climate and tourism seasons, and the sky. Each is a source,
 // fetched or computed at run time; no event list and no species list lives in the codebase.
 //
 //   festivities           Wikidata    recurring local festivals, not film, music, arts or pride   7 days
 //   national-festivities  Wikidata    country-wide festivals on a capital and big airport cities  7 days
 //   eclipses              Wikidata    solar eclipses, and total lunar eclipses                    7 days
-//   inaturalist           iNaturalist rolling seasonal highlights by place, 60 days per check    rolling
+//   highlights            Claude      rolling seasonal highlights read from Wikivoyage and Wikipedia text, 120 days per city   rolling
 //   aurora                NOAA SWPC   northern lights season (computed) and live Kp alerts        3 hours
 //   tourism-seasons       computed    peak and shoulder seasons from measured visitor nights      at read
 //   climate-seasons       computed    rainy, dry and snow seasons from monthly climate normals    at read
@@ -23,7 +23,7 @@ import { createJsonStore } from "./jsonStore.js";
 import { cityIndexFor, DAY_MS, realSleep, type Fetch, type FetchResponse, type LiveEventsFile, type PlaceDeps, type SourceContext, type SourceDef, type SourceResult, type SourceStatus, type StoredEvent } from "./events/common.js";
 import { auroraSource } from "./events/aurora.js";
 import { COMPUTED, computedStatus, type ComputedSource } from "./events/computed.js";
-import { DEFAULT_MAX_CHECKS, inaturalistSource } from "./events/inaturalist.js";
+import { DEFAULT_MAX_CALLS, highlightsSource } from "./events/claudeHighlights.js";
 import { defaultPlaceDeps } from "./events/places.js";
 import { eclipsesSource, festivitiesSource, nationalFestivitiesSource } from "./events/wikidata.js";
 
@@ -46,7 +46,7 @@ export {
   type StoredEvent,
 } from "./events/common.js";
 
-export const SOURCE_LABEL = "Wikidata (CC0), iNaturalist, NOAA SWPC";
+export const SOURCE_LABEL = "Wikidata (CC0), Wikivoyage and Wikipedia (CC BY-SA), NOAA SWPC";
 
 const PAUSE_BETWEEN_QUERIES_MS = 1000;
 const FILE_CACHE_MS = 60_000;
@@ -60,7 +60,7 @@ const emptyFile = (): LiveEventsFile => ({ version: 1, sources: [], events: [] }
 const store = createJsonStore<LiveEventsFile>("events-live.json", emptyFile);
 
 /** Order matters: when two sources carry the same item, the earlier one wins. */
-export const SOURCES: SourceDef[] = [festivitiesSource, nationalFestivitiesSource, eclipsesSource, inaturalistSource, auroraSource];
+export const SOURCES: SourceDef[] = [festivitiesSource, nationalFestivitiesSource, eclipsesSource, highlightsSource, auroraSource];
 
 const sourceRank = (id: string) => {
   const i = SOURCES.findIndex((s) => s.id === id);
@@ -90,9 +90,9 @@ export interface RefreshOptions {
   maxAgeDays?: number;
   /** Test seam: where the owner's places and the cities by attention come from. */
   places?: PlaceDeps;
-  /** City checks the iNaturalist source may run in one refresh. Default 60. */
+  /** Claude calls the highlights source may make in one refresh. Default 8 on Vercel, 40 elsewhere. */
   maxChecks?: number;
-  /** Pause between requests to iNaturalist and the like, ms. Default 1000. */
+  /** Pause between requests to Wikimedia and the like, ms. Default 1000. */
   hostPauseMs?: number;
   /** Test seam: the computed sources. Default: the real ones, except under Vitest where there are none. */
   computed?: ComputedSource[];
@@ -135,13 +135,14 @@ export function applySource(file: LiveEventsFile, status: SourceStatus, events: 
   file.events = dedupeAndSort(merged);
   file.sources = [...file.sources.filter((x) => x.id !== status.id && known.has(x.id)), status].sort((a, b) => sourceRank(a.id) - sourceRank(b.id));
   for (const x of file.sources) x.count = file.events.filter((e) => e.feed === x.id).length;
+  if (file.state) file.state = Object.fromEntries(Object.entries(file.state).filter(([id]) => known.has(id)));
   if (state !== undefined) file.state = { ...file.state, [status.id]: state };
   if (status.ok && status.fetchedAt && (!file.fetchedAt || status.fetchedAt > file.fetchedAt)) file.fetchedAt = status.fetchedAt;
 }
 
 /**
  * True when a source's last run succeeded and said work is left (`detail.pending`, the rolling
- * iNaturalist source with cities still to check). Such a source is retried on the short backoff
+ * highlights source with cities still to read). Such a source is retried on the short backoff
  * and runs whenever a refresh of the due sources starts, so ordinary use keeps it filling.
  */
 export function hasPendingWork(id: string, file: LiveEventsFile): boolean {
@@ -224,7 +225,7 @@ export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<Live
       index: cityIndexFor(cities),
       prev,
       places: opts.places ?? defaultPlaceDeps,
-      maxChecks: opts.maxChecks ?? DEFAULT_MAX_CHECKS,
+      maxChecks: opts.maxChecks ?? DEFAULT_MAX_CALLS,
       hostPauseMs: opts.hostPauseMs ?? 1000,
       async checkpoint(r) {
         saved = r;
@@ -338,10 +339,8 @@ function validEvent(e: unknown): e is StoredEvent {
     Array.isArray(x.tags) && x.tags.every((t) => typeof t === "string") &&
     (x.date === undefined || typeof x.date === "string") &&
     typeof x.feed === "string" &&
-    // A copy stored by an earlier version can hold feeds no source produces now (film festivals, sports, jma).
-    SOURCES.some((s) => s.id === x.feed) &&
-    // ... and nature events of the earlier phenomenon list (inat-jacaranda-...), where today's carry a taxon id.
-    (x.feed !== "inaturalist" || /^inat-\d+-/.test(x.id))
+    // A copy stored by an earlier version can hold feeds no source produces now (film festivals, sports, jma, inaturalist).
+    SOURCES.some((s) => s.id === x.feed)
   );
 }
 

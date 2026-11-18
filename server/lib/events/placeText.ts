@@ -1,105 +1,19 @@
-// What a place is known for, read from its own text (ADR 0021). The text of a city's English
-// Wikipedia and Wikivoyage articles, and of the regions it lies in, is used only to see which
-// seasonal species the place's own writing mentions. It is not stored and not shown. Wikipedia and
-// Wikivoyage text is CC BY-SA. No names are chosen in advance: what is looked for in the text comes
-// from iNaturalist's names for the candidate species and its genus.
+// The text of a place (ADR 0021): its English Wikivoyage and Wikipedia articles and the articles of
+// the regions above it, found through Wikidata, split into sections. Claude reads it to list the
+// place's seasonal highlights (claudeHighlights.ts). Wikipedia and Wikivoyage text is CC BY-SA; it
+// is held in memory for the call and not stored.
 
 import type { City } from "../../../src/types.js";
 import { haversineKm } from "../../../src/lib/geo.js";
 import { countryKey } from "./common.js";
-
-/** Lower case, accents removed, every run of other characters one space, padded with a space at each end. */
-export function normalizeText(s: string): string {
-  return ` ${s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()} `;
-}
-
-const singular = (w: string) => (w.endsWith("ies") && w.length > 4 ? `${w.slice(0, -3)}y` : w.endsWith("s") && !w.endsWith("ss") && w.length > 3 ? w.slice(0, -1) : w);
-
-/** The forms of a phrase to look for: as given, with a plural on its last word. */
-export function phraseForms(phrase: string): string[] {
-  const words = normalizeText(phrase).trim().split(" ").filter(Boolean);
-  if (words.length === 0) return [];
-  const last = singular(words[words.length - 1]!);
-  const head = words.slice(0, -1).join(" ");
-  const join = (w: string) => ` ${head ? `${head} ` : ""}${w} `;
-  const forms = new Set([join(last), join(`${last}s`), join(`${last}es`), join(last.endsWith("y") ? `${last.slice(0, -1)}ies` : last)]);
-  return [...forms];
-}
-
-/** Whether the normalized text contains the phrase or its plural, on word boundaries. */
-export function mentions(text: string, phrase: string): boolean {
-  return phraseForms(phrase).some((f) => text.includes(f));
-}
-
-/**
- * The names in an iNaturalist common name for a genus: "plums, cherries, and allies" gives plum
- * and cherry. Only commas separate names ("annual and perennial fleabanes" is one name).
- */
-export function genusAlternatives(common: string | null | undefined): string[] {
-  if (!common) return [];
-  return common
-    .split(",")
-    .map((x) => normalizeText(x.replace(/^\s*(and|or)\s+/i, "").replace(/\s+(and|or)\s+(allies|relatives)\s*$/i, "")).trim())
-    .filter((x) => x.length >= 3 && !/^(allies|relatives|species)$/.test(x))
-    .map((x) => x.split(" ").map((w, i, a) => (i === a.length - 1 ? singular(w) : w)).join(" "));
-}
-
-export interface CandidateNames {
-  /** Scientific name. */
-  n: string;
-  /** English common name, "" when none. */
-  c: string;
-  /** iNaturalist's common names of the taxa above the species (genus, subgenus), possibly several. */
-  genusCommon: string[];
-}
-
-export interface Mention {
-  /** 0 not mentioned, 1 the species' own name, 2 only its genus. */
-  w: 0 | 1 | 2;
-  /** The genus name found in the text, singular, for a mention of 2. */
-  gc?: string;
-  /** The text speaks of "<gc> blossom". */
-  blossom?: boolean;
-}
-
-/**
- * Whether the text mentions a candidate species. Its own names first (the common name, the
- * scientific name), then its genus: the genus name and iNaturalist's common names for the genus.
- */
-export function mentionOf(text: string, names: CandidateNames): Mention {
-  if ((names.c && names.c.length >= 4 && mentions(text, names.c)) || (names.n.includes(" ") && mentions(text, names.n))) return { w: 1 };
-  const alts = names.genusCommon.flatMap(genusAlternatives);
-  const genus = names.n.split(" ")[0] ?? "";
-  if (genus.length >= 4 && mentions(text, genus)) return { w: 2, gc: normalizeText(genus).trim(), blossom: false };
-  // The whole name ("true cherry"), then its last word ("cherry"), as iNaturalist's genus names often carry a qualifier.
-  const found: string[] = [];
-  for (const a of alts) {
-    const words = a.split(" ");
-    const head = words[words.length - 1]!;
-    if (mentions(text, a)) found.push(a);
-    else if (words.length > 1 && head.length >= 4 && mentions(text, head)) found.push(head);
-  }
-  if (found.length) {
-    // Several names of the genus may be in the text ("plums, cherries"): the one the species' own common name carries is its name.
-    const own = normalizeText(names.c);
-    const gc = found.find((f) => own.includes(` ${f.split(" ").pop()}`)) ?? found[0]!;
-    return { w: 2, gc, blossom: mentions(text, `${gc} blossom`) };
-  }
-  return { w: 0 };
-}
-
-// Fetching
 
 export type GetJson = (url: string, label: string) => Promise<unknown>;
 
 const WP = "https://en.wikipedia.org/w/api.php";
 const WV = "https://en.wikivoyage.org/w/api.php";
 const WD = "https://www.wikidata.org/w/api.php";
+export const WP_PAGE = "https://en.wikipedia.org/wiki/";
+export const WV_PAGE = "https://en.wikivoyage.org/wiki/";
 const NEAR_KM = 50;
 
 interface WpPage {
@@ -127,43 +41,50 @@ export function pickCityPage(pages: WpPage[], city: Pick<City, "lat" | "lng">): 
   return near[0]?.p;
 }
 
+/** The current "located in" (P131) values of an item: statements with an end time (a former state or empire) are left out, and preferred ones win. */
 const claimIds = (j: unknown): string[] => {
-  const claims = (j as { claims?: Record<string, { mainsnak?: { datavalue?: { value?: { id?: string } } }; rank?: string }[]> } | null)?.claims?.["P131"];
-  return (claims ?? []).filter((c) => c.rank !== "deprecated").map((c) => c.mainsnak?.datavalue?.value?.id).filter((x): x is string => typeof x === "string");
+  type Claim = { mainsnak?: { datavalue?: { value?: { id?: string } } }; rank?: string; qualifiers?: Record<string, unknown> };
+  const claims = ((j as { claims?: Record<string, Claim[]> } | null)?.claims?.["P131"] ?? []).filter((c) => c.rank !== "deprecated" && !c.qualifiers?.["P582"]);
+  const preferred = claims.filter((c) => c.rank === "preferred");
+  return (preferred.length ? preferred : claims).map((c) => c.mainsnak?.datavalue?.value?.id).filter((x): x is string => typeof x === "string");
 };
 
-export interface PlaceText {
-  /** Normalized text of the city's articles and its regions' articles; "" when none was found. */
-  text: string;
-  /** The article titles used, for the log. */
-  titles: string[];
+export interface RegionArticles {
+  /** Wikidata item of the region: what a region's result is cached by. */
+  qid: string;
+  wp?: string;
+  wv?: string;
+}
+
+export interface PlaceArticles {
+  cityWp?: string;
+  cityWv?: string;
+  qid?: string;
+  /** The administrative regions above the city, nearest first, at most three levels, a country's own article left out. */
+  regions: RegionArticles[];
   requests: number;
 }
 
 /**
- * The city's Wikipedia article (found by name, checked by its coordinates; or by a search near the
- * city when the name is ambiguous), its Wikivoyage article, and the introductions of the two
- * levels of administrative regions above it (Wikidata P131), so highlights of a province count for
- * its cities. Each step that fails leaves the text it has. At most 9 requests, one after another.
+ * Finds the articles. The city's Wikipedia article is found by name and checked by its
+ * coordinates (or by a search near the city when the name is ambiguous); Wikidata gives its
+ * Wikivoyage title and, through P131 (located in) up to three levels, the regions above it. Each step that
+ * fails leaves what was found. Requests are made one after another through `get`.
  */
-export async function fetchPlaceText(city: City, get: GetJson): Promise<PlaceText> {
-  let requests = 0;
+export async function resolvePlace(city: City, get: GetJson): Promise<PlaceArticles> {
+  const out: PlaceArticles = { regions: [], requests: 0 };
   const call = async (url: string, label: string): Promise<unknown> => {
-    requests++;
+    out.requests++;
     return get(url, label);
   };
-  const parts: string[] = [];
-  const titles: string[] = [];
   const attempt = async (fn: () => Promise<void>) => {
     try {
       await fn();
     } catch {
-      // The text found so far is still used.
+      // What was found so far is still used.
     }
   };
 
-  let qid: string | undefined;
-  let cityTitle: string | undefined;
   await attempt(async () => {
     const candidates = [...new Set([city.name, `${city.name}, ${city.country}`, `${city.name} (${city.country})`])];
     const q = qs({ action: "query", titles: candidates.join("|"), redirects: "1", prop: "coordinates|pageprops", ppprop: "wikibase_item|disambiguation", coprimary: "primary", format: "json", formatversion: "2" });
@@ -171,56 +92,83 @@ export async function fetchPlaceText(city: City, get: GetJson): Promise<PlaceTex
     if (!page) {
       const g = qs({ action: "query", list: "geosearch", gscoord: `${city.lat}|${city.lng}`, gsradius: "10000", gslimit: "10", gsprop: "type|name", format: "json", formatversion: "2" });
       const hits = ((await call(`${WP}?${g}`, "Wikipedia")) as { query?: { geosearch?: { title: string; type?: string }[] } })?.query?.geosearch ?? [];
-      const first = normalizeText(city.name).trim().split(" ")[0] ?? "";
-      const hit = hits.find((h) => h.type === "city" && normalizeText(h.title).includes(` ${first}`)) ?? hits.find((h) => normalizeText(h.title).includes(` ${first}`));
+      const norm = (s: string) => ` ${s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}`;
+      const first = norm(city.name).trim().split(" ")[0] ?? "";
+      const hit = hits.find((h) => h.type === "city" && norm(h.title).includes(` ${first}`)) ?? hits.find((h) => norm(h.title).includes(` ${first}`));
       if (hit) {
         const q2 = qs({ action: "query", titles: hit.title, redirects: "1", prop: "pageprops", ppprop: "wikibase_item", format: "json", formatversion: "2" });
         page = pagesOf(await call(`${WP}?${q2}`, "Wikipedia"))[0];
       }
     }
     if (page) {
-      cityTitle = page.title;
-      qid = page.pageprops?.wikibase_item;
+      out.cityWp = page.title;
+      out.qid = page.pageprops?.wikibase_item;
     }
   });
 
-  // Regions: P131 of the city, and of its first region; sitelinks of all of them in one call.
-  let voyageTitle: string | undefined;
-  const regionWp: string[] = [];
-  const regionWv: string[] = [];
-  if (qid) {
+  if (out.qid) {
+    const qid = out.qid;
     await attempt(async () => {
-      const level1 = claimIds(await call(`${WD}?${qs({ action: "wbgetclaims", entity: qid!, property: "P131", format: "json" })}`, "Wikidata")).slice(0, 2);
-      let level2: string[] = [];
-      if (level1[0]) level2 = claimIds(await call(`${WD}?${qs({ action: "wbgetclaims", entity: level1[0], property: "P131", format: "json" })}`, "Wikidata")).slice(0, 1);
-      const ids = [qid!, ...level1, ...level2];
+      // Up the chain of "located in", the current statement at each of three levels.
+      const chain: string[] = [];
+      let at = qid;
+      for (let level = 0; level < 3; level++) {
+        const up = claimIds(await call(`${WD}?${qs({ action: "wbgetclaims", entity: at, property: "P131", format: "json" })}`, "Wikidata"))[0];
+        if (!up || chain.includes(up) || up === qid) break;
+        chain.push(up);
+        at = up;
+      }
+      const ids = [qid, ...chain];
       const ent = (await call(`${WD}?${qs({ action: "wbgetentities", ids: ids.join("|"), props: "sitelinks", sitefilter: "enwiki|enwikivoyage", format: "json" })}`, "Wikidata")) as {
         entities?: Record<string, { sitelinks?: { enwiki?: { title: string }; enwikivoyage?: { title: string } } }>;
       };
       const links = (id: string) => ent.entities?.[id]?.sitelinks;
-      voyageTitle = links(qid!)?.enwikivoyage?.title;
-      for (const id of [...level1, ...level2]) {
+      out.cityWv = links(qid)?.enwikivoyage?.title;
+      for (const id of chain) {
         const wp = links(id)?.enwiki?.title;
         const wv = links(id)?.enwikivoyage?.title;
-        // A country's own article is not a region of the city.
-        if (wp && countryKey(wp) !== countryKey(city.country)) regionWp.push(wp);
-        if (wv && countryKey(wv) !== countryKey(city.country)) regionWv.push(wv);
+        const own = [wp, wv].filter((x): x is string => !!x).filter((t) => countryKey(t) !== countryKey(city.country));
+        if (own.length) out.regions.push({ qid: id, ...(wp && own.includes(wp) ? { wp } : {}), ...(wv && own.includes(wv) ? { wv } : {}) });
       }
     });
   }
-
-  const extract = async (base: string, label: string, ts: string[], intro: boolean) => {
-    const q = qs({ action: "query", prop: "extracts", explaintext: "1", redirects: "1", titles: ts.join("|"), format: "json", formatversion: "2", ...(intro ? { exintro: "1", exlimit: "max" } : { exlimit: "1" }) });
-    for (const p of pagesOf(await call(`${base}?${q}`, label))) {
-      if (p.extract) {
-        parts.push(p.extract);
-        titles.push(`${label}:${p.title}`);
-      }
-    }
-  };
-  if (cityTitle) await attempt(() => extract(WP, "Wikipedia", [cityTitle!], false));
-  if (voyageTitle) await attempt(() => extract(WV, "Wikivoyage", [voyageTitle!], false));
-  if (regionWp.length) await attempt(() => extract(WP, "Wikipedia", regionWp, true));
-  if (regionWv.length) await attempt(() => extract(WV, "Wikivoyage", regionWv, true));
-  return { text: parts.length ? normalizeText(parts.join("\n")) : "", titles, requests };
+  return out;
 }
+
+/** The plain-text extract of one article, with its headings written as "== Heading ==". Empty when the article is missing. */
+export async function fetchExtract(wiki: "wikipedia" | "wikivoyage", title: string, get: GetJson): Promise<string> {
+  const q = qs({ action: "query", prop: "extracts", explaintext: "1", redirects: "1", titles: title, format: "json", formatversion: "2", exlimit: "1" });
+  const page = pagesOf(await get(`${wiki === "wikipedia" ? WP : WV}?${q}`, wiki === "wikipedia" ? "Wikipedia" : "Wikivoyage"))[0];
+  return page?.extract ?? "";
+}
+
+export interface Section {
+  /** The level-2 heading, "" for the lead. */
+  heading: string;
+  /** The section's text with the headings of its subsections, without its own heading. */
+  text: string;
+}
+
+/** An extract split on its level-2 headings ("== X =="); the part before the first is the lead. Subsections stay inside their section. */
+export function splitSections(extract: string): Section[] {
+  const out: Section[] = [];
+  let heading = "";
+  let lines: string[] = [];
+  const flush = () => {
+    const text = lines.join("\n").trim();
+    if (text || heading) out.push({ heading, text });
+  };
+  for (const line of extract.split("\n")) {
+    const m = /^==\s*([^=].*?)\s*==\s*$/.exec(line);
+    if (m) {
+      flush();
+      heading = m[1]!;
+      lines = [];
+    } else lines.push(line);
+  }
+  flush();
+  return out;
+}
+
+export const articleUrl = (wiki: "wikipedia" | "wikivoyage", title: string, heading?: string) =>
+  `${wiki === "wikipedia" ? WP_PAGE : WV_PAGE}${encodeURIComponent(title.replace(/ /g, "_")).replace(/%2C/g, ",").replace(/%3A/g, ":")}${heading ? `#${encodeURIComponent(heading.replace(/ /g, "_"))}` : ""}`;
