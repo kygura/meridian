@@ -6,7 +6,7 @@ Until now events were `data/events.json`: 44 entries written by hand (six eclips
 
 ## Sources
 
-[Wikidata](https://www.wikidata.org/) (CC0) through its SPARQL endpoint. It needs no key, it carries coordinates, sitelink counts (a usable notability signal) and a month-of-year property for recurring events, and its licence allows caching. Five queries, run one at a time:
+[Wikidata](https://www.wikidata.org/) (CC0) through its SPARQL endpoint. It needs no key, it carries coordinates, sitelink counts (a usable notability signal) and a month-of-year property for recurring events, and its licence allows caching. Five queries, two at a time:
 
 | Source | Query | Result |
 |---|---|---|
@@ -40,7 +40,7 @@ Wikidata does not give an eclipse's path as cities. An eclipse is placed on the 
 
 ## Wikidata etiquette
 
-One request at a time, a second between queries, `User-Agent: Meridian/2.0 (personal travel planner; https://github.com/kygura/meridian)` and `Accept: application/sparql-results+json`. A 429 or 503 waits `Retry-After` (at most 60 s, 5 s steps when absent) and retries at most twice, then gives up on that source. The request timeout is 60 s, Wikidata's own query limit, not 30 s: the dated sporting query takes about 22 s. Tests never reach the network (they inject a fetch; without one the code refuses to run under Vitest, and `LIVE_EVENTS=off` turns fetching off anywhere).
+Two queries at a time (Wikidata allows a few per client), a second between queries in each lane, `User-Agent: Meridian/2.0 (personal travel planner; https://github.com/kygura/meridian)` and `Accept: application/sparql-results+json`. A 429 or 503 waits `Retry-After` (at most 60 s, 5 s steps when absent) and retries at most twice, then gives up on that source. The request timeout is 60 s, Wikidata's own query limit, not 30 s: the dated sporting query takes about 22 s. Tests never reach the network (they inject a fetch; without one the code refuses to run under Vitest, and `LIVE_EVENTS=off` turns fetching off anywhere).
 
 ## Failure
 
@@ -55,3 +55,7 @@ A source that fails (an error, a timeout, a 429 that persists, or no rows where 
 Wikidata's notability bias is visible: film festivals are about half of the first fetch (159 of 319). Moving holidays such as Lunar New Year, Easter and Diwali are mostly not there, and the Tết and Lunar New Year entries of the old file are gone. Recurring events have a month, not dates. Dated festival items came back empty in the first fetch. Eclipse paths are approximated by a point and a country list, and two of the four eclipses in the window had no city. Tags are whatever Wikidata's type labels say.
 
 Rejected: keeping the hand-written list and refreshing it by hand (it is the problem this ADR removes); PredictHQ and Ticketmaster (paid or keyed, and they cover ticketed shows and concerts rather than seasonal festivals, which is what a season-first planner needs); scraping tourism sites (licences, and brittle); asking the model for events at request time (no sources, not repeatable, and a fabricated date is worse than a missing one).
+
+## Serverless time limits
+
+A Vercel function stops at 60 s, and the five queries take about 35 s together from a cold start, longer from some regions. So a refresh saves each source as soon as it finishes, runs two at a time, and on Vercel stops starting sources after a 45 s budget; the ones left are the oldest-first work of the next run. A request that finds the store empty waits at most 8 s, then answers with whatever has been saved and leaves the rest to fill in. The first preview deployment showed the need: one request ran all five queries in turn, hit the 60 s limit and saved nothing.

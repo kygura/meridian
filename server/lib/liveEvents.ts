@@ -1,6 +1,6 @@
 // Live events from Wikidata (ADR 0021). Replaces the hand-kept data/events.json.
 //
-// Five sources, each one SPARQL query run one at a time:
+// Five sources, each one SPARQL query, two at a time:
 //   festivals        recurring festivals and culture (month of the year, P2922)
 //   sports           recurring sporting events (marathons, races, tournaments)
 //   dated-festivals  festivals with a start date or point in time in the next 18 months
@@ -89,6 +89,8 @@ export interface SparqlBinding {
 export interface SparqlContext {
   fetch: Fetch;
   sleep: (ms: number) => Promise<void>;
+  /** Epoch ms after which no request or retry starts, and running ones are cut off. */
+  deadline?: number;
 }
 
 const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -103,17 +105,21 @@ function retryDelayMs(header: string | null, attempt: number): number {
   return Math.min(RETRY_CAP_MS, 5000 * (attempt + 1));
 }
 
-/** One query, one request at a time. On 429 or 503 waits Retry-After (at most 60 s) and retries up to twice. */
+/** One query. On 429 or 503 waits Retry-After (at most 60 s) and retries up to twice. */
 export async function runSparql(query: string, ctx: SparqlContext): Promise<SparqlBinding[]> {
   const url = `${WIKIDATA_ENDPOINT}?format=json&query=${encodeURIComponent(query)}`;
+  const left = () => (ctx.deadline === undefined ? Infinity : ctx.deadline - Date.now());
   for (let attempt = 0; ; attempt++) {
+    if (left() <= 1000) throw new Error("out of time for this run; the next run continues");
     const res = await ctx.fetch(url, {
       headers: { "User-Agent": USER_AGENT, Accept: "application/sparql-results+json" },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(Math.min(REQUEST_TIMEOUT_MS, left())),
     });
     if (res.status === 429 || res.status === 503) {
       if (attempt >= MAX_RETRIES) throw new Error(`Wikidata answered ${res.status} after ${MAX_RETRIES} retries`);
-      await ctx.sleep(retryDelayMs(res.headers.get("retry-after"), attempt));
+      const wait = retryDelayMs(res.headers.get("retry-after"), attempt);
+      if (wait >= left()) throw new Error(`Wikidata answered ${res.status}; its retry wait outlasts this run`);
+      await ctx.sleep(wait);
       continue;
     }
     if (!res.ok) throw new Error(`Wikidata answered ${res.status}`);
@@ -532,10 +538,17 @@ export interface RefreshOptions {
   fetch?: Fetch;
   now?: Date;
   sleep?: (ms: number) => Promise<void>;
-  /** Pause between queries; Wikidata asks for one request at a time. */
+  /** Pause between queries in one lane. */
   pauseMs?: number;
   /** Test seam: replaces the loaded city list. */
   cities?: City[];
+  /**
+   * Time this run may take, in ms. Sources not started by then wait for the next run; each
+   * finished source is already saved. Default 45 s on Vercel (functions stop at 60 s), none elsewhere.
+   */
+  budgetMs?: number;
+  /** Sources queried at once. Wikidata allows a few parallel queries per client; default 2. */
+  concurrency?: number;
 }
 
 /** True when real network use is off: LIVE_EVENTS=off, or a test run that injected no fetch. */
@@ -564,51 +577,106 @@ export function dedupeAndSort(events: StoredEvent[]): StoredEvent[] {
   return out.sort((a, b) => a.month - b.month || a.title.localeCompare(b.title) || a.id.localeCompare(b.id));
 }
 
+const sourceRank = (id: string) => {
+  const i = SOURCES.findIndex((s) => s.id === id);
+  return i === -1 ? SOURCES.length : i;
+};
+
 /**
- * Runs every source and writes the store. A source that fails (or returns nothing where it
- * had events before) keeps its previous events and its previous fetchedAt, and records the
- * error. Throws only when the store cannot be written.
+ * Puts one source's outcome into the file: its events replace that source's earlier ones,
+ * and when two sources carry the same item the one earlier in SOURCES wins.
+ */
+export function applySource(file: LiveEventsFile, status: SourceStatus, events: StoredEvent[]): void {
+  const known = new Set(SOURCES.map((x) => x.id));
+  // Events from a feed no source produces any more (renamed or retired) are dropped here.
+  const merged = [...file.events.filter((e) => e.feed !== status.id && known.has(e.feed)), ...events].sort((a, b) => sourceRank(a.feed) - sourceRank(b.feed));
+  file.events = dedupeAndSort(merged);
+  file.sources = [...file.sources.filter((x) => x.id !== status.id), status].sort((a, b) => sourceRank(a.id) - sourceRank(b.id));
+  for (const x of file.sources) x.count = file.events.filter((e) => e.feed === x.id).length;
+  if (status.ok && status.fetchedAt && (!file.fetchedAt || status.fetchedAt > file.fetchedAt)) file.fetchedAt = status.fetchedAt;
+}
+
+/** Sources never fetched first, then the oldest, so a run cut short still moves the oldest forward. */
+function sourceOrder(prev: LiveEventsFile): SourceDef[] {
+  const at = (id: string) => prev.sources.find((x) => x.id === id && x.ok)?.fetchedAt ?? "";
+  return [...SOURCES].sort((a, b) => at(a.id).localeCompare(at(b.id)) || sourceRank(a.id) - sourceRank(b.id));
+}
+
+/**
+ * Runs the sources, two at a time by default, and saves each one as it finishes, so a run
+ * that is stopped (a serverless time limit) keeps what it got. A source that fails, or
+ * returns nothing where it had events before, keeps its previous events and fetchedAt and
+ * records the error. Sources left when the budget runs out are not started. Throws only
+ * when the store cannot be written.
  */
 export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<LiveEventsFile> {
   if (networkOff(opts.fetch !== undefined)) throw new Error("live events fetching is disabled (LIVE_EVENTS=off or a test run)");
   const now = opts.now ?? new Date();
+  const budgetMs = opts.budgetMs ?? (process.env.VERCEL ? 45_000 : undefined);
+  const deadline = budgetMs === undefined ? undefined : Date.now() + budgetMs;
   const ctx: SparqlContext = {
     fetch: opts.fetch ?? ((url, init) => fetch(url, init) as Promise<FetchResponse>),
     sleep: opts.sleep ?? realSleep,
+    ...(deadline !== undefined ? { deadline } : {}),
   };
   const pauseMs = opts.pauseMs ?? PAUSE_BETWEEN_QUERIES_MS;
-  const prev = await readFileSafe();
   const cities = opts.cities ?? getCities();
   const nowIso = now.toISOString();
 
-  const kept: StoredEvent[] = [];
-  const sources: SourceStatus[] = [];
-  let anyOk = false;
-  for (const [i, src] of SOURCES.entries()) {
-    const before = prev.sources.find((s) => s.id === src.id);
+  let prev: LiveEventsFile;
+  try {
+    prev = await store.update((f) => {
+      if (!Array.isArray(f.events) || !Array.isArray(f.sources)) Object.assign(f, emptyFile());
+      f.attemptedAt = nowIso;
+      return structuredClone(f);
+    });
+  } catch (err) {
+    // A corrupt store is replaced rather than left to block every refresh.
+    console.warn("[events] events-live.json is unreadable; starting it again:", err instanceof Error ? err.message : String(err));
+    prev = { ...emptyFile(), attemptedAt: nowIso };
+    await store.write(prev);
+  }
+  memo = undefined;
+
+  const queue = sourceOrder(prev);
+  const runOne = async (src: SourceDef): Promise<void> => {
+    const before = prev.sources.find((x) => x.id === src.id);
     const beforeEvents = prev.events.filter((e) => e.feed === src.id);
-    if (i > 0 && pauseMs > 0) await ctx.sleep(pauseMs);
+    let status: SourceStatus;
+    let events: StoredEvent[];
     try {
       if (cities.length === 0) throw new Error("cities are not loaded");
       const raws = await src.fetch(ctx, now);
       if (raws.length === 0 && beforeEvents.length > 0) throw new Error("query returned no rows; kept the previous events");
       const built = buildEvents(src.id, src.feed, raws, cityIndexFor(cities));
-      kept.push(...built.events);
-      anyOk = true;
-      sources.push({ id: src.id, ok: true, count: built.events.length, unmatched: built.unmatched, ...(built.unplaced ? { unplaced: built.unplaced } : {}), fetchedAt: nowIso });
+      events = built.events;
+      status = { id: src.id, ok: true, count: events.length, unmatched: built.unmatched, ...(built.unplaced ? { unplaced: built.unplaced } : {}), fetchedAt: nowIso };
     } catch (err) {
       const error = (err instanceof Error ? err.message : String(err)).slice(0, 300);
       console.warn(`[events] ${src.id} failed: ${error}`);
-      kept.push(...beforeEvents);
-      sources.push({ id: src.id, ok: false, count: beforeEvents.length, error, ...(before?.fetchedAt ? { fetchedAt: before.fetchedAt } : {}) });
+      events = beforeEvents;
+      status = { id: src.id, ok: false, count: beforeEvents.length, error, ...(before?.fetchedAt ? { fetchedAt: before.fetchedAt } : {}) };
     }
-  }
+    await store.update((f) => applySource(f, status, events));
+    memo = undefined;
+  };
 
-  const events = dedupeAndSort(kept);
-  for (const s of sources) s.count = events.filter((e) => e.feed === s.id).length;
-  const fetchedAt = anyOk ? nowIso : prev.fetchedAt;
-  const file: LiveEventsFile = { version: 1, ...(fetchedAt ? { fetchedAt } : {}), attemptedAt: nowIso, sources, events };
-  await store.write(file);
+  const lanes = Array.from({ length: Math.max(1, Math.min(opts.concurrency ?? 2, queue.length)) }, async (_, lane) => {
+    let first = true;
+    for (let src = queue.shift(); src; src = queue.shift()) {
+      if (deadline !== undefined && Date.now() > deadline - 5000) {
+        queue.length = 0;
+        break;
+      }
+      if (!first && pauseMs > 0) await ctx.sleep(pauseMs);
+      first = false;
+      await runOne(src);
+    }
+    void lane;
+  });
+  await Promise.all(lanes);
+
+  const file = await readFileSafe();
   memo = undefined;
   return file;
 }
@@ -675,19 +743,27 @@ export async function liveEventsStatus(): Promise<LiveEventsStatus> {
 
 /**
  * The live events. Serves the stored copy; when it is older than `maxAgeDays` a refresh
- * starts (one at a time, shared by concurrent callers) and the stale copy is served
- * meanwhile. Only an empty store waits for the refresh. Never throws: on failure it
+ * starts (one refresh at a time, shared by concurrent callers) and the stale copy is served
+ * meanwhile. An empty store waits up to `waitMs` (8 s) and then serves what has been saved so far. Never throws: on failure it
  * returns what it has, or [].
  */
-export async function getLiveEvents(opts: { maxAgeDays?: number } & RefreshOptions = {}): Promise<MeridianEvent[]> {
+export async function getLiveEvents(opts: { maxAgeDays?: number; waitMs?: number } & RefreshOptions = {}): Promise<MeridianEvent[]> {
   try {
     const now = opts.now ?? new Date();
     let file = await readCached();
     if (isStale(file, now, opts.maxAgeDays ?? 7) && !networkOff(opts.fetch !== undefined)) {
       const run = startRefresh(opts);
       if (file.events.length === 0) {
+        // Wait a little for the first sources; the rest keep filling the store after this answer.
+        const waitMs = opts.waitMs ?? 8000;
+        const timer = new Promise<"late">((r) => setTimeout(() => r("late"), waitMs).unref?.());
         try {
-          file = await run;
+          const out = await Promise.race([run, timer]);
+          if (out === "late") {
+            run.catch((err) => console.error("[events] refresh failed:", err instanceof Error ? err.message : String(err)));
+            memo = undefined;
+            file = await readCached();
+          } else file = out;
         } catch (err) {
           console.error("[events] refresh failed:", err instanceof Error ? err.message : String(err));
         }

@@ -288,10 +288,42 @@ describe("runSparql", () => {
 });
 
 describe("refreshLiveEvents", () => {
-  it("runs the five sources one at a time, merges them and writes the store", async () => {
+  it("runs two sources at a time by default", async () => {
+    const w = fakeWikidata(async (q) => {
+      await new Promise((r) => setTimeout(r, 5));
+      return recorded(q);
+    });
+    await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0 });
+    expect(w.maxActive()).toBe(2);
+    expect(w.calls).toHaveLength(5);
+  });
+
+  it("saves each source as it finishes and stops starting sources when the budget runs out", async () => {
+    let calls = 0;
+    const w = fakeWikidata((q) => {
+      calls += 1;
+      if (calls > 1) throw new Error("should not start after the budget");
+      return recorded(q);
+    });
+    // A 5.5 s budget leaves no room to start a source after the first (sources stop 5 s before the deadline).
+    const realNow = Date.now;
+    let t = realNow();
+    const spy = vi.spyOn(Date, "now").mockImplementation(() => (t += 400));
+    try {
+      await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: noSleep, pauseMs: 0, budgetMs: 6000, concurrency: 1 });
+    } finally {
+      spy.mockRestore();
+    }
+    const status = await liveEventsStatus();
+    expect(status.sources.map((x) => x.id)).toEqual(["eclipses"]);
+    expect(status.total).toBe(4);
+    expect(status.attemptedAt).not.toBeNull();
+  });
+
+  it("runs the five sources one at a time when asked, merges them and writes the store", async () => {
     const w = fakeWikidata(recorded);
     const sleeps: number[] = [];
-    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: async (ms) => void sleeps.push(ms) });
+    const file = await refreshLiveEvents({ fetch: w.fetch, now: NOW_FETCH, sleep: async (ms) => void sleeps.push(ms), concurrency: 1 });
     expect(w.calls.map((c) => sourceOfQuery(c.query))).toEqual(["eclipses", "dated-sports", "dated-festivals", "festivals", "sports"]);
     expect(w.maxActive()).toBe(1);
     expect(sleeps).toEqual([1000, 1000, 1000, 1000]);
@@ -412,7 +444,7 @@ describe("getLiveEvents", () => {
     });
     const served = await getLiveEvents({ fetch: w.fetch, sleep: noSleep, pauseMs: 0 });
     expect(served.map((e) => e.id)).toEqual(["old-1"]);
-    expect(w.calls.length).toBeLessThanOrEqual(1);
+    expect(w.calls.length).toBeLessThanOrEqual(2);
     release();
     await vi.waitFor(async () => expect((await liveEventsStatus()).total).toBe(17), { timeout: 3000 });
     expect((await getLiveEvents({ fetch: w.fetch })).length).toBe(17);
