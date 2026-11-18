@@ -1,0 +1,161 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "eLabel",
+   "month",
+   "sl",
+   "coord",
+   "types"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q60874"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Australian Open"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q108"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "84"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(144.98 -37.822777777)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "recurring tennis tournament"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q181336"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Dakar Rally"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q108"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "58"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(44.116667 23.716667)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "recurring sporting event|international sporting event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q578794"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "London Marathon"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q118"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "43"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(0.009444444 51.472777777)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "marathon|recurring sporting event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q161222"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Berlin Marathon"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q123"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "38"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(13.377777777 52.516388888)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "marathon|recurring sporting event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q153606"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kiel Week"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q120"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "22"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(10.139444444 54.323333333)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "regatta|folk festival"
+    }
+   }
+  ]
+ }
+}

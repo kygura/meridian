@@ -1,0 +1,156 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "eLabel",
+   "date",
+   "types",
+   "countries",
+   "coords"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3577558"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "solar eclipse of February 6, 2027"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2027-02-06T00:00:00Z"
+    },
+    "types": {
+     "type": "literal",
+     "value": "annular solar eclipse|solar eclipse"
+    },
+    "countries": {
+     "type": "literal",
+     "value": ""
+    },
+    "coords": {
+     "type": "literal",
+     "value": "Point(-48.5 -31.3)|Point(-48.083 -31.05)"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3577554"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "solar eclipse of August 2, 2027"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2027-08-02T00:00:00Z"
+    },
+    "types": {
+     "type": "literal",
+     "value": "total solar eclipse|solar eclipse"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Egypt"
+    },
+    "coords": {
+     "type": "literal",
+     "value": "Point(33.033 25.083)|Point(33.2 25.5)"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3577551"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "solar eclipse of January 26, 2028"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2028-01-26T00:00:00Z"
+    },
+    "types": {
+     "type": "literal",
+     "value": "future event|annular solar eclipse|solar eclipse"
+    },
+    "countries": {
+     "type": "literal",
+     "value": ""
+    },
+    "coords": {
+     "type": "literal",
+     "value": "Point(-51.5 3.0)|Point(-51.083 3.0)"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3577545"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Solar eclipse of July 22, 2028"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2028-07-22T00:00:00Z"
+    },
+    "types": {
+     "type": "literal",
+     "value": "total solar eclipse"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Australia"
+    },
+    "coords": {
+     "type": "literal",
+     "value": "Point(126.117 -15.1)"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4026605"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "solar eclipse of January 14, 2029"
+    },
+    "date": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+     "type": "literal",
+     "value": "2029-01-14T00:00:00Z"
+    },
+    "types": {
+     "type": "literal",
+     "value": "partial solar eclipse|solar eclipse"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Canada"
+    },
+    "coords": {
+     "type": "literal",
+     "value": "Point(-114.2 63.7)"
+    }
+   }
+  ]
+ }
+}

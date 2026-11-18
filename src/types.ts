@@ -713,6 +713,10 @@ export interface MeridianEvent {
   date?: string;
   recurring: boolean;
   tags: string[];
+  /** Where the event came from, e.g. "wikidata". */
+  source?: string;
+  /** The source's page for this event (the Wikidata item). */
+  sourceUrl?: string;
 }
 
 // ── Notices (ADR 0016) ───────────────────────────────────────────────
