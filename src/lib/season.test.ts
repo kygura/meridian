@@ -118,6 +118,17 @@ describe("comfort and events", () => {
     expect(stopEvents(han, events, datedSpan(han.months!, 2028))).toEqual([]);
   });
 
+  it("matches a recurring event that spans months against any month of the stop", () => {
+    const bloom: SeasonEvent = { id: "bloom", title: "Cherry blossom", kind: "nature", cityIds: ["tyo"], month: 3, months: [3, 4], recurring: true };
+    const aurora: SeasonEvent = { id: "aurora", title: "Northern lights season", kind: "sky", cityIds: ["tos"], month: 9, months: [9, 10, 11, 12, 1, 2, 3], recurring: true };
+    expect(stopEvents(node("tyo", 4), [bloom], null).map((e) => e.id)).toEqual(["bloom"]);
+    expect(stopEvents(node("tyo", 5), [bloom], null)).toEqual([]);
+    // A stop spanning the new year (Dec to Jan) meets the aurora season in either month.
+    const tos = withMonths(node("tos"), { start: 12, end: 1 });
+    expect(stopEvents(tos, [aurora], null).map((e) => e.id)).toEqual(["aurora"]);
+    expect(stopEvents(withMonths(node("tos"), { start: 5, end: 7 }), [aurora], null)).toEqual([]);
+  });
+
   it("sets and clears a node's months", () => {
     const n = withMonths(node("a"), { start: 3, end: 4 });
     expect(n.months).toEqual({ start: 3, end: 4 });

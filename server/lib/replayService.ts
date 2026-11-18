@@ -2,10 +2,8 @@
 // executeReplay(), used by POST /api/replay, watch runs and the agent's
 // find_similar_windows tool so all three go through the same deps factory.
 
-import { readFile } from "fs/promises";
-import { join } from "path";
 import type { MeridianEvent, ReplayQuery, ReplayResponse } from "../../src/types.js";
-import { getDataPath } from "./paths.js";
+import { getLiveEvents } from "./liveEvents.js";
 import { toMoney } from "./fx.js";
 import { getSettings, listJourneys } from "./journal.js";
 import { ensureFingerprint } from "./journalFingerprint.js";
@@ -28,48 +26,13 @@ export async function eurOf(amount: number, currency: string, date: string): Pro
   }
 }
 
-let warnedNoEvents = false;
-/** events.json is committed seed data: a DATA_DIR copy overrides it, else the repo's data/ (DATA_DIR is a runtime disk in prod). */
-async function readEventsFile(): Promise<string | undefined> {
-  for (const p of new Set([getDataPath("events.json"), join(process.cwd(), "data", "events.json")])) {
-    try {
-      return await readFile(p, "utf-8");
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
-    }
-  }
-  if (!warnedNoEvents) console.warn("[replay] events.json not found; event markers and tag constraints are disabled");
-  warnedNoEvents = true;
-  return undefined;
-}
-
 /**
- * Every valid entry in data/events.json, dated ones from every year. Tolerant of a
- * missing/corrupt file, array or {events}; malformed entries are dropped (one bad
- * entry must not throw inside every replay).
+ * Every live event (see liveEvents.ts), dated ones from every year. Never
+ * throws: when nothing is stored and the fetch fails the list is empty, and event
+ * markers and tag constraints simply find nothing.
  */
 export async function loadAllEvents(): Promise<MeridianEvent[]> {
-  try {
-    const text = await readEventsFile();
-    if (text === undefined) return [];
-    const raw = JSON.parse(text) as unknown;
-    const list = Array.isArray(raw) ? raw : (raw as { events?: unknown })?.events;
-    if (!Array.isArray(list)) return [];
-    const valid = (e: unknown): e is MeridianEvent => {
-      const x = e as Partial<MeridianEvent> | null;
-      return (
-        !!x &&
-        Number.isInteger(x.month) && x.month! >= 1 && x.month! <= 12 &&
-        Array.isArray(x.cityIds) && x.cityIds.every((c) => typeof c === "string") &&
-        Array.isArray(x.tags) && x.tags.every((t) => typeof t === "string") &&
-        (x.date === undefined || typeof x.date === "string")
-      );
-    };
-    return list.filter(valid);
-  } catch (err) {
-    console.warn("[replay] could not read events.json:", err instanceof Error ? err.message : String(err));
-    return [];
-  }
+  return getLiveEvents();
 }
 
 /**

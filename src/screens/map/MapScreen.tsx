@@ -571,6 +571,7 @@ export default function MapScreen({ active }: MapScreenProps) {
           }}
           anomaliesAsOf={anomalies.data?.asOf}
           eventCount={prefs.events && events.status === "ready" ? eventPoints.length : undefined}
+          eventKinds={prefs.events && events.status === "ready" ? [...new Set(eventPoints.map((e) => e.eventKind))].sort() : undefined}
         />
       ) : null}
 

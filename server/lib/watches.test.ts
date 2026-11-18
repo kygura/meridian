@@ -17,6 +17,7 @@ import {
 } from "./watches";
 import { loadEvents } from "./replayService";
 import { listNotices } from "./notifier";
+import { ev, seedLiveEvents } from "./__fixtures__/liveEvents";
 import type { ReplayQuery, ReplayResponse, ReplayResult, Watch } from "../../src/types";
 
 let TMP: string;
@@ -89,11 +90,15 @@ describe("watch CRUD + validation", () => {
   });
 });
 
-describe("events seed data", () => {
-  it("loadEvents reads the committed data/events.json when DATA_DIR has no copy (prod DATA_DIR is a runtime disk)", async () => {
-    const list = await loadEvents(NOW1); // DATA_DIR = empty temp dir here
-    expect(list.length).toBeGreaterThan(0);
+describe("events", () => {
+  it("loadEvents reads the live events store in DATA_DIR and never needs the network", async () => {
+    seedLiveEvents([ev("wd-Q1"), ev("wd-Q2", { recurring: false, date: "2026-12-01", month: 12 })]);
+    const list = await loadEvents(NOW1);
+    expect(list.map((e) => e.id)).toEqual(["wd-Q1", "wd-Q2"]);
     expect(list.some((e) => e.recurring)).toBe(true);
+  });
+  it("loadEvents gives an empty list, not an error, when nothing is stored", async () => {
+    expect(await loadEvents(NOW1)).toEqual([]);
   });
 });
 

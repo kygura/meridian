@@ -5,6 +5,7 @@ import { MODE_LABEL, tripLegs } from "../../lib/legs";
 import { resolveTripColor } from "../../lib/tripColors";
 import type { Booking } from "../../lib/bookingApi";
 import type { City, Journey, LegMode, Trip } from "../../types";
+import { eventKindLabel, recurringWhen } from "../../lib/eventKinds";
 import { cssColor, mixRgba, type MapColors, type RGBA } from "./useMapColors";
 
 // Trip overlays on the globe (DESIGN-v3.md §6): past journey arcs coloured by year,
@@ -81,6 +82,8 @@ export interface EventDatum {
   eventKind: string;
   date?: string;
   recurring: boolean;
+  /** The months of a recurring event that spans several. */
+  months?: number[];
   cityId: string;
   cityName: string;
 }
@@ -333,7 +336,7 @@ export function buildOverlayData(input: OverlayInput): OverlayData {
     pick.events = events;
     src["ov-events"] = {
       type: "FeatureCollection",
-      features: events.map((e, i) => point(e.coord, { i, hid: `${e.eventId}|${e.cityId}` })),
+      features: events.map((e, i) => point(e.coord, { i, hid: `${e.eventId}|${e.cityId}`, k: e.eventKind })),
     };
   }
 
@@ -591,7 +594,7 @@ export function overlayPaint(colors: MapColors, hover: string | null): Record<st
       "circle-stroke-width": 2,
     },
     "ov-events": {
-      "circle-color": colors.accent,
+      "circle-color": ["match", ["get", "k"], "nature", colors.success, "sky", colors.info, "eclipse", colors.warning, colors.accent],
       "circle-radius": z([[1, ["case", h, 5.5, 4]], [6, ["case", h, 7.5, 6]]]),
       "circle-stroke-color": colors.dot,
       "circle-stroke-width": 1.6,
@@ -651,7 +654,7 @@ export function describe(d: PickDatum, fmtDate: (iso: string) => string): { titl
     case "booking":
       return { title: `${d.from} to ${d.to}`, sub: `Booked flight · ${fmtDate(d.date)}` };
     case "event":
-      return { title: d.title, sub: `${d.cityName} · ${d.date ? fmtDate(d.date) : d.recurring ? "Every year" : d.eventKind}` };
+      return { title: d.title, sub: `${d.cityName} · ${eventKindLabel(d.eventKind)} · ${d.date ? fmtDate(d.date) : d.recurring ? recurringWhen({ month: 1, months: d.months }) : ""}`.replace(/ · $/, "") };
     case "anomaly":
       return { title: d.label, sub: d.sub };
   }

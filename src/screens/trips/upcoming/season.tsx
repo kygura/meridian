@@ -180,9 +180,9 @@ export function StopSeason({
       {events.length ? (
         <span className="trips-season-events">
           {events.map((e) => (
-            <Badge key={e.id} tone={e.recurring ? "neutral" : "warning"} title={e.title}>
+            <Badge key={e.id} tone={e.recurring ? "neutral" : "warning"} title={e.note ? `${e.title}. ${e.note}` : e.title}>
               {e.title.split(":")[0].split(" (")[0]}
-              {e.date ? ` · ${formatDay(e.date)}` : ` · ${monthName(e.month)}`}
+              {e.date ? ` · ${formatDay(e.date)}` : e.months && e.months.length > 1 ? ` · ${monthName(e.months[0]!)} to ${monthName(e.months[e.months.length - 1]!)}` : ` · ${monthName(e.month)}`}
             </Badge>
           ))}
         </span>

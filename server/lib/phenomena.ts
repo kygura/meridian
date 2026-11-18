@@ -4,10 +4,12 @@ import { getDataPath } from "./paths.js";
 import { getCityById } from "./cities.js";
 import { loadAllEvents, loadEvents } from "./replayService.js";
 import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
+import { eventInMonth } from "../../src/lib/eventKinds.js";
 
-// Map overlay data that is not a metric surface: dated events (data/events.json) placed
-// on their cities, and anomalies (data/phenomena.json): standing conflict advisories and
-// recurring seasonal hazards by month. Both files are committed seed data.
+// Map overlay data that is not a metric surface: events (live from Wikidata, see
+// liveEvents.ts) placed on their cities, and anomalies (data/phenomena.json): standing
+// conflict advisories and recurring seasonal hazards by month. The anomalies file is
+// committed seed data.
 
 interface PhenomenaFile {
   version: number;
@@ -79,12 +81,18 @@ export async function eventsForCities(cityIds: string[], now: Date = new Date())
     .filter((e) => e.cityIds.length > 0);
 }
 
-/** Events in a month (1-12), one point per city they touch. Unknown city ids are dropped. */
-export async function eventPointsFor(month: number, now: Date = new Date()): Promise<MapEventPoint[]> {
+/**
+ * Events in a month (1-12), one point per city they touch. Unknown city ids are dropped.
+ * Tourism seasons (kind "season") are left out unless `includeSeasons` is set: a peak and a
+ * shoulder season for every measured city would bury the markers, and they read better in a
+ * city's panel, a trip's season view and the lists.
+ */
+export async function eventPointsFor(month: number, now: Date = new Date(), opts: { includeSeasons?: boolean } = {}): Promise<MapEventPoint[]> {
   const events: MeridianEvent[] = await loadEvents(now);
   const out: MapEventPoint[] = [];
   for (const e of events) {
-    if (e.month !== month) continue;
+    if (!eventInMonth(e, month)) continue;
+    if (e.kind === "season" && !opts.includeSeasons) continue;
     for (const cityId of e.cityIds) {
       const c = getCityById(cityId);
       if (!c) continue;
@@ -94,6 +102,8 @@ export async function eventPointsFor(month: number, now: Date = new Date()): Pro
         kind: e.kind,
         date: e.date,
         recurring: e.recurring,
+        ...(e.months && e.months.length > 1 ? { months: e.months } : {}),
+        ...(e.note ? { note: e.note } : {}),
         cityId,
         cityName: c.name,
         country: c.country,
@@ -103,4 +113,23 @@ export async function eventPointsFor(month: number, now: Date = new Date()): Pro
     }
   }
   return out;
+}
+
+export interface EventTagCount {
+  tag: string;
+  count: number;
+}
+
+/** Distinct tags over the events that are still ahead (recurring ones always), most common first. */
+export async function eventTagCounts(now: Date = new Date(), limit = 60): Promise<EventTagCount[]> {
+  const today = now.toISOString().slice(0, 10);
+  const counts = new Map<string, number>();
+  for (const e of await loadAllEvents()) {
+    if (!e.recurring && e.date && e.date < today) continue;
+    for (const tag of new Set(e.tags.map((t) => t.toLowerCase()))) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, limit);
 }

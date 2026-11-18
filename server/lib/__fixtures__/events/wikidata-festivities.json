@@ -1,0 +1,887 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "eLabel",
+   "month",
+   "sl",
+   "coord",
+   "ended",
+   "types"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q102400"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oktoberfest"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q123"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "84"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(11.549167 48.131389)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "folk festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q102400"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Oktoberfest"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q124"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "84"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(11.549167 48.131389)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "folk festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q929531"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Sapporo Snow Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q109"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "30"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(141.35638 43.061047)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Japanese festival|winter festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q979873"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Gion Matsuri"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "28"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(135.778529 35.003645)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "goryō-e|matsuri"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q473423"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Festival d'Avignon"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "26"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(4.807305 43.95054)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q153606"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kiel Week"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q120"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "22"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(9.51416 54.470038)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "folk festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1026682"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Calgary Stampede"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "22"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-114.053888888 51.033611111)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1749262"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hakata Gion Yamakasa Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "16"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(130.41045 33.59297)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "matsuri"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2322517"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Festival Interceltique de Lorient"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q122"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "15"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-3.36128 47.7456)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Celtic festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q520500"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Sechseläuten"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q118"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "12"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(8.5459 47.3661)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "spring festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q862407"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Aomori Nebuta Matsuri"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q122"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "12"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(140.74739 40.822342)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "nebuta|matsuri"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2710193"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Aalst Carnival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q109"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "12"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(4.039166666 50.938333333)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Burgundian carnival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2710193"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Aalst Carnival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q110"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "12"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(4.039166666 50.938333333)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Burgundian carnival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q486373"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Boryeong Mud Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(126.517 36.304)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1130684"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Feast of San Gennaro"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q123"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-73.997 40.719)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4158202"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Moscow anniversary"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q123"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(37.6175 55.750555555)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Day of the Town"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2939684"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Historical Carnival of Ivrea"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q109"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(7.874797 45.467379)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Carnival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1127473"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "L.A. Outfest"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "10"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-118.24368 34.05223)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3358839"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Royal National Mod"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q124"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "10"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-3.34045 56.59157)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1126527"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Küstendorf Film and Music Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q108"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "9"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(19.508091666 43.795625)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q98594628"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kwafie Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q108"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "8"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-2.46635 7.40353)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q98594628"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kwafie Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q124"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "8"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-2.46635 7.40353)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q98594628"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kwafie Festival"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q125"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "8"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-2.46635 7.40353)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2282993"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Metageitnia"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q751019"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "7"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(23.719 37.975)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1284693"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Edinburgh Marathon"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q119"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-3.189166666 55.953333333)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q5629055"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "West Pride"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q119"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(11.9675 57.7075)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1854972"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Floralies of Ghent"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q118"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(3.725277777 51.053611111)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "flower festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1854972"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Floralies of Ghent"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q119"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(3.725277777 51.053611111)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "flower festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4120352"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Bristol International Balloon Fiesta"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q122"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(-2.64157 51.4437)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "hot air balloon festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q12874"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Les Santes"
+    },
+    "month": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "5"
+    },
+    "coord": {
+     "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+     "type": "literal",
+     "value": "Point(2.45 41.5333)"
+    },
+    "types": {
+     "type": "literal",
+     "value": "patronal festival"
+    }
+   }
+  ]
+ }
+}

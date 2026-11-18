@@ -8,6 +8,7 @@ import { comfortScore, getAllCityWeeks, peekCitySeasonality, loadSeasonality, ty
 import { getCities, getCityById } from "./cities.js";
 import { getFlightEstimate, REGION_COUNTRIES } from "./agent/tools.js";
 import { crowdProxyForMonth, loadHolidayIndexFromCache, type HolidayIndex } from "./crowd.js";
+import { eventInMonth } from "../../src/lib/eventKinds.js";
 import type {
   City,
   FlightEstimateResult,
@@ -539,7 +540,7 @@ export async function runReplay(query: ReplayQuery, deps: ReplayDeps): Promise<R
 }
 
 function eventsFor(events: MeridianEvent[] | undefined, cityId: string, month: number): MeridianEvent[] {
-  return (events ?? []).filter((e) => e.month === month && e.cityIds.includes(cityId));
+  return (events ?? []).filter((e) => eventInMonth(e, month) && e.cityIds.includes(cityId));
 }
 
 // ── real wiring ────────────────────────────────────────────────────────

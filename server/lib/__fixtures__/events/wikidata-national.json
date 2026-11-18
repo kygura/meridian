@@ -1,0 +1,1956 @@
+{
+ "head": {
+  "vars": [
+   "e",
+   "eLabel",
+   "sl",
+   "when",
+   "whenLabel",
+   "nc",
+   "countries",
+   "types"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q464458"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Eid al-Fitr"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "133"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4121955"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "1 Shawwal"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "worldwide"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Islamic holidays|religious holiday|public holiday|Islamic term"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q464458"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Eid al-Fitr"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "133"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4121948"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "2 Shawwal"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "worldwide"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Islamic holidays|religious holiday|public holiday|Islamic term"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q33881"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Tour de France"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "115"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q121"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "France"
+    },
+    "types": {
+     "type": "literal",
+     "value": "Grand Tour"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10244"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Diwali"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "107"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q19805725"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kartik Shukla Dwitiya"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Singapore|Myanmar|Suriname|Guyana|Nepal|Sri Lanka|Trinidad and Tobago|India|Bangladesh|Fiji|Mauritius"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10244"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Diwali"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "107"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2727946"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Kartik Shukla Pratipada"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Singapore|Myanmar|Suriname|Guyana|Nepal|Sri Lanka|Trinidad and Tobago|India|Bangladesh|Fiji|Mauritius"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10244"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Diwali"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "107"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724453"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Krishna Chaturdashi"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Singapore|Myanmar|Suriname|Guyana|Nepal|Sri Lanka|Trinidad and Tobago|India|Bangladesh|Fiji|Mauritius"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10244"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Diwali"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "107"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724451"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Krishna Trayodashi"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Singapore|Myanmar|Suriname|Guyana|Nepal|Sri Lanka|Trinidad and Tobago|India|Bangladesh|Fiji|Mauritius"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10244"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Diwali"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "107"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724444"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Amavasya"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "11"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Singapore|Myanmar|Suriname|Guyana|Nepal|Sri Lanka|Trinidad and Tobago|India|Bangladesh|Fiji|Mauritius"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q483236"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Nowruz"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "101"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q12889843"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "March equinox"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "23"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Serbia|India|Uzbekistan|Pakistan|Syria|Tajikistan|Turkmenistan|North Macedonia|Albania|Afghanistan|People's Republic of China|Turkey|Bosnia and Herzegovina|Azerbaijan|Georgia|Kazakhstan|Ukraine|Kurdistan|Iran|Iraq|Kyrgyzstan|Kosovo|Russia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|holiday|UN observance day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q483236"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Nowruz"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "101"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q14896458"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "1 Farvardin"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "23"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Serbia|India|Uzbekistan|Pakistan|Syria|Tajikistan|Turkmenistan|North Macedonia|Albania|Afghanistan|People's Republic of China|Turkey|Bosnia and Herzegovina|Azerbaijan|Georgia|Kazakhstan|Ukraine|Kurdistan|Iran|Iraq|Kyrgyzstan|Kosovo|Russia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|holiday|UN observance day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q483236"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Nowruz"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "101"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2433"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "March 21"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "23"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Serbia|India|Uzbekistan|Pakistan|Syria|Tajikistan|Turkmenistan|North Macedonia|Albania|Afghanistan|People's Republic of China|Turkey|Bosnia and Herzegovina|Azerbaijan|Georgia|Kazakhstan|Ukraine|Kurdistan|Iran|Iraq|Kyrgyzstan|Kosovo|Russia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|holiday|UN observance day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q131772"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Chinese New Year"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "98"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q906010"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Lunar/Lunisolar New Year's Day"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday|annual event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10259"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Holii"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "88"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2765162"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Phalguna Purnima"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "4"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Nepal|India|worldwide|Netherlands"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|spring festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q86591"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "76"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2698"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July 4"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "United States"
+    },
+    "types": {
+     "type": "literal",
+     "value": "federal holiday in the United States|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q309256"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Day of the Dead"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "63"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2997"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "November 1"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Mexico"
+    },
+    "types": {
+     "type": "literal",
+     "value": "religious holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q379519"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Mid-Autumn Festival"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "58"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q835516"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "15th day of the 8th month of the Chinese lunisolar calendar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "3"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Taiwan|Vietnam|People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724496"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Navami"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724495"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Ashtami"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724492"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Shashthi"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724490"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Panchami"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724489"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Chaturthi"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724486"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Tritiya"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724484"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Dwitiya"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q10269"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Navratri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "53"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2724469"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Ashvin Shukla Pratipada"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "India"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q35105"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Mardi Gras"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "49"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q14914941"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Easter − 47 days"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "3"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Italy|France|United States"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q215014"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Songkran"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "48"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2498"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "April 13"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Thailand"
+    },
+    "types": {
+     "type": "literal",
+     "value": "annual event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1254268"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Duanwu Festival"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "47"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q839531"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "5th day of the 5th month in the Chinese lunar calendar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "2"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Taiwan|People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q844110"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hinamatsuri"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "43"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2391"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "March 3"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Japan"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday|folk culture|Japanese festival|pentad"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q371781"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Memorial Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "43"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q14827173"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "last Monday in May"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "United States"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q844844"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Guy Fawkes Night"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "42"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2993"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "November 5"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "United Kingdom"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q581718"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Programmer's Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "38"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2228"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "January 7"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Ukraine"
+    },
+    "types": {
+     "type": "literal",
+     "value": "day|holiday|planned event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1968642"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day of Ukraine"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "38"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2825"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "August 24"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Ukraine"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q912988"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Tết"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "37"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q906010"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Lunar/Lunisolar New Year's Day"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Vietnam"
+    },
+    "types": {
+     "type": "literal",
+     "value": "annual event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q721133"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Naadam"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "37"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2701"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July 11"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Mongolia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q721133"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Naadam"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "37"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2688"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July 12"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Mongolia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q721133"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Naadam"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "37"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2687"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July 13"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Mongolia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1425496"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Loi Krathong"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "36"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q905470"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "12th month"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Thailand"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q13423122"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Qixi Festival"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "35"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q839741"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "7th day of the 7th month in the Chinese calendar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "2"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Japan|People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q13423122"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Qixi Festival"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "35"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2694"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "July 7"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "2"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Japan|People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "festival|holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q952721"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "34"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2912247"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "4 Iyar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Israel"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q952721"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "34"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2912243"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "5 Iyar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Israel"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q952721"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "34"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2912231"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "6 Iyar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Israel"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q952721"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "34"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2908563"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "3 Iyar"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Israel"
+    },
+    "types": {
+     "type": "literal",
+     "value": "national day|independence day"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q4158493"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Singles' Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "34"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2987"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "November 11"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "People's Republic of China"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q8249787"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Korean New Year"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "32"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q906010"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Lunar/Lunisolar New Year's Day"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "South Korea"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday in South Korea|annual event"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1623403"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hogmanay"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "29"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2912"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "December 31"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "United Kingdom"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q1623403"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Hogmanay"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "29"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q126"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "December"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "United Kingdom"
+    },
+    "types": {
+     "type": "literal",
+     "value": "holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q419595"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "29"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2303"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "December 6"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Finland"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday|flag day in Finland"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2007314"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day of Pakistan"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "26"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2775"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "August 14"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Pakistan"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q3210210"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day of Bangladesh"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "24"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2456"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "March 26"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Bangladesh"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holiday"
+    }
+   },
+   {
+    "e": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2782002"
+    },
+    "eLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "Independence Day"
+    },
+    "sl": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "20"
+    },
+    "when": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2355"
+    },
+    "whenLabel": {
+     "xml:lang": "en",
+     "type": "literal",
+     "value": "February 24"
+    },
+    "nc": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+     "type": "literal",
+     "value": "1"
+    },
+    "countries": {
+     "type": "literal",
+     "value": "Estonia"
+    },
+    "types": {
+     "type": "literal",
+     "value": "public holidays in Estonia|independence day"
+    }
+   }
+  ]
+ }
+}

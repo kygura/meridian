@@ -78,6 +78,14 @@ that a place's own headlines keep raising: once with deaths, or repeatedly with 
 Shown in the city panel under the curated advisories.
 _Avoid_: incident, disaster (too narrow)
 
+**Event**:
+Something at a city in a month or on a date that a traveller plans around, fetched or computed at run time
+(ADR 0021), never kept in the repository. Kinds: `festival` (local and country-wide festivities), `eclipse`
+(solar), `sky` (lunar eclipses, northern lights), `nature` (cherry blossom, autumn leaves, whale and bloom
+seasons), `season` (peak and shoulder tourism seasons). A recurring Event has a month, or `months` for a window
+that spans several; a dated one has a `date`. Film, music and arts festivals and sports are not Events.
+_Avoid_: experience (that's the journal's), alert (that's a Watch's)
+
 **Likeness** (ADR 0019):
 How alike two places are in experience: whether the same traits stand out (mountains, water,
 sea, heritage, how photographed, notable places, size), whatever their size. Measured, not rated.

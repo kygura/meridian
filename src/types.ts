@@ -667,6 +667,9 @@ export interface MapEventPoint {
   kind: MeridianEvent["kind"];
   date?: string;
   recurring: boolean;
+  /** The event's months, when it spans more than one. */
+  months?: number[];
+  note?: string;
   cityId: string;
   cityName: string;
   country: string;
@@ -706,13 +709,27 @@ export interface MapAnomaly {
 export interface MeridianEvent {
   id: string;
   title: string;
-  kind: "eclipse" | "festival" | "sport" | "culture" | "other";
+  /**
+   * festival: local festivities. eclipse: solar eclipses. sky: lunar eclipses and aurora.
+   * nature: bloom, leaf colour and wildlife seasons. season: peak and shoulder tourism
+   * seasons. sport, culture and other are kept for stored data from earlier versions.
+   */
+  kind: "festival" | "eclipse" | "sky" | "nature" | "season" | "culture" | "sport" | "other";
   cityIds: string[];
-  month: number; // 1-12
+  /** First month of the event, 1-12. For an event spanning several months, the first of `months`. */
+  month: number;
+  /** Every month the event covers (1-12, in order from `month`), for windows such as a bloom or a season. */
+  months?: number[];
+  /** One line of detail, such as the normal window or the observation count behind a nature season. */
+  note?: string;
   /** Specific occurrence date (YYYY-MM-DD); absent for recurring annual events. */
   date?: string;
   recurring: boolean;
   tags: string[];
+  /** Where the event came from: "wikidata", "jma", "inaturalist", "noaa-swpc" or "meridian" (computed). */
+  source?: string;
+  /** The source's page for this event (the Wikidata item, the JMA table, the iNaturalist observations). */
+  sourceUrl?: string;
 }
 
 // ── Notices (ADR 0016) ───────────────────────────────────────────────
