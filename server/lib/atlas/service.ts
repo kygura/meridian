@@ -20,12 +20,16 @@ import {
   atlasConfigSchema,
   atlasNotifyInputSchema,
   discoveryInputSchema,
+  fireInputSchema,
   importInputSchema,
+  signalInputSchema,
+  wishlistPatchSchema,
   scanInputSchema,
   tripPlanInputSchema,
   wishlistEntryInputSchema,
   type AtlasConfig,
   type AtlasPlace,
+  type AtlasSignal,
   type PlaceRef,
 } from "./schemas.js";
 import {
@@ -45,9 +49,29 @@ import {
 export const MAX_FARES = 20_000;
 export const MAX_RUNS = 200;
 
+export interface ScanHighlight {
+  flightId: string;
+  destination: string;
+  origin: string;
+  departDate: string;
+  returnDate: string;
+  priceEur: number | null;
+  composite: number;
+  priceVsMedianPct: number | null;
+  baselineDeal: boolean;
+  opportunity: boolean;
+  passed: boolean;
+  bookingUrl: string | null;
+}
+
 export interface RunSummary {
   id: string;
-  kind: "scan" | "discovery";
+  kind: "scan" | "discovery" | "fire";
+  /** Fire runs only: whether the routine accepted the request. */
+  status?: "fired" | "failed";
+  detail?: string;
+  /** Scan runs: the five best results, for the Scout screen. */
+  highlights?: ScanHighlight[];
   mode: string;
   at: string;
   origin: string | null;
@@ -63,6 +87,7 @@ interface AtlasFile {
   places: AtlasPlace[];
   fares: FareRecord[];
   runs: RunSummary[];
+  signals?: AtlasSignal[];
 }
 
 const store = createJsonStore<AtlasFile>("atlas.json", () => ({ version: 1, places: [], fares: [], runs: [] }));
@@ -179,6 +204,7 @@ export async function upsertWishlist(raw: unknown, now = new Date(), opts: { sta
         ...(input.notes ?? prev?.notes ? { notes: input.notes ?? prev?.notes } : {}),
         ...(input.watch ? { watch: input.watch } : prev?.watch ? { watch: prev.watch } : {}),
         ...(input.discoveryScore != null ? { discoveryScore: input.discoveryScore } : prev?.discoveryScore != null ? { discoveryScore: prev.discoveryScore } : {}),
+        priority: input.priority ?? prev?.priority ?? 3,
         addedAt: prev?.addedAt ?? at,
         ...(input.source === "scouted" && opts.stampScouted !== false ? { lastScoutedAt: at } : prev?.lastScoutedAt ? { lastScoutedAt: prev.lastScoutedAt } : {}),
         updatedAt: at,
@@ -310,9 +336,103 @@ function crowdFor(cityId: string, month: number, months: MonthSeasonality[] | un
   return c ? Math.round(c.value) : null;
 }
 
+const RESEARCH_FRESH_DAYS = 30;
+const MAX_RESEARCH_NEEDED = 12;
+const MAX_IDEAS_PER_WINDOW = 5;
+
+function km(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad;
+  const dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+
+export interface TripIdea {
+  window: "a" | "b";
+  from: string;
+  to: string;
+  cityId: string;
+  name: string;
+  country: string;
+  iata?: string;
+  score: number;
+  km: number | null;
+  parts: { season: number | null; quiet: number | null; conditions: number | null; priority: number; near: number | null };
+  reasons: string[];
+}
+
+/**
+ * Wishlist places ranked for one window, from where the owner is: 0.35 season (comfort), 0.2 quiet
+ * (researched quiet, else 100 minus the crowd proxy), 0.15 conditions (researched only), 0.15
+ * priority, 0.15 nearness (100 at the origin, 0 at 8,000 km). A part with no figure is left out
+ * and the rest reweighted. Places to avoid in every month of the window are skipped.
+ */
+export function rankIdeas(
+  win: { key: "a" | "b"; from: string; to: string },
+  places: { place: AtlasPlace; months?: MonthSeasonality[] }[],
+  signals: readonly AtlasSignal[],
+  from: { lat: number; lng: number } | null,
+  crowd: (cityId: string, month: number, months?: MonthSeasonality[]) => number | null
+): TripIdea[] {
+  const winMonths = monthsBetween(win.from, win.to);
+  const out: TripIdea[] = [];
+  for (const { place, months } of places) {
+    const ok = winMonths.filter((m) => !place.avoidMonths.includes(m));
+    if (!ok.length) continue;
+    const sig = signals.filter((x) => x.cityId === place.cityId && ok.includes(x.month));
+    const season = months ? mean(ok.map((m) => months[m - 1].score)) : null;
+    const q = mean(sig.flatMap((x) => (x.quiet != null ? [(x.quiet - 1) * 25] : [])));
+    const crowds = ok.map((m) => crowd(place.cityId, m, months)).filter((c): c is number => c != null);
+    const quiet = q ?? (crowds.length ? 100 - mean(crowds)! : null);
+    const conditions = mean(sig.flatMap((x) => (x.conditions != null ? [(x.conditions - 1) * 25] : [])));
+    const priority = ((place.priority ?? 3) - 1) * 25;
+    const dist = from ? km(from, place) : null;
+    const near = dist == null ? null : Math.max(0, 100 - dist / 80);
+    const parts: [number | null, number][] = [
+      [season, 0.35],
+      [quiet, 0.2],
+      [conditions, 0.15],
+      [priority, 0.15],
+      [near, 0.15],
+    ];
+    const used = parts.filter((p): p is [number, number] => p[0] != null);
+    const score = used.reduce((a, [v, w]) => a + v * w, 0) / used.reduce((a, [, w]) => a + w, 0);
+    const reasons: string[] = [];
+    if (season != null) reasons.push(`comfort ${Math.round(season)} in ${ok.map((m) => MONTH_NAMES[m - 1]).join("-")}`);
+    if (q != null) reasons.push(`researched quiet ${Math.round(q / 25 + 1)}/5`);
+    else if (quiet != null) reasons.push(`crowds about ${Math.round(100 - quiet)} of 100 (proxy)`);
+    if (conditions != null) reasons.push(`conditions ${Math.round(conditions / 25 + 1)}/5`);
+    const events = sig.flatMap((x) => x.events.map((e) => e.title));
+    if (events.length) reasons.push(`events: ${events.slice(0, 3).join(", ")}`);
+    if (dist != null) reasons.push(`${Math.round(dist)} km away`);
+    out.push({
+      window: win.key,
+      from: win.from,
+      to: win.to,
+      cityId: place.cityId,
+      name: place.name,
+      country: place.country,
+      ...(place.iata ? { iata: place.iata } : {}),
+      score: round(score),
+      km: dist == null ? null : Math.round(dist),
+      parts: { season: season == null ? null : round(season), quiet: quiet == null ? null : round(quiet), conditions: conditions == null ? null : round(conditions), priority, near: near == null ? null : round(near) },
+      reasons,
+    });
+  }
+  return out.sort((a, b) => b.score - a.score).slice(0, MAX_IDEAS_PER_WINDOW);
+}
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export const routineConfigured = (env: NodeJS.ProcessEnv = process.env) => !!(env.ATLAS_ROUTINE_FIRE_URL?.trim() && env.ATLAS_ROUTINE_TOKEN?.trim());
+
 export async function buildContext(today = todayIso()) {
   const f = await store.read();
   const config = configOf(f);
+  const signals = f.signals ?? [];
   const rot = await readRotation();
   const { origin, rotation } = resolveOrigin(rot.stays as RotationStay[], rot.settings.home, today, config);
   const windows = {
@@ -321,11 +441,16 @@ export async function buildContext(today = todayIso()) {
   };
   const touched = [...new Set([...monthsBetween(windows.a.from, windows.a.to), ...monthsBetween(windows.b.from, windows.b.to)])];
   const thisMonth = monthOf(today);
+  const fresh = addDays(today, -RESEARCH_FRESH_DAYS);
+  const signalFor = (cityId: string, m: number) => signals.find((x) => x.cityId === cityId && x.month === m);
 
   const budget = { left: MAX_CONTEXT_FETCHES };
   const wishlist = [];
+  const withMonths: { place: AtlasPlace; months?: MonthSeasonality[] }[] = [];
+  const researchNeeded: { cityId: string; name: string; priority: number; months: number[] }[] = [];
   for (const place of f.places) {
     const months = await monthsFor(place.cityId, budget);
+    withMonths.push({ place, months });
     const best = months
       ? months
           .map((m, i) => ({ month: i + 1, score: m.score }))
@@ -336,17 +461,33 @@ export async function buildContext(today = todayIso()) {
       : [];
     wishlist.push({
       ...place,
+      priority: place.priority ?? 3,
       season: {
-        months: touched.map((m) => ({
-          month: m,
-          comfort: months ? Math.round(months[m - 1].score) : null,
-          crowd: crowdFor(place.cityId, m, months),
-        })),
+        months: touched.map((m) => {
+          const sig = signalFor(place.cityId, m);
+          return { month: m, comfort: months ? Math.round(months[m - 1].score) : null, crowd: crowdFor(place.cityId, m, months), ...(sig ? { signal: sig } : {}) };
+        }),
+        /** Comfort for Jan..Dec, for a 12-month strip. */
+        year: months ? months.map((m) => Math.round(m.score)) : null,
         bestMonths: best,
         avoidNow: place.avoidMonths.includes(thisMonth),
       },
     });
+    // Research the window months and the two best months, skipping avoided ones and fresh research.
+    const want = [...new Set([...touched, ...best.slice(0, 2)])].filter((m) => !place.avoidMonths.includes(m));
+    const stale = want.filter((m) => {
+      const sig = signalFor(place.cityId, m);
+      return !sig || sig.researchedAt.slice(0, 10) < fresh;
+    });
+    if (stale.length) researchNeeded.push({ cityId: place.cityId, name: place.name, priority: place.priority ?? 3, months: stale });
   }
+  researchNeeded.sort((a, b) => b.priority - a.priority);
+
+  const from = origin.cityId ? getCityById(origin.cityId) ?? null : null;
+  const ideas = [
+    ...rankIdeas({ key: "a", ...windows.a }, withMonths, signals, from, crowdFor),
+    ...rankIdeas({ key: "b", ...windows.b }, withMonths, signals, from, crowdFor),
+  ];
 
   const cutoff = addDays(today, -config.discoveryWeights.repeatWindowDays);
   const recentlyScouted = f.places
@@ -361,9 +502,122 @@ export async function buildContext(today = todayIso()) {
     windows,
     config,
     wishlist,
+    ideas,
+    researchNeeded: researchNeeded.slice(0, MAX_RESEARCH_NEEDED),
     recentlyScouted,
     lastRuns: f.runs.slice(0, 5),
+    routine: { configured: routineConfigured() },
   };
+}
+
+// ── Wishlist edits ───────────────────────────────────────────────────
+
+export async function patchWishlist(cityId: string, raw: unknown, now = new Date()): Promise<AtlasPlace | null> {
+  const parsed = wishlistPatchSchema.safeParse(raw);
+  if (!parsed.success) throw new AtlasInputError("invalid_patch", "The change does not validate.", parsed.error.issues);
+  const p = parsed.data;
+  return store.update((f) => {
+    const place = f.places.find((x) => x.cityId === cityId);
+    if (!place) return null;
+    if (p.priority !== undefined) place.priority = p.priority;
+    if (p.intentTags !== undefined) place.intentTags = [...new Set(p.intentTags)];
+    if (p.avoidMonths !== undefined) place.avoidMonths = [...new Set(p.avoidMonths)].sort((a, b) => a - b);
+    if (p.notes === null) delete place.notes;
+    else if (p.notes !== undefined) place.notes = p.notes;
+    if (p.watch === null) delete place.watch;
+    else if (p.watch !== undefined) place.watch = p.watch;
+    if (p.source !== undefined) place.source = p.source;
+    place.updatedAt = nowIso(now);
+    return place;
+  });
+}
+
+// ── Season research ──────────────────────────────────────────────────
+
+export const MAX_SIGNALS = 3000;
+
+export async function recordSignals(raw: unknown, now = new Date()): Promise<{ stored: number; unresolved: Unresolved[] }> {
+  const list = isObject(raw) && Array.isArray(raw.signals) ? raw.signals : null;
+  if (!list) throw new AtlasInputError("invalid_signals", "Send { signals: [...] }.");
+  const parsed = list.map((x) => signalInputSchema.safeParse(x));
+  const bad = parsed.findIndex((p) => !p.success);
+  if (bad !== -1) throw new AtlasInputError("invalid_signals", `Signal ${bad} does not validate.`, parsed[bad].error?.issues);
+  const unresolved: Unresolved[] = [];
+  const rows: AtlasSignal[] = [];
+  for (const p of parsed) {
+    const x = p.data!;
+    const city = resolvePlace(x.place);
+    if (!city) {
+      unresolved.push({ place: x.place, reason: `No city matches '${refText(x.place)}'` });
+      continue;
+    }
+    rows.push({
+      cityId: city.id,
+      month: x.month,
+      ...(x.quiet != null ? { quiet: x.quiet } : {}),
+      ...(x.conditions != null ? { conditions: x.conditions } : {}),
+      events: x.events,
+      ...(x.note ? { note: x.note } : {}),
+      sources: x.sources,
+      researchedAt: nowIso(now),
+    });
+  }
+  await store.update((f) => {
+    const keep = (f.signals ?? []).filter((old) => !rows.some((r) => r.cityId === old.cityId && r.month === old.month));
+    f.signals = [...rows, ...keep].slice(0, MAX_SIGNALS);
+  });
+  return { stored: rows.length, unresolved };
+}
+
+export async function listSignals(cityId?: string): Promise<AtlasSignal[]> {
+  const all = (await store.read()).signals ?? [];
+  return cityId ? all.filter((x) => x.cityId === cityId).sort((a, b) => a.month - b.month) : all;
+}
+
+// ── Firing the routine ───────────────────────────────────────────────
+
+/**
+ * Starts the Atlas routine through its API trigger (ATLAS_ROUTINE_FIRE_URL and ATLAS_ROUTINE_TOKEN,
+ * from the routine's API trigger on claude.ai). The routine reads its context from /api/atlas itself,
+ * so the payload only names the mode.
+ */
+export async function fireRoutine(raw: unknown, deps: { env?: NodeJS.ProcessEnv; fetch?: typeof fetch; now?: Date } = {}): Promise<RunSummary> {
+  const parsed = fireInputSchema.safeParse(raw ?? {});
+  if (!parsed.success) throw new AtlasInputError("invalid_run", "The run request does not validate.", parsed.error.issues);
+  const env = deps.env ?? process.env;
+  const now = deps.now ?? new Date();
+  const run: RunSummary = { id: runId("fire", now), kind: "fire", mode: parsed.data.mode, at: nowIso(now), origin: null, counts: {}, status: "fired" };
+  if (!routineConfigured(env)) {
+    run.status = "failed";
+    run.detail = "ATLAS_ROUTINE_FIRE_URL and ATLAS_ROUTINE_TOKEN are not set on the server.";
+  } else {
+    const text = [`atlas ${parsed.data.mode}`, `run_id: ${run.id}`, ...(parsed.data.text ? ["", parsed.data.text] : [])].join("\n");
+    try {
+      const res = await (deps.fetch ?? fetch)(env.ATLAS_ROUTINE_FIRE_URL!.trim(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.ATLAS_ROUTINE_TOKEN!.trim()}`,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "experimental-cc-routine-2026-04-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) {
+        run.status = "failed";
+        run.detail = `The routine trigger answered ${res.status}: ${(await res.text()).slice(0, 200)}`;
+      }
+    } catch (err) {
+      run.status = "failed";
+      run.detail = `The routine trigger could not be reached: ${err instanceof Error ? err.message : String(err)}`.slice(0, 300);
+    }
+  }
+  await store.update((f) => {
+    f.runs.unshift(run);
+    f.runs = f.runs.slice(0, MAX_RUNS);
+  });
+  return run;
 }
 
 // ── Seasonal ranking ─────────────────────────────────────────────────
@@ -502,6 +756,20 @@ export async function recordScan(raw: unknown, now = new Date()) {
       origin: input.origin,
       counts: { flights: input.flights.length, scored: scored.length, rejected: rejected.length, passed: scored.filter((s) => s.gates.passed).length, watchHits: watchHits.length },
       top: top ? { flightId: top.flight.id, destination: top.flight.destinationName, priceEur: top.flight.priceEur, composite: top.composite } : null,
+      highlights: scored.slice(0, 5).map((s) => ({
+        flightId: s.flight.id,
+        destination: s.flight.destinationName,
+        origin: s.flight.origin,
+        departDate: s.flight.departDate,
+        returnDate: s.flight.returnDate,
+        priceEur: s.flight.priceEur,
+        composite: s.composite,
+        priceVsMedianPct: s.priceVsMedianPct,
+        baselineDeal: s.baselineDeal,
+        opportunity: s.opportunity,
+        passed: s.gates.passed,
+        bookingUrl: s.flight.bookingUrl,
+      })),
     });
     f.runs = f.runs.slice(0, MAX_RUNS);
     return { runId: id, scored, rejected, watchHits, selection };

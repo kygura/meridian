@@ -9,6 +9,10 @@ import {
   atlasNotify,
   buildContext,
   createTripFromPlan,
+  fireRoutine,
+  listSignals,
+  patchWishlist,
+  recordSignals,
   getConfig,
   importLegacy,
   listRuns,
@@ -72,6 +76,15 @@ atlas.post("/wishlist", async (c) => {
   const input = await body(c);
   return handle(c, () => upsertWishlist(input));
 });
+atlas.patch("/wishlist/:cityId", async (c) => {
+  const input = await body(c);
+  try {
+    const place = await patchWishlist(c.req.param("cityId"), input);
+    return place ? c.json({ entry: place }) : c.json({ error: "not_found" }, 404);
+  } catch (err) {
+    return handle(c, () => Promise.reject(err));
+  }
+});
 atlas.delete("/wishlist/:cityId", (c) => handle(c, async () => ({ removed: await removeFromWishlist(c.req.param("cityId")) })));
 
 atlas.post("/scans", async (c) => {
@@ -89,6 +102,18 @@ atlas.post("/trips", async (c) => {
 atlas.post("/notify", async (c) => {
   const input = await body(c);
   return handle(c, () => atlasNotify(input), 201);
+});
+
+atlas.get("/signals", (c) => handle(c, async () => ({ signals: await listSignals(c.req.query("cityId") || undefined) })));
+atlas.post("/signals", async (c) => {
+  const input = await body(c);
+  return handle(c, () => recordSignals(input), 201);
+});
+
+/** POST /api/atlas/run { mode: scan|discover|research, text? }: start the routine now. */
+atlas.post("/run", async (c) => {
+  const input = await body(c);
+  return handle(c, async () => ({ run: await fireRoutine(input) }), 201);
 });
 
 atlas.get("/runs", (c) => handle(c, async () => ({ runs: await listRuns(Number(c.req.query("limit") ?? 20) || 20) })));

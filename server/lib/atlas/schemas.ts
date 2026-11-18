@@ -128,6 +128,18 @@ export const wishlistEntryInputSchema = z.object({
   notes: z.string().max(2000).optional(),
   watch: watchSchema.optional(),
   discoveryScore: z.number().min(0).max(10).optional(),
+  /** 1 (someday) to 5 (next chance I get). Default 3. */
+  priority: z.number().int().min(1).max(5).optional(),
+});
+
+/** PATCH /api/atlas/wishlist/:cityId: change one place's own fields. Null removes the watch or the notes. */
+export const wishlistPatchSchema = z.object({
+  priority: z.number().int().min(1).max(5).optional(),
+  intentTags: z.array(z.string().max(60)).max(20).optional(),
+  avoidMonths: z.array(month).max(12).optional(),
+  notes: z.string().max(2000).nullable().optional(),
+  watch: watchSchema.nullable().optional(),
+  source: z.enum(["wished", "scouted"]).optional(),
 });
 export type WishlistEntryInput = z.input<typeof wishlistEntryInputSchema>;
 
@@ -144,10 +156,47 @@ export interface AtlasPlace {
   notes?: string;
   watch?: z.infer<typeof watchSchema>;
   discoveryScore?: number;
+  priority: number;
   addedAt: string;
   lastScoutedAt?: string;
   updatedAt: string;
 }
+
+// ── Season research (signals) ────────────────────────────────────────
+
+/** What the routine found about one place in one month: what climate data cannot show. */
+export const signalInputSchema = z.object({
+  place: placeRefSchema,
+  month,
+  /** 5 = genuine low or shoulder season, 1 = peak crowds. */
+  quiet: score5.optional(),
+  /** Fit for the place's activities that month (swell, trails, visibility, wildlife). */
+  conditions: score5.optional(),
+  events: z
+    .array(z.object({ title: z.string().min(1).max(200), date: isoDateSchema.optional() }))
+    .max(20)
+    .default([]),
+  note: z.string().max(500).optional(),
+  sources: z.array(link).max(5).default([]),
+});
+
+export interface AtlasSignal {
+  cityId: string;
+  month: number;
+  quiet?: number;
+  conditions?: number;
+  events: { title: string; date?: string }[];
+  note?: string;
+  sources: string[];
+  researchedAt: string;
+}
+
+export const runModes2 = ["scan", "discover", "research"] as const;
+export const fireInputSchema = z.object({
+  mode: z.enum(runModes2).default("scan"),
+  /** Extra words for the routine, as a Telegram message would carry. */
+  text: z.string().max(2000).optional(),
+});
 
 // ── Scans ────────────────────────────────────────────────────────────
 

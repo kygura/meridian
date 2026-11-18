@@ -314,3 +314,71 @@ describe("import", () => {
     expect((await call("GET", "/api/atlas/context?today=2026-11-18")).body.recentlyScouted).toEqual([]);
   });
 });
+
+describe("research, ideas and the routine", () => {
+  it("stores season research, ranks trip ideas from the origin and lists what still needs research", async () => {
+    await call("POST", "/api/atlas/wishlist", {
+      entries: [
+        { place: { cityId: "lisbon-portugal" }, priority: 5 },
+        { place: { cityId: "madrid-spain" }, priority: 1 },
+      ],
+    });
+    const before = await call("GET", "/api/atlas/context?today=2026-11-18");
+    expect(before.body.researchNeeded[0]).toMatchObject({ cityId: "lisbon-portugal", priority: 5 });
+    expect(before.body.researchNeeded[0].months).toEqual(expect.arrayContaining([12, 1]));
+
+    const s = await call("POST", "/api/atlas/signals", {
+      signals: [
+        { place: { cityId: "lisbon-portugal" }, month: 12, quiet: 5, conditions: 4, events: [{ title: "Christmas market", date: "2026-12-01" }], sources: ["https://example.com/a"] },
+        { place: { cityId: "lisbon-portugal" }, month: 1, quiet: 4, conditions: 4 },
+        { place: { query: "Nowhere-at-all-xyz" }, month: 1, quiet: 3 },
+      ],
+    });
+    expect(s.body).toMatchObject({ stored: 2, unresolved: [expect.anything()] });
+
+    const ctx = await call("GET", "/api/atlas/context?today=2026-11-18");
+    const lisbon = ctx.body.wishlist.find((w: any) => w.cityId === "lisbon-portugal");
+    expect(lisbon.season.months[0].signal).toMatchObject({ quiet: 5, events: [{ title: "Christmas market" }] });
+    expect(lisbon.season.year).toHaveLength(12);
+    expect(ctx.body.researchNeeded.find((r: any) => r.cityId === "lisbon-portugal")?.months ?? []).not.toContain(12);
+
+    const ideasA = ctx.body.ideas.filter((i: any) => i.window === "a");
+    expect(ideasA[0]).toMatchObject({ cityId: "lisbon-portugal" });
+    expect(ideasA[0].reasons.join(" ")).toContain("researched quiet 5/5");
+    expect(ideasA[0].km).toBeGreaterThan(0);
+    expect(ctx.body.routine).toEqual({ configured: false });
+  });
+
+  it("edits a place, and removes its watch with null", async () => {
+    await call("POST", "/api/atlas/wishlist", { entries: [{ place: { cityId: "lisbon-portugal" }, watch: { targetBudgetEur: { max: 100 } } }] });
+    const r = await call("PATCH", "/api/atlas/wishlist/lisbon-portugal", { priority: 4, avoidMonths: [8, 7], watch: null });
+    expect(r.body.entry).toMatchObject({ priority: 4, avoidMonths: [7, 8] });
+    expect(r.body.entry.watch).toBeUndefined();
+    expect((await call("PATCH", "/api/atlas/wishlist/nowhere", { priority: 2 })).status).toBe(404);
+    expect((await call("PATCH", "/api/atlas/wishlist/lisbon-portugal", { priority: 9 })).status).toBe(400);
+  });
+
+  it("records a failed run when the routine trigger is not configured", async () => {
+    delete process.env.ATLAS_ROUTINE_FIRE_URL;
+    const r = await call("POST", "/api/atlas/run", { mode: "discover" });
+    expect(r.status).toBe(201);
+    expect(r.body.run).toMatchObject({ kind: "fire", mode: "discover", status: "failed" });
+    expect((await call("GET", "/api/atlas/runs")).body.runs[0].id).toBe(r.body.run.id);
+  });
+});
+
+describe("fireRoutine", () => {
+  it("posts the mode to the routine trigger with its token", async () => {
+    const { fireRoutine } = await import("../lib/atlas/service.js");
+    const seen: { url: string; init: RequestInit }[] = [];
+    const fake = (async (url: string, init: RequestInit) => {
+      seen.push({ url, init });
+      return new Response("{}", { status: 200 });
+    }) as unknown as typeof fetch;
+    const run = await fireRoutine({ mode: "scan", text: "surf in December" }, { env: { ATLAS_ROUTINE_FIRE_URL: "https://example.com/fire", ATLAS_ROUTINE_TOKEN: "rt" }, fetch: fake });
+    expect(run.status).toBe("fired");
+    expect(seen[0].url).toBe("https://example.com/fire");
+    expect((seen[0].init.headers as Record<string, string>).Authorization).toBe("Bearer rt");
+    expect(JSON.parse(String(seen[0].init.body)).text).toMatch(/^atlas scan\nrun_id: fire_\d{8}_\w+\n\nsurf in December$/);
+  });
+});
