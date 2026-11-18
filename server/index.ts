@@ -6,6 +6,7 @@ import { execSync } from "child_process";
 import app from "./app.js";
 import { startClimateJob } from "./lib/climateJob.js";
 import { startDailyScheduler } from "./lib/scheduler.js";
+import { getLiveEvents } from "./lib/liveEvents.js";
 
 // Serve static files from dist/ in production. The security headers (CSP, nosniff,
 // frame-ancestors, referrer policy) are added to these too: installGuards in app.ts
@@ -100,3 +101,5 @@ async function startServer(port: number): Promise<void> {
 
 startServer(port);
 startClimateJob();
+// Fill the live events store on first boot (a no-op while it is fresh); never throws.
+void getLiveEvents();

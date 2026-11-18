@@ -1,4 +1,5 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { eventTagLabel, fetchEventTags, type EventTag } from "../../../lib/eventsApi";
 import { saveSettings } from "../../../lib/journalApi";
 import {
   DEFAULT_CONTROLS,
@@ -34,25 +35,6 @@ const REGIONS: { value: string; label: string }[] = [
   { value: "africa", label: "Africa" },
   { value: "latin america", label: "Latin America" },
   { value: "equator", label: "Near the equator" },
-];
-// Distinct tags in data/events.json (the client has no events endpoint to ask).
-const EVENT_TAGS: { value: string; label: string }[] = [
-  { value: "festival", label: "Festivals" },
-  { value: "carnival", label: "Carnival" },
-  { value: "music", label: "Music" },
-  { value: "arts", label: "Arts" },
-  { value: "culture", label: "Culture" },
-  { value: "sport", label: "Sport" },
-  { value: "marathon", label: "Marathons" },
-  { value: "nature", label: "Nature" },
-  { value: "cherry-blossom", label: "Cherry blossom" },
-  { value: "eclipse", label: "Eclipses" },
-  { value: "oktoberfest", label: "Oktoberfest" },
-  { value: "day-of-the-dead", label: "Day of the Dead" },
-  { value: "holi", label: "Holi" },
-  { value: "songkran", label: "Songkran" },
-  { value: "lanterns", label: "Lanterns" },
-  { value: "winter", label: "Winter" },
 ];
 const FLIGHT_HOURS = [3, 6, 9, 12, 16];
 
@@ -96,6 +78,18 @@ export interface RepeatToolbarProps {
 /** Compact controls: temperature, when, budget, crowds, and the rest under "More filters". */
 export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, templateClimate, fromCity }: RepeatToolbarProps) {
   const [more, setMore] = useState(false);
+  // Tag chips come from the live events; loaded the first time the filters sheet opens.
+  const [eventTags, setEventTags] = useState<EventTag[] | "loading" | "failed" | null>(null);
+  useEffect(() => {
+    if (!more || eventTags !== null) return;
+    setEventTags("loading");
+    fetchEventTags()
+      .then(setEventTags)
+      .catch(() => setEventTags("failed"));
+  }, [more, eventTags]);
+  const tagChips = Array.isArray(eventTags) ? eventTags.map((t) => t.tag) : [];
+  // A tag already chosen stays visible even when the list has not loaded or no longer carries it.
+  const shownTags = [...new Set([...controls.tags, ...tagChips])];
   const set = (p: Partial<Controls>) => onChange({ ...controls, ...p });
   const scorable = scorableWeights(fingerprint, templateClimate);
   const shares = weightShares(controls.weights, scorable);
@@ -344,12 +338,15 @@ export function RepeatToolbar({ controls, onChange, baseMonth, fingerprint, temp
           <section className="plan-repeat-section">
             <SectionHeader level={3} title="Happening while you're there" />
             <div className="plan-repeat-chips">
-              {EVENT_TAGS.map((t) => (
-                <Chip key={t.value} selected={controls.tags.includes(t.value)} onClick={() => set({ tags: toggle(controls.tags, t.value) })}>
-                  {t.label}
+              {shownTags.map((t) => (
+                <Chip key={t} selected={controls.tags.includes(t)} onClick={() => set({ tags: toggle(controls.tags, t) })}>
+                  {eventTagLabel(t)}
                 </Chip>
               ))}
             </div>
+            {eventTags === "loading" && <p className="plan-repeat-hint">Loading events.</p>}
+            {eventTags === "failed" && <p className="plan-repeat-hint">Events could not be loaded.</p>}
+            {Array.isArray(eventTags) && eventTags.length === 0 && <p className="plan-repeat-hint">No event data yet. It is fetched from Wikidata once a day.</p>}
           </section>
         </div>
       </Sheet>

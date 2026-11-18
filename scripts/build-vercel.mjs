@@ -38,9 +38,9 @@ await build({
   banner: { js: "import { createRequire as __cr } from 'module'; const require = __cr(import.meta.url);" },
 });
 
-// Datasets the server reads from data/ (cities, airports, capitals, seasonality seed, events, phenomena).
+// Datasets the server reads from data/ (cities, airports, capitals, seasonality seed, phenomena).
 // Personal data never ships: it lives in Postgres (DATABASE_URL).
-const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "events.json", "phenomena.json", "native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json"];
+const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "phenomena.json", "native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json"];
 mkdirSync(join(fn, "data"), { recursive: true });
 // Optional datasets: the server copes without them (the feature reports "no data").
 const OPTIONAL = new Set(["native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json"]);

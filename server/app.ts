@@ -31,6 +31,7 @@ import atlasRoutes from "./routes/atlas.js";
 import atlasTelegramRoutes from "./routes/atlasTelegram.js";
 // Registers the "bridges" daily job (Notion import, Gmail sync) with the one scheduler (ADR 0016).
 import "./lib/bridgesJob.js";
+import "./lib/eventsJob.js";
 import { gateRoutes } from "./middleware/auth.js";
 import { installGuards } from "./middleware/guards.js";
 import authRoutes from "./routes/auth.js";

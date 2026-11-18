@@ -5,9 +5,10 @@ import { getCityById } from "./cities.js";
 import { loadAllEvents, loadEvents } from "./replayService.js";
 import type { MapAnomaly, MapEventPoint, MeridianEvent } from "../../src/types.js";
 
-// Map overlay data that is not a metric surface: dated events (data/events.json) placed
-// on their cities, and anomalies (data/phenomena.json): standing conflict advisories and
-// recurring seasonal hazards by month. Both files are committed seed data.
+// Map overlay data that is not a metric surface: events (live from Wikidata, see
+// liveEvents.ts) placed on their cities, and anomalies (data/phenomena.json): standing
+// conflict advisories and recurring seasonal hazards by month. The anomalies file is
+// committed seed data.
 
 interface PhenomenaFile {
   version: number;
@@ -103,4 +104,23 @@ export async function eventPointsFor(month: number, now: Date = new Date()): Pro
     }
   }
   return out;
+}
+
+export interface EventTagCount {
+  tag: string;
+  count: number;
+}
+
+/** Distinct tags over the events that are still ahead (recurring ones always), most common first. */
+export async function eventTagCounts(now: Date = new Date(), limit = 60): Promise<EventTagCount[]> {
+  const today = now.toISOString().slice(0, 10);
+  const counts = new Map<string, number>();
+  for (const e of await loadAllEvents()) {
+    if (!e.recurring && e.date && e.date < today) continue;
+    for (const tag of new Set(e.tags.map((t) => t.toLowerCase()))) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, limit);
 }
