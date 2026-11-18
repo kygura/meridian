@@ -252,7 +252,7 @@ See `Watch` and `Alert` in `src/types.ts`.
   Claude scheduled task). No in-process timer.
 - **Delivery:** alerts show in the NewsTicker (`glyph: "good"`) and an alerts list in the
   journal. An optional `ALERT_WEBHOOK_URL` gets a JSON POST.
-- **Events overlay:** committed `data/events.json` with solar eclipses (paths simplified
+- **Events overlay:** live events from Wikidata (ADR 0021; this section first specified a committed `data/events.json`) with solar eclipses (paths simplified
   to city hits) and major recurring events. Shown as markers on replay grid cells and
   usable as a replay constraint (`constraints.tags: ["eclipse"]`).
 

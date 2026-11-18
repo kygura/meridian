@@ -40,7 +40,7 @@ Live: https://meridian-virid-nine.vercel.app
 - **Frontend:** React 19, Vite 6, TypeScript, Zustand, MapLibre GL. Hand-written CSS.
 - **Server:** Hono on Node 22 (`tsx`), zod validation.
 - **Storage:** one document store with two backends: JSON files under `DATA_DIR`, or Postgres when `DATABASE_URL` is set (ADR 0006).
-- **External services, all optional:** Anthropic Claude (assistant and news briefing), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images), Google News search RSS (city and country headlines; Google allows personal, non-commercial use of these feeds).
+- **External services, all optional:** Anthropic Claude (assistant and news briefing), Duffel and SerpAPI (flight prices), Open-Meteo (climate), Wikipedia/Wikimedia (images), Wikidata (events), Google News search RSS (city and country headlines; Google allows personal, non-commercial use of these feeds).
 - **Tests:** Vitest. CI (`.github/workflows/ci.yml`) runs typecheck, tests and build on every push and pull request.
 
 ## Data sources
@@ -48,6 +48,7 @@ Live: https://meridian-virid-nine.vercel.app
 - Cities: `data/worldcities.csv` (name, coordinates, country, population; origin not recorded in this repo), matched to airports from [OurAirports](https://ourairports.com/data/) and capitals from [mledoze/countries](https://github.com/mledoze/countries).
 - Country outlines: [Natural Earth](https://www.naturalearthdata.com/) 1:50m admin-0 countries (public domain), with small islands it lacks (Lampedusa, Incheon, Fernando de Noronha…) taken from 1:10m. Built into `public/geo/countries.json` by `npm run build:countries`.
 - Native city names: [Wikidata](https://www.wikidata.org/) (CC0), matched through [GeoNames](https://www.geonames.org/) ids (CC BY 4.0). Rebuilt with `scripts/build-native-names.ts`.
+- Events (festivals, sporting events, solar eclipses): [Wikidata](https://www.wikidata.org/) (CC0), fetched live from its SPARQL endpoint and refreshed daily by the `events` job, then cached in the document store (`events-live.json`). Nothing is committed; the list is empty until the first fetch succeeds. Status per source: `GET /api/overlays/events/status`. Method in ADR 0021.
 - Climate: [Open-Meteo](https://open-meteo.com/) historical data, 2015–2024.
 - Quality of life: [UNDP Human Development Index](https://hdr.undp.org/), [World Happiness Report](https://worldhappiness.report/) via [Our World in Data](https://ourworldindata.org/), [World Bank](https://data.worldbank.org/) homicide and PM2.5 data, and [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api) (CAMS) for major cities.
 - Beauty: [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/), [Natural Earth](https://www.naturalearthdata.com/) lakes, UNESCO World Heritage sites from Wikidata, [Wikimedia Commons](https://commons.wikimedia.org/) and English Wikipedia geotags. Built with `scripts/build-livability.ts`; method in ADR 0008.
@@ -135,7 +136,7 @@ server/         Hono API: app.ts (routes), index.ts (Node server), vercel.ts (Ve
   routes/       one file per /api/* area
   lib/          domain logic, storage (jsonStore.ts, pgDocuments.ts), agent tools
 scripts/        dataset builders, Vercel build, data copy to Postgres
-data/           read-only datasets (cities, airports, seasonality, events, phenomena)
+data/           read-only datasets (cities, airports, seasonality, phenomena)
 plans/          seasonal trip plans as an importable file (Settings › Trips › Import)
 docs/
   adr/          architecture decisions, numbered
@@ -152,6 +153,7 @@ Open decisions carried over from the old wiki:
 - **Climate coverage is partial and fills in slowly.** Open-Meteo's free tier allows about 80 climate cells a day, so the committed `data/climate-normals.json` holds the first 39 of 5,463 cells (49 cities with weekly normals, 48 with air quality; 134 of 5,878 cities have any monthly figure, counting the 120-city seed and on-demand fetches). The nightly job and `npm run backfill:climate` close the rest, about 70 days of quota. Cities without air or weekly data show "no data yet" and fall back to months; the air penalty is not applied to them.
 - **Crowds are real only in part.** Country arrivals per resident cover most cities; monthly busyness is measured only in Europe (Eurostat nights) and for 920 big cities (Wikipedia views, a weak signal). Elsewhere it falls back to the labelled comfort-curve proxy (ADR 0013).
 - **Cost and rent are mostly country-level.** City-level cost exists for 181 cities and rent for 41 (Eurostat); the rest use the World Bank price level, marked as a country figure and an estimate. Cities in countries with no price level show no cost.
+- **Events are what Wikidata knows.** Coverage follows notability: film festivals dominate (159 of 319 events in the first fetch), small local festivals and moving holidays (Lunar New Year, Easter, Diwali) are mostly absent, and no ticketed shows are covered. Recurring events carry a month, not dates; an item listed under several months becomes one event per month. Dated festival items were empty in the first fetch, so dated events are mostly sporting ones. Eclipse paths are approximated: Wikidata gives a point of greatest eclipse and few countries, so an eclipse lands on the airport cities within 150 km of that point and on each listed country's capital; two of four had no city (annular, over the ocean) and show in lists but not on the map. Partial eclipses are left out. The first load of an empty store takes about 35 seconds (five queries, one at a time); on Vercel the daily cron fills it, since a request may time out first (ADR 0021).
 - **Real booking is a hand-off.** Meridian never takes payment. Flights and stays are booked on other sites and recorded on the trip by hand; nothing checks a recorded booking against the airline.
 - **Ground transport is a guess.** The mode defaults from distance and landmass, and times and costs are formulas. There is no timetable, rail-network or fare data.
 - **Stay prices have no market source.** Only prices you enter, or your own journal's past stays, are used.
