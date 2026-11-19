@@ -89,7 +89,8 @@ export function hardFilterFailures(
   }
   const min = overrides.budgetEconomyEur?.min ?? filters.budgetEconomyEur.min;
   const max = overrides.budgetEconomyEur?.max ?? filters.budgetEconomyEur.max;
-  if (flight.priceEur == null) out.push("no economy price");
+  if (flight.fxError) out.push(flight.fxError);
+  else if (flight.priceEur == null) out.push("no economy price");
   else if (flight.priceEur < min || flight.priceEur > max) out.push(`${Math.round(flight.priceEur)} EUR outside ${min}-${max} EUR`);
   return out;
 }

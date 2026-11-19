@@ -69,3 +69,7 @@ The old `kygura/atlas` repository is only needed once, for `npm run atlas -- imp
 - Atlas writing Meridian's stores directly (shared database or files): it would bypass validation and the gate, and tie Atlas to Meridian's storage format.
 - Moving the routine into Meridian's own Ask agent: Ask runs on Meridian's Anthropic key without the claude.ai connectors (Kiwi, lastminute, Viator, Calendar), which are what Atlas needs.
 - Agent trip candidates (`origin: "agent"`): those live only in the browser. Atlas trips are ordinary server trips with status `scouting`, so they sync to every device and the owner keeps or deletes them.
+
+## Fares outside EUR and fares without a link
+
+Connectors differ. Expedia's answers in USD and returns no booking link. A scan flight may carry `originalPrice: { amount, currency }` with `priceEur: null`; `recordScan` converts it with the European Central Bank's daily reference rates (`server/lib/atlas/fx.ts`, cached for 6 hours) and stores the rate and its date on the flight as `fx`. A currency the ECB does not publish, or a failed fetch, leaves the fare without a EUR price and rejects it with that reason; Meridian never guesses a rate. A flight with no `bookingUrl` gets a search-results link for its route and dates (`server/lib/atlas/searchLinks.ts`: Expedia's own search for Expedia fares, Google Flights otherwise), marked `bookingUrlKind: "search"`. `fx`, `fxError` and `bookingUrlKind` are set only by Meridian; values sent by a caller are discarded.
