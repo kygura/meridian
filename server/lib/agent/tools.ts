@@ -11,7 +11,7 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
-import { getCities, getCityById } from "../cities.js";
+import { cityForIata, getCities, getCityById } from "../cities.js";
 import { computeFullScore } from "../scoring.js";
 import { placeDataInfo, placeFacts, type Fact, type FactGranularity, type PlaceFacts } from "../placeData.js";
 import { ensureDataDir } from "../paths.js";
@@ -496,8 +496,7 @@ function defaultFutureDate(): string {
 }
 
 function findCityByIata(iata: string): City | undefined {
-  const wanted = iata.toUpperCase();
-  return getCities().find((c) => c.iata === wanted);
+  return cityForIata(iata);
 }
 
 /** Deterministic placeholder pricing — same formula family as the legacy

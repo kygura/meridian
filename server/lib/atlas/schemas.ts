@@ -120,8 +120,21 @@ export const watchSchema = z.object({
   chatId: z.string().max(40).optional(),
 });
 
+/**
+ * The exact place a scouted entry is about (a beach, a village, a trailhead),
+ * when it differs from the airport city the entry is keyed on. The city stays
+ * the place for fares and seasonality; the spot is what the list shows.
+ */
+export const spotSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+export type Spot = z.infer<typeof spotSchema>;
+
 export const wishlistEntryInputSchema = z.object({
   place: placeRefSchema,
+  spot: spotSchema.optional(),
   source: z.enum(["wished", "scouted"]).default("wished"),
   intentTags: z.array(z.string().max(60)).max(20).default([]),
   avoidMonths: z.array(month).max(12).default([]),
@@ -140,6 +153,8 @@ export const wishlistPatchSchema = z.object({
   notes: z.string().max(2000).nullable().optional(),
   watch: watchSchema.nullable().optional(),
   source: z.enum(["wished", "scouted"]).optional(),
+  /** Set or correct the spot. Null removes it. */
+  spot: spotSchema.nullable().optional(),
 });
 export type WishlistEntryInput = z.input<typeof wishlistEntryInputSchema>;
 
@@ -150,6 +165,8 @@ export interface AtlasPlace {
   iata?: string;
   lat: number;
   lng: number;
+  /** The place itself, when the entry stands for a spot near this city. */
+  spot?: Spot;
   source: "wished" | "scouted";
   intentTags: string[];
   avoidMonths: number[];
@@ -267,7 +284,10 @@ export type ScanInput = z.input<typeof scanInputSchema>;
 // ── Discovery ────────────────────────────────────────────────────────
 
 export const candidateSchema = z.object({
+  /** The airport city to fly to: fares and seasonality use it. */
   place: placeRefSchema,
+  /** The place the candidate is about, when it is not the airport city (El Cotillo, not El Matorral). */
+  spot: spotSchema.optional(),
   profileId: z.string().min(1).max(40),
   reason: z.string().min(1).max(1000),
   intentTags: z.array(z.string().max(60)).max(20).default([]),
