@@ -126,6 +126,23 @@ describe("national festivities (recorded Wikidata response)", () => {
     for (const t of ["Memorial Day", "Programmer's Day", "Singles' Day", "Tour de France", "Independence Day", "Independence Day of Pakistan"]) expect(titles).not.toContain(t);
   });
 
+  it("drops religious holy days that are not also festivals (Marian feasts, saints' days)", () => {
+    const annunciation = {
+      qid: "Q4087807",
+      title: "Feast of the Annunciation",
+      countries: ["Serbia", "Russia", "Bulgaria", "Belarus", "Poland", "Ukraine", "North Macedonia"],
+      types: ["religious holiday", "holiday", "Marian feast days", "Christian holy day"],
+      sitelinks: 60,
+      countryCount: 7,
+      whens: ["March 25"],
+    };
+    expect(isNationalFestivity(annunciation)).toBe(false);
+    expect(isNationalFestivity({ ...annunciation, title: "St John's Feast", types: ["feast day", "holiday"] })).toBe(false);
+    // A religious holiday that Wikidata also classes as a festival stays.
+    expect(isNationalFestivity({ ...annunciation, title: "Rama Navami", types: ["festival", "public holiday", "religious holiday"] })).toBe(true);
+    expect(titles).not.toContain("Feast of the Annunciation");
+  });
+
   it("drops festivals celebrated in more than twelve countries (not location-specific)", () => {
     const nowruz = raws.find((r) => r.title === "Nowruz")!;
     expect(nowruz.countryCount).toBeGreaterThan(12);

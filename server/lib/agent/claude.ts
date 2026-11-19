@@ -43,7 +43,8 @@ function fallbackParams(model: string): { betas?: Anthropic.Beta.AnthropicBeta[]
 }
 
 let client: Anthropic | null = null;
-function anthropic(): Anthropic {
+/** The shared client (a fake one after `setAnthropicClient`). */
+export function anthropic(): Anthropic {
   client ??= new Anthropic();
   return client;
 }

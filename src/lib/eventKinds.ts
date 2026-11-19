@@ -10,7 +10,7 @@ export const EVENT_KIND_LABELS: Record<EventKind, string> = {
   eclipse: "Solar eclipse",
   sky: "Sky",
   nature: "Nature",
-  season: "Tourism season",
+  season: "Season",
   culture: "Culture",
   sport: "Sport",
   other: "Event",

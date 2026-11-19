@@ -3,8 +3,9 @@
 
 import { getCities } from "../cities.js";
 import { measuredBusyness, visitorMonthsFor } from "../placeData.js";
-import { peekCitySeasonality } from "../seasonality.js";
+import { getAllCitySeasonality, peekCitySeasonality } from "../seasonality.js";
 import type { SourceStatus, StoredEvent } from "./common.js";
+import { climateSeasonEvents } from "./climateSeasons.js";
 import { tourismSeasonEvents } from "./tourismSeasons.js";
 
 export interface ComputedSource {
@@ -28,7 +29,16 @@ export const tourismSeasonSource: ComputedSource = {
   },
 };
 
-export const COMPUTED: ComputedSource[] = [tourismSeasonSource];
+export const climateSeasonSource: ComputedSource = {
+  id: "climate-seasons",
+  compute() {
+    const all = getAllCitySeasonality();
+    const r = climateSeasonEvents({ cities: getCities(), normals: (id) => all[id] });
+    return { events: r.events, detail: { citiesWithNormals: r.citiesWithNormals, rainySeason: r.rainy, drySeason: r.dry, snowSeason: r.snow } };
+  },
+};
+
+export const COMPUTED: ComputedSource[] = [tourismSeasonSource, climateSeasonSource];
 
 export function computedStatus(src: ComputedSource, events: StoredEvent[], detail: Record<string, number | string>, at: string): SourceStatus {
   return { id: src.id, ok: true, count: events.length, detail, fetchedAt: at };

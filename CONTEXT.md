@@ -81,8 +81,8 @@ _Avoid_: incident, disaster (too narrow)
 **Event**:
 Something at a city in a month or on a date that a traveller plans around, fetched or computed at run time
 (ADR 0021), never kept in the repository. Kinds: `festival` (local and country-wide festivities), `eclipse`
-(solar), `sky` (lunar eclipses, northern lights), `nature` (cherry blossom, autumn leaves, whale and bloom
-seasons), `season` (peak and shoulder tourism seasons). A recurring Event has a month, or `months` for a window
+(solar), `sky` (lunar eclipses, northern lights), `nature` (seasonal highlights that Claude reads from a place's Wikivoyage and Wikipedia text and quotes: blooms, wildlife, harvests; festivals and other seasons are `festival`, `season`, `sky`, `other`),
+`season` (peak and shoulder tourism seasons, and rainy, dry and snow seasons). A recurring Event has a month, or `months` for a window
 that spans several; a dated one has a `date`. Film, music and arts festivals and sports are not Events.
 _Avoid_: experience (that's the journal's), alert (that's a Watch's)
 

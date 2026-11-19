@@ -1,10 +1,8 @@
-// The cities the rolling nature check covers (ADR 0021): the owner's places first, then the
-// cities people look at most. Stores are imported when asked, so the event code does not pull
-// the whole server in at load time.
+// Where the rolling nature check finds its cities (ADR 0021): the owner's places first, then the
+// cities people look at, in order of attention. Stores are imported when asked, so the event code
+// does not pull the whole server in at load time.
 
-import type { City } from "../../../src/types.js";
 import { createJsonStore } from "../jsonStore.js";
-import { getCities } from "../cities.js";
 import { cityIdsByAttention } from "../placeData.js";
 import type { PlaceDeps } from "./common.js";
 
@@ -35,22 +33,9 @@ export async function ownerCityIds(): Promise<string[]> {
   return out;
 }
 
-/** The n airport cities with the most measured attention (page views), topped up with the largest airport cities. */
-export function busiestCityIds(n: number, cities: City[] = getCities()): string[] {
-  const airport = new Map(cities.filter((c) => c.iata).map((c) => [c.id, c]));
-  const ids: string[] = [];
-  for (const id of cityIdsByAttention()) {
-    if (ids.length >= n) break;
-    if (airport.has(id)) ids.push(id);
-  }
-  if (ids.length < n) {
-    const have = new Set(ids);
-    for (const c of [...airport.values()].sort((a, b) => b.population - a.population)) {
-      if (ids.length >= n) break;
-      if (!have.has(c.id)) ids.push(c.id);
-    }
-  }
-  return ids;
+/** Every city with measured attention (page views), the most looked at first. */
+export function attentionCityIds(): string[] {
+  return cityIdsByAttention();
 }
 
-export const defaultPlaceDeps: PlaceDeps = { ownerCityIds, busiestCityIds: (n) => busiestCityIds(n) };
+export const defaultPlaceDeps: PlaceDeps = { ownerCityIds, attentionCityIds };

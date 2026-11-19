@@ -1,5 +1,5 @@
 // Test helpers for the live events store: seed events-live.json in the current DATA_DIR,
-// and answer the sources' requests (Wikidata, JMA, iNaturalist, NOAA SWPC) from recorded
+// and answer the sources' requests (Wikidata, Wikipedia and Wikivoyage, NOAA SWPC) from recorded
 // responses. No network.
 
 import { readFileSync, writeFileSync } from "fs";
@@ -10,10 +10,6 @@ import type { MeridianEvent } from "../../../src/types.js";
 
 export function fixtureJson(name: string): unknown {
   return JSON.parse(readFileSync(new URL(`./${name}`, import.meta.url), "utf-8"));
-}
-
-export function fixtureText(name: string): string {
-  return readFileSync(new URL(`./${name}`, import.meta.url), "utf-8");
 }
 
 /** Writes a fresh events-live.json into DATA_DIR (which the caller has set) and drops the in-memory copy. */
@@ -102,10 +98,9 @@ export function sourceOfQuery(q: string): WikidataSource {
 }
 
 /** The source a request belongs to, by host. */
-export function sourceOfRequest(req: FakeRequest): "wikidata" | "jma" | "inaturalist" | "swpc" | "other" {
+export function sourceOfRequest(req: FakeRequest): "wikidata" | "mediawiki" | "swpc" | "other" {
   if (req.host === "query.wikidata.org") return "wikidata";
-  if (req.host === "www.data.jma.go.jp") return "jma";
-  if (req.host === "api.inaturalist.org") return "inaturalist";
+  if (["en.wikipedia.org", "en.wikivoyage.org", "www.wikidata.org"].includes(req.host)) return "mediawiki";
   if (req.host === "services.swpc.noaa.gov") return "swpc";
   return "other";
 }
@@ -118,42 +113,22 @@ const WIKIDATA_FILES: Record<WikidataSource, string> = {
   "lunar-eclipses": "events/wikidata-lunar-eclipses.json",
 };
 
-const JMA_FILES: Record<string, string> = {
-  "index.html": "events/jma-index.html",
-  "sakura003_07.html": "events/jma-sakura-flowering.html",
-  "sakura004_07.html": "events/jma-sakura-fullbloom.html",
-  "phn_014.html": "events/jma-maple.html",
+/** Recorded MediaWiki answers (Wikipedia, Wikivoyage, Wikidata) by request URL, one file per city, trimmed to the sections Claude reads. */
+const PLACE_FILES: Record<string, string> = {
+  "kyoto-japan": "events/mediawiki-kyoto.json",
+  "avignon-france": "events/mediawiki-avignon.json",
 };
+let placeAnswers: Record<string, unknown> | undefined;
+function recordedPlaceAnswer(url: string): unknown {
+  const all = (placeAnswers ??= Object.assign({}, ...Object.values(PLACE_FILES).map((f) => fixtureJson(f) as Record<string, unknown>)) as Record<string, unknown>);
+  return all[url];
+}
 
-/** Taxon ids the recorded iNaturalist answers use. */
-export const TAXON = { prunus: 125742, jacaranda: 77541, humpback: 41566, chelonia: 39659, caretta: 39665 } as const;
-
-const TAXA_FILES: Record<string, string> = {
-  "prunus serrulata": "events/inat-taxa-prunus-serrulata.json",
-  "jacaranda mimosifolia": "events/inat-taxa-jacaranda.json",
-  "megaptera novaeangliae": "events/inat-taxa-humpback.json",
-  "caretta caretta": "events/inat-taxa-caretta.json",
-};
-
-const EMPTY_HISTOGRAM = { total_results: 12, page: 1, per_page: 12, results: { month_of_year: Object.fromEntries(Array.from({ length: 12 }, (_, i) => [String(i + 1), 0])) } };
-
-/** The recorded iNaturalist answer for a taxa or histogram request; places with no recording have no observations. */
-export function recordedInat(url: string): FakeResponse {
-  const u = new URL(url);
-  if (u.pathname.endsWith("/taxa")) {
-    const file = TAXA_FILES[(u.searchParams.get("q") ?? "").toLowerCase()];
-    return file ? { body: fixtureJson(file) } : { body: { total_results: 0, results: [] } };
-  }
-  const taxon = u.searchParams.get("taxon_id");
-  const lat = Number(u.searchParams.get("lat"));
-  const lng = Number(u.searchParams.get("lng"));
-  const near = (a: number, b: number) => Math.abs(lat - a) < 0.2 && Math.abs(lng - b) < 0.2;
-  if (taxon === String(TAXON.prunus) && near(35.68, 139.69)) return { body: fixtureJson("events/inat-histogram-prunus-tokyo.json") };
-  if (taxon === String(TAXON.prunus) && near(38.9, -77.04)) return { body: fixtureJson("events/inat-histogram-prunus-washington.json") };
-  if (taxon === String(TAXON.jacaranda) && near(-25.75, 28.23)) return { body: fixtureJson("events/inat-histogram-jacaranda-pretoria.json") };
-  if (taxon === String(TAXON.jacaranda) && near(48.86, 2.35)) return { body: fixtureJson("events/inat-histogram-jacaranda-paris.json") };
-  if (taxon === String(TAXON.humpback) && near(-33.87, 151.21)) return { body: fixtureJson("events/inat-histogram-humpback-sydney.json") };
-  return { body: EMPTY_HISTOGRAM };
+/** The recorded answer for a Wikipedia, Wikivoyage or Wikidata request; an unrecorded one finds nothing. */
+export function recordedMediaWiki(url: string): FakeResponse {
+  const hit = recordedPlaceAnswer(url);
+  if (hit !== undefined) return { body: hit };
+  return { body: new URL(url).host === "www.wikidata.org" ? { entities: {}, claims: {} } : { query: { pages: [] } } };
 }
 
 /** Answers every source's requests with its recorded fixture. */
@@ -161,15 +136,41 @@ export const recordedRequest = (req: FakeRequest): FakeResponse => {
   switch (sourceOfRequest(req)) {
     case "wikidata":
       return { body: fixtureJson(WIKIDATA_FILES[sourceOfQuery(req.query)]) };
-    case "jma": {
-      const file = JMA_FILES[new URL(req.url).pathname.split("/").pop() ?? ""];
-      return file ? { text: fixtureText(file) } : { status: 404 };
-    }
-    case "inaturalist":
-      return recordedInat(req.url);
+    case "mediawiki":
+      return recordedMediaWiki(req.url);
     case "swpc":
       return { body: fixtureJson("events/swpc-kp-forecast.json") };
     default:
       throw new Error(`unexpected request to ${req.host}`);
   }
 };
+
+/** The parts of a Messages request the highlights source sends, as the fake client sees them. */
+export interface FakeClaudeRequest {
+  model: string;
+  system: string;
+  max_tokens: number;
+  tool_choice: { type: string; name: string };
+  tools: { name: string; input_schema: unknown }[];
+  messages: { role: string; content: string }[];
+}
+
+/**
+ * A stand-in for the Anthropic client: answers every call with the one tool and the highlights
+ * `answer` returns for the request (the text is in the user message), and counts the calls.
+ */
+export function fakeClaude(answer: (req: FakeClaudeRequest, n: number) => unknown[] | { stop_reason: string } | Error, usage = { input_tokens: 5000, output_tokens: 400 }) {
+  const calls: FakeClaudeRequest[] = [];
+  const client = {
+    messages: {
+      create: async (req: FakeClaudeRequest) => {
+        calls.push(req);
+        const out = answer(req, calls.length);
+        if (out instanceof Error) throw out;
+        if (!Array.isArray(out)) return { stop_reason: out.stop_reason, content: [], usage };
+        return { stop_reason: "tool_use", content: [{ type: "tool_use", id: `t${calls.length}`, name: "record_highlights", input: { highlights: out } }], usage };
+      },
+    },
+  };
+  return { client: client as unknown as import("@anthropic-ai/sdk").default, calls };
+}

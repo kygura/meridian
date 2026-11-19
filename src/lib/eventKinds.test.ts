@@ -5,7 +5,7 @@ describe("event kinds", () => {
   it("labels every kind, including the ones from before the refocus, and falls back for an unknown one", () => {
     expect(eventKindLabel("nature")).toBe("Nature");
     expect(eventKindLabel("sky")).toBe("Sky");
-    expect(eventKindLabel("season")).toBe("Tourism season");
+    expect(eventKindLabel("season")).toBe("Season");
     expect(eventKindLabel("eclipse")).toBe("Solar eclipse");
     expect(eventKindLabel("festival")).toBe("Festival");
     expect(eventKindLabel("sport")).toBe("Sport");
@@ -14,7 +14,7 @@ describe("event kinds", () => {
     expect(Object.keys(EVENT_KIND_LABELS).sort()).toEqual(Object.keys(EVENT_KIND_COLOR_VAR).sort());
   });
 
-  it("keeps tourism seasons off the map by default and everything else on", () => {
+  it("keeps seasons (tourism and climate) off the map by default and everything else on", () => {
     expect(isMapDefaultKind("season")).toBe(false);
     for (const k of ["festival", "nature", "sky", "eclipse", "culture", "sport", "other", "unknown"]) expect(isMapDefaultKind(k)).toBe(true);
     expect(MAP_DEFAULT_KINDS).not.toContain("season");

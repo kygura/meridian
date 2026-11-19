@@ -14,10 +14,10 @@ function readMonth(raw: string | undefined): number | null | undefined {
 
 /**
  * GET /api/overlays/events?month=1-12 - events in that month, one point per city.
- *   Tourism seasons are left out of the map points unless `seasons=1` is given.
+ *   Tourism and climate seasons are left out of the map points unless `seasons=1` is given.
  * GET /api/overlays/events?cityIds=a,b - every upcoming event at those cities, any month
  *   (a seasonal trip's stops), with cityIds narrowed to the ones asked for. This includes seasons.
- * Events are live (ADR 0021: Wikidata, JMA, iNaturalist, NOAA SWPC, and Meridian's own seasons);
+ * Events are live (ADR 0021: Wikidata, Wikivoyage and Wikipedia read by Claude, NOAA SWPC, and Meridian's own seasons);
  * both answers carry `asOf` (when they were fetched) and `source`.
  */
 overlays.get("/events", async (c) => {
