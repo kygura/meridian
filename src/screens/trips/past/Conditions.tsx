@@ -21,6 +21,7 @@ const LODGING_KIND: Record<string, string> = {
   hotel: "Hotel",
   apartment: "Apartment",
   hostel: "Hostel",
+  guesthouse: "Guesthouse",
   friends: "With friends",
   other: "Other",
 };

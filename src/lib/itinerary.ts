@@ -392,7 +392,7 @@ export function cleanMoney(v: unknown): MoneyInput | undefined {
   return { amount, currency };
 }
 
-const LODGING_KINDS = ["hotel", "apartment", "hostel", "friends", "other"] as const;
+const LODGING_KINDS = ["hotel", "apartment", "hostel", "guesthouse", "friends", "other"] as const;
 
 /** Drop undefined keys so cleaned objects compare and serialize the same everywhere. */
 function compact<T extends object>(o: T): T {

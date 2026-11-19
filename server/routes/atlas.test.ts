@@ -230,6 +230,12 @@ describe("scans", () => {
     expect(r.body.error).toBe("invalid_scan");
   });
 
+  it("takes every connection airport on a scan flight", async () => {
+    const r = await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [flight("m", 150, { stops: 2, layover: ["CMN", "EUN"] })], annotations: [note("m")] });
+    expect(r.status).toBe(201);
+    expect((await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [flight("n", 150, { layover: "CMN, EUN" })], annotations: [note("n")] })).status).toBe(400);
+  });
+
   it("refuses a flight with no annotation", async () => {
     const r = await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [flight("a", 150)], annotations: [] });
     expect(r.status).toBe(400);
@@ -339,6 +345,31 @@ describe("trips and notices", () => {
     await call("POST", "/api/atlas/trips", { ...plan, flight: { ...plan.flight, priceEur: 140 } });
     const trips = await call("GET", "/api/trips");
     expect(trips.body.trips).toHaveLength(1);
+  });
+
+  it("keeps a 10-point stay rating, a guesthouse stay and every layover airport", async () => {
+    const r = await call("POST", "/api/atlas/trips", {
+      origin: { iata: "MAD" },
+      destination: { iata: "LIS" },
+      departDate: "2027-01-10",
+      returnDate: "2027-01-14",
+      flight: { priceEur: 210, bookingUrl: null, stops: 2, travelHours: 9, layover: ["CMN", "EUN"] },
+      stay: { name: "Casa Azul", kind: "guesthouse", rating: 8.6, ratingOutOf: 10, pricePerNightEur: 70, summary: "Small and quiet." },
+      activities: [{ date: "2027-01-11", title: "Coastal walk", rating: 4.8 }, { date: "2027-01-12", title: "Tile workshop", rating: 9.2, ratingOutOf: 10 }],
+    });
+    expect(r.status).toBe(201);
+    const stop = r.body.trip.nodes[0];
+    expect(stop.lodging.kind).toBe("guesthouse");
+    expect(stop.notes).toContain("via CMN, EUN");
+    expect(stop.notes).toContain("Casa Azul, rated 8.6/10");
+    expect(stop.activities[0].note).toBe("rated 4.8/5");
+    expect(stop.activities[1].note).toBe("rated 9.2/10");
+  });
+
+  it("refuses a rating above its scale", async () => {
+    const base = { origin: { iata: "MAD" }, destination: { iata: "LIS" }, departDate: "2027-01-10", returnDate: "2027-01-14", flight: { priceEur: 210, bookingUrl: null } };
+    expect((await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", rating: 8.6 } })).status).toBe(400);
+    expect((await call("POST", "/api/atlas/trips", { ...base, activities: [{ date: "2027-01-11", title: "Walk", rating: 11, ratingOutOf: 10 }] })).status).toBe(400);
   });
 
   it("raises a notice once per content", async () => {

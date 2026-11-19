@@ -366,7 +366,7 @@ export interface ObservedConditions {
 
 export interface Lodging {
   name: string;
-  kind?: "hotel" | "apartment" | "hostel" | "friends" | "other";
+  kind?: "hotel" | "apartment" | "hostel" | "guesthouse" | "friends" | "other";
   cost?: Money;
   provenance: Provenance;
 }

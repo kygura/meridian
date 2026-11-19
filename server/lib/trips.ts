@@ -51,7 +51,7 @@ const money = moneyInputSchema.pick({ amount: true, currency: true });
 
 const lodgingSchema = z.object({
   name: z.string().min(1).max(200),
-  kind: z.enum(["hotel", "apartment", "hostel", "friends", "other"]).optional(),
+  kind: z.enum(["hotel", "apartment", "hostel", "guesthouse", "friends", "other"]).optional(),
   address: z.string().max(300).optional(),
   checkIn: isoDateSchema.optional(),
   checkOut: isoDateSchema.optional(),
