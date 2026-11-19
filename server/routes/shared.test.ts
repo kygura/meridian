@@ -26,7 +26,7 @@ const home = { cityId: "las-palmas-spain", name: "Las Palmas", iata: "LPA", lat:
 const lisbon = { cityId: "lisbon-portugal", name: "Lisbon", iata: "LIS", lat: 38.72, lng: -9.14 };
 const porto = { cityId: "porto-portugal", name: "Porto", iata: "OPO", lat: 41.15, lng: -8.61 };
 
-const SECRETS = ["PNR-ABC123", "HOTEL-REF-77", "door code 1234", "meet Ana", "s3cret-token", "431"];
+const SECRETS = ["PNR-ABC123", "HOTEL-REF-77", "door code 1234", "meet Ana", "s3cret-token", "8631"];
 
 const itinerary = {
   name: "Portugal <script>alert(1)</script>",
@@ -40,7 +40,7 @@ const itinerary = {
       months: { start: 3, end: 3 },
       arrive: "2027-03-01",
       depart: "2027-03-05",
-      lodging: { name: "Casa do Bairro", address: "Rua A 1", bookingRef: "HOTEL-REF-77", cost: { amount: 431, currency: "EUR" }, link: "https://example.com/b?t=s3cret-token" },
+      lodging: { name: "Casa do Bairro", address: "Rua A 1", bookingRef: "HOTEL-REF-77", cost: { amount: 8631, currency: "EUR" }, link: "https://example.com/b?t=s3cret-token" },
       activities: [{ id: "a1", title: "Tram 28", date: "2027-03-02", time: "10:30", note: "meet Ana" }],
       notes: "door code 1234",
       travel: { fromCityId: "las-palmas-spain", booked: { carrier: "TAP", number: "TP1117", reference: "PNR-ABC123", departAt: "2027-03-01T07:10", arriveAt: "2027-03-01T10:25" } },
