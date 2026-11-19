@@ -88,6 +88,12 @@ export interface Watch {
   chatId?: string;
 }
 
+export interface Spot {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
 export interface WishlistPlace {
   cityId: string;
   name: string;
@@ -95,6 +101,8 @@ export interface WishlistPlace {
   iata?: string;
   lat: number;
   lng: number;
+  /** The exact place a scouted entry is about, when it is not the airport city. */
+  spot?: Spot;
   source: "wished" | "scouted";
   intentTags: string[];
   avoidMonths: number[];
@@ -195,9 +203,10 @@ export interface WishlistAddResult {
   unresolved: { place: PlaceRef; reason: string }[];
 }
 
-/** What PATCH /wishlist/:cityId accepts. Null removes the watch or the notes. */
+/** What PATCH /wishlist/:cityId accepts. Null removes the watch, the notes or the spot. */
 export interface WishlistPatch {
   priority?: number;
+  spot?: Spot | null;
   notes?: string | null;
   watch?: { active: boolean; targetBudgetEur?: { min?: number; max?: number } } | null;
   avoidMonths?: number[];

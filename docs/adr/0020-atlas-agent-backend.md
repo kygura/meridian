@@ -19,7 +19,7 @@ From this ADR on, Meridian is Atlas's backend. Atlas keeps the judgment (what to
 One document, `atlas.json`, in the shared store (JSON file or Postgres, ADR 0006):
 
 - `config`: traveller profile, hard filters, search windows, scoring and discovery weights, trip preferences, trip profiles. Defaults are the values Atlas shipped with.
-- `places`: the wishlist, one entry per city. `source` is `wished` (the owner added it) or `scouted` (a discovery run added it). Any entry can carry a `watch` (notify when a fare clears the deal bar). Wished and watched entries are never removed by a run; only the owner removes them.
+- `places`: the wishlist, one entry per city. `source` is `wished` (the owner added it) or `scouted` (a discovery run added it). Any entry can carry a `watch` (notify when a fare clears the deal bar) and a `spot`: `{ name, lat, lng }` of the exact place a scouted entry is about (a beach town, a trailhead) when it is not the airport city. The city stays the key and the place for fares and seasonality; the Scout screen shows the spot's name with "Via <city>" under it. One spot per city: a later spot for the same city replaces it, an entry without one keeps it, and `PATCH /wishlist/:cityId` with `spot` sets it or with `spot: null` removes it. Wished and watched entries are never removed by a run; only the owner removes them.
 - `fares`: priced, non-distorted fares from every scan, newest 20,000, keyed by route (`MAD-LIS`). Baselines are computed from them on each scan, never stored.
 - `runs`: the newest 200 run summaries (scan or discovery).
 
@@ -27,14 +27,16 @@ One document, `atlas.json`, in the shared store (JSON file or Postgres, ADR 0006
 
 All bodies and answers are JSON, camelCase. Places in inputs are a `PlaceRef`: `{ cityId }`, `{ iata }` or `{ query }` (a name, resolved with the city search). An unresolved place is reported back, never guessed.
 
+`{ iata }` resolves to the city the airport is in (`cityForIata` in `server/lib/cities.ts`): among cities within 60 km of the airport that fly from it or share its municipality name, the one it is named after, then the one that flies from it, then the most populous. An airport with no such city gets a city of its own at the airport. This is a different question from which airport a city flies from (`City.iata`): Kandy has no airport and flies from CMB, 87 km away, but CMB resolves to Colombo. Before this rule a code resolved to the largest city that flies from it, so CMB resolved to Kandy and 97 of 3274 airports resolved to a city more than 60 km away. `scripts/audit-airports.ts` prints the current count.
+
 | Method and path | Does |
 |---|---|
 | `GET /context?today=` | Everything a run starts from: today, the resolved origin and how it was found, the rotation's current and next stay, search windows A and B as dates, config, the wishlist with each place's comfort and crowd for the months the windows touch and its best months, places scouted within the repeat window, the last 5 runs |
 | `GET /seasonal?months=1,2&vibe=coast,tropical-coast&profile=surf&limit=25` | Cities with an airport ranked for those months: mean comfort, crowd proxy and, with a vibe or a profile, likeness strength (ADR 0019). Deterministic seed list for scouting |
 | `GET /config`, `PATCH /config`, `PUT /config` | Read, deep-merge a patch, or replace. Validated |
-| `GET /wishlist`, `POST /wishlist`, `DELETE /wishlist/:cityId` | List; upsert `{ entries: [...] }` by city; remove one |
+| `GET /wishlist`, `POST /wishlist`, `PATCH /wishlist/:cityId`, `DELETE /wishlist/:cityId` | List; upsert `{ entries: [...] }` by city, each with an optional `spot`; change one entry's own fields; remove one |
 | `POST /scans` | Score a scan: hard filters, route baselines (median, 25th percentile, count; under 3 records is thin), price against median, composite score, opportunity and baseline-deal flags, validation gates, top pick and alternative, watch hits. Stores the fares and the run |
-| `POST /discoveries` | Score discovery candidates with the discovery weights and the repeat penalty, attach each one's measured comfort for the current month, upsert the ones that pass as `scouted` places, store the run |
+| `POST /discoveries` | Score discovery candidates with the discovery weights and the repeat penalty, attach each one's measured comfort for the current month, upsert the ones that pass as `scouted` places with the candidate's `spot`, store the run |
 | `POST /trips` | Turn a trip plan into a Meridian Trip (`scouting`, dated, departure from the origin city, stay, activities, flight leg) and return its id and app link. Same destination and outbound date replace the earlier one |
 | `POST /notify` | Raise a Notice of kind `atlas-digest`, `atlas-deal`, `atlas-trip`, `atlas-watch` or `atlas-discovery` |
 | `GET /runs?limit=` | Run summaries, newest first |

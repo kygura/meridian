@@ -78,15 +78,15 @@ export function WishlistSection({ context, places, nowMonth }: Props) {
           <ul className="scout-list">
             {places.map((p) => (
               <li key={p.cityId}>
-                <article className={cx("scout-place", p.season.avoidNow && "is-avoid-now")} aria-label={p.name}>
+                <article className={cx("scout-place", p.season.avoidNow && "is-avoid-now")} aria-label={p.spot?.name ?? p.name}>
                   <div className="scout-place-info">
                     <div className="scout-place-title">
                       <button type="button" className="scout-link" onClick={() => openCity(p.cityId)}>
-                        {p.name}
+                        {p.spot?.name ?? p.name}
                       </button>
                       {p.iata && <span className="iata">{p.iata}</span>}
                     </div>
-                    <p className="scout-muted scout-place-country">{p.country}</p>
+                    <p className="scout-muted scout-place-country">{p.spot ? `Via ${p.name}, ${p.country}` : p.country}</p>
                     <div className="scout-place-badges">
                       <Badge tone={p.source === "wished" ? "accent" : "neutral"}>{p.source === "wished" ? "yours" : "scouted"}</Badge>
                       {p.season.avoidNow && <Badge tone="warning">Avoid now</Badge>}

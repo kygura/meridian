@@ -269,6 +269,49 @@ describe("discoveries", () => {
     expect(again.body.scored[0].repeatPenalty).toBe(true);
     expect(again.body.scored[0].composite).toBeCloseTo(lis.composite - 1.5, 2);
   });
+
+  it("resolves an airport code to the city the airport is in", async () => {
+    // CMB is at Katunayake, 27 km from Colombo and 87 km from Kandy.
+    const r = await call("POST", "/api/atlas/discoveries", { candidates: [candidate({ iata: "CMB" })] });
+    expect(r.body.scored[0]).toMatchObject({ cityId: "colombo-sri-lanka", iata: "CMB" });
+  });
+
+  it("keeps the spot a candidate names, with the airport city for fares", async () => {
+    const elCotillo = { name: "El Cotillo", lat: 28.6826, lng: -14.0115 };
+    const r = await call("POST", "/api/atlas/discoveries", { candidates: [candidate({ iata: "FUE" }, { spot: elCotillo })] });
+    expect(r.status).toBe(201);
+    expect(r.body.scored[0]).toMatchObject({ cityId: "el-matorral-spain", iata: "FUE", spot: elCotillo, passed: true });
+
+    const entry = () => call("GET", "/api/atlas/wishlist").then((x) => x.body.entries.find((e: any) => e.cityId === "el-matorral-spain"));
+    expect(await entry()).toMatchObject({ name: "El Matorral", iata: "FUE", spot: elCotillo, source: "scouted" });
+
+    // A later run without a spot keeps it; one with a spot replaces it.
+    await call("POST", "/api/atlas/discoveries", { candidates: [candidate({ iata: "FUE" })] });
+    expect((await entry()).spot).toEqual(elCotillo);
+    const corralejo = { name: "Corralejo", lat: 28.7306, lng: -13.8676 };
+    await call("POST", "/api/atlas/discoveries", { candidates: [candidate({ iata: "FUE" }, { spot: corralejo })] });
+    expect((await entry()).spot).toEqual(corralejo);
+
+    // The owner can correct the spot or remove it.
+    const patched = await call("PATCH", "/api/atlas/wishlist/el-matorral-spain", { spot: elCotillo });
+    expect(patched.body.entry.spot).toEqual(elCotillo);
+    expect((await call("PATCH", "/api/atlas/wishlist/el-matorral-spain", { spot: null })).body.entry.spot).toBeUndefined();
+  });
+
+  it("refuses a spot without a name or with coordinates off the globe", async () => {
+    const bad = [{ name: "", lat: 0, lng: 0 }, { name: "Nowhere", lat: 91, lng: 0 }, { name: "Nowhere", lat: 0 }];
+    for (const spot of bad) {
+      const r = await call("POST", "/api/atlas/discoveries", { candidates: [candidate({ iata: "FUE" }, { spot })] });
+      expect(r.status).toBe(400);
+    }
+    expect((await call("GET", "/api/atlas/wishlist")).body.entries).toHaveLength(0);
+  });
+
+  it("takes a spot on a wish list entry too", async () => {
+    const hiriketiya = { name: "Hiriketiya", lat: 5.9615, lng: 80.7085 };
+    const r = await call("POST", "/api/atlas/wishlist", { entries: [{ place: { cityId: "matara-sri-lanka" }, source: "scouted", spot: hiriketiya }] });
+    expect(r.body.entries[0]).toMatchObject({ cityId: "matara-sri-lanka", name: "Matara", spot: hiriketiya });
+  });
 });
 
 describe("trips and notices", () => {

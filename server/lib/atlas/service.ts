@@ -7,7 +7,7 @@ import type { City, Trip } from "../../../src/types.js";
 import { TRIP_COLORS } from "../../../src/lib/tripColors.js";
 import { VIBES } from "../../../src/lib/likeness.js";
 import { addDays, daysBetween, todayIso, whatsNext, type RotationStay } from "../../../src/lib/rotation.js";
-import { getCities, getCityById, searchCities } from "../cities.js";
+import { cityForIata, getCities, getCityById, searchCities } from "../cities.js";
 import { getAllCitySeasonality, peekCitySeasonality, resolveCitySeasonality, type MonthSeasonality } from "../seasonality.js";
 import { crowdProxyForMonth, loadHolidayIndexFromCache, type HolidayIndex } from "../crowd.js";
 import { runLikeness } from "../likeness.js";
@@ -111,17 +111,9 @@ const round = (n: number) => Math.round(n * 10) / 10;
 
 // ── Places ───────────────────────────────────────────────────────────
 
-/** The airport city for a code: the largest hub, then the most people. */
-function cityByIata(code: string): City | undefined {
-  const hubRank = (c: City) => (c.hub === "large" ? 2 : c.hub === "medium" ? 1 : 0);
-  return getCities()
-    .filter((c) => c.iata?.toUpperCase() === code.toUpperCase())
-    .sort((a, b) => hubRank(b) - hubRank(a) || b.population - a.population)[0];
-}
-
 export function resolvePlace(ref: PlaceRef): City | undefined {
   if ("cityId" in ref) return getCityById(ref.cityId);
-  if ("iata" in ref) return cityByIata(ref.iata);
+  if ("iata" in ref) return cityForIata(ref.iata);
   return searchCities(ref.query)[0];
 }
 
@@ -200,6 +192,7 @@ export async function upsertWishlist(raw: unknown, now = new Date(), opts: { sta
         ...(city.iata ? { iata: city.iata } : {}),
         lat: city.lat,
         lng: city.lng,
+        ...(input.spot ?? prev?.spot ? { spot: input.spot ?? prev?.spot } : {}),
         source,
         intentTags: [...new Set([...(prev?.intentTags ?? []), ...input.intentTags])],
         avoidMonths: input.avoidMonths.length ? [...new Set(input.avoidMonths)].sort((a, b) => a - b) : (prev?.avoidMonths ?? []),
@@ -290,7 +283,7 @@ export function resolveOrigin(
   const fromHome = home && originFromCity(home.cityId, "rotation-home");
   if (fromHome) return { origin: fromHome, rotation };
   for (const code of config.hardFilters.fallbackOrigins) {
-    const city = cityByIata(code);
+    const city = cityForIata(code);
     if (city) return { origin: { cityId: city.id, name: city.name, country: city.country, iata: code, source: "fallback" }, rotation };
   }
   const code = config.hardFilters.fallbackOrigins[0];
@@ -529,6 +522,8 @@ export async function patchWishlist(cityId: string, raw: unknown, now = new Date
     if (p.watch === null) delete place.watch;
     else if (p.watch !== undefined) place.watch = p.watch;
     if (p.source !== undefined) place.source = p.source;
+    if (p.spot === null) delete place.spot;
+    else if (p.spot !== undefined) place.spot = p.spot;
     place.updatedAt = nowIso(now);
     return place;
   });
@@ -847,6 +842,7 @@ export async function recordDiscovery(raw: unknown, now = new Date()) {
     await upsertWishlist(
       passing.map((s) => ({
         place: { cityId: s.cityId },
+        ...(s.spot ? { spot: s.spot } : {}),
         source: "scouted",
         intentTags: s.intentTags,
         avoidMonths: s.avoidMonths,
