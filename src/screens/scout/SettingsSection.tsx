@@ -78,6 +78,7 @@ function Form({ data, onSaved }: { data: Data; onSaved: (next: Data) => void }) 
         {num("budgetMax", "Budget maximum (EUR)")}
         {num("maxStops", "Maximum stops")}
         {num("maxTravelTimeHours", "Maximum travel time (hours)")}
+        {num("maxLayoverWaitHours", "Longest layover (hours)", "Fares with a longer wait at a connection are rejected")}
         <Field label="Fallback airports" hint="IATA codes, comma separated. Used when no stay shows where you are." error={errors.fallbackOrigins}>
           <Input value={form.fallbackOrigins} onChange={set("fallbackOrigins")} autoCapitalize="characters" />
         </Field>

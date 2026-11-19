@@ -186,6 +186,7 @@ export interface ConfigForm {
   budgetMax: string;
   maxStops: string;
   maxTravelTimeHours: string;
+  maxLayoverWaitHours: string;
   fallbackOrigins: string;
   aMin: string;
   aMax: string;
@@ -219,6 +220,7 @@ export function configToForm(c: AtlasConfig): ConfigForm {
     budgetMax: num(c.hardFilters.budgetEconomyEur.max),
     maxStops: num(c.hardFilters.maxStops),
     maxTravelTimeHours: num(c.hardFilters.maxTravelTimeHours),
+    maxLayoverWaitHours: num(c.hardFilters.maxLayoverWaitHours),
     fallbackOrigins: c.hardFilters.fallbackOrigins.join(", "),
     aMin: num(c.windows.a.minDays),
     aMax: num(c.windows.a.maxDays),
@@ -281,6 +283,8 @@ export function buildConfigPatch(base: AtlasConfig, form: ConfigForm): { patch: 
   if (stops !== undefined) hard.maxStops = stops;
   const hours = number("maxTravelTimeHours");
   if (hours !== undefined) hard.maxTravelTimeHours = hours;
+  const layover = number("maxLayoverWaitHours");
+  if (layover !== undefined) hard.maxLayoverWaitHours = layover;
   if (changed("fallbackOrigins")) {
     const codes = parseList(form.fallbackOrigins).map((c) => c.toUpperCase());
     if (!codes.length) errors.fallbackOrigins = "Enter at least one airport code.";
@@ -324,6 +328,7 @@ export function issuesToErrors(issues: unknown): { fields: FormErrors; general: 
     "hardFilters.budgetEconomyEur": "budgetMax",
     "hardFilters.maxStops": "maxStops",
     "hardFilters.maxTravelTimeHours": "maxTravelTimeHours",
+    "hardFilters.maxLayoverWaitHours": "maxLayoverWaitHours",
     "hardFilters.fallbackOrigins": "fallbackOrigins",
     "windows.a.minDays": "aMin",
     "windows.a.maxDays": "aMax",

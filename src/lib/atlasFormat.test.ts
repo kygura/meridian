@@ -185,6 +185,9 @@ describe("buildConfigPatch", () => {
   it("reports bad numbers and ranges per field", () => {
     expect(buildConfigPatch(config, { ...configToForm(config), maxStops: "1.5" }).errors.maxStops).toMatch(/whole/);
     expect(buildConfigPatch(config, { ...configToForm(config), maxTravelTimeHours: "" }).errors.maxTravelTimeHours).toMatch(/number/);
+    expect(configToForm(config).maxLayoverWaitHours).toBe("6");
+    expect(buildConfigPatch(config, { ...configToForm(config), maxLayoverWaitHours: "4" }).patch).toEqual({ hardFilters: { maxLayoverWaitHours: 4 } });
+    expect(buildConfigPatch(config, { ...configToForm(config), maxLayoverWaitHours: "-1" }).errors.maxLayoverWaitHours).toBeTruthy();
     expect(buildConfigPatch(config, { ...configToForm(config), budgetMin: "900" }).errors.budgetMax).toMatch(/below the minimum/);
     expect(buildConfigPatch(config, { ...configToForm(config), bMin: "200" }).errors.bMax).toMatch(/before the earliest/);
     expect(buildConfigPatch(config, { ...configToForm(config), persona: " " }).errors.persona).toBeTruthy();
