@@ -924,8 +924,14 @@ export async function createTripFromPlan(raw: unknown) {
   if (!dest) throw new AtlasInputError("unknown_destination", `No city matches '${refText(plan.destination)}'.`);
 
   const node = (c: City) => ({ cityId: c.id, name: c.name, ...(c.iata ? { iata: c.iata } : {}), lat: c.lat, lng: c.lng });
-  const nights = daysBetween(plan.departDate, plan.returnDate);
-  const stayTotal = plan.stay?.totalEur ?? (plan.stay?.pricePerNightEur != null ? plan.stay.pricePerNightEur * nights : undefined);
+  // The stay keeps its own dates when the routine sends them (a flight that lands after midnight checks in a day later).
+  const checkIn = plan.stay?.checkIn ?? plan.departDate;
+  const checkOut = plan.stay?.checkOut ?? plan.returnDate;
+  const nights = daysBetween(checkIn, checkOut);
+  const stayTotal =
+    plan.stay?.totalEur ??
+    plan.totals?.stayEur ??
+    (plan.stay?.pricePerNightEur != null ? plan.stay.pricePerNightEur * nights : undefined);
 
   const notes = [
     `Planned by Atlas. Flight ${plan.departDate} to ${plan.returnDate}: ${eurText(plan.flight.priceEur)}` +
@@ -968,8 +974,8 @@ export async function createTripFromPlan(raw: unknown) {
                 name: plan.stay.name,
                 ...(plan.stay.kind ? { kind: plan.stay.kind } : {}),
                 ...(plan.stay.address ? { address: plan.stay.address } : {}),
-                checkIn: plan.departDate,
-                checkOut: plan.returnDate,
+                checkIn,
+                checkOut,
                 ...(stayTotal != null ? { cost: eurMoney(stayTotal) } : {}),
                 ...(plan.stay.link ? { link: plan.stay.link } : {}),
               },

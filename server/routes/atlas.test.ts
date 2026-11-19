@@ -366,6 +366,19 @@ describe("trips and notices", () => {
     expect(stop.activities[1].note).toBe("rated 9.2/10");
   });
 
+  it("prices a stay over its own dates when it checks in after the flight's depart date", async () => {
+    const base = { origin: { iata: "MAD" }, destination: { iata: "LIS" }, departDate: "2027-01-08", returnDate: "2027-01-23", flight: { priceEur: 628, bookingUrl: null } };
+    const late = await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", pricePerNightEur: 32.01, checkIn: "2027-01-09" } });
+    expect(late.status).toBe(201);
+    expect(late.body.trip.nodes[0].lodging).toMatchObject({ checkIn: "2027-01-09", checkOut: "2027-01-23", cost: { amount: 448.14, currency: "EUR" } });
+
+    const fromTotals = await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", pricePerNightEur: 32.01 }, totals: { flightEur: 628, stayEur: 448.2, activitiesEur: null, totalEur: 1076.2 } });
+    expect(fromTotals.body.trip.nodes[0].lodging.cost.amount).toBe(448.2);
+
+    expect((await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", checkIn: "2027-01-07" } })).status).toBe(400);
+    expect((await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", checkIn: "2027-01-12", checkOut: "2027-01-10" } })).status).toBe(400);
+  });
+
   it("refuses a rating above its scale", async () => {
     const base = { origin: { iata: "MAD" }, destination: { iata: "LIS" }, departDate: "2027-01-10", returnDate: "2027-01-14", flight: { priceEur: 210, bookingUrl: null } };
     expect((await call("POST", "/api/atlas/trips", { ...base, stay: { name: "Casa Azul", rating: 8.6 } })).status).toBe(400);
