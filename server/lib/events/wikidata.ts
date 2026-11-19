@@ -212,7 +212,7 @@ export const NATIONAL_MAX_COUNTRIES = 12;
 export const NATIONAL_AIRPORT_CITIES = 3;
 
 export function nationalFestivitiesQuery(): string {
-  return `SELECT ?e ?eLabel ?sl ?when ?whenLabel (COUNT(DISTINCT ?country) AS ?nc) (GROUP_CONCAT(DISTINCT ?cl; separator="|") AS ?countries) (GROUP_CONCAT(DISTINCT ?tl; separator="|") AS ?types) WHERE {
+  return `SELECT ?e ?eLabel ?sl ?when ?whenLabel (COUNT(DISTINCT ?country) AS ?nc) (GROUP_CONCAT(DISTINCT ?cl; separator="|") AS ?countries) (GROUP_CONCAT(DISTINCT ?tl; separator="|") AS ?types) (GROUP_CONCAT(DISTINCT STRAFTER(STR(?rel), "entity/"); separator="|") AS ?rels) WHERE {
   { ?e wdt:P837 ?when } UNION { ?e wdt:P2922 ?when }
   ?e wikibase:sitelinks ?sl FILTER(?sl >= 20)
   FILTER NOT EXISTS { ?e wdt:P625 ?pt }
@@ -220,6 +220,7 @@ export function nationalFestivitiesQuery(): string {
   ?e wdt:P17 ?country . ?country rdfs:label ?cl FILTER(LANG(?cl)="en")
   FILTER NOT EXISTS { ?country wdt:P576 ?countryEnd }
   ?e wdt:P31 ?t . ?t rdfs:label ?tl FILTER(LANG(?tl)="en")
+  OPTIONAL { ?e wdt:P279|wdt:P460|wdt:P1889 ?rel }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 } GROUP BY ?e ?eLabel ?sl ?when ?whenLabel ORDER BY DESC(?sl) LIMIT 800`;
 }
@@ -253,6 +254,8 @@ export interface RawNational {
   /** How many countries Wikidata lists (more than 12 means not location-specific). */
   countryCount: number;
   whens: string[];
+  /** Items this one is tied to as a variant: subclass of, said to be the same as, different from (not "part of": Vijayadashami is part of Durga Puja, not India's version of it). */
+  rels?: string[];
 }
 
 export function parseNational(bindings: SparqlBinding[]): RawNational[] {
@@ -273,6 +276,7 @@ export function parseNational(bindings: SparqlBinding[]): RawNational[] {
       sitelinks: Number(b.sl?.value) || 0,
       countryCount: Number(b.nc?.value) || 0,
       whens: when ? [when] : [],
+      rels: split(b.rels?.value).filter((q) => /^Q\d+$/.test(q)),
     });
   }
   return [...byQid.values()];
@@ -287,6 +291,37 @@ export function isNationalFestivity(r: RawNational): boolean {
   if (festivalType) return true;
   const genericType = r.types.some((t) => NATIONAL_ALLOW.test(t));
   return genericType && r.sitelinks >= NATIONAL_GENERIC_SITELINKS && !OBSERVANCE_TITLE.test(r.title);
+}
+
+/** True when two festivals are tied to the same concept or to each other in Wikidata. */
+function related(a: RawNational, b: RawNational): boolean {
+  const ra = new Set(a.rels ?? []);
+  const rb = b.rels ?? [];
+  return ra.has(b.qid) || rb.includes(a.qid) || rb.some((q) => ra.has(q));
+}
+
+/**
+ * Where a festival celebrated in several countries has a country's own version (Qixi and
+ * Tanabata both tie to Night of Sevens; Chinese New Year and Tết), the country's own version
+ * wins there: the wider festival is removed from that country. Returns the festivals with
+ * their countries narrowed, dropping any left with none, and how many placements moved.
+ */
+export function assignNationalCountries(raws: RawNational[]): { raws: RawNational[]; moved: number } {
+  let moved = 0;
+  const out: RawNational[] = [];
+  for (const r of raws) {
+    if (r.countries.length < 2) {
+      out.push(r);
+      continue;
+    }
+    const keep = r.countries.filter((country) => {
+      const own = raws.some((s) => s !== r && s.countries.length < r.countries.length && s.countries.includes(country) && related(r, s));
+      if (own) moved++;
+      return !own;
+    });
+    if (keep.length) out.push(keep.length === r.countries.length ? r : { ...r, countries: keep });
+  }
+  return { raws: out, moved };
 }
 
 export interface BuiltNational extends Built {
@@ -353,13 +388,15 @@ export const nationalFestivitiesSource: SourceDef = {
   id: "national-festivities",
   intervalMs: 7 * DAY_MS,
   // 2: liturgical feasts that are not festivals are dropped (the Annunciation).
-  rules: 2,
+  // 3: a country's own version of a festival wins there (Tanabata, not Qixi, in Japan).
+  rules: 3,
   async run(ctx) {
     const raws = parseNational(await runSparql(nationalFestivitiesQuery(), ctx));
     if (raws.length === 0) return { events: [] };
-    const kept = raws.filter(isNationalFestivity);
+    const assigned = assignNationalCountries(raws.filter(isNationalFestivity));
+    const kept = assigned.raws;
     const built = buildNational("national-festivities", kept, ctx.index, ctx.now);
-    return { events: built.events, unmatched: built.unmatched, detail: { candidates: raws.length, kept: kept.length, undated: built.undated } };
+    return { events: built.events, unmatched: built.unmatched, detail: { candidates: raws.length, kept: kept.length, undated: built.undated, movedToOwnVersion: assigned.moved } };
   },
 };
 
