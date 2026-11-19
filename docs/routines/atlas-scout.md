@@ -47,7 +47,8 @@ Leave a number out rather than guess it. `POST /api/atlas/signals` with `{ "sign
 Destinations: the top 3 `ideas` for each window (after re-reading context if you posted research), every place with an active `watch`, and any `destination_focus` from the request. At most 8 destinations per run. For each, from the origin airport:
 - Window A: lastminute.com first (short-notice deals), Kiwi.com as well.
 - Window B: Kiwi.com and Expedia; Turkish Airlines only when it plausibly serves the route.
-- Return flights inside the window. Keep the cheapest per route and dates. Every fare needs the `bookingUrl` from the connector result, or null.
+- Return flights inside the window. Keep the cheapest per route and dates. Every fare needs the `bookingUrl` from the connector result, or null: Meridian then adds a search-results link for the route and dates and marks it `bookingUrlKind: "search"`.
+- A fare quoted in another currency (Expedia answers in USD): send `priceEur: null` and `originalPrice: { "amount": 209.30, "currency": "USD" }`, the amount exactly as the connector gave it. Meridian converts at the ECB reference rate and records it on the fare (`fx`). Never convert yourself. If the ECB publishes no rate for that currency, Meridian rejects the fare with that reason.
 - Do not apply the hard filters yourself; Meridian does and reports each rejection with its reason. Do report destinations where a search failed: send that flight with `error` set and `priceEur`, `stops`, `travelHours` and `bookingUrl` null, and no annotation.
 
 Then assess each fare's travel dates: `weather` 1 to 5 (forecast or the research above, not generic season), `crowd` (low, medium, high, peak), `events`, `distortion` (true when an event drives the price or crowds, with `distortionReason`), `surf` 1 to 5 for surf places, `isolation` 1 to 5, `personalFlag` (one sentence for this traveller), `reasoning`.

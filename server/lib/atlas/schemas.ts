@@ -236,6 +236,17 @@ export const flightSchema = z.object({
   travelHours: z.number().nonnegative().max(200).nullable(),
   bookingUrl: link.nullable(),
   error: z.string().max(500).nullable().optional(),
+  /**
+   * The fare as the connector gave it, when that is not EUR (Expedia answers in USD). Send it
+   * with `priceEur: null`; Meridian converts at the ECB reference rate and records the rate.
+   */
+  originalPrice: z.object({ amount: z.number().nonnegative().max(1_000_000), currency: z.string().regex(/^[A-Za-z]{3}$/) }).optional(),
+  /** Set by Meridian, never by the caller: the conversion applied to `originalPrice`. */
+  fx: z.object({ currency: z.string(), amount: z.number(), rate: z.number(), date: z.string(), source: z.literal("ECB") }).optional(),
+  /** Set by Meridian: why `originalPrice` could not be converted. */
+  fxError: z.string().max(200).optional(),
+  /** Set by Meridian: "search" when `bookingUrl` is a search page Meridian built because the connector gave no link. */
+  bookingUrlKind: z.enum(["connector", "search"]).optional(),
 }).superRefine((f, ctx) => {
   if (f.error) return;
   if (f.stops == null) ctx.addIssue({ code: "custom", path: ["stops"], message: "stops is required unless the search failed (error set)" });

@@ -1,6 +1,9 @@
 // Atlas on Meridian (ADR 0020): storage and the work behind /api/atlas.
 // One document, "atlas.json", in the shared store (a file under DATA_DIR or Postgres).
 
+import { eurRates, toEur, type EurRates } from "./fx.js";
+import { searchLinkFor } from "./searchLinks.js";
+import type { AtlasFlight } from "./schemas.js";
 import { createHash, randomUUID } from "crypto";
 import type { z } from "zod";
 import type { City, Trip } from "../../../src/types.js";
@@ -693,10 +696,57 @@ export async function seasonalRanking(q: { months: number[]; vibes?: string[]; p
 
 const runId = (prefix: string, now: Date) => `${prefix}_${now.toISOString().slice(0, 10).replace(/-/g, "")}_${randomUUID().slice(0, 8)}`;
 
-export async function recordScan(raw: unknown, now = new Date()) {
+/**
+ * Fills in what a connector could not give: a EUR price for a fare quoted in another currency
+ * (ECB reference rate, recorded on the flight) and a search-results link when there is no
+ * booking link. Fields only Meridian sets are cleared first, so a caller cannot supply them.
+ */
+export async function normalizeFlights(flights: AtlasFlight[], deps: { fetch?: typeof fetch; now?: Date } = {}): Promise<void> {
+  let rates: EurRates | null | undefined;
+  let ratesError = "";
+  for (const f of flights) {
+    delete f.fx;
+    delete f.fxError;
+    delete f.bookingUrlKind;
+    if (f.originalPrice && f.priceEur == null && !f.error) {
+      const { amount, currency } = f.originalPrice;
+      if (currency.toUpperCase() === "EUR") {
+        f.priceEur = Math.round(amount * 100) / 100;
+      } else {
+        if (rates === undefined) {
+          try {
+            rates = await eurRates(deps.fetch, deps.now?.getTime());
+          } catch (err) {
+            rates = null;
+            ratesError = err instanceof Error ? err.message : String(err);
+          }
+        }
+        const converted = rates ? toEur(amount, currency, rates) : null;
+        if (converted && rates) {
+          f.priceEur = converted.eur;
+          f.fx = { currency: currency.toUpperCase(), amount, rate: converted.rate, date: rates.date, source: "ECB" };
+        } else {
+          f.fxError = rates
+            ? `no ECB rate for ${currency.toUpperCase()}, so no EUR price`
+            : `ECB rates unavailable (${ratesError}), so no EUR price for ${amount} ${currency.toUpperCase()}`;
+        }
+      }
+    }
+    if (!f.error) {
+      if (f.bookingUrl) f.bookingUrlKind = "connector";
+      else {
+        f.bookingUrl = searchLinkFor(f);
+        f.bookingUrlKind = "search";
+      }
+    }
+  }
+}
+
+export async function recordScan(raw: unknown, now = new Date(), deps: { fetch?: typeof fetch } = {}) {
   const parsed = scanInputSchema.safeParse(raw);
   if (!parsed.success) throw new AtlasInputError("invalid_scan", "The scan does not validate.", parsed.error.issues);
   const input = parsed.data;
+  await normalizeFlights(input.flights, { fetch: deps.fetch, now });
   const byId = new Map(input.annotations.map((a) => [a.flightId, a]));
   // A failed search (error set) has nothing to annotate; it is rejected with its error below.
   const missing = input.flights.filter((fl) => !fl.error && !byId.has(fl.id)).map((fl) => fl.id);
