@@ -54,7 +54,7 @@ Unchanged from Atlas (`src/scoring/engine.ts`, `discovery.ts`), moved into `serv
 
 Everything Atlas needs is in this repository:
 
-- The routine prompt: `docs/routines/atlas-scout.md`. The "Meridian Scout" routine on claude.ai holds a copy and follows this file instead when a checkout of this repository is attached. A run fired from Meridian (`POST /api/atlas/run`) sends `atlas <mode>` and a `run_id` as the routine API's `text`, which reaches the routine in a `<routine-fire-payload>` block; the prompt opts in to reading its first line as the mode. It calls `/api/atlas` with curl; the routine's environment injects the owner token for the production host.
+- The routine prompt: `docs/routines/atlas-scout.md`. The "Meridian Scout" routine on claude.ai holds a copy and follows this file instead when a checkout of this repository is attached. A run fired from Meridian (`POST /api/atlas/run`) is recorded first, with the text it sends (`request`: `atlas <mode>`, `run_id`, the owner's request). The routine API delivers that text in a `<routine-fire-payload>` block, often as a second message after the routine has started, so the routine reads its mode from the newest fire run in `GET /api/atlas/runs` instead.
 - The terminal client: `npm run atlas -- <command>` (`scripts/atlas/`), for the owner and for scripts. `MERIDIAN_URL` and `MERIDIAN_TOKEN` point it at a server.
 - The Telegram bot: `/api/telegram/atlas` (public, checked against `TELEGRAM_WEBHOOK_SECRET` and the owner's `TELEGRAM_CHAT_ID`) parses `/scout`, `/discover`, `/watch` and free text and starts the routine.
 - Starting a run: `POST /api/atlas/run`, from the Scout screen, the client or the bot, through the routine's API trigger (`ATLAS_ROUTINE_FIRE_URL`, `ATLAS_ROUTINE_TOKEN`).

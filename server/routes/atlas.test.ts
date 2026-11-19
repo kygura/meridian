@@ -215,6 +215,21 @@ describe("scans", () => {
     expect(r.body.scored[0].gates).toEqual({ passed: true, failures: [], warnings: ["weather 1/5 under 3"] });
   });
 
+  it("records a failed search without an itinerary or annotation, as a rejection", async () => {
+    const failed = flight("x", 0, { priceEur: null, stops: null, travelHours: null, bookingUrl: null, error: "connector not connected" });
+    const r = await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [failed, flight("b", 150)], annotations: [note("b")] });
+    expect(r.status).toBe(201);
+    expect(r.body.rejected).toHaveLength(1);
+    expect(r.body.rejected[0].flight.id).toBe("x");
+    expect(r.body.rejected[0].reasons[0]).toBe("search error: connector not connected");
+  });
+
+  it("still requires stops and travel hours on a search that did not fail", async () => {
+    const r = await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [flight("a", 150, { stops: null })], annotations: [note("a")] });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe("invalid_scan");
+  });
+
   it("refuses a flight with no annotation", async () => {
     const r = await call("POST", "/api/atlas/scans", { mode: "scheduled", origin: "MAD", flights: [flight("a", 150)], annotations: [] });
     expect(r.status).toBe(400);
@@ -380,5 +395,6 @@ describe("fireRoutine", () => {
     expect(seen[0].url).toBe("https://example.com/fire");
     expect((seen[0].init.headers as Record<string, string>).Authorization).toBe("Bearer rt");
     expect(JSON.parse(String(seen[0].init.body)).text).toMatch(/^atlas scan\nrun_id: fire_\d{8}_\w+\n\nsurf in December$/);
+    expect(run.request).toBe(JSON.parse(String(seen[0].init.body)).text);
   });
 });

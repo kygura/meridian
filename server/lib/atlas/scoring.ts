@@ -82,8 +82,8 @@ export function hardFilterFailures(
   const out: string[] = [];
   if (flight.error) out.push(`search error: ${flight.error}`);
   const maxStops = overrides.maxStops ?? filters.maxStops;
-  if (flight.stops > maxStops) out.push(`${flight.stops} stops, limit ${maxStops}`);
-  if (flight.travelHours > filters.maxTravelTimeHours) out.push(`${flight.travelHours} h travel, limit ${filters.maxTravelTimeHours} h`);
+  if (flight.stops != null && flight.stops > maxStops) out.push(`${flight.stops} stops, limit ${maxStops}`);
+  if (flight.travelHours != null && flight.travelHours > filters.maxTravelTimeHours) out.push(`${flight.travelHours} h travel, limit ${filters.maxTravelTimeHours} h`);
   if (flight.longestLayoverHours != null && flight.longestLayoverHours > filters.maxLayoverWaitHours) {
     out.push(`${flight.longestLayoverHours} h layover, limit ${filters.maxLayoverWaitHours} h`);
   }

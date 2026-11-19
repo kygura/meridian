@@ -155,6 +155,7 @@ export interface RunSummary {
   kind: "scan" | "discovery" | "fire";
   status?: "fired" | "failed";
   detail?: string;
+  request?: string;
   highlights?: ScanHighlight[];
   mode: string;
   at: string;

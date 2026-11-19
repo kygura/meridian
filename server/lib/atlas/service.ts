@@ -70,6 +70,8 @@ export interface RunSummary {
   /** Fire runs only: whether the routine accepted the request. */
   status?: "fired" | "failed";
   detail?: string;
+  /** Fire runs only: the text sent to the routine (mode line, run id, the owner's request). */
+  request?: string;
   /** Scan runs: the five best results, for the Scout screen. */
   highlights?: ScanHighlight[];
   mode: string;
@@ -592,6 +594,7 @@ export async function fireRoutine(raw: unknown, deps: { env?: NodeJS.ProcessEnv;
     run.detail = "ATLAS_ROUTINE_FIRE_URL and ATLAS_ROUTINE_TOKEN are not set on the server.";
   } else {
     const text = [`atlas ${parsed.data.mode}`, `run_id: ${run.id}`, ...(parsed.data.text ? ["", parsed.data.text] : [])].join("\n");
+    run.request = text;
     try {
       const res = await (deps.fetch ?? fetch)(env.ATLAS_ROUTINE_FIRE_URL!.trim(), {
         method: "POST",
@@ -700,7 +703,8 @@ export async function recordScan(raw: unknown, now = new Date()) {
   if (!parsed.success) throw new AtlasInputError("invalid_scan", "The scan does not validate.", parsed.error.issues);
   const input = parsed.data;
   const byId = new Map(input.annotations.map((a) => [a.flightId, a]));
-  const missing = input.flights.filter((fl) => !byId.has(fl.id)).map((fl) => fl.id);
+  // A failed search (error set) has nothing to annotate; it is rejected with its error below.
+  const missing = input.flights.filter((fl) => !fl.error && !byId.has(fl.id)).map((fl) => fl.id);
   if (missing.length) throw new AtlasInputError("missing_annotations", `No annotation for: ${missing.join(", ")}`);
 
   const id = runId("scan", now);
