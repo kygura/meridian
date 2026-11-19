@@ -331,9 +331,14 @@ const stayPickSchema = z.object({
   ratingOutOf: z.union([z.literal(5), z.literal(10)]).optional(),
   pricePerNightEur: eur.optional(),
   totalEur: eur.optional(),
+  /** The stay's own dates when they differ from the flight's (a flight that lands after midnight). Default: departDate and returnDate. */
+  checkIn: isoDateSchema.optional(),
+  checkOut: isoDateSchema.optional(),
   summary: z.string().max(500).optional(),
   link: link.optional(),
-}).refine((s) => s.rating == null || s.rating <= (s.ratingOutOf ?? 5), { message: "rating is above its scale (ratingOutOf, 5 when absent)", path: ["rating"] });
+})
+  .refine((s) => s.rating == null || s.rating <= (s.ratingOutOf ?? 5), { message: "rating is above its scale (ratingOutOf, 5 when absent)", path: ["rating"] })
+  .refine((s) => s.checkIn == null || s.checkOut == null || s.checkIn < s.checkOut, { message: "checkOut must be after checkIn", path: ["checkOut"] });
 
 export const tripPlanInputSchema = z
   .object({
@@ -378,7 +383,18 @@ export const tripPlanInputSchema = z
     notes: z.string().max(3000).optional(),
     scanRunId: z.string().max(60).optional(),
   })
-  .refine((t) => t.departDate < t.returnDate, { message: "returnDate must be after departDate", path: ["returnDate"] });
+  .refine((t) => t.departDate < t.returnDate, { message: "returnDate must be after departDate", path: ["returnDate"] })
+  .superRefine((t, ctx) => {
+    for (const key of ["stay", "stayAlternative"] as const) {
+      const s = t[key];
+      if (!s) continue;
+      const inDate = s.checkIn ?? t.departDate;
+      const outDate = s.checkOut ?? t.returnDate;
+      if (inDate < t.departDate || inDate >= t.returnDate) ctx.addIssue({ code: "custom", message: "checkIn must fall on or after departDate and before returnDate", path: [key, "checkIn"] });
+      if (outDate > t.returnDate || outDate <= t.departDate) ctx.addIssue({ code: "custom", message: "checkOut must fall after departDate and on or before returnDate", path: [key, "checkOut"] });
+      if (inDate >= outDate) ctx.addIssue({ code: "custom", message: "checkOut must be after checkIn", path: [key, "checkOut"] });
+    }
+  });
 export type TripPlanInput = z.input<typeof tripPlanInputSchema>;
 
 // ── Notices ──────────────────────────────────────────────────────────
