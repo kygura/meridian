@@ -931,11 +931,11 @@ export async function createTripFromPlan(raw: unknown) {
     `Planned by Atlas. Flight ${plan.departDate} to ${plan.returnDate}: ${eurText(plan.flight.priceEur)}` +
       (plan.flight.stops != null ? `, ${plan.flight.stops} stops` : "") +
       (plan.flight.travelHours != null ? `, ${plan.flight.travelHours} h` : "") +
-      (plan.flight.layover ? ` via ${plan.flight.layover}` : "") +
+      (plan.flight.layover && plan.flight.layover.length ? ` via ${[plan.flight.layover].flat().join(", ")}` : "") +
       (plan.flight.carrier ? ` (${plan.flight.carrier})` : "") +
       ".",
     plan.flight.bookingUrl ? `Book the flight: ${plan.flight.bookingUrl}` : null,
-    plan.stay?.summary ? `Stay: ${plan.stay.name}${plan.stay.rating != null ? `, rated ${plan.stay.rating}` : ""}. ${plan.stay.summary}` : null,
+    plan.stay?.summary ? `Stay: ${plan.stay.name}${plan.stay.rating != null ? `, rated ${plan.stay.rating}/${plan.stay.ratingOutOf ?? 5}` : ""}. ${plan.stay.summary}` : null,
     plan.stayAlternative
       ? `Other stay: ${plan.stayAlternative.name}${plan.stayAlternative.pricePerNightEur != null ? `, ${Math.round(plan.stayAlternative.pricePerNightEur)} EUR a night` : ""}${plan.stayAlternative.link ? ` (${plan.stayAlternative.link})` : ""}.`
       : null,
@@ -976,7 +976,7 @@ export async function createTripFromPlan(raw: unknown) {
             }
           : {}),
         activities: plan.activities.map((a, i) => {
-          const extra = [a.durationHours != null ? `${a.durationHours} h` : null, a.rating != null ? `rated ${a.rating}` : null].filter(Boolean).join(", ");
+          const extra = [a.durationHours != null ? `${a.durationHours} h` : null, a.rating != null ? `rated ${a.rating}/${a.ratingOutOf ?? 5}` : null].filter(Boolean).join(", ");
           const note = [a.note, extra].filter(Boolean).join(" ");
           return {
             id: `atlas-${i + 1}`,

@@ -54,7 +54,7 @@ const shortText = z.string().trim().min(1).max(300);
 
 export const lodgingSchema = z.object({
   name: shortText,
-  kind: z.enum(["hotel", "apartment", "hostel", "friends", "other"]).optional(),
+  kind: z.enum(["hotel", "apartment", "hostel", "guesthouse", "friends", "other"]).optional(),
   cost: moneyInputSchema.optional(),
   provenance: provenanceWithDefault,
 });

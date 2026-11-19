@@ -230,7 +230,8 @@ export const flightSchema = z.object({
   priceBusinessEur: eur.nullable().optional(),
   /** Null only on a failed search (`error` set): a failed search has no itinerary. */
   stops: z.number().int().min(0).max(10).nullable(),
-  layover: iata.nullable().optional(),
+  /** One connection airport, or every connection in order (`["CMN", "EUN"]`). */
+  layover: z.union([iata, z.array(iata).min(1).max(6)]).nullable().optional(),
   longestLayoverHours: z.number().nonnegative().max(200).nullable().optional(),
   /** Null only on a failed search, as `stops`. */
   travelHours: z.number().nonnegative().max(200).nullable(),
@@ -323,14 +324,16 @@ export type DiscoveryInput = z.input<typeof discoveryInputSchema>;
 
 const stayPickSchema = z.object({
   name: z.string().min(1).max(200),
-  kind: z.enum(["hotel", "apartment", "hostel", "friends", "other"]).optional(),
+  kind: z.enum(["hotel", "apartment", "hostel", "guesthouse", "friends", "other"]).optional(),
   address: z.string().max(300).optional(),
-  rating: z.number().min(0).max(5).optional(),
+  /** On the scale in `ratingOutOf` (5 when absent): send Booking.com's 8.6 as `rating: 8.6, ratingOutOf: 10`. */
+  rating: z.number().min(0).max(10).optional(),
+  ratingOutOf: z.union([z.literal(5), z.literal(10)]).optional(),
   pricePerNightEur: eur.optional(),
   totalEur: eur.optional(),
   summary: z.string().max(500).optional(),
   link: link.optional(),
-});
+}).refine((s) => s.rating == null || s.rating <= (s.ratingOutOf ?? 5), { message: "rating is above its scale (ratingOutOf, 5 when absent)", path: ["rating"] });
 
 export const tripPlanInputSchema = z
   .object({
@@ -346,7 +349,7 @@ export const tripPlanInputSchema = z
       carrier: z.string().max(100).optional(),
       stops: z.number().int().min(0).max(10).optional(),
       travelHours: z.number().nonnegative().max(200).optional(),
-      layover: z.string().max(8).nullable().optional(),
+      layover: z.union([z.string().max(8), z.array(z.string().max(8)).min(1).max(6)]).nullable().optional(),
       flightId: z.string().max(120).optional(),
     }),
     stay: stayPickSchema.optional(),
@@ -359,10 +362,12 @@ export const tripPlanInputSchema = z
           title: z.string().min(1).max(200),
           costEur: eur.optional(),
           durationHours: z.number().nonnegative().max(48).optional(),
-          rating: z.number().min(0).max(5).optional(),
+          rating: z.number().min(0).max(10).optional(),
+          ratingOutOf: z.union([z.literal(5), z.literal(10)]).optional(),
           link: link.optional(),
           note: z.string().max(1000).optional(),
         })
+        .refine((a) => a.rating == null || a.rating <= (a.ratingOutOf ?? 5), { message: "rating is above its scale (ratingOutOf, 5 when absent)", path: ["rating"] })
       )
       .max(60)
       .default([]),

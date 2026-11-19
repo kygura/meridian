@@ -127,6 +127,7 @@ const LODGING_KINDS = [
   { value: "hotel", label: "Hotel" },
   { value: "apartment", label: "Apartment" },
   { value: "hostel", label: "Hostel" },
+  { value: "guesthouse", label: "Guesthouse" },
   { value: "friends", label: "With friends" },
   { value: "other", label: "Other" },
 ];
