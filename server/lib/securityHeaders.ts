@@ -17,8 +17,11 @@
 export const MAP_DATA_HOSTS = ["https://d2ad6b4ur7yvpq.cloudfront.net"] as const;
 /** Photo hosts for places shown in Ask (server/lib/agent/tools.ts returns Wikimedia URLs). */
 export const IMAGE_HOSTS = ["https://upload.wikimedia.org", "https://commons.wikimedia.org"] as const;
-/** Sites allowed to frame the app: the owner's portfolio embeds it as an inert, scaled-down preview. */
-export const FRAME_ANCESTORS = ["https://www.nca.ink"] as const;
+/**
+ * Sites allowed to frame the app: the owner's portfolio embeds it as an inert,
+ * scaled-down preview, on nca.ink and on its Vercel preview deployments.
+ */
+export const FRAME_ANCESTORS = ["https://www.nca.ink", "https://nca.ink", "https://*.vercel.app"] as const;
 
 export interface SecurityHeaderOptions {
   /** Adds Strict-Transport-Security. */
