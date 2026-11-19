@@ -305,6 +305,8 @@ export interface SourceStatus {
   error?: string;
   /** Last time this source returned data. */
   fetchedAt?: string;
+  /** The source's `rules` when that data was made; a different value makes the source due now. */
+  rules?: number;
 }
 
 export interface LiveEventsFile {
@@ -363,6 +365,8 @@ export interface SourceDef {
   intervalMs: number;
   /** True when the source may legitimately return no events. */
   mayBeEmpty?: boolean;
+  /** Bump when the source's filtering or placing rules change, so stored copies refresh at once. */
+  rules?: number;
   run(ctx: SourceContext): Promise<SourceResult>;
 }
 

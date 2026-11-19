@@ -154,6 +154,8 @@ export function hasPendingWork(id: string, file: LiveEventsFile): boolean {
 /** When a source's last fetch is old enough to repeat. `maxAgeDays` caps the interval. */
 function sourceDue(src: SourceDef, file: LiveEventsFile, now: Date, maxAgeDays?: number): boolean {
   if (hasPendingWork(src.id, file)) return true;
+  const landed = file.sources.find((x) => x.id === src.id && x.fetchedAt);
+  if (landed && (landed.rules ?? 0) !== (src.rules ?? 0)) return true;
   const at = Date.parse(file.sources.find((x) => x.id === src.id && x.fetchedAt)?.fetchedAt ?? "");
   if (!Number.isFinite(at)) return true;
   const interval = maxAgeDays === undefined ? src.intervalMs : Math.min(src.intervalMs, maxAgeDays * DAY_MS);
@@ -217,6 +219,7 @@ export async function refreshLiveEvents(opts: RefreshOptions = {}): Promise<Live
       ...(r.unplaced ? { unplaced: r.unplaced } : {}),
       ...(r.detail ? { detail: r.detail } : {}),
       fetchedAt: nowIso,
+      ...(src.rules ? { rules: src.rules } : {}),
     });
     const ctx: SourceContext = {
       ...base,
@@ -353,7 +356,11 @@ function validEvent(e: unknown): e is StoredEvent {
 export function isStale(file: LiveEventsFile, now: Date, maxAgeDays?: number): boolean {
   const landed = (id: string) => file.sources.find((x) => x.id === id && x.fetchedAt)?.fetchedAt;
   // Never landed and never failed (a run was cut short before reaching it), or work is left over.
-  const missing = SOURCES.some((src) => (!landed(src.id) && !file.sources.some((x) => x.id === src.id && x.error)) || hasPendingWork(src.id, file));
+  const rulesChanged = (src: SourceDef) => {
+    const s = file.sources.find((x) => x.id === src.id && x.fetchedAt);
+    return !!s && (s.rules ?? 0) !== (src.rules ?? 0);
+  };
+  const missing = SOURCES.some((src) => (!landed(src.id) && !file.sources.some((x) => x.id === src.id && x.error)) || hasPendingWork(src.id, file) || rulesChanged(src));
   const old = SOURCES.some((src) => sourceDue(src, file, now, maxAgeDays));
   if (!missing && !old) return false;
   // `old` includes sources that failed and never landed: those wait the hour like any failure.

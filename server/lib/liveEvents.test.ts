@@ -525,7 +525,7 @@ describe("getLiveEvents", () => {
     const w = fakeNetwork(recordedRequest);
     // Seeded files carry no per-source lines, so mark every source as landed just now.
     const raw = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
-    raw.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: new Date().toISOString() }));
+    raw.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: new Date().toISOString(), ...(s.rules ? { rules: s.rules } : {}) }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(raw));
     resetLiveEventsForTests();
     expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["fresh"]);
@@ -535,7 +535,7 @@ describe("getLiveEvents", () => {
     seedLiveEvents([ev("stale")], { fetchedAt: old, attemptedAt: new Date(now.getTime() - 10 * 60_000).toISOString() });
     // Every source landed long ago and the last attempt, ten minutes ago, failed: wait the hour.
     const failed = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf-8"));
-    failed.sources = SOURCES.map((s) => ({ id: s.id, ok: false, count: 0, error: "timeout", fetchedAt: old }));
+    failed.sources = SOURCES.map((s) => ({ id: s.id, ok: false, count: 0, error: "timeout", fetchedAt: old, ...(s.rules ? { rules: s.rules } : {}) }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(failed));
     resetLiveEventsForTests();
     expect((await getLiveEvents({ fetch: w.fetch })).map((e) => e.id)).toEqual(["stale"]);
@@ -726,7 +726,7 @@ describe("eclipse tag constraint in replay", () => {
 describe("isStale", () => {
   const now = new Date("2026-11-18T12:00:00Z");
   const at = (ms: number) => new Date(now.getTime() - ms).toISOString();
-  const allSources = (fetchedAt: string) => SOURCES.map((s) => ({ id: s.id, ok: true, count: 1, fetchedAt }));
+  const allSources = (fetchedAt: string) => SOURCES.map((s) => ({ id: s.id, ok: true, count: 1, fetchedAt, ...(s.rules ? { rules: s.rules } : {}) }));
 
   it("is fresh when every source landed within its own interval", () => {
     expect(isStale({ version: 1, sources: allSources(at(30 * 60_000)), events: [], attemptedAt: at(30 * 60_000) }, now)).toBe(false);
@@ -766,7 +766,7 @@ describe("isStale", () => {
   });
 
   it("retries after two minutes while the highlights source still has cities to check, and not once it has none", () => {
-    const sources = (pending: number, ok = true) => SOURCES.map((s) => (s.id === "highlights" ? { id: s.id, ok, count: 3, fetchedAt: at(10 * 60_000), detail: { pending } } : { id: s.id, ok: true, count: 1, fetchedAt: at(10 * 60_000) }));
+    const sources = (pending: number, ok = true) => SOURCES.map((s) => (s.id === "highlights" ? { id: s.id, ok, count: 3, fetchedAt: at(10 * 60_000), detail: { pending }, ...(s.rules ? { rules: s.rules } : {}) } : { id: s.id, ok: true, count: 1, fetchedAt: at(10 * 60_000), ...(s.rules ? { rules: s.rules } : {}) }));
     const file = (pending: number, ok = true, attemptedAt = at(3 * 60_000)) => ({ version: 1 as const, sources: sources(pending, ok), events: [], attemptedAt });
     expect(isStale(file(40), now)).toBe(true);
     expect(isStale(file(40, true, at(60_000)), now)).toBe(false);
@@ -786,7 +786,7 @@ describe("isStale", () => {
 
   it("waits an hour, not two minutes, before retrying a source that failed", () => {
     const tenMinAgo = at(10 * 60_000);
-    const sources = SOURCES.map((s) => (s.id === "eclipses" ? { id: s.id, ok: false, count: 0, error: "timeout" } : { id: s.id, ok: true, count: 1, fetchedAt: tenMinAgo }));
+    const sources = SOURCES.map((s) => (s.id === "eclipses" ? { id: s.id, ok: false, count: 0, error: "timeout" } : { id: s.id, ok: true, count: 1, fetchedAt: tenMinAgo, ...(s.rules ? { rules: s.rules } : {}) }));
     expect(isStale({ version: 1, sources, events: [], attemptedAt: tenMinAgo }, now)).toBe(false);
   });
 });
@@ -812,7 +812,7 @@ describe("refreshing only what is due", () => {
     const recent = new Date(NOW_FETCH.getTime() - 5 * 60_000).toISOString();
     seedLiveEvents([], { fetchedAt: recent, attemptedAt: recent });
     const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
-    seeded.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent, ...(s.id === "highlights" ? { detail: { pending: 120 } } : {}) }));
+    seeded.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent, ...(s.rules ? { rules: s.rules } : {}), ...(s.id === "highlights" ? { detail: { pending: 120 } } : {}) }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
     resetLiveEventsForTests();
     const w = fakeNetwork(recordedRequest);
@@ -828,7 +828,7 @@ describe("refreshing only what is due", () => {
     seedLiveEvents([], { fetchedAt: recent, attemptedAt: recent });
     // Seed sources: all but eclipses landed an hour ago.
     const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
-    seeded.sources = SOURCES.filter((s) => s.id !== "eclipses").map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent }));
+    seeded.sources = SOURCES.filter((s) => s.id !== "eclipses").map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: recent, ...(s.rules ? { rules: s.rules } : {}) }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
     resetLiveEventsForTests();
     const w = fakeNetwork(recordedRequest);
@@ -844,11 +844,24 @@ describe("refreshing only what is due", () => {
     const stale = new Date(NOW_FETCH.getTime() - 4 * 3_600_000).toISOString();
     seedLiveEvents([], { fetchedAt: lastWeek, attemptedAt: stale });
     const seeded = JSON.parse(readFileSync(join(TMP, "events-live.json"), "utf8"));
-    seeded.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: s.id === "aurora" ? stale : lastWeek }));
+    seeded.sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 0, fetchedAt: s.id === "aurora" ? stale : lastWeek, ...(s.rules ? { rules: s.rules } : {}) }));
     writeFileSync(join(TMP, "events-live.json"), JSON.stringify(seeded));
     resetLiveEventsForTests();
     const w = fakeNetwork(recordedRequest);
     await run(w.fetch, { onlyDue: true });
     expect(w.calls.map((c) => c.host)).toEqual(["services.swpc.noaa.gov"]);
+  });
+});
+
+describe("source rules versions", () => {
+  it("refreshes a source at once when its rules changed since the stored copy", () => {
+    const now = new Date("2026-11-18T12:00:00Z");
+    const recent = new Date(now.getTime() - 3_600_000).toISOString();
+    const sources = SOURCES.map((s) => ({ id: s.id, ok: true, count: 1, fetchedAt: recent, ...(s.rules ? { rules: s.rules } : {}) }));
+    expect(isStale({ version: 1, sources, events: [], attemptedAt: recent }, now, 7)).toBe(false);
+    const national = SOURCES.find((s) => s.id === "national-festivities")!;
+    expect(national.rules).toBeGreaterThan(1);
+    const old = sources.map((x) => (x.id === "national-festivities" ? { id: x.id, ok: true, count: 1, fetchedAt: recent } : x));
+    expect(isStale({ version: 1, sources: old, events: [], attemptedAt: new Date(now.getTime() - 3 * 60_000).toISOString() }, now, 7)).toBe(true);
   });
 });

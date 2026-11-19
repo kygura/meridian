@@ -225,7 +225,19 @@ export function nationalFestivitiesQuery(): string {
 }
 
 /** Types that mark a festival or holiday a traveller plans around. */
-const NATIONAL_ALLOW = /festival|carnival|matsuri|harvest|religious holiday|new year|fiesta|feast|^holiday$|annual event|celebration/i;
+const NATIONAL_ALLOW = /festival|carnival|matsuri|harvest|religious holiday|new year|fiesta|^holiday$|annual event|celebration/i;
+/** Types that are a festival in their own right (Day of the Dead is classed only as a religious holiday). */
+const NATIONAL_FESTIVAL = /festival|carnival|matsuri|harvest|religious holiday|new year|fiesta/i;
+/** Types that are a festival and not merely a religious holiday. */
+const TRUE_FESTIVAL = /festival|carnival|matsuri|harvest|new year|fiesta/i;
+/**
+ * Liturgical observances (Marian feasts, saints' and feast days, Christian holy days): kept
+ * only when Wikidata also classes the item as a festival. A plain religious holiday (Day of the
+ * Dead) still counts. The
+ * Feast of the Annunciation, a religious holiday and a Marian feast with no festival type,
+ * otherwise landed on every capital of seven countries.
+ */
+const LITURGICAL = /holy day|feast|marian|liturgical|saint|solemnity|commemoration|memorial/i;
 /** Types and titles that mark an observance, a race, a company or a film event. */
 const NATIONAL_DENY = /film|music|jazz|race|sport|prize|award|compan|organi[sz]ation|cycling|marathon|tournament|competition|league|lottery|theat|federal|public holidays? in|national day|independence|awareness|world day|anniversary|book fair|sculpture|city|town|tourist|astronomical|parade|military|regatta/i;
 /** A bare "holiday" or "annual event" type needs this many sitelinks (a festival type needs 20). */
@@ -270,9 +282,10 @@ export function parseNational(bindings: SparqlBinding[]): RawNational[] {
 export function isNationalFestivity(r: RawNational): boolean {
   if (r.countryCount < 1 || r.countryCount > NATIONAL_MAX_COUNTRIES) return false;
   if (NATIONAL_DENY.test(r.title) || r.types.some((t) => NATIONAL_DENY.test(t))) return false;
-  const festivalType = r.types.some((t) => /festival|carnival|matsuri|harvest|religious holiday|new year|fiesta|feast/i.test(t));
-  const genericType = r.types.some((t) => NATIONAL_ALLOW.test(t));
+  if (r.types.some((t) => LITURGICAL.test(t)) && !r.types.some((t) => TRUE_FESTIVAL.test(t))) return false;
+  const festivalType = r.types.some((t) => NATIONAL_FESTIVAL.test(t));
   if (festivalType) return true;
+  const genericType = r.types.some((t) => NATIONAL_ALLOW.test(t));
   return genericType && r.sitelinks >= NATIONAL_GENERIC_SITELINKS && !OBSERVANCE_TITLE.test(r.title);
 }
 
@@ -339,6 +352,8 @@ export function buildNational(sourceId: string, raws: RawNational[], index: City
 export const nationalFestivitiesSource: SourceDef = {
   id: "national-festivities",
   intervalMs: 7 * DAY_MS,
+  // 2: liturgical feasts that are not festivals are dropped (the Annunciation).
+  rules: 2,
   async run(ctx) {
     const raws = parseNational(await runSparql(nationalFestivitiesQuery(), ctx));
     if (raws.length === 0) return { events: [] };
