@@ -12,6 +12,7 @@ import {
   festivitiesQuery,
   festivityExclusionQuery,
   isNationalFestivity,
+  assignNationalCountries,
   lunarEclipsesQuery,
   nationalFestivitiesQuery,
   parseEclipses,
@@ -110,6 +111,9 @@ describe("national festivities query", () => {
     expect(q).toContain("?sl >= 20");
     expect(q).toContain("FILTER NOT EXISTS { ?e wdt:P625 ?pt }");
     expect(q).toContain("FILTER NOT EXISTS { ?country wdt:P576 ?countryEnd }");
+    // Variant ties only: "part of" (P361) and "based on" (P144) would move Durga Puja off India.
+    expect(q).toContain("wdt:P279|wdt:P460|wdt:P1889 ?rel");
+    expect(q).not.toContain("P361");
   });
 });
 
@@ -141,6 +145,23 @@ describe("national festivities (recorded Wikidata response)", () => {
     // A religious holiday that Wikidata also classes as a festival stays.
     expect(isNationalFestivity({ ...annunciation, title: "Rama Navami", types: ["festival", "public holiday", "religious holiday"] })).toBe(true);
     expect(titles).not.toContain("Feast of the Annunciation");
+  });
+
+  it("gives a country its own version of a festival: Tanabata, not Qixi, in Japan", () => {
+    const base = { sitelinks: 50, whens: ["July"] };
+    const qixi = { ...base, qid: "Q13423122", title: "Qixi Festival", countries: ["People's Republic of China", "Japan"], countryCount: 2, types: ["festival"], rels: ["Q1193996x", "Q906486"] };
+    const tanabata = { ...base, qid: "Q1193996", title: "Tanabata", countries: ["Japan"], countryCount: 1, types: ["Japanese festival"], rels: ["Q906486"] };
+    const diwali = { ...base, qid: "Q10259", title: "Diwali", countries: ["India", "Nepal"], countryCount: 2, types: ["festival"], rels: [] };
+    const tihar = { ...base, qid: "Q1066870", title: "Tihar", countries: ["Nepal"], countryCount: 1, types: ["festival"], rels: [] };
+    const out = assignNationalCountries([qixi, tanabata, diwali, tihar]);
+    expect(out.raws.find((r) => r.title === "Qixi Festival")!.countries).toEqual(["People's Republic of China"]);
+    expect(out.raws.find((r) => r.title === "Tanabata")!.countries).toEqual(["Japan"]);
+    // Not tied in Wikidata: both stay where Wikidata puts them.
+    expect(out.raws.find((r) => r.title === "Diwali")!.countries).toEqual(["India", "Nepal"]);
+    expect(out.moved).toBe(1);
+    // Tied directly (one names the other) also counts.
+    const direct = assignNationalCountries([{ ...qixi, rels: ["Q1193996"] }, { ...tanabata, rels: [] }]);
+    expect(direct.raws.find((r) => r.title === "Qixi Festival")!.countries).toEqual(["People's Republic of China"]);
   });
 
   it("drops festivals celebrated in more than twelve countries (not location-specific)", () => {
