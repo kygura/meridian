@@ -39,12 +39,12 @@ await build({
 });
 
 // Datasets the server reads from data/ (cities, airports, capitals, seasonality seed, phenomena,
-// place data for crowds, cost and tourism seasons).
+// place data for crowds, cost and tourism seasons, committed climate normals for air and weeks).
 // Personal data never ships: it lives in Postgres (DATABASE_URL).
-const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "phenomena.json", "native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json", "country-data.json", "city-data.json"];
+const DATASETS = ["worldcities.csv", "airports.json", "capitals.json", "seasonality.json", "phenomena.json", "native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json", "country-data.json", "city-data.json", "climate-normals.json"];
 mkdirSync(join(fn, "data"), { recursive: true });
 // Optional datasets: the server copes without them (the feature reports "no data").
-const OPTIONAL = new Set(["native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json", "country-data.json", "city-data.json"]);
+const OPTIONAL = new Set(["native-names.json", "livability.json", "city-geo.json", "city-coast.json", "visa-requirements.json", "country-data.json", "city-data.json", "climate-normals.json"]);
 for (const f of DATASETS) {
   const src = join(root, "data", f);
   if (!existsSync(src) && OPTIONAL.has(f)) {
