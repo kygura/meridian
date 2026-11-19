@@ -15,7 +15,7 @@ export const DEFAULT_ATLAS_CONFIG: AtlasConfig = {
   hardFilters: {
     maxStops: 2,
     maxTravelTimeHours: 50,
-    maxLayoverWaitHours: 6,
+    maxLayoverWaitHours: 4,
     budgetEconomyEur: { min: 10, max: 2500 },
     fallbackOrigins: ["AGP", "MAD", "LPA"],
     lastminuteWindowDays: 21,
