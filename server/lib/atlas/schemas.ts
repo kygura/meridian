@@ -211,12 +211,18 @@ export const flightSchema = z.object({
   returnDate: isoDateSchema,
   priceEur: eur.nullable(),
   priceBusinessEur: eur.nullable().optional(),
-  stops: z.number().int().min(0).max(10),
+  /** Null only on a failed search (`error` set): a failed search has no itinerary. */
+  stops: z.number().int().min(0).max(10).nullable(),
   layover: iata.nullable().optional(),
   longestLayoverHours: z.number().nonnegative().max(200).nullable().optional(),
-  travelHours: z.number().nonnegative().max(200),
+  /** Null only on a failed search, as `stops`. */
+  travelHours: z.number().nonnegative().max(200).nullable(),
   bookingUrl: link.nullable(),
   error: z.string().max(500).nullable().optional(),
+}).superRefine((f, ctx) => {
+  if (f.error) return;
+  if (f.stops == null) ctx.addIssue({ code: "custom", path: ["stops"], message: "stops is required unless the search failed (error set)" });
+  if (f.travelHours == null) ctx.addIssue({ code: "custom", path: ["travelHours"], message: "travelHours is required unless the search failed (error set)" });
 });
 export type AtlasFlight = z.infer<typeof flightSchema>;
 
