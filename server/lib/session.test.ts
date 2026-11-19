@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OWNER_ID, issueSession, sessionTtlMs, signingKey, verifySession } from "./session";
-import { IMAGE_HOSTS, MAP_DATA_HOSTS, contentSecurityPolicy, originOf, securityHeaders } from "./securityHeaders";
+import { FRAME_ANCESTORS, IMAGE_HOSTS, MAP_DATA_HOSTS, contentSecurityPolicy, originOf, securityHeaders } from "./securityHeaders";
 
 beforeEach(() => {
   process.env.MERIDIAN_TOKEN = "the-password";
@@ -87,7 +87,7 @@ describe("security headers", () => {
     const directive = (name: string) => csp.split("; ").find((d) => d.startsWith(`${name} `))!;
     expect(directive("default-src")).toBe("default-src 'self'");
     expect(directive("script-src")).toBe("script-src 'self'");
-    expect(directive("frame-ancestors")).toBe("frame-ancestors 'none'");
+    expect(directive("frame-ancestors")).toBe(`frame-ancestors 'self' ${FRAME_ANCESTORS.join(" ")}`);
     expect(directive("object-src")).toBe("object-src 'none'");
     expect(directive("style-src")).not.toContain("googleapis");
     expect(directive("font-src")).toBe("font-src 'self' data:");
@@ -106,11 +106,12 @@ describe("security headers", () => {
     expect(originOf(undefined)).toBeNull();
   });
 
-  it("carries nosniff, a referrer policy and frame denial; HSTS in production", () => {
+  it("carries nosniff and a referrer policy, leaves framing to the CSP; HSTS in production", () => {
     const h = securityHeaders();
     expect(h["X-Content-Type-Options"]).toBe("nosniff");
     expect(h["Referrer-Policy"]).toBe("strict-origin-when-cross-origin");
-    expect(h["X-Frame-Options"]).toBe("DENY");
+    // X-Frame-Options cannot name an allowed site, so frame-ancestors alone governs framing.
+    expect(h["X-Frame-Options"]).toBeUndefined();
     expect(h["Strict-Transport-Security"]).toBeUndefined();
     expect(securityHeaders({ production: true })["Strict-Transport-Security"]).toMatch(/max-age=\d+/);
   });

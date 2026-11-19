@@ -464,8 +464,8 @@ describe("security headers", () => {
       const res = await app.request(path);
       expect(res.headers.get("x-content-type-options"), path).toBe("nosniff");
       expect(res.headers.get("referrer-policy"), path).toBe("strict-origin-when-cross-origin");
-      expect(res.headers.get("content-security-policy"), path).toContain("frame-ancestors 'none'");
-      expect(res.headers.get("x-frame-options"), path).toBe("DENY");
+      expect(res.headers.get("content-security-policy"), path).toContain("frame-ancestors 'self' https://www.nca.ink");
+      expect(res.headers.get("x-frame-options"), path).toBeNull();
     }
   });
 
@@ -474,7 +474,7 @@ describe("security headers", () => {
     expect(res.headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
     expect(res.headers.get("referrer-policy")).toBe("no-referrer");
     // Headers the route did not set still get the app-wide value.
-    expect(res.headers.get("x-frame-options")).toBe("DENY");
+    expect(res.headers.get("x-content-type-options")).toBe("nosniff");
   });
 
   it("adds HSTS in production only", async () => {
