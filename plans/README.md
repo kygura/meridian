@@ -153,3 +153,5 @@ Before booking:
 - Budget per trip
 
 The flight prices on the trip cards are placeholder estimates until live provider keys are set.
+
+For where to live and buy a home rather than travel, see [coastal-home.md](coastal-home.md).
