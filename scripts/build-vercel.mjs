@@ -84,6 +84,8 @@ const headersModule = await import(`data:text/javascript;base64,${Buffer.from(bu
 const staticSecurityHeaders = headersModule.securityHeaders({
   production: true,
   apiOrigin: headersModule.originOf(process.env.VITE_API_BASE_URL),
+  // GA4 hosts only when the build has VITE_GA_ID (src/lib/analytics.ts).
+  analytics: headersModule.analyticsConfigured(process.env),
 });
 
 writeFileSync(

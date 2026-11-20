@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { trackEvent } from "../lib/analytics";
 import { EMPTY_FILTER, type ClimateFilter, type ClimateMode, type ConditionId } from "../lib/climate";
 import type { MetricId, MetricThresholds } from "../lib/cityMetrics";
 
@@ -78,7 +79,10 @@ export const useMapPrefs = create<MapPrefs>()(
       setMonth: (month) => set({ month: Math.min(12, Math.max(1, Math.round(month))) }),
       setClimateMode: (climateMode) => set({ climateMode }),
       setClimate: (climate) => set({ climate: { conditions: [...climate.conditions], minComfort: clampPct(climate.minComfort) } }),
-      setConditions: (conditions) => set((s) => ({ climate: { ...s.climate, conditions } })),
+      setConditions: (conditions) => {
+        set((s) => ({ climate: { ...s.climate, conditions } }));
+        trackEvent("finder_filter", { conditions: [...conditions].sort().join(","), condition_count: conditions.length });
+      },
       setMinComfort: (min) => set((s) => ({ climate: { ...s.climate, minComfort: clampPct(min) } })),
       setMetricColor: (colorBy) => set((s) => ({ metrics: { ...s.metrics, colorBy } })),
       setThreshold: (id, value) =>

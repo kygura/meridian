@@ -10,7 +10,7 @@
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import { isProduction } from "../lib/session.js";
-import { originOf, securityHeaders } from "../lib/securityHeaders.js";
+import { analyticsConfigured, originOf, securityHeaders } from "../lib/securityHeaders.js";
 import { readSessionCookie, requireOwner, requireOwnerWhen } from "./auth.js";
 import { agentLimiter, flightSearchLimiter, newsLimiter } from "./rateLimit.js";
 
@@ -85,7 +85,7 @@ const onWrites =
 export function installGuards(app: Hono): void {
   app.use("*", async (c, next) => {
     await next();
-    const headers = securityHeaders({ production: isProduction(), apiOrigin: originOf(process.env.VITE_API_BASE_URL) });
+    const headers = securityHeaders({ production: isProduction(), apiOrigin: originOf(process.env.VITE_API_BASE_URL), analytics: analyticsConfigured() });
     // App-wide defaults only: a route that set a stricter policy itself (the public share
     // pages: CSP default-src 'none', no-referrer) keeps it.
     for (const [name, value] of Object.entries(headers)) if (!c.res.headers.has(name)) c.header(name, value);

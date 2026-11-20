@@ -8,6 +8,10 @@ import "./ui/ui.css";
 import "./shell/shell.css";
 import "./shell/phone.css";
 import App from "./App";
+import { initAnalytics } from "./lib/analytics";
+
+// Consent defaults must be in the dataLayer before gtag.js loads (src/lib/analytics.ts).
+initAnalytics();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

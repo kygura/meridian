@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OWNER_ID, issueSession, sessionTtlMs, signingKey, verifySession } from "./session";
-import { FRAME_ANCESTORS, IMAGE_HOSTS, MAP_DATA_HOSTS, contentSecurityPolicy, originOf, securityHeaders } from "./securityHeaders";
+import { ANALYTICS_HOSTS, FRAME_ANCESTORS, IMAGE_HOSTS, MAP_DATA_HOSTS, analyticsConfigured, contentSecurityPolicy, originOf, securityHeaders } from "./securityHeaders";
 
 beforeEach(() => {
   process.env.MERIDIAN_TOKEN = "the-password";
@@ -97,6 +97,24 @@ describe("security headers", () => {
     expect(csp).not.toContain("unsafe-eval");
     expect(directive("script-src")).not.toContain("unsafe-inline");
     expect(csp).not.toMatch(/(^|\s)\*(\s|;|$)/);
+  });
+
+  it("lets GA4 through only when the build has a measurement ID", () => {
+    const directive = (csp: string, name: string) => csp.split("; ").find((d) => d.startsWith(`${name} `))!;
+    const off = contentSecurityPolicy();
+    expect(off).not.toContain("googletagmanager");
+    expect(off).not.toContain("google-analytics");
+    const on = contentSecurityPolicy({ analytics: true });
+    expect(directive(on, "script-src")).toBe("script-src 'self' https://www.googletagmanager.com");
+    for (const host of ANALYTICS_HOSTS.connect) expect(directive(on, "connect-src")).toContain(host);
+    for (const host of ANALYTICS_HOSTS.img) expect(directive(on, "img-src")).toContain(host);
+    expect(directive(on, "script-src")).not.toContain("unsafe-inline");
+    expect(on).not.toMatch(/(^|\s)\*(\s|;|$)/);
+    expect(analyticsConfigured({ VITE_GA_ID: "G-ABC123" })).toBe(true);
+    expect(analyticsConfigured({ VITE_GA_ID: " G-ABC123 " })).toBe(true);
+    expect(analyticsConfigured({})).toBe(false);
+    expect(analyticsConfigured({ VITE_GA_ID: "UA-1234-1" })).toBe(false);
+    expect(analyticsConfigured({ VITE_GA_ID: "G-x; script-src *" })).toBe(false);
   });
 
   it("adds the API origin to connect-src when the frontend calls another origin", () => {
