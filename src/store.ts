@@ -6,6 +6,7 @@ import { withMonths } from "./lib/season";
 import { DEFAULT_DEPARTURE } from "./lib/tripPlan";
 import { planOnlyNode, type NodeItinerary } from "./lib/itinerary";
 import { apiCredentials, apiUrl } from "./lib/api";
+import { trackEvent } from "./lib/analytics";
 import type { SeasonMonth, RegionSeason } from "./lib/seasonalityApi";
 import {
   listBookings as listBookingsApi,
@@ -216,6 +217,7 @@ export const useMeridianStore = create<MeridianState>()(
           nodes: [],
         };
         set((s) => ({ trips: [...s.trips, trip], activeTripId: id }));
+        trackEvent("trip_create", { trip_count: state.trips.length + 1 });
         return id;
       },
       updateTripName: (tripId, name) =>
@@ -272,12 +274,14 @@ export const useMeridianStore = create<MeridianState>()(
             return returnHome ? rest : { ...rest, returnHome: false };
           }),
         })),
-      addCityToTrip: (tripId, node) =>
+      addCityToTrip: (tripId, node) => {
         set((state) => ({
           trips: state.trips.map((t) =>
             t.id === tripId ? { ...t, nodes: [...t.nodes, node] } : t
           ),
-        })),
+        }));
+        trackEvent("trip_add_city", { city_id: node.cityId, city_name: node.name });
+      },
       addCityToActiveTrip: (node) =>
         set((state) => {
           if (state.trips.some((t) => t.id === state.activeTripId)) {
@@ -455,12 +459,16 @@ export const useMeridianStore = create<MeridianState>()(
           // Server unreachable: keep what is there.
         }
       },
-      addToShortlist: (entry) =>
-        set((state) => ({ shortlist: [...state.shortlist, entry] })),
-      removeFromShortlist: (cityId) =>
+      addToShortlist: (entry) => {
+        set((state) => ({ shortlist: [...state.shortlist, entry] }));
+        trackEvent("shortlist_add", { city_id: entry.cityId, city_name: entry.name, country: entry.country });
+      },
+      removeFromShortlist: (cityId) => {
         set((state) => ({
           shortlist: state.shortlist.filter((s) => s.cityId !== cityId),
-        })),
+        }));
+        trackEvent("shortlist_remove", { city_id: cityId });
+      },
 
       // News headlines
       ticker: [],

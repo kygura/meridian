@@ -15,6 +15,7 @@ import {
   type PassengerErrors,
 } from "../../../lib/bookingApi";
 import { navigate } from "../../../lib/router";
+import { trackEvent } from "../../../lib/analytics";
 import { useMeridianStore } from "../../../store";
 import { Button, Dialog, ErrorState, Sheet, Spinner, UnlockCard, toast, useJournalToken } from "../../../ui";
 import { IconArrowLeft, IconSearch } from "../../../ui/icons";
@@ -112,6 +113,16 @@ export default function BookingSheet() {
       setPhase(recovery ? "expired" : "searching");
       try {
         const res = await searchOffers(searchParams(search));
+        if (!recovery) {
+          trackEvent("flight_search", {
+            origin_iata: search.origin?.iata,
+            destination_iata: search.dest?.iata,
+            passengers: search.passengers,
+            round_trip: Boolean(search.returnDate),
+            offer_count: res.offers.length,
+            offer_source: res.source,
+          });
+        }
         setOffers(res.offers);
         setSource(res.source);
         setSelected(null);
@@ -182,6 +193,15 @@ export default function BookingSheet() {
       });
       setBooking(b);
       setPhase("booked");
+      // Test mode: no ticket, no money. Deliberately not a GA4 "purchase" with a value,
+      // so it can never show up as revenue.
+      trackEvent("flight_booked", {
+        test_mode: true,
+        origin_iata: search.origin?.iata,
+        destination_iata: search.dest?.iata,
+        stops: selected.stops,
+        from_trip: Boolean(target?.tripId),
+      });
       toast("Test booking made. No ticket was issued.", { tone: "success" });
       void refreshBookings();
     } catch (err) {

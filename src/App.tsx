@@ -5,6 +5,8 @@ import { apiUrl } from "./lib/api";
 import { AppShell } from "./shell/AppShell";
 import { useUIStore } from "./shell/uiStore";
 import { PwaLayer } from "./shell/PwaLayer";
+import { ConsentBanner } from "./shell/ConsentBanner";
+import { startAnalyticsTracking } from "./lib/analyticsEvents";
 import { Toaster } from "./ui";
 import { onJournalTokenChange } from "./ui/journalToken";
 import { startTripSync } from "./lib/tripSync";
@@ -41,6 +43,9 @@ export default function App() {
 
   // Trips sync to the server while the journal is unlocked (ADR 0006).
   useEffect(() => startTripSync(onJournalTokenChange), []);
+
+  // GA4 page views and UI events; a no-op without VITE_GA_ID or inside a frame.
+  useEffect(() => startAnalyticsTracking(), []);
 
   const onMap = route.view === "map";
 
@@ -89,6 +94,7 @@ export default function App() {
       <BookingSheet />
       <PwaLayer />
       <Toaster />
+      <ConsentBanner />
     </>
   );
 }
