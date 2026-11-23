@@ -21,7 +21,7 @@ nature close by (parks, forest, reefs, trails), an international airport within 
 
 **Pick: Florianópolis.** It's the only place that hits everything: a soft beach break 10 minutes from home, nature on every side,
 an airport 15–45 minutes away with a direct flight to Lisbon, real hospitals, mild weather in both seasons and freehold title.
-A R$1M (~US$190k) purchase also gives a 4-year Brazilian residence permit that asks for just 14 days in the country every two years.
+A R$1M (~US$170k) purchase also gives a 4-year Brazilian residence permit that asks for just 14 days in the country every two years.
 The cost is a wetsuit from June to September.
 
 **Runner-up: Punta de Mita / San Pancho**, for warm water and the mellowest waves on the list. The trade-offs are owning through a
@@ -37,9 +37,7 @@ Seen on 20–21 November 2026. Tenure on several pages is unclear or missing; co
 
 | Coast | Listing | Price | Beds | Source |
 |---|---|---|---|---|
-| Florianópolis | Praia Mole, 4,100 m² lot in a small gated condo, lagoon view, next to the Galheta dunes; Barra da Lagoa ~10 min | R$9.6M (~US$1.8M) | 4 | [Loft](https://loft.com.br/home/r0qxn5r3) |
-| Florianópolis | Canto da Lagoa, 361 m², lagoon view, pool, gated | R$4.95M (~US$0.93M) | 3 | [Loft](https://loft.com.br/home/eswzjb7k) |
-| Florianópolis | Santo Antônio de Lisboa, 788 m², sea and forest views (bay side, no surf at the door; ad text says R$5.2M) | R$4.8M (~US$0.9M) | 5 | [Loft](https://loft.com.br/imovel/casa-deputado-walter-gomes-santo-antonio-de-lisboa-florianopolis-5-quartos-788m2/1j799kxs) |
+| Florianópolis | See [Florianópolis in depth](#florianópolis-in-depth) for six current listings | | | |
 | San Pancho | Doña del Mar, ~90 m from the beach (tenure not stated) | US$1,500,000 | 4 | [MexHome](https://mexhome.com/property/29423) |
 | Sayulita | Casa Pia, 417 m² built (tenure not stated; updated Jan 2026) | US$1,449,000 | 3 | [Tropicasa](https://tropicasa.com/en/property/casa-pia/41632) |
 | Sayulita | Two houses, Mexican title deed (escritura) | US$1,325,000 | 5 | [MexHome](https://mexhome.com/property/39824/) |
@@ -51,6 +49,73 @@ Seen on 20–21 November 2026. Tenure on several pages is unclear or missing; co
 
 Close to Florianópolis, **Garopaba and Praia do Rosa** (1 h 15–1.5 h from FLN) have gentler sand beaches, more nature and fewer people;
 US$1–2M buys the top of that market. No listing pages could be read there.
+
+## Florianópolis in depth
+
+Researched 23 November 2026. US$1 = R$5.93 (commercial close, 19 November 2026, Times Brasil).
+
+### Where on the island
+
+| Area | Surf | Nature | Feel | Fit |
+|---|---|---|---|---|
+| **Barra da Lagoa / Praia Mole** | Barra da Lagoa's sand break is the softest on the island; Mole is punchier | Galheta dunes, the lagoon, trails to Joaquina | East side, ~30 min to FLN (approx.), quiet outside summer | Best fit |
+| **Campeche / Novo Campeche / Morro das Pedras** | Long open beach break, mellow on small days; Morro das Pedras breaks harder | Dunes, Ilha do Campeche, Lagoa do Peri park | Closest to FLN (~15–20 min, approx.), more built up | Good fit |
+| **Armação / Matadeiro / Pântano do Sul** | Mellow on small swell, sheltered corners | Lagoinha do Leste trail, Lagoa do Peri | The most remote-feeling, fishing village south | Fits, but almost nothing for sale at US$1M+ |
+| **Lagoa da Conceição (centre, Canto, Porto da Lagoa)** | 10 min to Joaquina and Barra | Lagoon, hills | Lively, not remote, recurring sewage problems | Fits if you want town life |
+
+North Island (Jurerê, Canasvieiras) and the bay side (Santo Antônio de Lisboa) have calm water and no surf, so they're out.
+
+### Current listings, US$1–2M
+
+Seen on 23 November 2026 on Loft and Chaves na Mão. ZAP and VivaReal didn't load. No page gives a listing date, so confirm each is still available.
+
+| Area | House | Price | USD | Source |
+|---|---|---|---|---|
+| Praia Mole | 350 m² on a 4,100 m² lot in a small gated condo, 4 bed (3 suites), lagoon view; Barra da Lagoa ~10 min | R$9,600,000 | ~1.62M | [Loft](https://loft.com.br/imovel/casa-rodovia-jornalista-manoel-de-menezes-barra-da-lagoa-florianopolis-4-quartos-350m2/r0qxn5r3) |
+| Morro das Pedras | 422 m² in the Porto das Mares II condo, 4 bed (3 suites), sea view, private pool; lot size not given | R$7,800,000 | ~1.32M | [Loft](https://loft.com.br/imovel/casa-rua-manoel-pedro-vieira-morro-das-pedras-florianopolis-4-quartos-422m2/rvhomze2) |
+| Campeche | Main house plus 7 one-bed rental units, 750 m² on 1,500 m², ~1.5 km to the beach | R$7,000,000 | ~1.18M | [Chaves na Mão](https://www.chavesnamao.com.br/imovel/casa-a-venda-10-quartos-com-garagem-sc-florianopolis-campeche-1500m2-RS7000000/id-36240951/) |
+| Lagoa da Conceição | 450 m² on 651 m², 4 bed (2 suites), lagoon and hill view, pool | R$5,850,000 | ~0.99M | [Loft](https://loft.com.br/imovel/casa-avenida-das-mangueiras-lagoa-da-conceicao-florianopolis-4-quartos-450m2/pn1chy) |
+| Porto da Lagoa | 408 m² on 542 m², 3 suites, lagoon view, gated condo of ~38 houses with a trail to Joaquina | R$5,689,990 | ~0.96M | [Loft](https://loft.com.br/imovel/casa-rua-vereador-osni-ortiga-lagoa-da-conceicao-florianopolis-3-quartos-408m2/0vsxnn21) |
+| Canto da Lagoa | 361 m², 3 suites, pool, gated; lot size not given | R$4,950,000 | ~0.83M | [Loft](https://loft.com.br/imovel/casa-rua-laurindo-januario-da-silveira-lagoa-da-conceicao-florianopolis-3-quartos-361m2/eswzjb7k) |
+
+The Praia Mole house is the one that best matches the brief: big land, dunes and lagoon next door, the softest break 10 minutes away.
+Its road runs along dunes and the lagoon edge, so check APP and federal coastal-land status first. The Campeche compound is a rental business;
+its income figure is the seller's, and the permit has to cover all eight units. At R$5.93 to the dollar, US$1–2M buys the top of the island market,
+and the south (Armação, Matadeiro) had nothing listed above about R$4M.
+
+### How a foreigner buys
+
+Urban property has no limits for foreigners (Zilveti Sanden, October 2026; Global Property Guide).
+
+1. Get a **CPF** (tax number): online, at a Brazilian consulate, or through a lawyer.
+2. If you can't be there, sign a **power of attorney** (procuração pública) at a Brazilian consulate.
+3. Send the money through an authorised bank under an FX contract (contrato de câmbio), so the funds are documented as coming from abroad. That record is what the R$1M investor visa and any later repatriation rest on.
+4. **Due diligence** by your own lawyer, 2–4 weeks: the *matrícula* (registry record), 30+ certificates on the seller and the property, liens, zoning, APP mapping, federal coastal-land status (SPU) and the *habite-se* (occupancy permit).
+5. Sign the purchase contract, pay ITBI, sign the **escritura** (public deed) at a notary.
+6. Register the deed at the Cartório de Registro de Imóveis. You own the house only once it's registered, 10–30 days later.
+
+### What it costs on top of the price
+
+| Item | Cost | Paid by |
+|---|---|---|
+| ITBI (transfer tax) | 2% in Florianópolis | Buyer |
+| Notary and registry | Progressive by value: about R$7–11k on R$1M in São Paulo examples; Santa Catarina's own table not checked | Buyer |
+| Certificates | R$2–5k | Buyer |
+| Your lawyer | 1–2% | Buyer |
+| Broker | 5–6% | Seller, usually; confirm in writing |
+
+So budget about 3.5–4.5% on top. ITBI is charged on the higher of the price and the city's valuation according to one source,
+while another says the declared price stands; ask the city before signing (Rocks Investments, July 2026; Zilveti Sanden).
+
+### Risks
+
+- **Federal coastal land (terrenos de marinha):** a court order has the federal property office (SPU) redrawing the 1831 high-tide line across the whole island,
+  about 30,000 properties, with notices sent in phases since Jurerê in December 2023 and a deadline of end-2025 that couldn't be confirmed as met.
+  A house that falls inside pays 2% of the land value a year (occupation fee, 0.6% if held as aforamento) and 5% of the land value on every sale (laudêmio) (Migalhas, July 2025).
+- **Protected land (APP):** dunes, restinga and lagoon edges can't be built on or extended; houses built there can face demolition orders.
+- **Possession-only titles:** common on the Costa da Lagoa and older plots; no registered *matrícula* means no clean ownership.
+- **Sewage:** Lagoa da Conceição has had repeated pollution, including a treatment pond that burst in January 2021. Check the state's beach-water reports (IMA) for the beach you'd use.
+- **Summer:** traffic on the island's few roads and crowds in December–February.
 
 ## Residency tied to the purchase
 
@@ -98,7 +163,7 @@ and Sumner on Banks Peninsula (~30 min from Christchurch).
 
 Costa Rica's investor threshold after July 2026; Jalisco's current US advisory level; whether a BIMC hospital is open in Mandalika;
 New Zealand's LINZ page still calls the Active Investor Plus home rule "proposed", though law firms describe it as in force;
-drive times marked approximate in the research; current BRL rate; and whether each listing is still for sale.
+drive times marked approximate; Santa Catarina's notary and registry fee table; whether SPU finished the island's coastal-land redraw; and whether each listing is still for sale.
 
 ## Still open
 
