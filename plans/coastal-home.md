@@ -188,11 +188,46 @@ Listings below were opened on 24 November 2026. Safety and airport facts come fr
 | Pavones, Costa Rica | [Pavones Point villa](https://internationalsurfproperties.com/listing/pavones-point-luxury-surf-villa) | US$1,100,000 | 4 bed, titled, furnished, Starlink; the point break here is for advanced surfers |
 | Punta Mango, El Salvador | [La Ventana Beach house](https://www.housemaxsal.com/216/inmuebles/venta-rancho-y-terreno-de-playa-3-dormitorios-usulutan-usulatan) | US$750,000 header, US$849,000 in the text | Under budget; 3 bed, 400 / 758 m², gated, artesian well |
 
-Gone: Panama Sovereign's Venao villa shows as off market elsewhere, and its Costa Pedasí house (US$1.2M) is a 404.
+Gone: both Panama Sovereign homes have left its site; see "Off the market" below for where they still show.
 Not checked: a Playa Rincón estate on Encuentra24 (US$1.19M), because that site blocks the browser.
 
 **Pick:** Costa Ballena (Escaleras) has the most live homes in range with paved access and legal water, and Dominicalito is a gentle wave.
 Azuero is quieter and safer but has only two homes in range today, and one of them is a business.
+
+## Quiet luxury, any price up to US$2M
+
+Added 24 November 2026. The ask: luxurious but low profile, budget anywhere up to US$2M.
+"Low profile" here means no visible neighbours or a small gated road, house hidden in forest, no resort or condo block next door.
+
+**Opened in the browser on 24 November 2026**
+
+| Area | Listing | Price | Why it's quiet | Catch |
+|---|---|---|---|---|
+| Escaleras, Costa Rica | [Casa de Zen](https://costaricarealestate.net/properties/dominical/3-39-acres-3-bedroom-luxury-ocean-view-villa-exclusive-gated-community-surrounded-rainforest/), MLS DOM684 | US$1,685,000 (reduced) | 3.39 acres of primary rainforest at 1,700 ft, private gated drive, security room; 4,801 sq ft, built 2015, casita, infinity pool, Whale's Tail view | Steep hill road; rented on VRBO today |
+| Dominicalito, Costa Rica | [Hilltop estate](https://costaricarealestate.net/properties/dom734mao/), MLS DOM734MAO | US$1,500,000 | 5 acres, end of the road, "no visible neighbours", security gate, fibre buried, well plus community water; 7 min to Dominicalito beach | 3 bed / 2 bath for 4,000 sq ft; remodelled 2020, an older house underneath |
+| Cañas, Panama | [Villa Níspero](https://www.panama-properties.com/properties-1/villa-nispero-three-bedroom-ocean-view-villa-gated-community-canas-5156), #5156 | US$995,000 | New single-level villa in a small gated community, 360° views over Isla Cañas, solar with battery room, 10 min to Venao | 0.61 acre; the lead image looks like a render, so ask for photos of the finished house |
+
+**From search results, not opened**
+
+| Area | Listing | Price | Note |
+|---|---|---|---|
+| Ojochal, Costa Rica | [3 acres with orchard](https://www.dominicalproperty.com/property/luxury-ocean-view-home-with-lots-of-fruit-trees-3-acres/), RMX-1579 | US$1,100,000 | Electric gate, paved drive, underground utilities, fibre, legal water |
+| Escaleras, Costa Rica | [Glass house, 2.44 acres](https://www.dominicalproperty.com/property/amazing-property-with-ocean-and-mountain-views-in-escaleras-2-44-acres/) | US$1,795,000 | Built 2023, 3 bed, gated |
+| Dominical, Costa Rica | DOM762, 1.2 acres, above the canopy | US$1,390,000 | Same agency as Casa de Zen |
+| Los Destiladeros, Panama | [Villa Esplendorosa](https://panamasovereign.com/property/psr078/) | US$1,800,000 | 7 bed, built 2009, titled, no HOA, walk to the beach |
+| Costa Pedasí, Panama | [Villa Luna Mar](https://panamasovereign.com/property/psr048/) | US$1,500,000 | Oceanfront, built 2017, titled; inside a subdivision |
+| Ojochal / Escaleras | Mar Mystique Haven, Villa Elle, Casa Capung, Casa de Orquídeas | US$589k–789k | Smaller 2-bed homes on about an acre, if the budget drops |
+
+## Off the market
+
+Both homes that left Panama Sovereign's site still show on other portals. Neither page says whether they sold or were withdrawn.
+
+| Home | Where it still shows | Price | Status shown | Facts |
+|---|---|---|---|---|
+| Playa Venao oceanview villa | [DoPanama, PLS-19936](https://dopanama.com/properties/luxurious-oceanview-villa-with-rental-casitas-in-playa-venao-pls-19936-or-ideal-investment-in-panama-1770382902908) | US$1,400,000 (struck through) | "Off Market" badge | 4 bed / 4 bath main house plus 2 rental casitas on 6,552 m², sunset pool view |
+| Costa Pedasí oceanfront villa | [propertyinvestor.io, PA-1005](https://propertyinvestor.io/en/brand-new-3-bedroom-luxury-oceanfront-villa-for-sale-in-pedasi-panama-1005) | US$1,200,000 (struck through) | Search snippet says "Sold"; the page itself shows no sold label | 3 bed / 5 bath, 659 m² on 1,624 m², above La Garita beach; built 2023 per that page, 2017 per a 2024 MLS copy |
+
+An off-market home can sometimes be bought if the owner withdrew rather than sold. Only the listing agent can say which.
 
 ## Residency tied to the purchase
 
