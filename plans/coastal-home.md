@@ -314,6 +314,23 @@ Read only; nobody contacted. Sources: Johor land office (PTG) page, PTG circular
 
 **Read across:** Desaru buys you clean title, hotel service and Singapore next door, but mediocre sea and seasonal surf, and with taxes it lands just over US$2M. Medewi buys the wave and real quiet, for far less money, at the cost of a lease or Hak Pakai instead of full ownership, thin infrastructure and a slow resale.
 
+### Soka villa vs Desaru: taxes (24 Nov 2026)
+
+He shortlisted the Soka villa ("Villa Asoka") on 24 Nov. He treats the $2M ceiling as soft but is wary of extra taxes, so this compares tax, not price.
+
+| | Soka villa, Bali | Anantara 3-bed, Desaru |
+|---|---|---|
+| Asking | IDR 30.3–35bn (one agent 32bn, negotiable), about $1.66–1.92M | RM 7.9M promo, about $1.92M |
+| Buyer tax at purchase | BPHTB 5% (Tabanan's tax-free slice is tiny): about $83–96k, plus notary/PPAT fees | 8% foreigner stamp duty + 3% Johor consent levy: RM 869k, about $211k |
+| VAT | None on a resale from a private owner (VAT only applies when the seller is a registered business) | Developer sale; promo price quoted as all-in to buyer before duty |
+| 1% "very luxurious" prepaid tax (PPh 22, houses over IDR 30bn) | Collected only when the seller is a company. SHM can only be held by Indonesian individuals, so it should not apply; confirm with the notary | n/a |
+| Tax when you sell later | Seller's final tax 2.5% of the gross sale price, gain or no gain | RPGT for non-citizens: 30% of the gain if sold within 5 years, 10% from year 6 |
+| Yearly | PBB land and building tax, small | Service fees RM 5,472/month (about $16k a year) plus quit rent and assessment |
+
+Sources: vOffice tax guide (Aug 2026) for PPh 2.5%, BPHTB 5%, VAT 11% on registered sellers; DDTC (May 2024) for PPh 22 on very luxurious goods (collected by corporate sellers, 1% on houses over IDR 30bn); PwC Malaysian Tax Booklet 2025/26 for RPGT rates.
+
+Photos (24 Nov): Soka villa from the Betterplace listing mirrored on hatamatata.com (Betterplace and Rumah123 blocked the browser). One photo shows a black-edged infinity pool, a newer-looking one a white-edged pool, so the photos are from different years. Desaru photos are the developer's gallery (styled shots of the resort's villas, not necessarily this unit). Villa: 841 m² land, 288 m² built.
+
 ## Off the market
 
 Both homes that left Panama Sovereign's site still show on other portals. Neither page says whether they sold or were withdrawn.
