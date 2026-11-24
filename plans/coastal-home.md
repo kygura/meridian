@@ -229,6 +229,53 @@ Added 24 November 2026. The ask: luxurious but low profile, budget anywhere up t
 | Costa Pedasí, Panama | [Villa Luna Mar](https://panamasovereign.com/property/psr048/) | US$1,500,000 | Oceanfront, built 2017, titled; inside a subdivision |
 | Ojochal / Escaleras | Mar Mystique Haven, Villa Elle, Casa Capung, Casa de Orquídeas | US$589k–789k | Smaller 2-bed homes on about an acre, if the budget drops |
 
+## Southeast Asia, deeper (24 Nov 2026)
+
+Prices read on the listing pages on 24 Nov 2026. FX: US$1 = IDR 18,237 / RM 4.114 / THB 33.94 / PHP 63.77.
+
+### Who can own what
+
+| Country | What a foreigner can hold | Catch |
+| --- | --- | --- |
+| Malaysia (Johor) | Direct title with state consent; strata leasehold to 2114 at Anantara | 3% state levy (min RM30k), 8% stamp duty for foreigners from 2026; Johor's landed rule mentions 2+ storeys, the 3-bed Anantara villa is single-storey strata, so confirm eligibility with the land office |
+| Indonesia (Bali) | Hak Pakai (30+20+30 yrs) with a KITAS, min IDR 5bn in Bali; or a lease | Listings say "freehold" (SHM), which only an Indonesian can hold; nominee deals are now prosecuted in Bali |
+| Thailand | 30-year lease on land | "Freehold Chanote" ads mean a Thai company or nominee; 2026 nominee raids |
+| Philippines | Lease only (25+25) | Typhoon belt |
+
+### Pick by what matters
+
+- **Cleanest title + easiest airport:** Desaru Coast, Malaysia. Ferry 7 min away to Singapore (Changi). Surf only Nov–Mar, small sandy beach breaks.
+- **Best mellow wave:** Medewi, west Bali. Very long soft left, longboard heaven, few people. 2.5–3 h from Bali airport.
+- **Most polished:** Natai / Khao Lak, Thailand. 30 min from Phuket airport (Natai). Weakest title.
+
+### Listings
+
+| Home | Price | What it is | Link |
+| --- | --- | --- | --- |
+| Anantara Desaru Coast Residences, 3-bed pool villa | RM 7.9M (~US$1.92M) promo; RM 8.1M elsewhere | 288 m² on 841 m² land, beachfront, private infinity pool, run by the Anantara resort; fees RM 5,472/mo; optional rental program | https://www.propertyguru.com.my/bm/senarai-hartanah/anantara-desaru-coast-residences-untuk-dijual-oleh-fiza-sulaiman-501586055 |
+| Same project, developer page | – | Floor plan, 360° tour, brochure | https://www.anantaradesaru-residences.com/villas/three-bedroom-pool-villa.html |
+| Soka beachfront estate, Medewi area (BPVF01058) | IDR 30.3bn in the text (~US$1.66M); IDR 35.8bn (~US$1.96M) in the page header | 3 bed, 700 m² resort-style build on 3,000 m² beachfront, built 2016 | https://betterplace.cc/buy/properties/BPVF01058 |
+| Balian beach-view villa (BE-2314) | US$960k | 3 bed, 300 m² on 500 m², built 2023 | https://baliexception.com/properties/for-sale/villa/freehold/tabanan/beach-view-3-bedroom-villa-for-sale-freehold-in-balian-be-2314/ |
+| Medewi Point house (HPC1467) | IDR 9bn (~US$493k) | 5 bed, single level, 2,370 m² land, 100 m to beach, looks at Medewi Point; room to build | https://harcourtspurbabali.com/property/scenic-coastal-property-medewi-bali/ |
+| Natai beach villa (PHA6718) | US$1.62M (was US$2.0M) | 3 bed, 285 m², 3 floors, 15-villa managed complex, 2021, leasehold | https://phuketbuyhouse.com/buy/p/6718-villa-house-in-phang-nga |
+| Bang Niang beachfront, Khao Lak (Kinnara #4189) | THB 70M (~US$2.06M) | Beachfront, sold as "freehold Chanote" (company route) | https://kinnara.asia/4189 |
+| Siargao hillcrest villa (NWA-098) | PHP 18.5M (~US$290k) | 1,000 m², 8 min to Cloud 9; Jacking Horse is the mellow wave; domestic flights only | https://northwaveasia.com/property/nwa-098/ |
+
+Also seen: Balian beachfront 6-bed, IDR 22bn (~US$1.21M), 3,300 m², 95% built, permit (SLF) in progress, on Rumah123. Pekutatan joglo estate IDR 41.5bn, over budget. Anantara 4-bed beachfront RM 18M, over budget.
+
+### Surf near each
+
+- **Desaru:** Wild Boar Bay, Tanjung Balau. Soft sandy beach breaks, ~3 ft, Nov–Mar only; flat the rest of the year.
+- **Medewi / Balian / Soka:** Medewi left is soft and long; rocky entry, 2026 local rules for beginners. Balian is a punchier rivermouth.
+- **Khao Lak:** Memories Beach / Pakarang, soft sandy beach break 2–3 ft, May–Oct. Natai itself isn't a surf spot.
+
+### Left out this round
+
+- **Sumba:** truly untouched, but listings are resort units, infrastructure thin, surf mostly heavy reef.
+- **La Union (Philippines):** houses PHP 24–45M, but 4–5 h from Manila airport.
+- A sumba.estate listing looked like a template (placeholder phone numbers).
+- Pages that wouldn't load for photos: PropertyGuru, EdgeProp, Kinnara (bot checks). Data above came from search copies of those pages.
+
 ## Off the market
 
 Both homes that left Panama Sovereign's site still show on other portals. Neither page says whether they sold or were withdrawn.
