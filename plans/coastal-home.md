@@ -276,6 +276,44 @@ Also seen: Balian beachfront 6-bed, IDR 22bn (~US$1.21M), 3,300 m², 95% built, 
 - A sumba.estate listing looked like a template (placeholder phone numbers).
 - Pages that wouldn't load for photos: PropertyGuru, EdgeProp, Kinnara (bot checks). Data above came from search copies of those pages.
 
+### Desaru vs Medewi, deep dive (24 Nov 2026)
+
+Read only; nobody contacted. Sources: Johor land office (PTG) page, PTG circular 3/2025 as reported, The Edge (Nov 2025), Anantara and GHA rate pages, Desaru Ferries / BatamFast, Wikivoyage; Kepmen ATR/BPN 1241/2022, Perda Bali 4/2026, agency listings on Brighton, Rumah123, 99.co, GroPerti, Harcourts.
+
+#### Desaru: Anantara Desaru Coast Residences, 3-bed
+
+| Check | Finding |
+| --- | --- |
+| Title for a foreigner | Johor allows foreign buyers at RM1M+ with state consent (3-6 months, discretionary). PTG's list covers bungalows of 2+ storeys and "holiday homes"; the 3-bed villa is single storey on a strata leasehold to 2114. Which category it falls in, and whether a foreign quota is left, must be confirmed in writing before any deposit. |
+| All-in cost | RM 7.9M + 8% foreigner stamp duty (RM 632k) + 3% state consent fee (RM 237k) + RM 2k ≈ RM 8.77M, about **US$2.13M**. That is over the US$2M ceiling unless the price is negotiated down. |
+| Running cost | Fees RM 5,472/month (~US$16k/yr). |
+| Rental | Optional resort-run programme, target minimum 5% a year; ~70% of owners opted in (The Edge, Nov 2025). The resort sells a 3-bed residence at RM 14,675–15,650 a night. Half the 20 villas sold as of late 2025. |
+| Access | Senai airport 1 h; Changi ~2–3 h by road via the causeway. Ferry Tanah Merah–Desaru: one sailing each way, Thu–Sun only, ~90 min, S$70 + S$12 surcharge one way; in the NE monsoon it can divert to Tanjung Pengelih plus a 45-min coach. |
+| Water / power | Johor mains; resort-managed. No issue found. |
+| Sea and season | Nov–Feb monsoon: high waves, rain, rough ferry. Good season Apr–Oct. Wikivoyage calls the beach greyish with often murky water by Malaysian standards. |
+| Surf | Only in monsoon (Dec to mid-Feb), soft sandy beach breaks; flat the rest of the year. |
+
+#### Medewi area, west Bali
+
+| Check | Finding |
+| --- | --- |
+| Title for a foreigner | All three listings are SHM (Hak Milik), which only Indonesians can hold. Lawful routes: Hak Pakai in your own name (30 + 20 + 30 yrs; passport, visa or stay permit; house must be worth at least IDR 5bn in Bali), a long lease, or HGB through a PT PMA. A nominee "freehold" is void and banned under Perda Bali 4/2026. All three homes clear the IDR 5bn floor. |
+| Buying costs | Roughly 5% buyer tax (BPHTB) plus notary fees on top of the price. |
+| Road | Denpasar–Gilimanuk national road: narrow, winding, heavy trucks. Medewi ~2.5–3 h from the airport; Soka/Balian ~1.5–2 h. Pekutatan–Soka–Mengwi toll road targeted for 2031 (tender 2027); don't price it in. |
+| Water | ~84% of Jembrana runs on wells, springs or rain water, and the regency projects a deficit. Bore wells need permits since April 2026; ask for a water test. |
+| Power | Bali-wide blackout May 2025 (under 12 h). Plan backup power. |
+| Health | Village clinic in Medewi; hospital and banks in Negara, ~20 km. |
+| Rental market | Thin: surf travellers and quiet-seekers. Beachfront villas at Medewi rent from ~US$85 a night (Batu Kayu); Soka-area villas ~US$150–900. Resale is slow, sometimes years. Treat it as a lifestyle buy, not income. |
+| Surf | Medewi: long soft left over rounded stones, 300–800 m, best Apr–Oct, ~80% longboards. Rocky entry. Since Feb 2026 beginners must stay inside with an instructor. |
+
+| Home | Price | Notes |
+| --- | --- | --- |
+| Soka beachfront "Villa Asoka", 3 bed, 700 m² on 3,000 m² | IDR 30.3bn to 35bn across agents; one at IDR 32bn "slightly negotiable" (~US$1.66–1.92M) | Same villa listed by at least five agencies (Betterplace, Brighton, Rumah123 x2, 99.co, GroPerti). Single storey, built 2016, deep well, IMB and SLF claimed. Power quoted as 5,500, 6,600 or 15,000 VA depending on the listing. Sits on the main road. No rental history found online. ~30–40 min to Medewi. |
+| Medewi Point house HPC1467, 5 bed, 200 m² on 2,370 m² | IDR 9bn (~US$493k) | Built 2016, single level, 100 m to the beach, view of the point. Town water (PDAM), only 3,300 W power: needs an upgrade. Partly furnished; room to build. Updated Aug 2026. |
+| Balian villa BE-2314, 3 bed | US$960k | Built 2023, beach view; 1.5–2 h from the airport. Not checked in depth. |
+
+**Read across:** Desaru buys you clean title, hotel service and Singapore next door, but mediocre sea and seasonal surf, and with taxes it lands just over US$2M. Medewi buys the wave and real quiet, for far less money, at the cost of a lease or Hak Pakai instead of full ownership, thin infrastructure and a slow resale.
+
 ## Off the market
 
 Both homes that left Panama Sovereign's site still show on other portals. Neither page says whether they sold or were withdrawn.
