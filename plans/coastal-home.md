@@ -207,6 +207,17 @@ Added 24 November 2026. The ask: luxurious but low profile, budget anywhere up t
 | Dominicalito, Costa Rica | [Hilltop estate](https://costaricarealestate.net/properties/dom734mao/), MLS DOM734MAO | US$1,500,000 | 5 acres, end of the road, "no visible neighbours", security gate, fibre buried, well plus community water; 7 min to Dominicalito beach | 3 bed / 2 bath for 4,000 sq ft; remodelled 2020, an older house underneath |
 | Cañas, Panama | [Villa Níspero](https://www.panama-properties.com/properties-1/villa-nispero-three-bedroom-ocean-view-villa-gated-community-canas-5156), #5156 | US$995,000 | New single-level villa in a small gated community, 360° views over Isla Cañas, solar with battery room, 10 min to Venao | 0.61 acre; the lead image looks like a render, so ask for photos of the finished house |
 
+**Casa de Zen, checked from public sources on 24 November 2026**
+
+- **Status:** listed at US$1,685,000 since at least March 2025 (Lot 53, MLS CB 22208). Most portals show it active, but Coldwell Banker Pacific Realty and We Sell Paradise mark it "Sold". The listing agent has to say which is true.
+- **Title:** about 5 km inland at 1,700 ft, so the maritime zone (Law 6043) doesn't touch it. Lots in Costa Verde Estates are titled. This lot's folio real, liens and survey need an attorney's Registry check. VRBO places it in Pérez Zeledón (San José); the listings say Osa (Puntarenas). Which municipality it falls in sets the permits and property tax.
+- **Water:** community aqueduct supplied by the Puerto Nuevo ASADA and run by the estate's own staff, plus a 1,500-gallon cistern and a generator. ASADA water means renting it out needs no MINAE concession. Confirm the meter is in the seller's name.
+- **Forest:** 3.4 acres of primary forest with a stream and a seasonal waterfall. The Forestry Law bars clearing it and sets buffers along the stream, so you can't add buildings in the forest.
+- **Road:** a mostly paved climb of about 15 to 20 minutes from the coastal highway, then the estate's 7 km of internal roads, which the owners' association regrades twice a year. The owner's VRBO page says 4x4 is mandatory, and it's the only house on a dead-end road. Dominicalito beach is about 20 minutes away and Quepos airport about 70.
+- **Rentals:** on VRBO it rents as a 2-bed home for 6 guests, rated 10/10 (20 reviews on the listing, 48 ratings in map data). Nights from about CA$494 in early December 2026. No income or occupancy figures are public.
+- **Costs:** gated with a 24-hour guard. Association dues are annual, but no amount is published. One agent estimates closing costs at US$70,770 (about 4.2%).
+- **Area safety:** the Escaleras community site says crime is present and asks owners to warn renters. Down on Dominical beach, a German tourist was murdered in 2023, and in 2025 a court ordered Osa municipality to clear illegal occupation of the beach.
+
 **From search results, not opened**
 
 | Area | Listing | Price | Note |
