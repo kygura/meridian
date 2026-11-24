@@ -322,7 +322,7 @@ He shortlisted the Soka villa ("Villa Asoka") on 24 Nov. He treats the $2M ceili
 |---|---|---|
 | Asking | IDR 30.3–35bn (one agent 32bn, negotiable), about $1.66–1.92M | RM 7.9M promo, about $1.92M |
 | Buyer tax at purchase | BPHTB 5% (Tabanan's tax-free slice is tiny): about $83–96k, plus notary/PPAT fees | 8% foreigner stamp duty + 3% Johor consent levy: RM 869k, about $211k |
-| VAT | None on a resale from a private owner (VAT only applies when the seller is a registered business) | Developer sale; promo price quoted as all-in to buyer before duty |
+| VAT | None on a resale from a private owner (VAT only applies when the seller is a registered business) | None: Malaysia charges no sales tax on residential property |
 | 1% "very luxurious" prepaid tax (PPh 22, houses over IDR 30bn) | Collected only when the seller is a company. SHM can only be held by Indonesian individuals, so it should not apply; confirm with the notary | n/a |
 | Tax when you sell later | Seller's final tax 2.5% of the gross sale price, gain or no gain | RPGT for non-citizens: 30% of the gain if sold within 5 years, 10% from year 6 |
 | Yearly | PBB land and building tax, small | Service fees RM 5,472/month (about $16k a year) plus quit rent and assessment |
