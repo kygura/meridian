@@ -117,13 +117,61 @@ while another says the declared price stands; ask the city before signing (Rocks
 - **Sewage:** Lagoa da Conceição has had repeated pollution, including a treatment pond that burst in January 2021. Check the state's beach-water reports (IMA) for the beach you'd use.
 - **Summer:** traffic on the island's few roads and crowds in December–February.
 
+## Without Brazil
+
+Researched 24 November 2026, for a buyer who'd rather avoid Brazil for the language and the sense of insecurity.
+The Spanish-speaking coasts remove the language problem. Safety is the deciding factor, and it moved in 2025–2026.
+For comparison, Florianópolis had the lowest homicide rate of any Brazilian state capital in 2024.
+
+### Ranked on safety first
+
+| # | Coast | Safety (2025 data and 2026 news) | Language | Title | Surf | Airport to Europe |
+|---|---|---|---|---|---|---|
+| 1 | **Panama's Pacific beaches**: Coronado, Playa Serena / Buenaventura, El Palmar (San Carlos) | National homicide rate 12.9/100k, flat. Panamá Oeste ~8–9 and Coclé ~5 (own estimates from Ministerio Público counts). US Level 2. No 2025–2026 reports found of violence in Coronado; the UK warns of burglars befriending residents | Spanish | Titled freehold; first 22 m of beach public; avoid rights-of-possession (ROP) land | El Palmar and Playa Serena are beginner beach breaks | PTY 1–1.5 h: nonstop Madrid (Iberia, Air Europa), Amsterdam, Paris |
+| 2 | **Sayulita / San Pancho**, Nayarit, Mexico | Nayarit 15.3/100k (INEGI), below Mexico's 21.4, but disappearances rose from 0.5 to 10.2/100k (Jan–May, 2015 vs 2026) and Bahía de Banderas is named among hotspots. 22 Feb 2026: after the army killed the CJNG leader, Puerto Vallarta had burned vehicles, a prison attack, a shelter-in-place and a day of cancelled flights. No 2026 reports found of attacks on residents in Sayulita or San Pancho | Spanish | Bank trust (fideicomiso), 50+50 years | The best chill surf on the list | PVR 35–60 min; no nonstop to Europe |
+| 3 | **Playa Grande / Tamarindo**, Guanacaste, Costa Rica | National 16.8/100k (2025), near the record. Guanacaste 79 homicides (~19–20/100k, own estimate). Armed robberies of foreign-owned homes: a Canadian shot in Los Jobos (Jul 2025), OIJ warning on extortion of foreigners' homes (Jan 2026), an American woman killed at home in Playa Grande's district and a double hit in Tamarindo (Aug 2026). US Level 2 | Spanish | Titled freehold; 200 m maritime zone is concession only | Mellow sand peaks, crowded | LIR ~1.5 h: only Zürich (Edelweiss) |
+| 4 | **Bali's west coast**: Pererenan, Canggu, Seseh, Balian | Low violent crime, but foreign crime victims up 47% in 2025 (339; police data via detikBali); burglary, snatch theft, scams; a Dutch man stabbed at a villa in March 2026. Earthquakes. Canggu traffic: 5 km can take an hour | English in daily life; deeds in Bahasa Indonesia | No ownership: Hak Pakai (30+20+30 years, needs a KITAS, min. IDR 5bn in Bali) or 22–30 year leases. "Freehold" ads are nominee deals, now criminal in Bali | Batu Bolong, Kedungu, Balian | DPS: nonstop Istanbul (Turkish) and the Gulf |
+| 5 | **Todos Santos / Cerritos**, Baja California Sur, Mexico | Getting worse: BCS 23.2/100k in 2025 (homicides 85 → 203), 4th-highest extortion rate, violent home robberies 3 → 35 in Jan–Aug 2026. US Level 2 | Spanish | Fideicomiso | Cerritos is sand-bottom and friendly | SJD ~1.5 h; seasonal Frankfurt |
+
+Dropped: South Lombok (only Singapore and Kuala Lumpur flights, thin stock at this budget, same title problem as Bali);
+Cherating, Malaysia (freehold above RM1M, but surf only Nov–Apr and inconsistent).
+
+**Pick without Brazil: Panama's Pacific beaches.** Lowest violence of the Spanish-speaking options, real title, a nonstop
+to Madrid from an airport about an hour away, residency through Friendly Nations (Spain and Germany qualify) with US$200k
+in property, and the US dollar. The cost: it's hot and wet May–Nov, less wild than Nayarit, and Coronado is closer to a
+beach suburb than a remote village. Hospital Panamericano has a branch in Coronado; the big private hospitals are in Panama City.
+
+**Runner-up: Sayulita / San Pancho** for the surf and jungle, accepting a bank trust and the CJNG risk around Puerto Vallarta.
+
+### Current listings, US$1–2M
+
+Pages read on 24 November 2026. Title or tenure on most pages is missing or a label; a lawyer checks it in the registry first.
+
+| Coast | Listing | Price | Beds | Built / lot | Title on page |
+|---|---|---|---|---|---|
+| Coronado | [Beachfront house](https://www.panamaequity.com/listings/luxury-beachfront-home-for-sale-in-coronado-panama/) (updated 10 Sep 2026) | US$1,300,000 | 4–5 | 435 / 2,509 m² | Not stated |
+| Coronado | [Beachfront house](https://www.remax-centralamerica.com/003033098056) | US$1,800,000 | 4 | 300 / 2,475 m² | Not stated |
+| Playa Corona, San Carlos | [Beachfront estate](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/for-sale-beautiful-4-bedroom-beachfront-estate-lot-no-5-at-playa-corona-highly-negotiable/32072423) ("highly negotiable") | US$1,500,000 | 4 | 450 / 2,446 m² | Not stated |
+| Buenaventura | [Ocean Lake Villas](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/house-for-sale-in-buenaventura/33198557) (30 Oct 2026; maybe the same house listed at US$1.65M in April) | US$1,300,000 | 4 | 566 m² / ? | Not stated |
+| Sayulita | [Casa Suenos](https://mexhome.com/property/34719), north side (17 Nov 2026) | US$1,449,000 | 4 | 840 / 1,116 m² | Escritura |
+| Sayulita | [Villa Monte](https://www.mlsvallarta.com/property/mlv/53107/villa-monte), Monte Calvario, six blocks to the beach | US$1,499,000 | 4 | 223 / 602 m² | Not stated |
+| San Pancho | [Villa Papelillos](https://mexhome.com/property/38298/), hills toward Mandarina (12 May 2026) | US$1,990,000 | 8 | 529 / 14,190 m² | Escritura |
+| Playa Grande | [Casa Flores del Mar](https://kraincostarica.com/en/playa-grande/playa-grande-listings/rs2600671), Las Ventanas (12 Oct 2026) | US$1,795,000 | 4 | 391 / 1,317 m² | Held in a company |
+| Playa Grande | [Casa Mareva](https://www.re.cr/en/costa-rica-real-estate-for-sale/beach-homes-ocean-view/rs2501316/print-listing), Palm Beach, ~3 min walk | US$1,300,000 | 4 | 305 / 1,059 m² | Not stated |
+| Pererenan, Bali | [BE-1453](https://baliexception.com/properties/for-sale/villa/leasehold/pererenan/ready-now-5-bedroom-villa-for-sale-leasehold-in-pererenan-be-1453) | US$1,445,000 | 5 | 1,400 / 1,022 m² | Lease, 22 years |
+| Seseh, Bali | [BE-2405](https://baliexception.com/properties/for-sale/villa/leasehold/seseh/offplan-4-bedroom-ocean-front-luxury-villa-for-sale-leasehold-in-seseh-be-2405), off-plan (7 Oct 2026) | US$1,199,000 | 3–4 | 570 / 500 m² | Lease, 23 years |
+| Balian, Bali | [BE-2075](https://baliexception.com/properties/for-sale/villa/freehold/tabanan/beachfront-6-bedroom-villa-for-sale-freehold-in-balian-be-2075/), beachfront (3 Sep 2026) | US$1,000,000 | 6 | 546 / 3,030 m² | "Freehold" (SHM; a foreigner can't hold it) |
+| Cerritos, BCS | [Casa Cumpleaños](https://ricardoamigo.com/for-sale/casa-cumplea-os/25-4075), steps from the sand (19 Nov 2026) | US$1,100,000 | 4 | 283 / 574 m² | Fideicomiso |
+| Todos Santos | [La Cachora](https://ricardoamigo.com/for-sale/todos-santos/26-1303), house, casita and studio | US$1,200,000 | 1–2 | 260 / 2,799 m² | Fideicomiso |
+
 ## Residency tied to the purchase
 
 | Country | Route | Threshold | Notes |
 |---|---|---|---|
 | Brazil | Real-estate investor (CNIg RN 36/2018) | R$1M urban property (R$700k only in the North and Northeast) | 4 years, then indefinite; 14 days in Brazil every 2 years; funds must come from abroad |
 | Mexico | Temporary residency | ~US$4,250/month income or ~US$72k savings | No property visa; varies by consulate |
-| Costa Rica | Investor (Law 9996) | US$150k, possibly back to US$200k | Disputed since July 2026: get it in writing from Migración |
+| Costa Rica | Investor (Law 9996) | Likely US$200k again | The US$150k window closed 14 July 2026; no official notice yet; about a year of backlog |
+| Panama | Friendly Nations | US$200k in property | Spain and Germany qualify; Qualified Investor needs US$300k (new build) or US$500k (resale) since 16 Sep 2026 |
 | Indonesia | Second Home Visa | IDR 2bn (~US$130k) in a bank or qualifying property | 5 or 10 years |
 
 ## New Zealand: not buyable on this budget
@@ -144,13 +192,13 @@ and Sumner on Banks Peninsula (~30 min from Christchurch).
 - **Guanacaste's Playa Hermosa / Papagayo:** 30 min from the airport, but almost no surf.
 - **El Salvador's Surf City (El Sunzal, El Zonte):** a direct flight to Madrid since September 2026 and US Level 1, but the breaks are over rock and reef, coastal titles are often unregistered, and Canada warns that foreigners can be detained under the ongoing state of exception.
 - **Nosara and the Southern Pacific of Costa Rica:** Playa Guiones is the most forgiving beach break in Costa Rica, but 2.5–4 h from an international airport.
-- **Pedasí, Panama:** easy residency, but 4.5–5 h from the airport and thin healthcare.
+- **Pedasí / Playa Venao, Panama:** easy residency and gentle surf at Venao, but 4.5–5 h by road from PTY (or about 40 min by light aircraft from Albrook) and thin healthcare.
 - **Langkawi:** hot, scarce stock, public hospital only, no surf.
 - **Trancoso, Brazil:** faction violence next door in Caraíva.
 - **José Ignacio, Uruguay:** winters of 8–16°C.
 - **Olón, Ecuador:** the UK advises against all but essential travel to Santa Elena.
 - **Thailand:** a 30-year lease is the only certain title, and villas held through nominee companies are being raided in 2026.
-- **Philippines and Vietnam:** no land for foreigners; Vietnam's September 2026 draft would end foreign ownership of houses.
+- **Philippines and Vietnam:** no land for foreigners. The Philippines now allows 99-year leases for foreign investors (RA 12252, 2025), unclear for a private home; Vietnam's September 2026 draft would end foreign ownership of houses.
 
 ## Before buying
 
@@ -163,7 +211,7 @@ and Sumner on Banks Peninsula (~30 min from Christchurch).
 
 Costa Rica's investor threshold after July 2026; Jalisco's current US advisory level; whether a BIMC hospital is open in Mandalika;
 New Zealand's LINZ page still calls the Active Investor Plus home rule "proposed", though law firms describe it as in force;
-drive times marked approximate; Santa Catarina's notary and registry fee table; whether SPU finished the island's coastal-land redraw; and whether each listing is still for sale.
+drive times marked approximate; Santa Catarina's notary and registry fee table; whether SPU finished the island's coastal-land redraw; whether each listing is still for sale; Nayarit's US advisory level (Level 2 in November 2026 secondary sources, Level 3 in an undated OSAC copy); provincial homicide rates for Guanacaste, Panamá Oeste and Coclé (own estimates from counts); fibre and title on the Panama listings; whether Panama's Friendly Nations route changed with Decree 17.
 
 ## Still open
 
