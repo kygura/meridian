@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, type FormEvent, type Keybo
 import { Chip, EmptyState, ErrorState, IconButton, Select, Sheet, Textarea, UnlockCard, toast, useJournalToken } from "../../ui";
 import { IconAsk, IconClose, IconEdit, IconSend, IconSparkle } from "../../ui/icons";
 import { apiCredentials, apiUrl } from "../../lib/api";
+import { trackEvent } from "../../lib/analytics";
 import { navigate } from "../../lib/router";
 import { useMeridianStore } from "../../store";
 import { openCity, useUIStore } from "../../shell/uiStore";
@@ -108,6 +109,7 @@ export default function AskPanel({ mode, onClose }: AskPanelProps) {
   const send = (text: string) => {
     const q = text.trim();
     if (!q || busy) return;
+    trackEvent("ask_send", { turn: messages.filter((m) => m.role === "user").length + 1 });
     void append({ role: "user", content: q });
     setInput("");
   };

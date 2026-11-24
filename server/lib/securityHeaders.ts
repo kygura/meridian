@@ -10,6 +10,7 @@
 //   connect   the API, and the Natural Earth country outlines the map fetches
 //   workers   blob: (MapLibre builds its worker from a blob URL)
 //   framing   this site and the owner's portfolio, which shows a live preview
+//   analytics only when the build has VITE_GA_ID: gtag.js and the hosts its hits go to
 // The basemap has no tile host: land comes from that one GeoJSON and labels use glyphs
 // served from /fonts.
 
@@ -23,11 +24,29 @@ export const IMAGE_HOSTS = ["https://upload.wikimedia.org", "https://commons.wik
  */
 export const FRAME_ANCESTORS = ["https://www.nca.ink", "https://nca.ink", "https://*.vercel.app"] as const;
 
+/**
+ * Google Analytics 4 (src/lib/analytics.ts), as Google documents for gtag.js without
+ * Google Signals: the script from Tag Manager, hits to google-analytics.com (regional
+ * endpoints are subdomains, hence the wildcard) and analytics.google.com.
+ */
+export const ANALYTICS_HOSTS = {
+  script: ["https://www.googletagmanager.com"],
+  connect: ["https://*.google-analytics.com", "https://*.analytics.google.com", "https://www.googletagmanager.com"],
+  img: ["https://*.google-analytics.com", "https://www.googletagmanager.com"],
+} as const;
+
+/** True when the build carries a GA4 measurement ID, so the CSP has to let it through. */
+export function analyticsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+  return /^G-[A-Z0-9]+$/.test(env.VITE_GA_ID?.trim() ?? "");
+}
+
 export interface SecurityHeaderOptions {
   /** Adds Strict-Transport-Security. */
   production?: boolean;
   /** Origin of the API when the frontend is built with VITE_API_BASE_URL pointing elsewhere. */
   apiOrigin?: string | null;
+  /** Lets GA4 load and send (ANALYTICS_HOSTS). Set from analyticsConfigured(). */
+  analytics?: boolean;
 }
 
 /** "https://api.example.com/x" → "https://api.example.com"; anything unparsable → null. */
@@ -42,13 +61,14 @@ export function originOf(url: string | undefined | null): string | null {
 }
 
 export function contentSecurityPolicy(opts: SecurityHeaderOptions = {}): string {
-  const connect = ["'self'", "data:", "blob:", ...MAP_DATA_HOSTS, ...(opts.apiOrigin ? [opts.apiOrigin] : [])];
+  const ga = opts.analytics ? ANALYTICS_HOSTS : { script: [], connect: [], img: [] };
+  const connect = ["'self'", "data:", "blob:", ...MAP_DATA_HOSTS, ...(opts.apiOrigin ? [opts.apiOrigin] : []), ...ga.connect];
   const directives: Array<[string, string[]]> = [
     ["default-src", ["'self'"]],
-    ["script-src", ["'self'"]],
+    ["script-src", ["'self'", ...ga.script]],
     ["style-src", ["'self'", "'unsafe-inline'"]],
     ["font-src", ["'self'", "data:"]],
-    ["img-src", ["'self'", "data:", "blob:", ...IMAGE_HOSTS]],
+    ["img-src", ["'self'", "data:", "blob:", ...IMAGE_HOSTS, ...ga.img]],
     ["connect-src", connect],
     ["worker-src", ["'self'", "blob:"]],
     ["child-src", ["'self'", "blob:"]],

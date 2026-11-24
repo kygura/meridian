@@ -7,6 +7,7 @@
 // signed-in screens straight away; the server remains the judge (a 401 signs out).
 
 import { apiCredentials, apiUrl } from "./api";
+import { trackEvent } from "./analytics";
 import { useMeridianStore } from "../store";
 
 /** Not a credential: only says "this browser signed in at some point". */
@@ -168,7 +169,10 @@ export async function signIn(password: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ password }),
   });
-  if (status === 200 && data?.signedIn) return markSignedIn();
+  if (status === 200 && data?.signedIn) {
+    trackEvent("login", { method: "password" });
+    return markSignedIn();
+  }
   if (status === 429) throw new LockedOutError(data?.retryAfterSeconds ?? retryAfter ?? 60);
   if (status === 401 && data?.reason === "token_not_configured") {
     useMeridianStore.getState().setJournalLocked(true, "token_not_configured");

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Popover, Segmented, UnlockCard, toast, useJournalToken } from "../ui";
 import { IconLock, IconMonitor, IconMoon, IconSettings, IconSun, IconUnlock, IconUpload } from "../ui/icons";
 import { useMeridianStore } from "../store";
@@ -9,6 +9,26 @@ import { ReplanSettingsSection } from "./ReplanSettings";
 import { NotionSection } from "./NotionSettings";
 import { GmailSection } from "./GmailSettings";
 import { VisaSettingsSection } from "./VisaSettings";
+import { analyticsEnabled, onConsentChange, readConsent, reopenConsent } from "../lib/analytics";
+
+/** The analytics answer and a way to change it. Only where GA4 is configured. */
+function PrivacySection() {
+  const [choice, setChoice] = useState(readConsent);
+  useEffect(() => onConsentChange(() => setChoice(readConsent())), []);
+  if (!analyticsEnabled()) return null;
+  const label = choice === "granted" ? "Analytics allowed" : choice === "denied" ? "Analytics declined" : "Not answered yet";
+  return (
+    <section className="shell-settings-section">
+      <h3 className="shell-settings-heading">Privacy</h3>
+      <div className="shell-settings-row">
+        <span>{label}</span>
+        <Button size="sm" onClick={reopenConsent}>
+          Change
+        </Button>
+      </div>
+    </section>
+  );
+}
 
 /** Export trips to a JSON file and import them back (trips otherwise live only in this browser). */
 function TripTransferSection() {
@@ -98,6 +118,7 @@ export function SettingsPanel() {
           <UnlockCard compact title="Sign in" />
         )}
       </section>
+      <PrivacySection />
       <VisaSettingsSection />
       <AlertSettingsSection />
       <ReplanSettingsSection />

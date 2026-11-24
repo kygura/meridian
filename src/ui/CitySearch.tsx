@@ -1,5 +1,6 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type Ref } from "react";
 import { useMeridianStore } from "../store";
+import { trackEvent } from "../lib/analytics";
 import type { City } from "../types";
 import { searchCities } from "./citySearch";
 import { cx } from "./cx";
@@ -65,6 +66,8 @@ export function CitySearch({
   const noMatch = open && q.trim().length >= 2 && results.length === 0;
 
   const pick = (c: City) => {
+    // Sent on pick, not per keystroke: the term that led somewhere, and where.
+    trackEvent("search", { search_term: q.trim().slice(0, 100), city_id: c.id, city_name: c.name });
     onPick(c);
     setQ(clearOnPick ? "" : c.name);
     setOpen(false);
