@@ -164,6 +164,36 @@ Pages read on 24 November 2026. Title or tenure on most pages is missing or a la
 | Cerritos, BCS | [Casa Cumpleaños](https://ricardoamigo.com/for-sale/casa-cumplea-os/25-4075), steps from the sand; cut from US$1,399,000 on 19 Nov 2026; trucked water, unpaved road | US$1,100,000 | 4 | 283 / 574 m² | Fideicomiso |
 | Todos Santos | [La Cachora](https://ricardoamigo.com/for-sale/todos-santos/26-1303), house, casita and studio; dirt road, satellite internet | US$1,200,000 | 1–2 | 260 / 2,799 m² | Fideicomiso |
 
+## Under-developed coasts, Spanish-speaking
+
+Added 24 November 2026, for a coast that is still quiet: few resorts, small towns, no high-rise. All five are Spanish-speaking.
+Listings below were opened on 24 November 2026. Safety and airport facts come from sources dated 2025–2026 and are not re-checked here.
+
+| Coast | Why it's quiet | Airport | Mellow surf | Catch |
+|---|---|---|---|---|
+| **Azuero, Panama** (Pedasí, Venao, Cambutal) | 20+ small projects, no big resorts | PTY 4.5–5.5 h by road; small flights to Pedasí (about 35 min) | Venao beach break, Dec–Apr | Thin supply at $1–2M; wells common (Pedasí water emergency Jun 2026); avoid rights-of-possession land |
+| **Costa Ballena / Pavones, Costa Rica** | Ojochal and Pavones are the least built-up stretch of the Pacific | SJO 3.5–4 h by road; southern airport has no build date | Dominicalito, Playa Uvita | Most listings sit about a year; a narco raid in Uvita (Oct 2026) |
+| **El Salvador east** (Las Flores, Punta Mango) | New coastal road (Apr 2025), almost no high-end homes | SAL 2–3 h; Pacific airport at La Unión planned for 2027, behind on spending | Las Flores, soft right point | Homes in range are hotels; state of exception still in force |
+| **Nayarit north** (Lo de Marcos, Chacala, San Blas) | Villages north of Sayulita | PVR 1–1.5 h | San Blas (Las Islitas) | Violence rising; fideicomiso; watch for ejido land |
+| **Oaxaca** (Rancho Neptuno) | Very little built | Puerto Escondido | Varies | Weakest on safety and highest title risk (communal land) |
+
+**Listings checked live on 24 November 2026**
+
+| Area | Listing | Price | Notes |
+|---|---|---|---|
+| Cambutal, Panama | [Cambutal Beachfront Surf Retreat](https://panamasovereign.com/property/psr024/) | US$1,750,000 | Operating business: 9 cottages, a house and a restaurant, on a black-sand beach |
+| Playa Venao, Panama | [Venao house](https://metrorealtypanama.com/property/playa-venao-panama-house-for-sale-ocean-view/) | US$1,900,000 | 4 bed, 260 / 1,100 m², built 2022, pool, ocean view |
+| Escaleras, Costa Rica | [Villa La Luna](https://www.dominicalproperty.com/property/villa-luna-property-with-three-bedrooms-and-sunset-views-in-escaleras-0-66-acres/) | US$1,400,000 | 3 bed, 325 m² on 0.66 acres, paved road, legal water, infinity pool |
+| Escaleras, Costa Rica | [Casi Cielo](https://bluezonerealty.com/properties/casi-cielo-almost-heaven-ocean-view-tropical-paradise) | US$1,549,000 | 7 bed (main house, guest villa, casita) on 3,000 m²; rental history |
+| Pavones, Costa Rica | [Pavones Point villa](https://internationalsurfproperties.com/listing/pavones-point-luxury-surf-villa) | US$1,100,000 | 4 bed, titled, furnished, Starlink; the point break here is for advanced surfers |
+| Punta Mango, El Salvador | [La Ventana Beach house](https://www.housemaxsal.com/216/inmuebles/venta-rancho-y-terreno-de-playa-3-dormitorios-usulutan-usulatan) | US$750,000 header, US$849,000 in the text | Under budget; 3 bed, 400 / 758 m², gated, artesian well |
+
+Gone: Panama Sovereign's Venao villa shows as off market elsewhere, and its Costa Pedasí house (US$1.2M) is a 404.
+Not checked: a Playa Rincón estate on Encuentra24 (US$1.19M), because that site blocks the browser.
+
+**Pick:** Costa Ballena (Escaleras) has the most live homes in range with paved access and legal water, and Dominicalito is a gentle wave.
+Azuero is quieter and safer but has only two homes in range today, and one of them is a business.
+
 ## Residency tied to the purchase
 
 | Country | Route | Threshold | Notes |
