@@ -151,18 +151,18 @@ Pages read on 24 November 2026. Title or tenure on most pages is missing or a la
 |---|---|---|---|---|---|
 | Coronado | [Beachfront house](https://www.panamaequity.com/listings/luxury-beachfront-home-for-sale-in-coronado-panama/) (updated 10 Sep 2026) | US$1,300,000 | 4–5 | 435 / 2,509 m² | Not stated |
 | Coronado | [Beachfront house](https://www.remax-centralamerica.com/003033098056) | US$1,800,000 | 4 | 300 / 2,475 m² | Not stated |
-| Playa Corona, San Carlos | [Beachfront estate](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/for-sale-beautiful-4-bedroom-beachfront-estate-lot-no-5-at-playa-corona-highly-negotiable/32072423) ("highly negotiable") | US$1,500,000 | 4 | 450 / 2,446 m² | Not stated |
-| Buenaventura | [Ocean Lake Villas](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/house-for-sale-in-buenaventura/33198557) (30 Oct 2026; maybe the same house listed at US$1.65M in April) | US$1,300,000 | 4 | 566 m² / ? | Not stated |
+| Playa Corona, San Carlos | [Beachfront estate](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/for-sale-beautiful-4-bedroom-beachfront-estate-lot-no-5-at-playa-corona-highly-negotiable/32072423) ("highly negotiable"); not re-checked 24 Nov, site blocked us | US$1,500,000 | 4 | 450 / 2,446 m² | Not stated |
+| Buenaventura | [Ocean Lake Villas](https://www.encuentra24.com/panama-en/real-estate-for-sale-houses-homes/house-for-sale-in-buenaventura/33198557) (30 Oct 2026; maybe the same house listed at US$1.65M in April); not re-checked 24 Nov, site blocked us | US$1,300,000 | 4 | 566 m² / ? | Not stated |
 | Sayulita | [Casa Suenos](https://mexhome.com/property/34719), north side (17 Nov 2026) | US$1,449,000 | 4 | 840 / 1,116 m² | Escritura |
 | Sayulita | [Villa Monte](https://www.mlsvallarta.com/property/mlv/53107/villa-monte), Monte Calvario, six blocks to the beach | US$1,499,000 | 4 | 223 / 602 m² | Not stated |
 | San Pancho | [Villa Papelillos](https://mexhome.com/property/38298/), hills toward Mandarina (12 May 2026) | US$1,990,000 | 8 | 529 / 14,190 m² | Escritura |
 | Playa Grande | [Casa Flores del Mar](https://kraincostarica.com/en/playa-grande/playa-grande-listings/rs2600671), Las Ventanas (12 Oct 2026) | US$1,795,000 | 4 | 391 / 1,317 m² | Held in a company |
-| Playa Grande | [Casa Mareva](https://www.re.cr/en/costa-rica-real-estate-for-sale/beach-homes-ocean-view/rs2501316/print-listing), Palm Beach, ~3 min walk | US$1,300,000 | 4 | 305 / 1,059 m² | Not stated |
-| Pererenan, Bali | [BE-1453](https://baliexception.com/properties/for-sale/villa/leasehold/pererenan/ready-now-5-bedroom-villa-for-sale-leasehold-in-pererenan-be-1453) | US$1,445,000 | 5 | 1,400 / 1,022 m² | Lease, 22 years |
-| Seseh, Bali | [BE-2405](https://baliexception.com/properties/for-sale/villa/leasehold/seseh/offplan-4-bedroom-ocean-front-luxury-villa-for-sale-leasehold-in-seseh-be-2405), off-plan (7 Oct 2026) | US$1,199,000 | 3–4 | 570 / 500 m² | Lease, 23 years |
+| Playa Grande | [Casa Mareva](https://www.re.cr/en/costa-rica-real-estate-for-sale/beach-homes-ocean-view/rs2501316/print-listing), Palm Beach, ~3 min walk; unpaved road, septic | US$1,300,000 | 4 | 305 / 1,059 m² | Not stated |
+| ~~Pererenan, Bali~~ | ~~BE-1453~~: page gone (404) on 24 Nov 2026 | ~~US$1,445,000~~ | 5 | 1,400 / 1,022 m² | Lease, 22 years |
+| Seseh, Bali | [BE-2405](https://baliexception.com/properties/for-sale/villa/leasehold/seseh/offplan-3-bedroom-ocean-front-luxury-villa-for-sale-leasehold-in-seseh-be-2405/), off-plan, delivery Nov 2026, US$1.3M on completion; now listed as 3 bed | US$1,199,000 | 3 | 570 / 500 m² | Lease, 23 years |
 | Balian, Bali | [BE-2075](https://baliexception.com/properties/for-sale/villa/freehold/tabanan/beachfront-6-bedroom-villa-for-sale-freehold-in-balian-be-2075/), beachfront (3 Sep 2026) | US$1,000,000 | 6 | 546 / 3,030 m² | "Freehold" (SHM; a foreigner can't hold it) |
-| Cerritos, BCS | [Casa Cumpleaños](https://ricardoamigo.com/for-sale/casa-cumplea-os/25-4075), steps from the sand (19 Nov 2026) | US$1,100,000 | 4 | 283 / 574 m² | Fideicomiso |
-| Todos Santos | [La Cachora](https://ricardoamigo.com/for-sale/todos-santos/26-1303), house, casita and studio | US$1,200,000 | 1–2 | 260 / 2,799 m² | Fideicomiso |
+| Cerritos, BCS | [Casa Cumpleaños](https://ricardoamigo.com/for-sale/casa-cumplea-os/25-4075), steps from the sand; cut from US$1,399,000 on 19 Nov 2026; trucked water, unpaved road | US$1,100,000 | 4 | 283 / 574 m² | Fideicomiso |
+| Todos Santos | [La Cachora](https://ricardoamigo.com/for-sale/todos-santos/26-1303), house, casita and studio; dirt road, satellite internet | US$1,200,000 | 1–2 | 260 / 2,799 m² | Fideicomiso |
 
 ## Residency tied to the purchase
 
