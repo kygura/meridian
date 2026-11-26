@@ -7,7 +7,7 @@ import { navigate } from "../../lib/router";
 import { FIT_LABEL, placeFromCity, todayIso } from "../../lib/rotation";
 import { monthName, spanLabel } from "../../lib/season";
 import { METRIC_BY_ID, type MetricIndex } from "../../lib/cityMetrics";
-import { HAZARD_WATCH, LOCALES, anchorOf, researchRanks, researchScore, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
+import { HAZARD_WATCH, LOCALES, SEASON_LABEL, anchorOf, researchRanks, researchScore, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
 import { useRotation } from "../rotation/useRotation";
 import { LOCALE_METRICS, type LocaleView } from "./useLocaleData";
 
@@ -28,6 +28,9 @@ const SCORE_LABEL: Record<keyof LocaleScores, string> = {
   nomad: "Setting up",
   longstay: "Long stay",
 };
+
+/** "02-14" → "14 Feb". */
+const dayText = (mmdd: string) => `${Number(mmdd.slice(3))} ${monthName(Number(mmdd.slice(0, 2)))}`;
 
 const RANKS = researchRanks(LOCALES);
 const ROLE_COUNT = (r: string) => LOCALES.filter((l) => l.role === r).length;
@@ -218,6 +221,20 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
             meta={`#${RANKS.get(locale.id)} of ${ROLE_COUNT(locale.role)} ${locale.role === "hub" ? "hubs" : `${locale.role}s`} · ${researchScore(locale).toFixed(1)} / 10`}
           />
           <p>{locale.summary}</p>
+          {locale.seasons?.length ? (
+            <ul className="loc-seasons" aria-label="Seasons">
+              {locale.seasons.map((w, i) => (
+                <li key={i} className={`loc-season--${w.kind}`}>
+                  <strong>{w.title}</strong>{" "}
+                  <span className="loc-muted">
+                    · {SEASON_LABEL[w.kind].toLowerCase()} · {dayText(w.from)} – {dayText(w.to)}
+                    {w.tourism ? ` · tourism ${w.tourism}` : ""}
+                  </span>
+                  {w.why && <p className="loc-muted">{w.why}</p>}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <div className="loc-scores" aria-label="Field check scores, 1 to 10">
             {(Object.keys(SCORE_LABEL) as (keyof LocaleScores)[]).map((k) => (
               <span key={k}>

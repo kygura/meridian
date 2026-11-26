@@ -55,10 +55,21 @@ export interface LocaleEvent {
 /** Tourist season of a month. */
 export type Tourism = "low" | "shoulder" | "high";
 
-/** A stretch of the year, MM-DD to MM-DD, wrapping the new year when it ends before it starts. */
+/** A stretch of the year, MM-DD to MM-DD inclusive, wrapping the new year when it ends before it starts. */
 export interface DayWindow {
   from: string;
   to: string;
+}
+
+export type SeasonKind = "peak" | "shoulder" | "avoid";
+
+/** One of the Field Check's dated windows: the year cut at the dates a source supports. Not scored. */
+export interface SeasonWindow extends DayWindow {
+  kind: SeasonKind;
+  tourism?: Tourism;
+  title: string;
+  /** The figure that sets the dates. */
+  why?: string;
 }
 
 /**
@@ -101,6 +112,8 @@ export interface Locale {
   airport?: string;
   /** Weeks ahead to book a stay here. */
   leadWeeks?: LeadTime;
+  /** The Field Check's dated windows, covering the year without gaps or overlaps. */
+  seasons?: SeasonWindow[];
   /** What the field check could not pin down, or what is changing. */
   caveats?: string;
   sources: string[];
@@ -211,6 +224,15 @@ export function daysInMonth(w: DayWindow, month: number): number {
   const ms = MONTH_DAYS.slice(0, month - 1).reduce((x, y) => x + y, 0);
   const me = ms + MONTH_DAYS[month - 1];
   return windowRanges(w).reduce((n, [a, b]) => n + Math.max(0, Math.min(b, me) - Math.max(a, ms)), 0);
+}
+
+export const SEASON_LABEL: Record<SeasonKind, string> = { peak: "Peak", shoulder: "Shoulder", avoid: "Avoid" };
+
+/** Days of the year (0–364) covered by each window: 365 entries, each the count of windows covering that day. */
+export function seasonCoverage(windows: DayWindow[]): number[] {
+  const out = Array<number>(365).fill(0);
+  for (const w of windows) for (const [a, b] of windowRanges(w)) for (let d = a; d < b; d++) out[d]++;
+  return out;
 }
 
 export const TOURISM_LABEL: Record<Tourism, string> = { low: "Low season", shoulder: "Shoulder season", high: "High season" };

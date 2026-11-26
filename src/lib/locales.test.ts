@@ -14,6 +14,7 @@ import {
   monthRuns,
   percentileOf,
   researchRanks,
+  seasonCoverage,
   researchScore,
   SCORE_WEIGHTS,
   rangeSegments,
@@ -73,6 +74,11 @@ describe("dataset", () => {
       for (const v of Object.values(l.scores)) expect(v >= 1 && v <= 10, `${l.id} score ${v}`).toBe(true);
       expect(Object.keys(l.scores).sort()).toEqual(Object.keys(SCORE_WEIGHTS).sort());
       expect(l.sources.length, `${l.id} sources`).toBeGreaterThan(0);
+      if (l.seasons) {
+        // The dated windows cover every day of the year exactly once.
+        const cover = seasonCoverage(l.seasons);
+        expect(cover.every((n) => n === 1), `${l.id} seasons: gap or overlap on day ${cover.findIndex((n) => n !== 1)}`).toBe(true);
+      }
     }
     expect(new Set(LOCALES.map((l) => l.id)).size).toBe(LOCALES.length);
   });
@@ -278,6 +284,22 @@ describe("day windows", () => {
     expect(daysInMonth({ from: "11-01", to: "02-14" }, 12)).toBe(31);
     expect(daysInMonth({ from: "11-01", to: "02-14" }, 2)).toBe(14);
     expect(daysInMonth({ from: "03-25", to: "04-10" }, 4)).toBe(10);
+  });
+});
+
+describe("seasonCoverage", () => {
+  it("counts each day once for windows that tile the year, wrapping the new year", () => {
+    const c = seasonCoverage([
+      { from: "11-01", to: "02-14" },
+      { from: "02-15", to: "04-30" },
+      { from: "05-01", to: "10-31" },
+    ]);
+    expect(c.every((n) => n === 1)).toBe(true);
+  });
+  it("shows gaps and overlaps", () => {
+    const c = seasonCoverage([{ from: "01-01", to: "06-30" }, { from: "06-30", to: "12-30" }]);
+    expect(c.filter((n) => n === 2)).toHaveLength(1);
+    expect(c.filter((n) => n === 0)).toHaveLength(1);
   });
 });
 
