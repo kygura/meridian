@@ -7,7 +7,7 @@
   "entry rules per locale, linked",
   "month ratings reviewed for climate, monsoon, typhoon and air"
  ],
- "method": "Each month reads the owner's Travel Seasons windows first (a window covering at least half of the month sets it), then the reviewed research ratings. Stay lengths: how long the place holds up as a base, cut to the run of good months and the passport's day limit.",
+ "method": "Months are scored from Meridian data (Comfort Index, seasonal hazards, tourist seasons); the month ratings and Travel Seasons here are the owner notes and do not score. Stay lengths: how long the place holds up as a base, cut to the run of good months and the passport's day limit.",
  "regions": [
   "SE & East Asia",
   "Indian Subcontinent",

@@ -1,3 +1,7 @@
+/* Locales (#/locales, ADR 0022). Fit colours come from rotation.css (.rotation-fit--*). */
+
+.loc-muted { color: var(--muted); }
+.loc-section { margin-bottom: var(--space-6); }
 
 .loc-toolbar {
   display: flex;
@@ -18,78 +22,113 @@
   color: var(--muted);
 }
 
-.loc-muted { color: var(--muted); }
-
-/* ── Calendar grid ── */
+/* ── Calendar ─────────────────────────────────────────────────────────
+   Three columns: the locale, a timeline of the twelve months from this one, the ideal stay.
+   The timeline is one continuous strip per row; nothing is drawn inside it but colour, the
+   ideal-stay bracket and today's line. Marks sit above it, tourist peaks under it. */
 .loc-cal {
-  --loc-name: minmax(150px, 220px);
-  --loc-stay: 78px;
-  overflow-x: auto;
+  --loc-name: 216px;
+  --loc-stay: 132px;
+  --loc-strip: 22px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  -webkit-overflow-scrolling: touch;
 }
 .loc-row,
 .loc-region {
   display: grid;
-  grid-template-columns: var(--loc-name) repeat(12, minmax(26px, 1fr)) var(--loc-stay);
-  min-width: 560px;
-  align-items: stretch;
+  grid-template-columns: var(--loc-name) minmax(0, 1fr) var(--loc-stay);
+  column-gap: var(--space-3);
+  align-items: center;
 }
-.loc-row + .loc-row,
-.loc-group + .loc-group .loc-row { border-top: 1px solid var(--border); }
+
+/* Header: sticks to the top of the page while the rows scroll under it. */
 .loc-row--head {
   position: sticky;
   top: 0;
-  z-index: 1;
-  background: var(--surface);
+  z-index: 3;
+  background: var(--bg);
   border-bottom: 1px solid var(--border-strong);
+  padding-top: var(--space-2);
 }
+.loc-name--head,
+.loc-stay--head {
+  align-self: end;
+  padding-bottom: var(--space-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.loc-axis {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  padding-top: 14px; /* room for the year and the today flag */
+}
+.loc-mhead {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  padding: 2px 0 var(--space-2) 4px;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 1px solid var(--border);
+}
+.loc-mhead:hover { color: var(--text); background: var(--surface-2); }
+.loc-mhead:focus-visible { box-shadow: var(--focus-ring); }
+.loc-mhead--focus { color: var(--text); font-weight: var(--weight-semibold); box-shadow: inset 0 -2px 0 var(--accent); }
+.loc-mhead--year { border-left-color: var(--rule); }
+.loc-mhead-year {
+  position: absolute;
+  top: -13px;
+  left: 4px;
+  font-size: 9px;
+  color: var(--subtle);
+  letter-spacing: 0.06em;
+}
+.loc-mhead-short { display: none; }
+.loc-today-flag {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  pointer-events: none;
+}
+
 .loc-region {
   font-family: var(--mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--label-tracking);
   text-transform: uppercase;
   color: var(--muted);
-  padding: var(--space-3) 0 var(--space-1);
-  border-top: 1px solid var(--border-strong);
+  padding: var(--space-4) 0 var(--space-1);
 }
-.loc-region > span {
-  grid-column: 1 / 2;
-  position: sticky;
-  left: 0;
-  white-space: nowrap;
+.loc-region > span { grid-column: 1 / -1; }
+
+/* Body rows: the whole row opens the locale. */
+.loc-row--body {
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  outline: none;
 }
+.loc-row--body:hover { background: var(--surface); }
+.loc-row--body:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
 
 .loc-name {
-  all: unset;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 2px;
-  padding: 6px var(--space-3) 6px 0;
   min-width: 0;
-  cursor: pointer;
-  /* Stays put while the months scroll sideways on narrow screens. */
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--bg);
+  padding-left: var(--space-1);
 }
-.loc-row--head .loc-name { background: var(--surface); }
-.loc-row--head .loc-name,
-.loc-row--head .loc-stay {
-  cursor: default;
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--label-tracking);
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.loc-name:focus-visible,
-.loc-cell:focus-visible,
-.loc-mhead:focus-visible { box-shadow: var(--focus-ring); outline: none; }
 .loc-name-main {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
@@ -97,7 +136,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.loc-name:hover .loc-name-main { color: var(--accent-text); }
+.loc-row--body:hover .loc-name-main { color: var(--accent-text); }
 .loc-name-sub {
   display: flex;
   align-items: center;
@@ -105,9 +144,11 @@
   font-size: var(--text-xs);
   color: var(--muted);
   white-space: nowrap;
-  overflow: hidden;
+  min-width: 0;
 }
+.loc-name-country { overflow: hidden; text-overflow: ellipsis; }
 .loc-role {
+  flex: none;
   font-family: var(--mono);
   font-size: 9px;
   letter-spacing: 0.12em;
@@ -118,135 +159,133 @@
 .loc-role--base { border-color: var(--success); color: var(--success); }
 .loc-role--destination { border-color: var(--accent); color: var(--accent-text); }
 .loc-score {
+  margin-left: auto;
+  flex: none;
   font-family: var(--mono);
   color: var(--text);
-  margin-left: auto;
 }
 
-.loc-mhead {
-  all: unset;
-  box-sizing: border-box;
-  position: relative;
-  text-align: center;
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  color: var(--muted);
-  padding: var(--space-2) 0 var(--space-1);
-  cursor: pointer;
-  border-left: 1px solid transparent;
-}
-.loc-mhead:hover { color: var(--text); }
-.loc-mhead--focus { color: var(--text); font-weight: var(--weight-semibold); box-shadow: inset 0 -2px 0 var(--accent); }
-.loc-mhead--year { border-left-color: var(--border-strong); }
-.loc-mhead-year { display: block; font-size: 9px; color: var(--subtle); }
-.loc-mhead-short { display: none; }
-
-.loc-cell {
-  all: unset;
-  box-sizing: border-box;
-  position: relative;
-  min-height: 30px;
-  margin: 0 1px 5px;
-  cursor: pointer;
-}
-.loc-cell--focus { outline: 1px solid var(--rule); outline-offset: 1px; }
-.loc-cell:hover { filter: brightness(0.94); }
-
-/* A row: two lanes on exact dates above the month cells, like a timeline. */
+/* The track: marks lane, strip, crowd lane; column bands behind. */
 .loc-track {
-  grid-column: 2 / 14;
+  position: relative;
   display: grid;
-  grid-template-rows: 18px 6px auto;
+  grid-template-rows: 10px var(--loc-strip) 4px;
   row-gap: 3px;
-  padding-top: 6px;
   min-width: 0;
 }
-.loc-lane { position: relative; }
-.loc-cells { display: grid; grid-template-columns: repeat(12, 1fr); }
+.loc-col {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  pointer-events: none;
+}
+.loc-col--focus { background: var(--accent-soft); }
+.loc-col--hover { background: var(--surface-3); opacity: 0.5; }
 
-/* Your Travel Seasons windows: a paper bar edged in the season's colour, titled. */
-.loc-season {
+.loc-marks,
+.loc-crowd { position: relative; }
+.loc-mark-slot {
   position: absolute;
   top: 0;
   bottom: 0;
-  box-sizing: border-box;
   display: flex;
   align-items: center;
-  overflow: hidden;
-  padding: 0 4px 0 5px;
-  margin: 0 1px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-left: 3px solid var(--season, var(--border-strong));
-  font-size: 10px;
-  line-height: 1;
-  color: var(--ink-2);
-  white-space: nowrap;
+  justify-content: center;
+  gap: 3px;
 }
-.loc-season--peak { --season: var(--div-pos-3); }
-.loc-season--shoulder { --season: var(--div-0); border-left-color: var(--subtle); }
-.loc-season--avoid { --season: var(--div-neg-3); color: var(--muted); }
-.loc-season--t-high { background: var(--surface-2); }
-.loc-season-text { overflow: hidden; text-overflow: ellipsis; }
-.loc-season-crowd { color: var(--accent-text); }
-
-/* The ideal stay: one continuous ink bar on its own lane. */
-.loc-ideal {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  margin: 0 2px;
-  background: var(--ink);
-  border-radius: 3px;
+.loc-hazard {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 8px solid var(--warning);
 }
-
-.loc-ev {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+.loc-event {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 1.5px var(--surface);
+  background: var(--info);
 }
-.loc-mark {
+.loc-hazard--static,
+.loc-event--static { display: inline-block; }
+
+.loc-strip {
+  position: relative;
+  height: var(--loc-strip);
+  overflow: visible;
+  background: var(--surface-3);
+}
+.loc-seg,
+.loc-month {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
+  bottom: 0;
 }
-.loc-mark--disagree { border-width: 7px 7px 0 0; border-color: var(--info) transparent transparent transparent; }
-.loc-mark--personal { top: auto; bottom: 0; border-width: 0 0 7px 7px; border-color: transparent transparent var(--ink) transparent; left: auto; right: 0; }
-.loc-mark--static,
-.loc-ev--static { position: static; display: inline-block; }
+/* Month boundaries as hairlines, so a run of one colour still reads as months. */
+.loc-month { box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.08); }
+.loc-month--overlay { background: transparent; }
+.loc-row--body .loc-month:hover { box-shadow: inset 0 0 0 2px var(--rule); }
+
+/* Ideal stay: a bracket around the months, standing just proud of the strip. */
+.loc-ideal {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--surface);
+}
+.loc-ideal--relative { border-style: dashed; }
+.loc-stay-rel { display: block; font-size: 9px; letter-spacing: 0.04em; color: var(--muted); }
+.loc-today {
+  position: absolute;
+  top: -8px;
+  bottom: -11px;
+  width: 0;
+  border-left: 1.5px solid var(--accent);
+  pointer-events: none;
+}
+
+.loc-crowd-seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: 0 1px;
+}
+.loc-crowd-seg--high { background: var(--accent); }
+.loc-crowd-seg--shoulder { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 
 .loc-stay {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-end;
-  padding-left: var(--space-2);
   font-family: var(--mono);
   font-size: var(--text-xs);
   white-space: nowrap;
+  padding-right: var(--space-1);
 }
-.loc-stay-cap { font-size: 9px; color: var(--warning); text-transform: uppercase; letter-spacing: 0.1em; }
+.loc-stay--head { align-items: flex-end; }
+.loc-stay-weeks { color: var(--text); }
+.loc-stay-when { font-size: 10px; color: var(--muted); text-align: right; }
+.loc-stay-cap { color: var(--warning); }
 
+/* ── Legend and notes ── */
 .loc-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-2) var(--space-5);
   margin-top: var(--space-3);
   font-size: var(--text-xs);
   color: var(--muted);
 }
 .loc-legend-item { display: inline-flex; align-items: center; gap: 6px; }
-.loc-legend-bar { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: var(--ink); }
-.loc-legend-season { position: static; display: inline-block; width: 22px; height: 12px; margin: 0; }
-.loc-note { font-size: var(--text-xs); color: var(--muted); margin: var(--space-2) 0 var(--space-6); max-width: 72ch; }
+.loc-legend-ramp { display: inline-flex; }
+.loc-legend-swatch { display: inline-block; width: 14px; height: 12px; }
+.loc-legend-ideal { display: inline-block; width: 26px; height: 14px; border: 2px solid var(--ink); border-radius: 3px; }
+.loc-legend-crowd { display: inline-block; width: 20px; height: 4px; background: var(--accent); }
+.loc-note { font-size: var(--text-xs); color: var(--muted); margin: var(--space-2) 0 0; max-width: 78ch; }
 .loc-sources { margin-top: var(--space-5); }
 
 /* ── Where to base yourself ── */
@@ -260,6 +299,9 @@
 .loc-where-month { background: var(--surface); padding: var(--space-3); }
 .loc-where-month--focus { box-shadow: inset 0 2px 0 var(--accent); }
 .loc-where-head {
+  all: unset;
+  cursor: pointer;
+  display: block;
   font-family: var(--mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--label-tracking);
@@ -267,7 +309,7 @@
   margin-bottom: var(--space-2);
 }
 .loc-where ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.loc-where button {
+.loc-where li button {
   all: unset;
   display: inline-flex;
   align-items: center;
@@ -282,18 +324,12 @@
 .loc-sheet { display: grid; gap: var(--space-3); font-size: var(--text-sm); }
 .loc-sheet p { margin: 0; }
 .loc-sheet-role { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--label-tracking); text-transform: uppercase; color: var(--muted); }
-.loc-months { display: grid; gap: 4px; }
-.loc-month { display: grid; grid-template-columns: 44px 1fr 32px; gap: var(--space-2); align-items: center; }
-.loc-month-chip {
-  font-family: var(--mono);
-  font-size: var(--text-2xs);
-  text-align: center;
-  padding: 3px 0;
-  color: var(--ink);
-}
-.loc-month-why { font-size: var(--text-xs); }
-.loc-month-comfort { font-family: var(--mono); font-size: var(--text-xs); text-align: right; color: var(--muted); }
-.loc-month-comfort--disagree { color: var(--info); font-weight: var(--weight-semibold); }
+.loc-months { display: grid; gap: 3px; }
+.loc-mrow { display: grid; grid-template-columns: 44px 1fr auto; gap: var(--space-2); align-items: baseline; font-size: var(--text-xs); }
+.loc-mrow-chip { font-family: var(--mono); font-size: var(--text-2xs); text-align: center; padding: 3px 0; color: var(--ink); align-self: center; }
+.loc-mrow-note { display: block; color: var(--muted); }
+.loc-mrow-note--disagree { color: var(--info); }
+.loc-mrow-comfort { font-family: var(--mono); color: var(--muted); text-align: right; }
 .loc-windows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .loc-window {
   display: flex;
@@ -310,22 +346,39 @@
 .loc-metric-value { font-family: var(--mono); font-size: var(--text-md); }
 .loc-meter { display: block; height: 3px; background: var(--surface-3); }
 .loc-meter > span { display: block; height: 100%; background: var(--ink-2); }
-.loc-scores { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-family: var(--mono); font-size: var(--text-xs); }
-.loc-score-item--overall { font-weight: var(--weight-semibold); }
-.loc-events { margin: 0; padding-left: var(--space-4); display: grid; gap: 2px; }
+.loc-notes { border-top: 1px solid var(--border); padding-top: var(--space-3); display: grid; gap: var(--space-2); }
+.loc-scores { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); font-family: var(--mono); font-size: var(--text-xs); }
+.loc-seasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); font-size: var(--text-xs); }
+.loc-seasons li { border-left: 3px solid var(--season, var(--border-strong)); padding-left: var(--space-2); }
+.loc-seasons .loc-season--peak { --season: var(--div-pos-3); }
+.loc-seasons .loc-season--avoid { --season: var(--div-neg-3); }
+.loc-events { margin: 0; padding-left: var(--space-4); display: grid; gap: 2px; font-size: var(--text-xs); }
 .loc-link { color: var(--accent-text); display: inline-flex; align-items: center; gap: 2px; }
 .loc-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); font-size: var(--text-xs); }
 
-@media (max-width: 640px) {
-  .loc-cal { --loc-name: 128px; --loc-stay: 60px; }
+/* ── Narrow screens: the timeline scrolls sideways under a pinned locale column. ── */
+@media (max-width: 760px) {
+  .loc-cal {
+    --loc-name: 118px;
+    --loc-stay: 84px;
+    --loc-strip: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .loc-row,
+  .loc-region { grid-template-columns: var(--loc-name) minmax(440px, 1fr) var(--loc-stay); min-width: 640px; }
+  .loc-row--head { position: static; }
+  .loc-name,
+  .loc-region > span {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg);
+  }
+  .loc-region > span { grid-column: 1 / 2; white-space: nowrap; }
+  .loc-row--body:hover .loc-name { background: var(--surface); }
   .loc-mhead-long { display: none; }
   .loc-mhead-short { display: inline; }
-  .loc-cell { min-height: 28px; margin: 0 0 4px; }
-  .loc-season-text { display: none; }
+  .loc-today-flag { display: none; }
   .loc-name-sub .loc-score { display: none; }
 }
-
-.loc-seasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
-.loc-seasons li { display: grid; grid-template-columns: 70px 1fr; gap: var(--space-2); align-items: start; }
-.loc-seasons p { margin: 2px 0 0; font-size: var(--text-xs); }
-.loc-season--static { position: static; height: 18px; justify-content: center; }

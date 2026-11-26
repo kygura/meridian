@@ -4,11 +4,10 @@ import { IconExternal, IconMap, IconPlus } from "../../ui/icons";
 import { useMeridianStore } from "../../store";
 import { useUIStore } from "../../shell/uiStore";
 import { navigate } from "../../lib/router";
-import { FIT_LABEL, placeFromCity } from "../../lib/rotation";
+import { FIT_LABEL, placeFromCity, todayIso } from "../../lib/rotation";
 import { monthName, spanLabel } from "../../lib/season";
 import { METRIC_BY_ID, type MetricIndex } from "../../lib/cityMetrics";
-import { RESEARCH_LABEL, SEASON_LABEL, anchorOf, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
-import { todayIso } from "../../lib/rotation";
+import { HAZARD_WATCH, SEASON_LABEL, anchorOf, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
 import { useRotation } from "../rotation/useRotation";
 import { LOCALE_METRICS, type LocaleView } from "./useLocaleData";
 
@@ -51,9 +50,13 @@ export interface LocaleSheetProps {
   onClose: () => void;
 }
 
-/** One locale: its months and why, the staying windows, the owner's scores beside Meridian's, entry and timing. */
+/**
+ * One locale. Meridian's reading first (each month with its comfort, hazard and crowds; the
+ * staying windows; the metric surfaces), then entry, then the owner's own notes, which do not
+ * score: their Travel Seasons, research, scores and corrections.
+ */
 export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetProps) {
-  const { locale, year, windows, cap } = view;
+  const { locale, year, windows, cap, hazards, events } = view;
   const cities = useMeridianStore((s) => s.cities);
   const openCity = useUIStore((s) => s.openCity);
   const putStay = useRotation((s) => s.putStay);
@@ -61,16 +64,14 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
   const [adding, setAdding] = useState(false);
   const anchor = cities.find((c) => c.id === anchorOf(locale));
   const extra = locale.cityIds.slice(1).map((id) => cities.find((c) => c.id === id)?.name ?? id);
+  const disagreements = year.filter((m) => m.noteDisagrees).length;
 
   const addToRotation = async (i: number) => {
     if (!anchor) return;
     setAdding(true);
-    const stay = stayFromLocale(locale, placeFromCity(anchor), windows[i], todayIso());
-    const ok = await putStay(stay);
+    const ok = await putStay(stayFromLocale(locale, placeFromCity(anchor), windows[i], todayIso()));
     setAdding(false);
-    if (ok) {
-      toast(`${locale.name} added to your rotation as an idea`, { tone: "success", action: { label: "Open", onClick: () => navigate("/rotation") } });
-    }
+    if (ok) toast(`${locale.name} added to your rotation as an idea`, { tone: "success", action: { label: "Open", onClick: () => navigate("/rotation") } });
   };
 
   return (
@@ -84,50 +85,8 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
     >
       <div className="loc-sheet">
         <p className="loc-sheet-role">{ROLE_TEXT[locale.role]}</p>
-        <p>{locale.summary}</p>
 
-        <SectionHeader level={3} title="Months" meta={view.profile ? "Your rotation windows, then your seasons, then research" : "Your seasons first, then research, then the Comfort Index"} />
-        <div className="loc-months" role="list">
-          {year.map((m) => (
-            <div key={m.month} className="loc-month" role="listitem">
-              <span className={cx("loc-month-chip", `rotation-fit--${m.level}`, `rotation-fit--${m.level}`)}>{monthName(m.month)}</span>
-              <span className="loc-month-why">
-                <strong>{m.source === "research" ? RESEARCH_LABEL[locale.months[m.month - 1]] : FIT_LABEL[m.level]}</strong>
-                {m.tourism && <span className="loc-muted"> · tourism: {m.tourism}</span>}
-                {m.why && m.why !== RESEARCH_LABEL[locale.months[m.month - 1]] ? ` · ${m.why}` : ""}
-                {m.source === "personal" && <em> (yours)</em>}
-              </span>
-              <span className={cx("loc-month-comfort", m.disagrees && "loc-month-comfort--disagree")} title="Comfort Index of the anchor city">
-                {m.comfort !== undefined ? m.comfort : "–"}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {locale.seasons?.length ? (
-          <>
-            <SectionHeader level={3} title="Your Travel Seasons" meta="From your Notion database" />
-            <ul className="loc-seasons">
-              {locale.seasons.map((w, i) => (
-                <li key={i}>
-                  <span className={cx("loc-season", `loc-season--${w.kind}`, "loc-season--static")}>{SEASON_LABEL[w.kind]}</span>
-                  <div>
-                    <strong>{w.title}</strong>
-                    <span className="loc-muted">
-                      {" "}
-                      · {dayText(w.from)} – {dayText(w.to)}
-                      {w.tourism ? ` · tourism: ${w.tourism}` : ""}
-                    </span>
-                    {w.notes && <p className="loc-muted">{w.notes}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-
-        <SectionHeader level={3} title="When to stay" meta={`Research range ${weeksText({ min: locale.stay.minWeeks, max: locale.stay.maxWeeks })}`} />
-        <p className="loc-muted">{locale.stay.why}</p>
+        <SectionHeader level={3} title="When to stay" meta={`Stay range ${weeksText({ min: locale.stay.minWeeks, max: locale.stay.maxWeeks })}`} />
         {windows.length ? (
           <ul className="loc-windows">
             {windows.map((w, i) => (
@@ -137,7 +96,7 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
                   <span className="loc-muted">
                     {" "}
                     · good from {spanLabel(w.run)} ({w.runMonths} {w.runMonths === 1 ? "month" : "months"}
-                    {w.great ? `, ${w.great} best` : ""}){w.fallback ? " · only fair months" : ""}
+                    {w.great ? `, ${w.great} great` : ""}){w.relative ? " · never comfortable here: the best it gets" : w.fallback ? " · only fair months" : ""}
                     {w.capped && cap?.days ? ` · cut to ${cap.days} days by entry rules` : ""}
                   </span>
                 </div>
@@ -150,21 +109,45 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
             ))}
           </ul>
         ) : (
-          <p className="loc-muted">No run of good months; nothing to recommend.</p>
+          <p className="loc-muted">No run of good months in Meridian’s data.</p>
+        )}
+
+        <SectionHeader
+          level={3}
+          title="Months"
+          meta={`${anchor ? anchor.name : "Anchor city"}: Comfort Index, hazards, crowds${disagreements ? ` · your notes differ in ${disagreements}` : ""}`}
+        />
+        <div className="loc-months" role="list">
+          {year.map((m) => (
+            <div key={m.month} className="loc-mrow" role="listitem">
+              <span className={cx("loc-mrow-chip", `rotation-fit--${m.level}`, `rotation-fit--${m.level}`)}>{monthName(m.month)}</span>
+              <span>
+                <strong>{FIT_LABEL[m.level]}</strong>
+                {m.source === "personal" && <span className="loc-muted"> · {m.why}</span>}
+                {m.hazard && <span className="loc-muted"> · {m.hazard.label}</span>}
+                {m.tourism === "high" && <span className="loc-muted"> · tourist peak</span>}
+                {m.tourism === "shoulder" && <span className="loc-muted"> · tourist shoulder</span>}
+                {m.note && (
+                  <span className={cx("loc-mrow-note", m.noteDisagrees && "loc-mrow-note--disagree")}>
+                    Your notes: {m.note.text}
+                    {m.noteDisagrees ? ` (${FIT_LABEL[m.note.level].toLowerCase()})` : ""}
+                  </span>
+                )}
+              </span>
+              <span className="loc-mrow-comfort" title="Comfort Index">
+                {m.comfort ?? "–"}
+              </span>
+            </div>
+          ))}
+        </div>
+        {hazards.some((h) => h.score >= HAZARD_WATCH) && (
+          <p className="loc-muted">
+            Seasonal hazards that lower months here: {hazards.filter((h) => h.score >= HAZARD_WATCH).slice(0, 3).map((h) => `${h.label} (${h.months.map((x) => monthName(x)).join(", ")}, ${h.km} km)`).join("; ")}.
+          </p>
         )}
 
         <SectionHeader level={3} title="Metrics" meta={anchor ? `Meridian figures for ${anchor.name}` : undefined} />
         <div className="loc-metrics">
-          {locale.cost && (
-            <div className="loc-metric">
-              <span className="loc-metric-label">Cost</span>
-              <span className="loc-metric-value">
-                {locale.cost.currency === "EUR" ? "€" : `${locale.cost.currency} `}
-                {locale.cost.min.toLocaleString()}–{locale.cost.max.toLocaleString()}
-              </span>
-              <span className="loc-muted">per {locale.cost.per}{locale.cost.note ? ` · ${locale.cost.note}` : ""}</span>
-            </div>
-          )}
           {LOCALE_METRICS.map((id) => {
             const v = metrics[id]?.get(anchorOf(locale));
             const def = METRIC_BY_ID.get(id)!;
@@ -179,23 +162,26 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
             );
           })}
         </div>
-        {locale.scores && (
-          <div className="loc-scores" aria-label="Your research scores, 1 to 10">
-            {(Object.keys(SCORE_LABEL) as (keyof LocaleScores)[]).map((k) => (
-              <span key={k} className={cx("loc-score-item", k === "overall" && "loc-score-item--overall")}>
-                <span className="loc-muted">{SCORE_LABEL[k]}</span> {locale.scores![k].toFixed(1)}
-              </span>
-            ))}
-          </div>
+
+        {events.length > 0 && (
+          <>
+            <SectionHeader level={3} title="Worth timing" meta="Meridian’s live events" />
+            <ul className="loc-events">
+              {events.slice(0, 8).map((e) => (
+                <li key={e.id}>
+                  <span className="loc-muted">{(e.months ?? [e.month]).map((x) => monthName(x)).join("–")}</span> {e.title}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
-        {locale.asymmetry && <p className="loc-muted">#{locale.asymmetry} in your asymmetry ranking (price against quality).</p>}
 
         {(locale.entry || cap) && <SectionHeader level={3} title="Entry" />}
         {cap && (
           <p>
             <strong>{ENTRY_TEXT[cap.status] ?? cap.status}</strong> on your {cap.passport} passport
             {cap.days ? `, ${cap.days} days` : cap.status === "home" || cap.status === "free-movement" ? ", no day limit" : ""}.
-            <span className="loc-muted"> Check the Days page for rolling windows such as Schengen.</span>
+            <span className="loc-muted"> The Days page counts rolling windows such as Schengen.</span>
           </p>
         )}
         {locale.entry && (
@@ -208,25 +194,41 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
           </p>
         )}
 
-        {locale.corrections && (
-          <>
-            <SectionHeader level={3} title="Corrections to the notes" />
-            <p className="loc-muted">{locale.corrections}</p>
-          </>
-        )}
-
-        {locale.events?.length ? (
-          <>
-            <SectionHeader level={3} title="Worth timing" />
-            <ul className="loc-events">
-              {locale.events.map((e, i) => (
-                <li key={i}>
-                  <span className="loc-muted">{monthName(e.month)}</span> {e.name}
+        <div className="loc-notes">
+          <SectionHeader level={3} title="Your notes" meta="Context only; not scored" />
+          <p>{locale.summary}</p>
+          {locale.seasons?.length ? (
+            <ul className="loc-seasons">
+              {locale.seasons.map((w, i) => (
+                <li key={i} className={`loc-season--${w.kind}`}>
+                  <strong>{w.title}</strong>{" "}
+                  <span className="loc-muted">
+                    · {SEASON_LABEL[w.kind].toLowerCase()} · {dayText(w.from)} – {dayText(w.to)}
+                    {w.tourism ? ` · tourism ${w.tourism}` : ""}
+                  </span>
+                  {w.notes && <p className="loc-muted">{w.notes}</p>}
                 </li>
               ))}
             </ul>
-          </>
-        ) : null}
+          ) : null}
+          {locale.cost && (
+            <p className="loc-muted">
+              Cost in your research: {locale.cost.currency === "EUR" ? "€" : `${locale.cost.currency} `}
+              {locale.cost.min.toLocaleString()}–{locale.cost.max.toLocaleString()} per {locale.cost.per}
+              {locale.cost.note ? ` (${locale.cost.note})` : ""}.
+            </p>
+          )}
+          {locale.scores && (
+            <div className="loc-scores" aria-label="Your research scores, 1 to 10">
+              {(Object.keys(SCORE_LABEL) as (keyof LocaleScores)[]).map((k) => (
+                <span key={k}>
+                  <span className="loc-muted">{SCORE_LABEL[k]}</span> {locale.scores![k].toFixed(1)}
+                </span>
+              ))}
+            </div>
+          )}
+          {locale.corrections && <p className="loc-muted">Review of your notes: {locale.corrections}</p>}
+        </div>
 
         <div className="loc-sheet-actions">
           {anchor && (

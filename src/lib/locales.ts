@@ -24,6 +24,9 @@ import {
   type RotationStay,
 } from "./rotation";
 import { monthName, spanLabel } from "./season";
+import { haversineKm } from "./geo";
+import { proximity } from "./tripRisk";
+import type { MapAnomaly, MeridianEvent } from "../types";
 import dataset from "../../data/locales.json";
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -144,18 +147,45 @@ export const RESEARCH_LABEL: Record<ResearchLevel, string> = {
   avoid: "Avoid",
 };
 
+/** A seasonal hazard that reaches a locale (from the map's anomalies, data/phenomena.json). */
+export interface HazardHit {
+  label: string;
+  type?: string;
+  months: number[];
+  /** severity × proximity, as trip risk scores it: 0.75 is "watch", 1.75 "caution". */
+  score: number;
+  km: number;
+}
+
+/** What Meridian's own data says about a locale, joined by the screen. */
+export interface LocaleSignals {
+  /** The owner's Personal Windows for the anchor city (the rotation's Place Profile). */
+  profile?: PlaceProfile;
+  /** The anchor city's monthly Comfort Index (temperature, rain, air, desert). */
+  comfort?: ComfortLookup;
+  /** Seasonal hazards within reach of the anchor city. */
+  hazards?: HazardHit[];
+  /** Tourist season by month (1–12) from measured visitor nights, when measured. */
+  crowds?: (Tourism | undefined)[];
+}
+
 export interface LocaleMonth {
   /** 1–12. */
   month: number;
   level: FitLevel;
-  source: "personal" | "seasons" | "research" | "comfort" | "none";
-  /** The tourist season of the owner's window covering most of the month. */
-  tourism?: Tourism;
+  /** Where the level came from: the owner's rotation window, or the Comfort Index. */
+  source: "personal" | "comfort" | "none";
   why: string;
   /** The anchor city's Comfort Index for the month, when known. */
   comfort?: number;
-  /** The Comfort Index reads two or more levels away from the level shown. */
-  disagrees?: boolean;
+  /** The worst hazard in season that lowered the month. */
+  hazard?: HazardHit;
+  /** Tourist season from measured visitor nights. */
+  tourism?: Tourism;
+  /** What the owner's notes say about the month (Travel Seasons first, then the research). Not scored. */
+  note?: { level: FitLevel; text: string; from: "seasons" | "research" };
+  /** The notes read two or more levels away from the level shown. */
+  noteDisagrees?: boolean;
 }
 
 /** The note that explains a month, the one matching its rating first. */
@@ -220,6 +250,16 @@ export interface Segment {
  * day's position is its month's place plus how far into the month it is.
  */
 export function windowSegments(w: Pick<SeasonWindow, "from" | "to">, startMonth: number): Segment[] {
+  return rangeSegments(windowRanges(w), startMonth);
+}
+
+/** Days of the year a week of the year covers (index 0 = week 1; week 52 runs to the year's end). */
+export function weekRange(i: number): [number, number] {
+  return [i * 7, i === 51 ? 365 : i * 7 + 7];
+}
+
+/** Day-of-year ranges ([start, end), 0–365) as segments of a calendar starting at `startMonth`. */
+export function rangeSegments(ranges: [number, number][], startMonth: number): Segment[] {
   const S = dayOfYear(`${String(startMonth).padStart(2, "0")}-01`);
   /** Calendar position, in months, of a day `rel` days after the calendar starts (0–365). */
   const pos = (rel: number): number => {
@@ -233,7 +273,7 @@ export function windowSegments(w: Pick<SeasonWindow, "from" | "to">, startMonth:
     return k + (k < 12 ? rel / MONTH_DAYS[m] : 0);
   };
   const out: Segment[] = [];
-  for (const [a, b] of windowRanges(w)) {
+  for (const [a, b] of ranges) {
     // Split at the calendar's start so every piece runs forward on it.
     const pieces: [number, number][] = a < S && b > S ? [[a, S], [S, b]] : [[a, b]];
     for (const [x, y] of pieces) {
@@ -259,43 +299,99 @@ export function spanSegments(span: MonthSpan, startMonth: number): Segment[] {
   return windowSegments({ from: `${String(span.start).padStart(2, "0")}-01`, to: `${String(span.end).padStart(2, "0")}-${endDay}` }, startMonth);
 }
 
-export function localeMonth(l: Locale, month: number, profile?: PlaceProfile, comfort?: ComfortLookup): LocaleMonth {
-  const score = comfort?.(anchorOf(l))?.[month - 1]?.score;
+/** The month a hazard lowers the fit: "watch" one level, "caution" or worse to avoid. */
+export const HAZARD_WATCH = 0.75;
+export const HAZARD_AVOID = 1.75;
+const DOWN: Record<FitLevel, FitLevel> = { great: "good", good: "fair", fair: "poor", poor: "poor", avoid: "avoid", unknown: "unknown" };
+
+/** Seasonal hazards (anomalies with months) within reach of a point, scored as trip risk scores a place. */
+export function hazardHits(lat: number, lng: number, anomalies: MapAnomaly[]): HazardHit[] {
+  const out: HazardHit[] = [];
+  for (const a of anomalies) {
+    if (a.kind !== "hazard" || !a.months?.length) continue;
+    const km = haversineKm([lng, lat], [a.lng, a.lat]);
+    const score = a.severity * proximity(km);
+    if (score < 0.05) continue;
+    out.push({ label: a.label, ...(a.type ? { type: a.type } : {}), months: a.months, score: Math.round(score * 100) / 100, km: Math.round(km) });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+
+/** Tourist season by month from Meridian's computed tourism seasons (peak and shoulder, from measured visitor nights). */
+export function crowdsFromEvents(events: Pick<MeridianEvent, "kind" | "tags" | "month" | "months">[]): (Tourism | undefined)[] | undefined {
+  const out: (Tourism | undefined)[] = Array(12).fill(undefined);
+  let any = false;
+  for (const e of events) {
+    if (e.kind !== "season") continue;
+    const t: Tourism | undefined = e.tags.includes("peak-season") ? "high" : e.tags.includes("shoulder-season") ? "shoulder" : undefined;
+    if (!t) continue;
+    any = true;
+    for (const m of e.months ?? [e.month]) if (out[m - 1] !== "high") out[m - 1] = t;
+  }
+  if (!any) return undefined;
+  return out.map((t) => t ?? "low");
+}
+
+/** The owner's notes for a month: their Travel Seasons window, else the research rating. */
+export function notesFor(l: Locale, month: number): LocaleMonth["note"] {
+  const season = seasonFor(l, month);
+  if (season) return { level: SEASON_FIT[season.kind], text: season.title, from: "seasons" };
+  const r = l.months[month - 1];
+  if (r) return { level: RESEARCH_FIT[r], text: noteFor(l, month)?.reason ?? RESEARCH_LABEL[r], from: "research" };
+  return undefined;
+}
+
+/**
+ * One month of a locale from Meridian's own data. The owner's rotation window wins; else the
+ * anchor city's Comfort Index, lowered by any seasonal hazard in reach (one level at "watch",
+ * to avoid at "caution"). The owner's notes ride along unscored, flagged when they disagree.
+ */
+export function localeMonth(l: Locale, month: number, sig: LocaleSignals = {}): LocaleMonth {
+  const score = sig.comfort?.(anchorOf(l))?.[month - 1]?.score;
   const c = typeof score === "number" && Number.isFinite(score) ? Math.round(score) : undefined;
-  const cLevel = c === undefined ? undefined : comfortFit(c);
-  const withComfort = (m: Omit<LocaleMonth, "comfort" | "disagrees">): LocaleMonth => {
-    if (c === undefined) return m;
-    const gap = m.source === "comfort" ? 0 : Math.abs(FIT_RANK[m.level] - FIT_RANK[cLevel!]);
-    return { ...m, comfort: c, disagrees: m.level !== "unknown" && gap >= 2 };
+  const tourism = sig.crowds?.[month - 1];
+  const hazard = (sig.hazards ?? []).filter((h) => h.months.includes(month)).sort((a, b) => b.score - a.score)[0];
+  const note = notesFor(l, month);
+  const finish = (m: LocaleMonth): LocaleMonth => {
+    const out: LocaleMonth = { ...m };
+    if (c !== undefined) out.comfort = c;
+    if (tourism) out.tourism = tourism;
+    if (note) {
+      out.note = note;
+      out.noteDisagrees = m.level !== "unknown" && Math.abs(FIT_RANK[m.level] - FIT_RANK[note.level]) >= 2;
+    }
+    return out;
   };
 
-  const w = personalWindowFor(profile, month);
+  const w = personalWindowFor(sig.profile, month);
   if (w) {
     const level: FitLevel = w.kind === "peak" ? "great" : w.kind === "shoulder" ? "fair" : "avoid";
     const label = w.kind === "peak" ? "Your peak" : w.kind === "shoulder" ? "Your shoulder" : "You avoid";
-    const t = seasonFor(l, month)?.tourism;
-    return withComfort({ month, level, source: "personal", why: w.reason ? `${label}: ${w.reason}` : label, ...(t ? { tourism: t } : {}) });
+    return finish({ month, level, source: "personal", why: w.reason ? `${label}: ${w.reason}` : label });
   }
-  const season = seasonFor(l, month);
-  const tourism = season?.tourism;
-  if (season) {
-    return withComfort({ month, level: SEASON_FIT[season.kind], source: "seasons", why: `Your seasons: ${season.title}`, ...(tourism ? { tourism } : {}) });
+  if (c === undefined) return finish({ month, level: "unknown", source: "none", why: "No comfort data yet" });
+  let level: FitLevel = comfortFit(c);
+  let why = `Comfort ${c}`;
+  if (hazard && hazard.score >= HAZARD_WATCH) {
+    level = hazard.score >= HAZARD_AVOID ? "avoid" : DOWN[level];
+    why += ` · ${hazard.label}`;
   }
-  const r = l.months[month - 1];
-  if (r) {
-    const note = noteFor(l, month);
-    return withComfort({ month, level: RESEARCH_FIT[r], source: "research", why: note?.reason ?? RESEARCH_LABEL[r] });
-  }
-  if (cLevel) return withComfort({ month, level: cLevel, source: "comfort", why: `Comfort ${c}` });
-  return { month, level: "unknown", source: "none", why: "No research or comfort data" };
+  return finish({ month, level, source: "comfort", why, ...(hazard && hazard.score >= HAZARD_WATCH ? { hazard } : {}) });
 }
 
 /** The twelve months of a locale, January first. */
-export function localeYear(l: Locale, profile?: PlaceProfile, comfort?: ComfortLookup): LocaleMonth[] {
-  return Array.from({ length: 12 }, (_, i) => localeMonth(l, i + 1, profile, comfort));
+export function localeYear(l: Locale, sig: LocaleSignals = {}): LocaleMonth[] {
+  return Array.from({ length: 12 }, (_, i) => localeMonth(l, i + 1, sig));
 }
 
-// ── Ideal staying windows ────────────────────────────────────────────
+/** Week-of-year fits from weekly normals (index 0 = week 1), for drawing; months stay the unit of planning. */
+export function weekLevels(weeks: { score: number }[] | null | undefined): FitLevel[] | null {
+  if (!weeks || weeks.length !== 52) return null;
+  return weeks.map((w) => (Number.isFinite(w.score) ? comfortFit(w.score) : "unknown"));
+}
+
+/** How close to its best month a month must be to join a "best it gets" run, in Comfort points. */
+export const RELATIVE_BAND = 10;
 
 /** Average weeks in a month. */
 export const WEEKS_PER_MONTH = 4.348;
@@ -314,6 +410,8 @@ export interface StayWindow {
   capped: boolean;
   /** True when the run is only fair months. */
   fallback: boolean;
+  /** True when no month is even fair and the run is the place's own best months (the best it gets). */
+  relative: boolean;
 }
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
@@ -348,10 +446,20 @@ export function monthRuns(ok: (month: number) => boolean): number[][] {
 export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1): StayWindow[] {
   const level = (m: number) => months[m - 1]?.level ?? "unknown";
   let fallback = false;
+  let relative = false;
   let runs = monthRuns((m) => level(m) === "great" || level(m) === "good");
   if (!runs.length) {
     runs = monthRuns((m) => level(m) === "fair");
     fallback = true;
+  }
+  if (!runs.length) {
+    // Never fair: the place's own best months, within RELATIVE_BAND Comfort points of its peak.
+    const scores = months.map((m) => (m.level === "avoid" ? undefined : m.comfort));
+    const peak = Math.max(...scores.map((c) => c ?? -1));
+    if (peak >= 0) {
+      runs = monthRuns((m) => scores[m - 1] !== undefined && scores[m - 1]! >= peak - RELATIVE_BAND);
+      relative = runs.length > 0;
+    }
   }
   const out = runs.map((run): StayWindow => {
     const runWeeks = run.length * WEEKS_PER_MONTH;
@@ -384,6 +492,7 @@ export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number |
       weeks: { min: r1(min), ideal: r1(ideal), max: r1(max) },
       capped: capWeeks < Math.min(l.stay.maxWeeks, runWeeks),
       fallback,
+      relative,
     };
   });
   return out.sort((a, b) => b.great - a.great || b.runMonths - a.runMonths);

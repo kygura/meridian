@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { Page, PageHeader, SectionHeader, Segmented, Select, cx } from "../../ui";
 import { FIT_LABEL, type FitLevel } from "../../lib/rotation";
 import { monthName } from "../../lib/season";
@@ -8,12 +8,14 @@ import {
   bestForMonth,
   fitRank,
   meanOf,
-  SEASON_LABEL,
+  rangeSegments,
   spanSegments,
+  weekRange,
   weeksText,
-  windowSegments,
   windowText,
+  type LocaleMonth,
   type LocaleRole,
+  type Segment,
 } from "../../lib/locales";
 import { LOCALE_METRICS, useLocaleData, type LocaleView } from "./useLocaleData";
 import { LocaleSheet } from "./LocaleSheet";
@@ -21,12 +23,14 @@ import "../rotation/rotation.css";
 import "./locales.css";
 
 type RoleFilter = "all" | LocaleRole;
-type SortKey = "region" | "score" | "meridian" | "month";
-
-const pct = (x: number) => `${(x * 100).toFixed(3)}%`;
+type SortKey = "region" | "meridian" | "cost" | "month";
 
 export const ROLE_LABEL: Record<LocaleRole, string> = { base: "Base", hub: "Hub", destination: "Destination" };
-const LEVELS: FitLevel[] = ["great", "good", "fair", "poor", "avoid", "unknown"];
+const RAMP: FitLevel[] = ["avoid", "poor", "fair", "good", "great"];
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+const pct = (x: number) => `${(x * 100).toFixed(3)}%`;
+const segStyle = (g: Segment) => ({ left: pct(g.left), width: pct(g.width) });
 
 /** The twelve months from this one: [{ month: 11, year: 2026 }, …]. */
 function rollingMonths(now = new Date()) {
@@ -38,42 +42,71 @@ function rollingMonths(now = new Date()) {
   });
 }
 
+/** Today's place on a calendar that starts on the first of this month, 0–1. */
+function todayX(now = new Date()): number {
+  return (now.getDate() - 1) / MONTH_DAYS[now.getMonth()] / 12;
+}
+
+function monthTitle(month: number, f: LocaleMonth): string {
+  const parts = [`${monthName(month, "long")}: ${FIT_LABEL[f.level]}`, f.why];
+  if (f.tourism === "high") parts.push("tourist peak");
+  if (f.note) parts.push(`your notes: ${f.note.text}${f.noteDisagrees ? " (disagree)" : ""}`);
+  return parts.join(" · ");
+}
+
 /**
- * Route #/locales. The researched home bases, hubs and destinations on a rolling
- * twelve-month calendar: each month's fit and the ideal staying window (ADR 0022).
+ * Route #/locales. Bases, hubs and destinations on a rolling twelve-month timeline: each row
+ * is the anchor city's fit through the year from Meridian's own data, with the ideal stay
+ * bracketed, tourist peaks under it and hazards and events above (ADR 0022).
  */
 export default function LocalesScreen() {
   const { views, metrics, unlocked, comfortLoaded, signedInVisa } = useLocaleData();
   const [role, setRole] = useState<RoleFilter>("all");
   const [sort, setSort] = useState<SortKey>("region");
   const [focus, setFocus] = useState<number>(new Date().getMonth() + 1);
+  const [hover, setHover] = useState<number | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const months = useMemo(() => rollingMonths(), []);
+  const start = months[0].month;
+  const today = useMemo(() => todayX(), []);
 
-  const meridianScore = (v: LocaleView) => {
-    const id = anchorOf(v.locale);
-    return meanOf(LOCALE_METRICS.map((m) => metrics[m]?.get(id)));
-  };
+  const score = (v: LocaleView) => meanOf(LOCALE_METRICS.map((m) => metrics[m]?.get(anchorOf(v.locale))));
+  const afford = (v: LocaleView) => metrics.cost?.get(anchorOf(v.locale));
 
   const shown = useMemo(() => {
     const list = views.filter((v) => role === "all" || v.locale.role === role);
     const order = LOCALE_DATA.regions;
     const byName = (a: LocaleView, b: LocaleView) => a.locale.name.localeCompare(b.locale.name);
+    const byScore = (a: LocaleView, b: LocaleView) => (score(b) ?? -1) - (score(a) ?? -1);
     switch (sort) {
       case "region":
-        return [...list].sort((a, b) => order.indexOf(a.locale.region) - order.indexOf(b.locale.region) || (b.locale.scores?.overall ?? 0) - (a.locale.scores?.overall ?? 0) || byName(a, b));
-      case "score":
-        return [...list].sort((a, b) => (b.locale.scores?.overall ?? -1) - (a.locale.scores?.overall ?? -1) || byName(a, b));
+        return [...list].sort((a, b) => order.indexOf(a.locale.region) - order.indexOf(b.locale.region) || byName(a, b));
       case "meridian":
-        return [...list].sort((a, b) => (meridianScore(b) ?? -1) - (meridianScore(a) ?? -1) || byName(a, b));
+        return [...list].sort((a, b) => byScore(a, b) || byName(a, b));
+      case "cost":
+        return [...list].sort((a, b) => (afford(b) ?? -1) - (afford(a) ?? -1) || byName(a, b));
       case "month":
-        return [...list].sort((a, b) => fitRank(b.year[focus - 1].level) - fitRank(a.year[focus - 1].level) || (b.locale.scores?.overall ?? 0) - (a.locale.scores?.overall ?? 0) || byName(a, b));
+        return [...list].sort((a, b) => fitRank(b.year[focus - 1].level) - fitRank(a.year[focus - 1].level) || byScore(a, b) || byName(a, b));
     }
-  }, [views, role, sort, focus, metrics]);
+  }, [views, role, sort, focus, metrics]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const years = useMemo(() => new Map(views.map((v) => [v.locale.id, v.year])), [views]);
   const bases = useMemo(() => views.filter((v) => v.locale.role === "base").map((v) => v.locale), [views]);
   const openView = open ? views.find((v) => v.locale.id === open) : undefined;
+  const focusIndex = months.findIndex((m) => m.month === focus);
+  const hoverIndex = hover === null ? -1 : months.findIndex((m) => m.month === hover);
+  const columnBand = (i: number) => ({ left: pct(i / 12), width: pct(1 / 12) });
+
+  const pickMonth = (month: number) => {
+    setFocus(month);
+    setSort("month");
+  };
+  const onRowKey = (e: KeyboardEvent, id: string) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setOpen(id);
+    }
+  };
 
   let lastRegion = "";
 
@@ -82,7 +115,7 @@ export default function LocalesScreen() {
       <PageHeader
         kicker="Residence · where life rotates"
         title="Locales"
-        subtitle="Researched bases, hubs and destinations, with the months to be there and how long to stay."
+        subtitle="Where to base yourself through the year, and for how long, from Meridian’s climate, air, hazard and crowd data."
       />
 
       <div className="loc-toolbar">
@@ -106,53 +139,61 @@ export default function LocalesScreen() {
             onChange={(e) => setSort(e.target.value as SortKey)}
             options={[
               { value: "region", label: "Region" },
-              { value: "score", label: "Your research score" },
-              { value: "meridian", label: "Meridian metrics" },
               { value: "month", label: `Best in ${monthName(focus, "long")}` },
+              { value: "meridian", label: "Meridian score" },
+              { value: "cost", label: "Most affordable" },
             ]}
           />
         </label>
       </div>
 
-      <section aria-labelledby="loc-cal">
+      <section aria-labelledby="loc-cal" className="loc-section">
         <SectionHeader
           id="loc-cal"
           title="Calendar"
-          meta={`${shown.length} locales · ${months[0].year === months[11].year ? months[0].year : `${monthName(months[0].month)} ${months[0].year} – ${monthName(months[11].month)} ${months[11].year}`}`}
+          meta={`${shown.length} locales · ${monthName(months[0].month)} ${months[0].year} – ${monthName(months[11].month)} ${months[11].year}`}
         />
-        <div className="loc-cal" role="table" aria-label="Locales by month">
+
+        <div className="loc-cal" role="table" aria-label="Locales by month" onMouseLeave={() => setHover(null)}>
           <div className="loc-row loc-row--head" role="row">
-            <div className="loc-name" role="columnheader">
+            <div className="loc-name loc-name--head" role="columnheader">
               Locale
             </div>
-            {months.map(({ month, year }, i) => (
-              <button
-                key={i}
-                type="button"
-                role="columnheader"
-                className={cx("loc-mhead", month === focus && "loc-mhead--focus", month === 1 && i > 0 && "loc-mhead--year")}
-                onClick={() => {
-                  setFocus(month);
-                  setSort("month");
-                }}
-                title={`Sort by ${monthName(month, "long")} ${year}`}
-              >
-                <span className="loc-mhead-long">{monthName(month)}</span>
-                <span className="loc-mhead-short">{monthName(month).slice(0, 1)}</span>
-                {(i === 0 || month === 1) && <span className="loc-mhead-year">’{String(year).slice(2)}</span>}
-              </button>
-            ))}
-            <div className="loc-stay" role="columnheader">
-              Stay
+            <div className="loc-axis" role="presentation">
+              {months.map(({ month, year }, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="columnheader"
+                  aria-sort={sort === "month" && month === focus ? "descending" : undefined}
+                  className={cx("loc-mhead", month === focus && "loc-mhead--focus", month === 1 && i > 0 && "loc-mhead--year")}
+                  onClick={() => pickMonth(month)}
+                  onMouseEnter={() => setHover(month)}
+                  title={`Rank by ${monthName(month, "long")} ${year}`}
+                >
+                  <span className="loc-mhead-long">{monthName(month)}</span>
+                  <span className="loc-mhead-short">{monthName(month).slice(0, 1)}</span>
+                  {(i === 0 || month === 1) && <span className="loc-mhead-year">{year}</span>}
+                </button>
+              ))}
+              <span className="loc-today-flag" style={{ left: pct(today) }}>
+                Today
+              </span>
+            </div>
+            <div className="loc-stay loc-stay--head" role="columnheader">
+              Ideal stay
             </div>
           </div>
 
           {shown.map((v) => {
-            const { locale, year, windows } = v;
+            const { locale, year, weeks, windows } = v;
             const main = windows[0];
             const header = sort === "region" && locale.region !== lastRegion ? locale.region : null;
             lastRegion = locale.region;
-            const start = months[0].month;
+            const s = score(v);
+            const hazardMonths = new Set(year.filter((f) => f.hazard).map((f) => f.month));
+            const eventMonths = new Map<number, string[]>();
+            for (const e of v.events) for (const m of e.months ?? [e.month]) eventMonths.set(m, [...(eventMonths.get(m) ?? []), e.title]);
             return (
               <div key={locale.id} className="loc-group" role="rowgroup">
                 {header && (
@@ -160,68 +201,87 @@ export default function LocalesScreen() {
                     <span role="cell">{header}</span>
                   </div>
                 )}
-                <div className="loc-row" role="row">
-                  <button type="button" className="loc-name" role="rowheader" onClick={() => setOpen(locale.id)}>
+                <div
+                  className="loc-row loc-row--body"
+                  role="row"
+                  tabIndex={0}
+                  aria-label={`${locale.name}, ${ROLE_LABEL[locale.role]}. ${main ? `Ideal stay ${windowText(main)}` : "No good stretch"}`}
+                  onClick={() => setOpen(locale.id)}
+                  onKeyDown={(e) => onRowKey(e, locale.id)}
+                >
+                  <div className="loc-name" role="rowheader">
                     <span className="loc-name-main">{locale.name}</span>
                     <span className="loc-name-sub">
                       <span className={cx("loc-role", `loc-role--${locale.role}`)}>{ROLE_LABEL[locale.role]}</span>
-                      {locale.country}
-                      {locale.scores && <span className="loc-score">{locale.scores.overall.toFixed(1)}</span>}
+                      <span className="loc-name-country">{locale.country}</span>
+                      {s !== null && (
+                        <span className="loc-score" title="Meridian score: mean of quality of life, safety, healthcare, affordability and internet">
+                          {s}
+                        </span>
+                      )}
                     </span>
-                  </button>
-                  <div className="loc-track">
-                    <div className="loc-lane loc-lane--seasons" aria-hidden="true">
-                      {(locale.seasons ?? []).flatMap((w, k) =>
-                        windowSegments(w, start).map((g, j) => (
-                          <span
-                            key={`${k}-${j}`}
-                            className={cx("loc-season", `loc-season--${w.kind}`, w.tourism && `loc-season--t-${w.tourism}`)}
-                            style={{ left: pct(g.left), width: pct(g.width) }}
-                            title={`${w.title} · ${SEASON_LABEL[w.kind]}${w.tourism ? ` · tourism: ${w.tourism}` : ""}${w.notes ? `\n${w.notes}` : ""}`}
-                          >
-                            <span className="loc-season-text">
-                              {w.title}
-                              {w.tourism === "high" && <span className="loc-season-crowd"> · busy</span>}
-                            </span>
+                  </div>
+
+                  <div className="loc-track" role="cell">
+                    {focusIndex >= 0 && <span className="loc-col loc-col--focus" style={columnBand(focusIndex)} aria-hidden="true" />}
+                    {hoverIndex >= 0 && hoverIndex !== focusIndex && <span className="loc-col loc-col--hover" style={columnBand(hoverIndex)} aria-hidden="true" />}
+
+                    <div className="loc-marks" aria-hidden="true">
+                      {months.map(({ month }, i) =>
+                        hazardMonths.has(month) || eventMonths.has(month) ? (
+                          <span key={i} className="loc-mark-slot" style={columnBand(i)}>
+                            {hazardMonths.has(month) && <span className="loc-hazard" title={year[month - 1].hazard?.label} />}
+                            {eventMonths.has(month) && <span className="loc-event" title={eventMonths.get(month)!.join(", ")} />}
                           </span>
-                        ))
+                        ) : null
                       )}
                     </div>
-                    <div className="loc-lane loc-lane--ideal" aria-hidden="true">
-                      {main &&
-                        spanSegments(main.stay, start).map((g, j) => (
-                          <span key={j} className="loc-ideal" style={{ left: pct(g.left), width: pct(g.width) }} title={`Ideal stay: ${windowText(main)}`} />
-                        ))}
-                    </div>
-                    <div className="loc-cells">
+
+                    <div className="loc-strip">
+                      {weeks &&
+                        weeks.map((lvl, w) =>
+                          rangeSegments([weekRange(w)], start).map((g, j) => (
+                            <span key={`${w}-${j}`} className={cx("loc-seg", `rotation-fit--${lvl}`, `rotation-fit--${lvl}`)} style={segStyle(g)} />
+                          ))
+                        )}
                       {months.map(({ month }, i) => {
                         const f = year[month - 1];
-                        const ev = locale.events?.filter((e) => e.month === month) ?? [];
                         return (
-                          <button
+                          <span
                             key={i}
-                            type="button"
-                            role="cell"
-                            className={cx("loc-cell", `rotation-fit--${f.level}`, `rotation-fit--${f.level}`, month === focus && "loc-cell--focus")}
-                            title={`${monthName(month, "long")}: ${FIT_LABEL[f.level]}. ${f.why}${f.tourism ? ` · tourism: ${f.tourism}` : ""}${f.comfort !== undefined ? ` · Comfort ${f.comfort}` : ""}${f.disagrees ? " (comfort disagrees)" : ""}${ev.length ? ` · ${ev.map((e) => e.name).join(", ")}` : ""}`}
-                            onClick={() => setOpen(locale.id)}
-                          >
-                            {f.source === "personal" && <span className="loc-mark loc-mark--personal" aria-hidden="true" />}
-                            {f.disagrees && <span className="loc-mark loc-mark--disagree" aria-hidden="true" />}
-                            {ev.length > 0 && <span className="loc-ev" aria-hidden="true" />}
-                          </button>
+                            className={cx("loc-month", weeks ? "loc-month--overlay" : [`rotation-fit--${f.level}`, `rotation-fit--${f.level}`].join(" "))}
+                            style={columnBand(i)}
+                            title={monthTitle(month, f)}
+                            onMouseEnter={() => setHover(month)}
+                          />
                         );
+                      })}
+                      {main &&
+                        spanSegments(main.stay, start).map((g, j) => <span key={j} className={cx("loc-ideal", main.relative && "loc-ideal--relative")} style={segStyle(g)} aria-hidden="true" />)}
+                      <span className="loc-today" style={{ left: pct(today) }} aria-hidden="true" />
+                    </div>
+
+                    <div className="loc-crowd" aria-hidden="true">
+                      {months.map(({ month }, i) => {
+                        const t = year[month - 1].tourism;
+                        return t && t !== "low" ? <span key={i} className={cx("loc-crowd-seg", `loc-crowd-seg--${t}`)} style={columnBand(i)} /> : null;
                       })}
                     </div>
                   </div>
+
                   <div className="loc-stay" role="cell">
                     {main ? (
                       <>
                         <span className="loc-stay-weeks">{weeksText(main.weeks)}</span>
-                        {main.capped && <span className="loc-stay-cap">visa cap</span>}
+                        <span className="loc-stay-when">
+                          {monthName(main.stay.start)}
+                          {main.stay.end !== main.stay.start ? `–${monthName(main.stay.end)}` : ""}
+                          {main.capped && <span className="loc-stay-cap"> · visa</span>}
+                          {main.relative && <span className="loc-stay-rel">best it gets</span>}
+                        </span>
                       </>
                     ) : (
-                      <span className="loc-muted">—</span>
+                      <span className="loc-muted">{comfortLoaded ? "No good stretch" : "…"}</span>
                     )}
                   </div>
                 </div>
@@ -231,53 +291,54 @@ export default function LocalesScreen() {
         </div>
 
         <div className="loc-legend" aria-label="Legend">
-          {LEVELS.map((l) => (
-            <span key={l} className="loc-legend-item">
-              <span className={cx("rotation-swatch", `rotation-fit--${l}`, `rotation-fit--${l}`)} />
-              {FIT_LABEL[l]}
-            </span>
-          ))}
           <span className="loc-legend-item">
-            <span className="loc-season loc-season--peak loc-legend-season" />
-            Your Travel Seasons window (peak, shoulder, avoid)
+            <span className="loc-legend-ramp">
+              {RAMP.map((l) => (
+                <span key={l} className={cx("loc-legend-swatch", `rotation-fit--${l}`, `rotation-fit--${l}`)} title={FIT_LABEL[l]} />
+              ))}
+            </span>
+            Avoid → great
           </span>
           <span className="loc-legend-item">
-            <span className="loc-legend-bar" />
+            <span className="loc-legend-ideal" />
             Ideal stay
           </span>
           <span className="loc-legend-item">
-            <span className="loc-ev loc-ev--static" />
-            Worth timing
+            <span className="loc-legend-ideal loc-ideal--relative" />
+            Best it gets (never comfortable)
           </span>
           <span className="loc-legend-item">
-            <span className="loc-mark loc-mark--disagree loc-mark--static" />
-            Comfort Index disagrees
+            <span className="loc-legend-crowd" />
+            Tourist peak
           </span>
-          {unlocked && (
-            <span className="loc-legend-item">
-              <span className="loc-mark loc-mark--personal loc-mark--static" />
-              Your own window
-            </span>
-          )}
+          <span className="loc-legend-item">
+            <span className="loc-hazard loc-hazard--static" />
+            Seasonal hazard
+          </span>
+          <span className="loc-legend-item">
+            <span className="loc-event loc-event--static" />
+            Event
+          </span>
         </div>
         <p className="loc-note">
-          Each month reads {unlocked ? "your rotation’s own windows, then " : ""}your Travel Seasons windows, then the research, then the Comfort Index. The
-          top lane shows your windows on their dates; “busy” marks high tourist season.
-          {!comfortLoaded && " Comfort is still loading."} Stay lengths are the research’s, cut to the good months
-          {signedInVisa ? " and your passport’s day limit." : "; sign in to cut them to your passport’s day limit."}
+          Fit is the anchor city’s Comfort Index (temperature, rain, air), weekly where Meridian has weekly normals, lowered in
+          months a seasonal hazard reaches it{unlocked ? "; your rotation’s own windows come first" : ""}. Tourist peaks are
+          measured visitor nights. Stay lengths are cut to the run of good months
+          {signedInVisa ? " and your passport’s day limit" : "; sign in to cut them to your passport’s day limit"}. Your notes
+          and Travel Seasons are in each locale, not in the score.{!comfortLoaded && " Climate data is loading."}
         </p>
       </section>
 
-      <section aria-labelledby="loc-where">
+      <section aria-labelledby="loc-where" className="loc-section">
         <SectionHeader id="loc-where" title="Where to base yourself" meta="Top three bases each month" />
         <div className="loc-where">
           {months.map(({ month, year }, i) => {
             const picks = bestForMonth(bases, years, month).slice(0, 3);
             return (
               <div key={i} className={cx("loc-where-month", month === focus && "loc-where-month--focus")}>
-                <div className="loc-where-head">
+                <button type="button" className="loc-where-head" onClick={() => pickMonth(month)}>
                   {monthName(month)} <span className="loc-muted">{year}</span>
-                </div>
+                </button>
                 <ol>
                   {picks.map((p) => (
                     <li key={p.locale.id}>
@@ -295,8 +356,7 @@ export default function LocalesScreen() {
       </section>
 
       <p className="loc-note loc-sources">
-        Research checked {LOCALE_DATA.checked}. Sources: {LOCALE_DATA.sources.join(", ")}.{" "}
-        {roleCount(views)}
+        {roleCount(views)} Places researched {LOCALE_DATA.checked}; climate, air, hazards, crowds and metrics are Meridian’s own.
       </p>
 
       {openView && <LocaleSheet view={openView} metrics={metrics} unlocked={unlocked} onClose={() => setOpen(null)} />}
