@@ -1,7 +1,7 @@
 // The Comfort Index formula (ADR 0002, ADR 0014). Pure and shared by the server
 // (scoring, backfill) and the client (the breakdown shown wherever the index is explained).
 //
-//   score = temperature comfort - rain penalty - air penalty - desert penalty, clamped to 0-100.
+//   score = temperature comfort - rain penalty - air penalty - sky penalty - desert penalty, clamped to 0-100.
 //
 // Temperature is the month's MEAN daily temperature (average of day high and night low). A
 // 16-20C mean scores 100: afternoons around 21-27C. Above it the score falls away, reaching 0 at a
@@ -14,6 +14,11 @@
 // penalty. Air subtracts
 // 0 at a monthly mean PM2.5 of <=10 ug/m3, scaling to 40 at >=75 ug/m3 (the WHO 24-hour interim target 1). A month with no
 // air-quality figure has no air penalty applied (and says so), never an assumed one.
+//
+// Sky (ADR 0026) subtracts 0 at >=6 hours of sunshine a day, scaling linearly to 25 at <=2 hours a
+// day (the mean over the month or week; Open-Meteo's sunshine_duration). It sees the long grey
+// stretches a temperature and a rain total cannot, such as Lima's garua. Like air, a month with no
+// sunshine figure takes nothing off, never an assumed amount.
 //
 // Desert is a year-round term: a place that gets almost no rain all year is bare, dusty and
 // sun-blasted even in its mildest month, which the month's temperature alone does not show.
@@ -57,6 +62,10 @@ export const AIR_FREE_UGM3 = 10;
 export const AIR_MAX_UGM3 = 75;
 export const AIR_MAX_PENALTY = 40;
 
+export const SKY_FREE_H = 6;
+export const SKY_MAX_H = 2;
+export const SKY_MAX_PENALTY = 25;
+
 export const DESERT_FREE_MM_YEAR = 400;
 export const DESERT_MAX_MM_YEAR = 50;
 export const DESERT_MAX_PENALTY = 45;
@@ -83,6 +92,10 @@ export interface ComfortBreakdown {
   air: number;
   /** False when no PM2.5 figure was available, so `air` is an absence rather than a clean result. */
   airKnown: boolean;
+  /** Sky (dull weather) penalty, 0-25 points subtracted; 0 when `skyKnown` is false. */
+  sky: number;
+  /** False when no sunshine figure was available, so `sky` is an absence rather than a sunny result. */
+  skyKnown: boolean;
   /** Desert penalty, 0-45 points subtracted; 0 when the year's rain was not given. */
   desert: number;
   /** The year's rain this was judged on (mm), when given. */
@@ -130,6 +143,13 @@ export function airPenalty(pm25: number): number {
   return (AIR_MAX_PENALTY * (pm25 - AIR_FREE_UGM3)) / (AIR_MAX_UGM3 - AIR_FREE_UGM3);
 }
 
+/** Points off for a dull sky, from mean hours of sunshine a day: none at 6 h or more, 25 at 2 h or less. */
+export function skyPenalty(sunH: number): number {
+  if (sunH >= SKY_FREE_H) return 0;
+  if (sunH <= SKY_MAX_H) return SKY_MAX_PENALTY;
+  return (SKY_MAX_PENALTY * (SKY_FREE_H - sunH)) / (SKY_FREE_H - SKY_MAX_H);
+}
+
 /** The desert penalty from the year's rain alone, before the ocean-climate scaling. */
 export function desertPenalty(annualPrecipMm: number): number {
   if (annualPrecipMm >= DESERT_FREE_MM_YEAR) return 0;
@@ -172,11 +192,13 @@ export function annualRain(precips: ReadonlyArray<number | null | undefined>): n
   return precips.length === 52 ? sum * (365.25 / 364) : sum;
 }
 
-export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number | null, yearIn?: number | YearClimate | null): ComfortBreakdown {
+export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number | null, yearIn?: number | YearClimate | null, sunH?: number | null): ComfortBreakdown {
   const temp = tempComfort(tempC);
   const rain = rainPenalty(precipMm) * rainShare(tempC, temp);
   const airKnown = typeof pm25 === "number" && Number.isFinite(pm25);
   const air = airKnown ? airPenalty(pm25 as number) : 0;
+  const skyKnown = typeof sunH === "number" && Number.isFinite(sunH);
+  const sky = skyKnown ? skyPenalty(sunH as number) : 0;
   const year = asYear(yearIn);
   const share = year && year.warmestC !== undefined ? desertShare(year.warmestC, year.coldestC) : undefined;
   const desert = year ? desertPenalty(year.precipMm) * (share ?? 1) : 0;
@@ -185,24 +207,26 @@ export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number 
     rain,
     air,
     airKnown,
+    sky,
+    skyKnown,
     desert,
     ...(year ? { annualPrecipMm: year.precipMm } : {}),
     ...(share !== undefined ? { desertShare: share, warmestC: year!.warmestC } : {}),
-    score: Math.round(clamp(temp - rain - air - desert, 0, 100)),
+    score: Math.round(clamp(temp - rain - air - sky - desert, 0, 100)),
   };
 }
 
-/** The Comfort Index for a month (precip in mm/month) with an optional monthly-mean PM2.5. */
-export function comfortScore(tempC: number, precipMm: number, pm25?: number | null, year?: number | YearClimate | null): number {
-  return comfortBreakdown(tempC, precipMm, pm25, year).score;
+/** The Comfort Index for a month (precip in mm/month) with an optional monthly-mean PM2.5 and mean sunshine hours a day. */
+export function comfortScore(tempC: number, precipMm: number, pm25?: number | null, year?: number | YearClimate | null, sunH?: number | null): number {
+  return comfortBreakdown(tempC, precipMm, pm25, year, sunH).score;
 }
 
 /** Weeks in an average month; converts a mm-per-week normal to the mm-per-month scale the formula uses. */
 export const WEEKS_PER_MONTH = 365.25 / 12 / 7;
 
 /** Comfort Index breakdown for one week-of-year normal (precip in mm/week). */
-export function weeklyComfortBreakdown(tempC: number, precipMmPerWeek: number, pm25?: number | null, year?: number | YearClimate | null): ComfortBreakdown {
-  return comfortBreakdown(tempC, precipMmPerWeek * WEEKS_PER_MONTH, pm25, year);
+export function weeklyComfortBreakdown(tempC: number, precipMmPerWeek: number, pm25?: number | null, year?: number | YearClimate | null, sunH?: number | null): ComfortBreakdown {
+  return comfortBreakdown(tempC, precipMmPerWeek * WEEKS_PER_MONTH, pm25, year, sunH);
 }
 
 export type AirBand = "clean" | "moderate" | "poor" | "unhealthy" | "hazardous";
@@ -239,7 +263,7 @@ export function weekOfDayOfYear(doy: number): number {
 }
 
 export interface BreakdownRow {
-  key: "temp" | "rain" | "air" | "desert";
+  key: "temp" | "rain" | "air" | "sky" | "desert";
   label: string;
   /** Points added (temperature) or taken off (rain, air), rounded. */
   points: number;
@@ -255,13 +279,22 @@ function desertNote(b: ComfortBreakdown): string {
   return `${rain}; a mild ocean climate (warmest month ${Math.round(b.warmestC)}°C) keeps ${Math.round(b.desertShare * 100)}% of the penalty`;
 }
 
-/** The three terms of the Comfort Index as display rows, for every place the index is explained. */
-export function breakdownRows(b: ComfortBreakdown, tempC: number, precipMm: number, pm25?: number | null, rainUnit = "mm a month"): BreakdownRow[] {
+/** Hours of sun a day for display: one decimal under 10 ("1.5", "2"), whole above. */
+function sunHours(h: number): string {
+  return String(h < 10 ? Math.round(h * 10) / 10 : Math.round(h));
+}
+
+/** The terms of the Comfort Index as display rows, for every place the index is explained. Sky shows only when a sunshine figure is known. */
+export function breakdownRows(b: ComfortBreakdown, tempC: number, precipMm: number, pm25?: number | null, rainUnit = "mm a month", sunH?: number | null): BreakdownRow[] {
   const take = (v: number) => (Math.round(v) === 0 ? "0" : `−${Math.round(v)}`);
   // Desert shows only where it takes something off: elsewhere it is noise.
   const desert: BreakdownRow[] =
     b.annualPrecipMm !== undefined && Math.round(b.desert) > 0
       ? [{ key: "desert", label: "Desert", points: -Math.round(b.desert), text: take(b.desert), note: desertNote(b) }]
+      : [];
+  const sky: BreakdownRow[] =
+    b.skyKnown && typeof sunH === "number"
+      ? [{ key: "sky", label: "Sky", points: -Math.round(b.sky), text: take(b.sky), note: `${sunHours(sunH)} h of sun a day` }]
       : [];
   return [
     { key: "temp", label: "Temperature", points: Math.round(b.temp), text: `+${Math.round(b.temp)}`, note: `${Math.round(tempC)}°C` },
@@ -269,6 +302,7 @@ export function breakdownRows(b: ComfortBreakdown, tempC: number, precipMm: numb
     b.airKnown
       ? { key: "air", label: "Air", points: -Math.round(b.air), text: take(b.air), note: `PM2.5 ${Math.round(pm25 as number)} µg/m³ (${AIR_BAND_LABEL[airBand(pm25 as number)]})` }
       : { key: "air", label: "Air", points: 0, text: "n/a", note: "No air-quality data for this place yet, so nothing is taken off" },
+    ...sky,
     ...desert,
   ];
 }

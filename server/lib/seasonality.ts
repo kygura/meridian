@@ -20,12 +20,14 @@ export { comfortScore };
 export type { WeekSeasonality };
 
 export interface MonthSeasonality {
-  /** Comfort Index: temperature comfort minus rain penalty minus air penalty (src/lib/comfort.ts). */
+  /** Comfort Index: temperature comfort minus rain, air, sky and desert penalties (src/lib/comfort.ts). */
   score: number;
   tempC: number;
   precipMm: number;
   /** Monthly mean PM2.5 in ug/m3 (CAMS via Open-Meteo); absent until the air-quality backfill reaches the city. */
   pm25?: number;
+  /** Mean hours of sunshine a day (Open-Meteo); absent until the sunshine backfill reaches the city. */
+  sunH?: number;
 }
 
 export interface CitySeasonality {
@@ -42,7 +44,7 @@ export interface SeasonalityDataset {
 export interface RegionAggregate {
   region: string;
   /** Means over the country's covered cities. tempC to 1dp, precipMm rounded. */
-  months: Array<{ score: number; tempC: number; precipMm: number; pm25?: number }>;
+  months: Array<{ score: number; tempC: number; precipMm: number; pm25?: number; sunH?: number }>;
 }
 
 // ── Comfort score formula ───────────────────────────────────────────────
@@ -56,7 +58,7 @@ export interface RegionAggregate {
 export function rescoreMonths(months: MonthSeasonality[]): MonthSeasonality[] {
   const year = climateYear(months);
   return months.map((m) =>
-    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm, m.pm25, year) } : m
+    Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm, m.pm25, year, m.sunH) } : m
   );
 }
 
@@ -535,9 +537,11 @@ export function getRegionAggregates(): RegionAggregate[] {
       const ms = lists.map((l) => l[i]).filter((m): m is MonthSeasonality => !!m);
       // PM2.5 is the mean over the cities that have it: a country with none reports none, never zero.
       const air = ms.filter((m) => typeof m.pm25 === "number").map((m) => m.pm25 as number);
+      const sun = ms.filter((m) => typeof m.sunH === "number").map((m) => m.sunH as number);
       return {
         score: Math.round(mean(ms.map((m) => m.score))),
         ...(air.length ? { pm25: Math.round(mean(air) * 10) / 10 } : {}),
+        ...(sun.length ? { sunH: Math.round(mean(sun) * 10) / 10 } : {}),
         tempC: Math.round(mean(ms.map((m) => m.tempC)) * 10) / 10,
         precipMm: Math.round(mean(ms.map((m) => m.precipMm))),
       };

@@ -11,6 +11,10 @@ import {
   desertShare,
   annualRain,
   monthOfWeek,
+  SKY_FREE_H,
+  SKY_MAX_H,
+  SKY_MAX_PENALTY,
+  skyPenalty,
   tempComfort,
   weekOfDayOfYear,
   weeklyComfortBreakdown,
@@ -172,5 +176,51 @@ describe("week calendar", () => {
     expect(monthOfWeek(10)).toBe(3);
     expect(monthOfWeek(27)).toBe(7);
     expect(monthOfWeek(52)).toBe(12);
+  });
+});
+
+describe("sky term (ADR 0026)", () => {
+  it("is free at 6 h of sun a day, full at 2 h, linear between", () => {
+    expect([SKY_FREE_H, SKY_MAX_H, SKY_MAX_PENALTY]).toEqual([6, 2, 25]);
+    expect(skyPenalty(6)).toBe(0);
+    expect(skyPenalty(9)).toBe(0);
+    expect(skyPenalty(4)).toBe(12.5);
+    expect(skyPenalty(2)).toBe(25);
+    expect(skyPenalty(1)).toBe(25);
+    expect(skyPenalty(0)).toBe(25);
+  });
+
+  it("takes nothing off when the sunshine is unknown, and says so in the breakdown", () => {
+    for (const none of [undefined, null, Number.NaN]) {
+      const b = comfortBreakdown(18, 0, undefined, undefined, none);
+      expect(b).toMatchObject({ sky: 0, skyKnown: false, score: 100 });
+    }
+    expect(comfortScore(18, 0, undefined, undefined, 1.5)).toBe(75);
+    expect(weeklyComfortBreakdown(18, 0, undefined, undefined, 4)).toMatchObject({ sky: 12.5, skyKnown: true, score: 88 }); // 87.5 rounds up; weekly sunH is already per day
+  });
+
+  it("adds a Sky row after Air only when sunshine is known", () => {
+    const withSun = breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 1.5), 18, 10, undefined, "mm a month", 1.5);
+    expect(withSun.map((r) => r.key)).toEqual(["temp", "rain", "air", "sky"]);
+    expect(withSun[3]).toMatchObject({ label: "Sky", points: -25, text: "−25", note: "1.5 h of sun a day" });
+    expect(breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 2), 18, 10, undefined, "mm a month", 2)[3]!.note).toBe("2 h of sun a day");
+    expect(breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 8), 18, 10, undefined, "mm a month", 8)[3]).toMatchObject({ text: "0", note: "8 h of sun a day" });
+    const without = breakdownRows(comfortBreakdown(18, 10), 18, 10);
+    expect(without.map((r) => r.key)).toEqual(["temp", "rain", "air"]);
+    expect(breakdownRows(comfortBreakdown(18, 10), 18, 10, undefined, "mm a month", 3).some((r) => r.key === "sky")).toBe(false); // a figure without a known breakdown never shows
+  });
+
+  it("puts Lima's garua winter at 80 or below, while the Canaries stay as they were", () => {
+    const lima = [23, 23.5, 23, 21.5, 19.5, 18, 17, 16.5, 17, 18, 19.5, 21.5].map((tempC) => ({ tempC, precipMm: 1 }));
+    const year = climateYear(lima)!;
+    const jul = lima[6]!;
+    expect(comfortBreakdown(jul.tempC, jul.precipMm, undefined, year).score).toBe(100); // 0025: the desert term is gone, the sky is not seen
+    expect(comfortScore(jul.tempC, jul.precipMm, undefined, year, 1.5)).toBeLessThanOrEqual(80);
+    // a sunny Lima summer month is not hurt
+    expect(comfortScore(lima[1]!.tempC, 1, undefined, year, 7.5)).toBe(comfortScore(lima[1]!.tempC, 1, undefined, year));
+    // Canary-like: mild, dry, sunny (8 h)
+    const arrecife = { precipMm: 80, warmestC: 23.6, coldestC: 17.1 };
+    expect(comfortScore(17.2, 6, undefined, arrecife, 8)).toBe(100);
+    expect(comfortBreakdown(17.2, 6, undefined, arrecife, 8).sky).toBe(0);
   });
 });

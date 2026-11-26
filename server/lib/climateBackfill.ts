@@ -1,8 +1,9 @@
 // Resumable, quota-aware backfill of climate normals for every city (ADR 0014).
 //
 // Cities are grouped by 0.25 degree climate cell, so one fetch serves every city in a cell.
-// Each cell needs two Open-Meteo calls: the archive API (10 years of daily temperature and rain)
-// and the air quality API (3 years of hourly PM2.5 from CAMS). The same code runs as a script
+// Each cell needs three Open-Meteo calls: the archive API (10 years of daily temperature and rain),
+// the air quality API (3 years of hourly PM2.5 from CAMS) and the archive API again for 3 years of
+// daily sunshine duration (ADR 0026). The same code runs as a script
 // (scripts/backfill-climate.ts) and as the server's nightly job (climateJob.ts); only the
 // persistence differs (a `ClimateSink`).
 //
@@ -31,6 +32,9 @@ export const WEATHER_WINDOW = "2015-2024";
 export const AIR_START = "2023-01-01";
 export const AIR_END = "2025-12-31";
 export const AIR_WINDOW = "2023-2025";
+export const SKY_START = "2022-01-01";
+export const SKY_END = "2024-12-31";
+export const SKY_WINDOW = "2022-2024";
 
 const WEATHER_URL = "https://archive-api.open-meteo.com/v1/archive";
 const AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
@@ -68,6 +72,7 @@ export function weightOf(variables: number, days: number): number {
 const daysBetween = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) + 1;
 export const WEATHER_WEIGHT = weightOf(3, daysBetween(WEATHER_START, WEATHER_END));
 export const AIR_WEIGHT = weightOf(1, daysBetween(AIR_START, AIR_END));
+export const SKY_WEIGHT = weightOf(1, daysBetween(SKY_START, SKY_END));
 
 export function usedIn(ledger: Ledger, now: number, windowMs: number): number {
   return ledger.spent.reduce((s, [t, w]) => (now - t < windowMs ? s + w : s), 0);
@@ -161,6 +166,25 @@ export async function fetchWeatherDaily(lat: number, lng: number, fetchFn: Fetch
   return { ok: true, data: { temp, rain, records } };
 }
 
+/** Daily mean hours of sunshine (Open-Meteo reports sunshine_duration in seconds per day), 3 years, its own one-variable call. */
+export async function fetchSkyDaily(lat: number, lng: number, fetchFn: Fetch = fetch): Promise<FetchOutcome<DailyValue[]>> {
+  const url =
+    `${WEATHER_URL}?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}` +
+    `&start_date=${SKY_START}&end_date=${SKY_END}&daily=sunshine_duration&timezone=UTC`;
+  const r = await getJson(url, fetchFn);
+  if (!r.ok) return r;
+  const daily = r.data.daily as { time?: string[]; sunshine_duration?: Array<number | null> } | undefined;
+  if (!daily?.time || !Array.isArray(daily.time) || !Array.isArray(daily.sunshine_duration)) return { ok: false, reason: "bad", message: "no daily block" };
+  const out: DailyValue[] = [];
+  for (let i = 0; i < daily.time.length; i++) {
+    const s = daily.sunshine_duration[i];
+    if (s == null || !Number.isFinite(s)) continue;
+    out.push({ date: daily.time[i]!, v: s / 3600 });
+  }
+  if (out.length === 0) return { ok: false, reason: "bad", message: "no usable sunshine days" };
+  return { ok: true, data: out };
+}
+
 export async function fetchAirDaily(lat: number, lng: number, fetchFn: Fetch = fetch): Promise<FetchOutcome<DailyValue[]>> {
   const url =
     `${AIR_URL}?latitude=${lat.toFixed(4)}&longitude=${lng.toFixed(4)}` +
@@ -185,8 +209,8 @@ export function cellFromWeather(w: WeatherDaily, today: string, prior?: ClimateC
   return {
     ...prior,
     at: today,
-    m: { t: months.map((m) => q10(m.tempC)), p: months.map((m) => m.precipMm), ...(prior?.m?.a ? { a: prior.m.a } : {}) },
-    ...(weekly ? { w: { ...weekly, ...(prior?.w?.a ? { a: prior.w.a } : {}) } } : prior?.w ? { w: prior.w } : {}),
+    m: { t: months.map((m) => q10(m.tempC)), p: months.map((m) => m.precipMm), ...(prior?.m?.a ? { a: prior.m.a } : {}), ...(prior?.m?.s ? { s: prior.m.s } : {}) },
+    ...(weekly ? { w: { ...weekly, ...(prior?.w?.a ? { a: prior.w.a } : {}), ...(prior?.w?.s ? { s: prior.w.s } : {}) } } : prior?.w ? { w: prior.w } : {}),
   };
 }
 
@@ -200,6 +224,16 @@ export function withAir(cell: ClimateCell, air: DailyValue[], today: string): Cl
   return out;
 }
 
+/** Adds sunshine hours a day (monthly and weekly) to a cell that already has weather. */
+export function withSky(cell: ClimateCell, sun: DailyValue[], today: string): ClimateCell {
+  const monthly = monthlyMeanNormals(sun);
+  const weekly = weeklyNormals(sun)?.map(q10);
+  const out: ClimateCell = { ...cell, sq: today };
+  if (monthly && cell.m) out.m = { ...cell.m, s: monthly.map(q10) };
+  if (weekly && cell.w) out.w = { ...cell.w, s: weekly };
+  return out;
+}
+
 // ── planning ──────────────────────────────────────────────────────────────
 
 export interface PlanItem {
@@ -209,6 +243,7 @@ export interface PlanItem {
   cityCount: number;
   needsWeather: boolean;
   needsAir: boolean;
+  needsSky: boolean;
   /** Smaller = sooner. */
   rank: number;
 }
@@ -224,8 +259,8 @@ export interface PlanOptions {
 /**
  * Every cell that has a gap, ordered: cells with nothing yet (seed cities first, then capitals and
  * large-airport cities, then by population), then cells missing only air quality, then stale cells
- * oldest first. A cell is a gap if it has no weather, no weekly profile, no air quality, or weather
- * older than REFRESH_AFTER_DAYS.
+ * oldest first, then cells missing only sunshine (ADR 0026). A cell is a gap if it has no weather, no
+ * weekly profile, no air quality, no sunshine, or weather older than REFRESH_AFTER_DAYS.
  */
 export function planBackfill(cities: City[], cells: Record<string, ClimateCell>, opts: PlanOptions = {}): PlanItem[] {
   const today = opts.today ?? new Date().toISOString().slice(0, 10);
@@ -242,14 +277,16 @@ export function planBackfill(cities: City[], cells: Record<string, ClimateCell>,
     const cell = cells[key];
     const needsWeather = !cell?.m || !cell.w;
     const needsAir = !cell?.aq;
+    // Sunshine is done once fetched (`sq`), even if a sparse series gave no `s`, so it is not asked for forever.
+    const needsSky = !cell?.sq && !cell?.m?.s;
     const ageDays = cell?.at ? (Date.parse(today) - Date.parse(cell.at)) / 86_400_000 : Infinity;
     const stale = !needsWeather && ageDays > REFRESH_AFTER_DAYS;
-    if (!needsWeather && !needsAir && !stale) continue;
+    if (!needsWeather && !needsAir && !needsSky && !stale) continue;
     const important = list.some((c) => opts.firstIds?.has(c.id)) ? -1 : list.some((c) => opts.seedIds?.has(c.id)) ? 0 : list.some((c) => c.capital || c.hub === "large") ? 1 : 2;
-    // rank: unfetched (0-2) before air-only (3) before stale (4); within a tier by population or age.
-    const tier = needsWeather || important < 0 ? important : needsAir ? 3 : 4;
+    // rank: unfetched (0-2) before air-only (3) before stale (4) before sky-only (5); within a tier by population or age.
+    const tier = needsWeather || important < 0 ? important : needsAir ? 3 : stale ? 4 : 5;
     const within = tier === 4 ? Date.parse(cell?.at ?? today) / 86_400_000 : -rep.population / 1e9;
-    items.push({ key, rep, cityCount: list.length, needsWeather: needsWeather || stale, needsAir: needsAir || stale, rank: tier * 1e6 + within });
+    items.push({ key, rep, cityCount: list.length, needsWeather: needsWeather || stale, needsAir: needsAir || stale, needsSky: needsSky || stale, rank: tier * 1e6 + within });
   }
   return items.sort((a, b) => a.rank - b.rank || a.key.localeCompare(b.key));
 }
@@ -397,6 +434,32 @@ export async function runBackfill(opts: BackfillOptions): Promise<BackfillResult
         continue;
       }
       cell = withAir(cell, a.data, today);
+      await opts.sink.save(item.key, cell);
+      await sleep(delayMs);
+    }
+
+    if (!failed && item.needsSky && cell?.m) {
+      if (!(await admit(SKY_WEIGHT))) {
+        if (fresh) result.cellsPartial++;
+        break;
+      }
+      await record(SKY_WEIGHT);
+      const s = await fetchSkyDaily(item.rep.lat, item.rep.lng, fetchFn);
+      if (!s.ok) {
+        result.lastError = `${item.rep.id}: sky ${s.reason} ${s.message ?? ""}`.trim();
+        log(`sunshine failed for ${result.lastError}`);
+        if (fresh) result.cellsPartial++;
+        if (s.reason === "minutely" || s.reason === "hourly" || s.reason === "daily" || s.reason === "limit") {
+          if (await onLimit(s.reason)) {
+            await sleep(60_000);
+            i--;
+            continue;
+          }
+          break;
+        }
+        continue;
+      }
+      cell = withSky(cell, s.data, today);
       await opts.sink.save(item.key, cell);
       await sleep(delayMs);
     }

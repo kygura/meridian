@@ -22,13 +22,16 @@ export function cellKeyFor(lat: number, lng: number): string {
  * One cell's record. All numbers are integers (x10 where noted) to keep the file small.
  *  m.t monthly mean temperature C x10, m.p monthly rain mm, m.a monthly mean PM2.5 ug/m3 x10
  *  w.t weekly mean temperature C x10, w.p rain mm per 7 days x10, w.a weekly mean PM2.5 x10
- *  at: date the weather was fetched; aq: date the air quality was fetched (absent = not yet).
+ *  m.s monthly mean hours of sunshine a day x10, w.s weekly mean hours of sunshine a day x10 (ADR 0026)
+ *  at: date the weather was fetched; aq: date the air quality was fetched; sq: date the sunshine
+ *  was fetched (absent = not yet). Cells without `s` decode exactly as before.
  */
 export interface ClimateCell {
   at?: string;
   aq?: string;
-  m?: { t: number[]; p: number[]; a?: number[] };
-  w?: { t: number[]; p: number[]; a?: number[] };
+  sq?: string;
+  m?: { t: number[]; p: number[]; a?: number[]; s?: number[] };
+  w?: { t: number[]; p: number[]; a?: number[]; s?: number[] };
 }
 
 export interface ClimateFile {
@@ -37,6 +40,8 @@ export interface ClimateFile {
   weatherWindow: string;
   /** Years the air-quality normals average over, e.g. "2023-2025". */
   airWindow: string;
+  /** Years the sunshine normals average over, e.g. "2022-2024". Absent in files written before ADR 0026. */
+  skyWindow?: string;
   generatedAt: string;
   cellDeg: number;
   cells: Record<string, ClimateCell>;
@@ -48,6 +53,8 @@ export interface WeekSeasonality {
   /** Mean rain per 7 days. */
   precipMm: number;
   pm25?: number;
+  /** Mean hours of sunshine per day. */
+  sunH?: number;
 }
 
 export function emptyClimateFile(weatherWindow = "", airWindow = ""): ClimateFile {
@@ -159,7 +166,7 @@ export function encodeWeekly(temp: DailyValue[], rain: DailyValue[], pm25?: Dail
 
 // ── decoding ──────────────────────────────────────────────────────────────
 
-export function decodeMonths(cell: ClimateCell | undefined): Array<{ score: number; tempC: number; precipMm: number; pm25?: number }> | null {
+export function decodeMonths(cell: ClimateCell | undefined): Array<{ score: number; tempC: number; precipMm: number; pm25?: number; sunH?: number }> | null {
   const m = cell?.m;
   if (!m || m.t.length !== 12 || m.p.length !== 12) return null;
   const year = climateYear(m.t.map((t, i) => ({ tempC: t / 10, precipMm: m.p[i] })));
@@ -168,7 +175,9 @@ export function decodeMonths(cell: ClimateCell | undefined): Array<{ score: numb
     const precipMm = m.p[i]!;
     const a = m.a?.[i];
     const pm25 = typeof a === "number" ? a / 10 : undefined;
-    return { score: comfortScore(tempC, precipMm, pm25, year), tempC, precipMm, ...(pm25 !== undefined ? { pm25 } : {}) };
+    const s = m.s?.[i];
+    const sunH = typeof s === "number" ? s / 10 : undefined;
+    return { score: comfortScore(tempC, precipMm, pm25, year, sunH), tempC, precipMm, ...(pm25 !== undefined ? { pm25 } : {}), ...(sunH !== undefined ? { sunH } : {}) };
   });
 }
 
@@ -181,7 +190,9 @@ export function decodeWeeks(cell: ClimateCell | undefined): WeekSeasonality[] | 
     const precipMm = w.p[i]! / 10;
     const a = w.a?.[i];
     const pm25 = typeof a === "number" ? a / 10 : undefined;
-    return { score: weeklyComfortBreakdown(tempC, precipMm, pm25, year).score, tempC, precipMm: Math.round(precipMm * 10) / 10, ...(pm25 !== undefined ? { pm25 } : {}) };
+    const s = w.s?.[i];
+    const sunH = typeof s === "number" ? s / 10 : undefined;
+    return { score: weeklyComfortBreakdown(tempC, precipMm, pm25, year, sunH).score, tempC, precipMm: Math.round(precipMm * 10) / 10, ...(pm25 !== undefined ? { pm25 } : {}), ...(sunH !== undefined ? { sunH } : {}) };
   });
 }
 
@@ -196,7 +207,7 @@ export function serializeClimateFile(file: ClimateFile): string {
     const [b1, b2] = b.split(",").map(Number) as [number, number];
     return a1 - b1 || a2 - b2;
   });
-  const head = JSON.stringify({ version: file.version, weatherWindow: file.weatherWindow, airWindow: file.airWindow, generatedAt: file.generatedAt, cellDeg: file.cellDeg });
+  const head = JSON.stringify({ version: file.version, weatherWindow: file.weatherWindow, airWindow: file.airWindow, ...(file.skyWindow ? { skyWindow: file.skyWindow } : {}), generatedAt: file.generatedAt, cellDeg: file.cellDeg });
   const cells = keys.map((k) => `${JSON.stringify(k)}:${JSON.stringify(file.cells[k])}`).join(",\n");
   return `${head.slice(0, -1)},\n"cells":{\n${cells}\n}}\n`;
 }

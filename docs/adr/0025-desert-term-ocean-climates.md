@@ -30,3 +30,5 @@ Rejected:
 
 - **A list of exempt places.** That would be a judgement in the data, not a measurement, and would miss the next Atlantic island.
 - **Dropping the desert term.** Hot deserts would read as pleasant in their mild months again, the problem ADR 0018 fixed.
+
+Amended by ADR 0026: a sky (sunshine) term now separates the grey fog coasts named above from the Canaries.

@@ -21,6 +21,8 @@ export interface SeasonMonth {
   precipMm: number;
   /** Monthly mean PM2.5 (ug/m3); absent until the air-quality data reaches the place. */
   pm25?: number;
+  /** Mean hours of sunshine a day; absent until the sunshine data reaches the place. */
+  sunH?: number;
 }
 
 /** One week-of-year normal (index 0 = week 1). `precipMm` is per 7 days. */
@@ -29,12 +31,14 @@ export interface SeasonWeek {
   tempC: number;
   precipMm: number;
   pm25?: number;
+  /** Mean hours of sunshine a day (already per day, not per week). */
+  sunH?: number;
 }
 
 /** Region aggregate: means over the country's covered cities (temp/precip absent on older servers). */
 export interface RegionSeason {
   region: string;
-  months: Array<{ score: number; tempC?: number; precipMm?: number; pm25?: number }>;
+  months: Array<{ score: number; tempC?: number; precipMm?: number; pm25?: number; sunH?: number }>;
 }
 
 /** Batch response: city records plus the dataset's year window (null if the server omitted it). */

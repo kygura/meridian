@@ -57,6 +57,8 @@ export interface FrameMonth {
   tempC?: number;
   precipMm?: number;
   pm25?: number;
+  /** Mean hours of sunshine a day. */
+  sunH?: number;
 }
 
 const finite = (v: number | undefined): v is number => typeof v === "number" && Number.isFinite(v);
@@ -104,6 +106,8 @@ export function frameBreakdown(
   rain: number;
   air: number;
   airKnown: boolean;
+  sky: number;
+  skyKnown: boolean;
   desert: number;
   /** The year the desert term was judged on (rain, warmest and coldest months), when known. */
   year?: YearClimate;
@@ -111,6 +115,7 @@ export function frameBreakdown(
   tempC: number;
   precipMm: number;
   pm25?: number;
+  sunH?: number;
   per: "month" | "week";
 } | null {
   const usable = (m: FrameMonth | undefined): m is FrameMonth & { tempC: number; precipMm: number } => !!m && finite(m.tempC) && finite(m.precipMm);
@@ -118,26 +123,31 @@ export function frameBreakdown(
     const w = weeks[col];
     if (!usable(w)) return null;
     const wYear = climateYear(weeks);
-    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25, wYear), ...(wYear ? { year: wYear } : {}), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
+    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25, wYear, w.sunH), ...(wYear ? { year: wYear } : {}), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, sunH: w.sunH, per: "week" };
   }
   const year = climateYear(months);
   const picked = frameColumns(tf)[col]!.months.map((i) => months[i]);
   if (!picked.every(usable)) return null;
-  const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25, year));
+  const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25, year, m.sunH));
   const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
   const air = picked.filter((m) => finite(m.pm25)).map((m) => m.pm25 as number);
   const airKnown = air.length === picked.length;
+  const sun = picked.filter((m) => finite(m.sunH)).map((m) => m.sunH as number);
+  const skyKnown = sun.length === picked.length;
   return {
     temp: mean(parts.map((p) => p.temp)),
     rain: mean(parts.map((p) => p.rain)),
     air: mean(parts.map((p) => p.air)),
     airKnown,
+    sky: mean(parts.map((p) => p.sky)),
+    skyKnown,
     desert: mean(parts.map((p) => p.desert)),
     ...(year ? { year } : {}),
     score: Math.round(mean(parts.map((p) => p.score))),
     tempC: mean(picked.map((m) => m.tempC)),
     precipMm: mean(picked.map((m) => m.precipMm)),
     pm25: airKnown ? mean(air) : undefined,
+    sunH: skyKnown ? mean(sun) : undefined,
     per: "month",
   };
 }

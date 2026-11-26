@@ -280,7 +280,7 @@ function BestMonths({ cityId }: { cityId: string }) {
           </p>
         ) : null}
         {m ? (
-          <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} year={climateYear(ms)} />
+          <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} sunH={m.sunH} year={climateYear(ms)} />
         ) : null}
       </>
     );

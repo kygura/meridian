@@ -14,6 +14,10 @@ const fetchFn = (async (url: string) => {
     const time = daysOf(2023, 2025).flatMap((d) => Array.from({ length: 24 }, (_, h) => `${d}T${String(h).padStart(2, "0")}:00`));
     return { ok: true, status: 200, json: async () => ({ hourly: { time, pm2_5: time.map(() => 33) } }) } as unknown as Response;
   }
+  if (url.includes("daily=sunshine_duration")) {
+    const time = daysOf(2022, 2024);
+    return { ok: true, status: 200, json: async () => ({ daily: { time, sunshine_duration: time.map(() => 25_200) } }) } as unknown as Response; // 7 h
+  }
   const time = daysOf(2015, 2024);
   return {
     ok: true,
@@ -62,12 +66,13 @@ describe("nightly climate job", () => {
     if (peek.kind === "hit") {
       expect(peek.months).toHaveLength(12);
       expect(peek.months[0]!.pm25).toBe(33);
+      expect(peek.months[0]!.sunH).toBe(7);
     }
     expect(seasonality.getCityWeeks(city.id)).toHaveLength(52);
 
     // The ledger records what was spent, so the next run (or the script) sees it.
     const ledger = JSON.parse(readFileSync(join(dir, "cache", "open-meteo-ledger.json"), "utf-8")) as { spent: Array<[number, number]> };
-    expect(ledger.spent).toHaveLength(4);
+    expect(ledger.spent).toHaveLength(6); // weather, air and sunshine for each of the 2 cells
 
     // A second run picks different gaps rather than redoing these.
     const again = await job.runClimateJobOnce({ maxCells: 1, fetchFn, delayMs: 0 });
