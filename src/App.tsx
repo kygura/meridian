@@ -20,6 +20,7 @@ import InboxScreen from "./screens/inbox/InboxScreen";
 import WorldScreen from "./screens/world/WorldScreen";
 import RotationScreen from "./screens/rotation/RotationScreen";
 import ScoutScreen from "./screens/scout/ScoutScreen";
+import LocalesScreen from "./screens/locales/LocalesScreen";
 
 export default function App() {
   const route = useRoute();
@@ -79,6 +80,11 @@ export default function App() {
         {route.view === "rotation" && (
           <div className="shell-screen">
             <RotationScreen />
+          </div>
+        )}
+        {route.view === "locales" && (
+          <div className="shell-screen">
+            <LocalesScreen />
           </div>
         )}
         {route.view === "scout" && (

@@ -93,6 +93,7 @@ Canonical hashes:
 | `#/plan/watches` | Watches |
 | `#/plan/flights` | Flights |
 | `#/plan/days` | Days: Schengen window, country and tax-day counters (ADR 0012) |
+| `#/locales` | Locales: researched bases, hubs and destinations on a month calendar (ADR 0022) |
 | `#/inbox` | inbox |
 | `#/world` | world |
 

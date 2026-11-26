@@ -289,6 +289,11 @@ export function resetLiveEventsForTests(): void {
   computedMemo = undefined;
 }
 
+/** Test seam: wait for any refresh in flight to finish its writes (its errors are ignored). */
+export async function settleLiveEventsForTests(): Promise<void> {
+  await inflight?.catch(() => undefined);
+}
+
 async function readCached(): Promise<LiveEventsFile> {
   const key = store.path();
   if (memo && memo.key === key && Date.now() - memo.at < FILE_CACHE_MS) return memo.file;

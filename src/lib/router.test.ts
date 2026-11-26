@@ -11,6 +11,7 @@ describe("parseHash: v3 routes", () => {
     expect(parseHash("#/world")).toEqual({ view: "world" });
     expect(parseHash("#/scout")).toEqual({ view: "scout" });
     expect(parseHash("#/scout/")).toEqual({ view: "scout" });
+    expect(parseHash("#/locales")).toEqual({ view: "locales" });
   });
 
   it("parses trips tabs and detail routes", () => {
@@ -82,6 +83,7 @@ describe("routePath / hrefFor / canonicalRedirect", () => {
     { view: "inbox" },
     { view: "world" },
     { view: "scout" },
+    { view: "locales" },
   ];
 
   it("round-trips every route", () => {

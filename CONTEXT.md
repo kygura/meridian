@@ -419,6 +419,33 @@ scheduler on a long-running server or from Vercel Cron.
 What the service worker keeps of the owner's data for offline reading. Emptied on sign-out
 and on any 401, and never holds sign-in state or share links.
 
+### Locales (ADR 0022)
+
+**Locale**:
+A researched place to live in or pass through on the rotation: a base, a hub or a destination,
+covering one or more Cities (the first is the anchor), with a stay range and entry route
+(`data/locales.json`). Its months are scored from Meridian's own data (the anchor's Comfort Index,
+seasonal hazards, measured tourist seasons); the owner's research rides along as notes. Not a
+commitment; a Rotation Stay is the commitment.
+_Avoid_: destination (alone), location, place (see City, Open Place)
+
+**Travel Seasons**:
+The owner's dated windows for a locale (peak, shoulder or avoid, with a tourist season), from their
+Notion database of that name. Shown as notes beside Meridian's reading; they do not score.
+_Avoid_: Season (that's a Trip's months)
+
+**Hub** (of a Locale):
+A locale held for a few days between bases, such as Bangkok or Istanbul. Becomes a Pass-through.
+
+**Destination** (of a Locale):
+A locale visited once in its window and left, such as Bhutan or the South Island.
+
+**Ideal Stay**:
+The stretch of a locale's good months to be there, at the locale's ideal length, cut to the run of
+good months and the owner's passport day limit; for a place never comfortable, its own best months
+("best it gets"). Shown as a bracket on the Locales calendar.
+_Avoid_: best time
+
 ### Solver and re-planning (ADR 0015)
 
 **Rotation Solver**:

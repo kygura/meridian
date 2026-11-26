@@ -20,6 +20,7 @@ import {
   refreshLiveEvents,
   resetLiveEventsForTests,
   runSparql,
+  settleLiveEventsForTests,
   SOURCES,
   USER_AGENT,
   type LiveEventsFile,
@@ -66,7 +67,9 @@ beforeEach(() => {
   process.env.ANTHROPIC_API_KEY = "test-key";
   setAnthropicClient(springClaude().client);
 });
-afterEach(() => {
+afterEach(async () => {
+  // A background refresh may still be writing to TMP; let it finish before removing the folder.
+  await settleLiveEventsForTests();
   setAnthropicClient(null);
   delete process.env.ANTHROPIC_API_KEY;
   rmSync(TMP, { recursive: true, force: true });

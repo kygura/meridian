@@ -14,6 +14,7 @@ const TITLES: Record<Route["view"], string> = {
   inbox: "Inbox",
   world: "World",
   rotation: "Rotation",
+  locales: "Locales",
   scout: "Scout",
 };
 

@@ -19,7 +19,7 @@ const TAB_VIEWS = new Set(["map", "trips", "plan", "inbox"]);
 /** Phone (< 900px) bottom tab bar: Map, Trips, Plan, Inbox, More. */
 export function TabBar({ route, badges }: TabBarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const moreActive = route.view === "world" || route.view === "rotation" || route.view === "scout";
+  const moreActive = route.view === "world" || route.view === "rotation" || route.view === "locales" || route.view === "scout";
   const noticesUnseen = useNotices((s) => s.unseen);
 
   return (
@@ -79,6 +79,7 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
   const world = NAV_ITEMS.find((i) => i.view === "world")!;
   const rotation = NAV_ITEMS.find((i) => i.view === "rotation");
   const scout = NAV_ITEMS.find((i) => i.view === "scout");
+  const locales = NAV_ITEMS.find((i) => i.view === "locales");
   const noticesUnseen = useNotices((s) => s.unseen);
   return (
     <Sheet open={open} onClose={onClose} title="More" size="sm">
@@ -97,6 +98,12 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
           <a className="shell-more-link" href={rotation.href} onClick={onClose}>
             {rotation.icon}
             <span>{rotation.label}</span>
+          </a>
+        )}
+        {locales && (
+          <a className="shell-more-link" href={locales.href} onClick={onClose}>
+            {locales.icon}
+            <span>{locales.label}</span>
           </a>
         )}
         <button
