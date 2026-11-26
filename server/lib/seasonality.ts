@@ -2,7 +2,7 @@ import { join } from "path";
 import { readFileSync, writeFileSync } from "fs";
 import { getDataPath, ensureDataDir } from "./paths.js";
 import { getCities, getCityById } from "./cities.js";
-import { annualRain, comfortScore } from "../../src/lib/comfort.js";
+import { climateYear, comfortScore } from "../../src/lib/comfort.js";
 import { createJsonStore } from "./jsonStore.js";
 import {
   cellKeyFor,
@@ -54,7 +54,7 @@ export interface RegionAggregate {
  * datasets (the seed and the runtime cache) always follow the current formula.
  */
 export function rescoreMonths(months: MonthSeasonality[]): MonthSeasonality[] {
-  const year = annualRain(months.map((m) => m.precipMm));
+  const year = climateYear(months);
   return months.map((m) =>
     Number.isFinite(m.tempC) && Number.isFinite(m.precipMm) ? { ...m, score: comfortScore(m.tempC, m.precipMm, m.pm25, year) } : m
   );
@@ -435,7 +435,7 @@ async function fetchCityLive(
   }
 
   const monthly = aggregateDailyToMonthly(records);
-  const year = annualRain(monthly.map((m) => m.precipMm));
+  const year = climateYear(monthly);
   const months: MonthSeasonality[] = monthly.map((m) => ({
     score: comfortScore(m.tempC, m.precipMm, undefined, year),
     tempC: m.tempC,

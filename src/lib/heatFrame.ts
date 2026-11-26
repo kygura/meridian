@@ -2,7 +2,7 @@
 // greenery) over one timeframe (12 months or 4 seasons). Pure: no React, no fetch.
 
 import { lushIndex, type ClimateMode } from "./climate";
-import { annualRain, comfortBreakdown, monthOfWeek, weeklyComfortBreakdown } from "./comfort";
+import { climateYear, comfortBreakdown, type YearClimate, monthOfWeek, weeklyComfortBreakdown } from "./comfort";
 import { MONTH_NAMES, MONTH_SHORT } from "./repeatCopy";
 
 export type Timeframe = "months" | "seasons" | "weeks";
@@ -105,7 +105,8 @@ export function frameBreakdown(
   air: number;
   airKnown: boolean;
   desert: number;
-  annualPrecipMm?: number;
+  /** The year the desert term was judged on (rain, warmest and coldest months), when known. */
+  year?: YearClimate;
   score: number;
   tempC: number;
   precipMm: number;
@@ -116,10 +117,10 @@ export function frameBreakdown(
   if (tf === "weeks" && weeks && weeks.length === 52) {
     const w = weeks[col];
     if (!usable(w)) return null;
-    const wYear = annualRain(weeks.map((x) => x.precipMm));
-    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25, wYear), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
+    const wYear = climateYear(weeks);
+    return { ...weeklyComfortBreakdown(w.tempC, w.precipMm, w.pm25, wYear), ...(wYear ? { year: wYear } : {}), tempC: w.tempC, precipMm: w.precipMm, pm25: w.pm25, per: "week" };
   }
-  const year = annualRain(months.map((m) => m.precipMm));
+  const year = climateYear(months);
   const picked = frameColumns(tf)[col]!.months.map((i) => months[i]);
   if (!picked.every(usable)) return null;
   const parts = picked.map((m) => comfortBreakdown(m.tempC, m.precipMm, m.pm25, year));
@@ -132,7 +133,7 @@ export function frameBreakdown(
     air: mean(parts.map((p) => p.air)),
     airKnown,
     desert: mean(parts.map((p) => p.desert)),
-    ...(year !== undefined ? { annualPrecipMm: year } : {}),
+    ...(year ? { year } : {}),
     score: Math.round(mean(parts.map((p) => p.score))),
     tempC: mean(picked.map((m) => m.tempC)),
     precipMm: mean(picked.map((m) => m.precipMm)),

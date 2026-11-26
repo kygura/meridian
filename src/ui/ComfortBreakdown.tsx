@@ -1,4 +1,4 @@
-import { breakdownRows, comfortBreakdown, weeklyComfortBreakdown } from "../lib/comfort";
+import { breakdownRows, comfortBreakdown, weeklyComfortBreakdown, type YearClimate } from "../lib/comfort";
 import { cx } from "./cx";
 import "./comfortBreakdown.css";
 
@@ -9,8 +9,10 @@ export interface ComfortBreakdownProps {
   /** Monthly (or weekly) mean PM2.5 in ug/m3; omit when the place has no air-quality data yet. */
   pm25?: number | null;
   per?: "month" | "week";
-  /** The place's yearly rain (mm); adds the desert term when given. */
+  /** The place's yearly rain (mm); adds the desert term when given. Prefer `year`. */
   annualPrecipMm?: number;
+  /** The place's year (rain, warmest and coldest months): the desert term, scaled for mild ocean climates (ADR 0025). */
+  year?: YearClimate;
   className?: string;
 }
 
@@ -18,11 +20,11 @@ export interface ComfortBreakdownProps {
  * How the Comfort Index is made up: temperature comfort, minus the rain penalty, minus the
  * air-quality penalty, minus the desert penalty for very dry places. Used wherever the index is explained (city panel, When to go, Repeat a trip).
  */
-export function ComfortBreakdown({ tempC, precipMm, pm25, per = "month", annualPrecipMm, className }: ComfortBreakdownProps) {
+export function ComfortBreakdown({ tempC, precipMm, pm25, per = "month", annualPrecipMm, year, className }: ComfortBreakdownProps) {
   const b =
     per === "week"
-      ? weeklyComfortBreakdown(tempC, precipMm, pm25, annualPrecipMm)
-      : comfortBreakdown(tempC, precipMm, pm25, annualPrecipMm);
+      ? weeklyComfortBreakdown(tempC, precipMm, pm25, year ?? annualPrecipMm)
+      : comfortBreakdown(tempC, precipMm, pm25, year ?? annualPrecipMm);
   const rows = breakdownRows(b, tempC, precipMm, pm25, per === "week" ? "mm a week" : "mm a month");
   return (
     <dl className={cx("ui-comfort-bd", className)} aria-label="How the Comfort Index is made up">

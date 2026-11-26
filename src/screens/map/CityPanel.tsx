@@ -27,7 +27,7 @@ import {
 import { IconAsk, IconBell, IconCalendar, IconCheck, IconPin, IconPlane, IconPlus } from "../../ui/icons";
 import { TOPIC_LABELS, useCitySeasonality, useNewsBrief, usePlaceNews, type NewsIssue, type NewsTopic } from "./cityData";
 import { countryInfo } from "./countries";
-import { annualRain } from "../../lib/comfort";
+import { climateYear } from "../../lib/comfort";
 import CityPlacesToLive from "./CityPlacesToLive";
 import CityLikeness from "./CityLikeness";
 import CityFacts from "./CityFacts";
@@ -280,7 +280,7 @@ function BestMonths({ cityId }: { cityId: string }) {
           </p>
         ) : null}
         {m ? (
-          <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} annualPrecipMm={annualRain(ms.map((x) => x.precipMm))} />
+          <ComfortBreakdown tempC={m.tempC} precipMm={m.precipMm} pm25={m.pm25} year={climateYear(ms)} />
         ) : null}
       </>
     );

@@ -22,7 +22,7 @@ A continent or subregion grouping of cities, used for aggregate views.
 
 **Comfort Index**:
 The 0–100 monthly seasonality score for a city, derived from multi-year climate
-normals (temperature comfort minus precipitation penalty minus air penalty minus desert penalty, ADR 0014, ADR 0018, ADR 0023).
+normals (temperature comfort minus precipitation penalty minus air penalty minus desert penalty, ADR 0014, ADR 0018, ADR 0023; the desert penalty is scaled down for mild ocean climates, ADR 0025).
 Deliberately labeled an index, not "best time" truth. Shown as three terms wherever it is explained.
 _Avoid_: weather score, climate score
 

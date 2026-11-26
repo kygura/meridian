@@ -20,6 +20,13 @@
 // It subtracts 0 at >=400mm of rain a year, scaling to 45 at <=50mm a year (Cairo, Dubai,
 // Lima's coast). It needs the whole year's rain, so callers without it pass nothing and no
 // desert penalty applies.
+//
+// Not every dry place is a desert to live in (ADR 0025). An ocean-cooled one (the Canaries, Cape
+// Verde, Lima's coast) is dry but mild all year: trade winds, no summer furnace, little gap between
+// seasons. So the penalty is scaled by how hot and continental the year is, from the same monthly
+// means: the warmest month's mean (none at <=24C, all at >=28C) or the gap between the warmest and
+// coldest months (none at <=9C, all at >=15C), whichever is larger. Cairo, the Gulf, Phoenix and the
+// Gobi keep the full penalty; Lanzarote keeps none. Without the year's temperatures it applies in full.
 
 /** [mean C, temperature comfort] points; linear between them, flat beyond the ends. */
 export const TEMP_CURVE: ReadonlyArray<readonly [number, number]> = [
@@ -53,6 +60,19 @@ export const AIR_MAX_PENALTY = 40;
 export const DESERT_FREE_MM_YEAR = 400;
 export const DESERT_MAX_MM_YEAR = 50;
 export const DESERT_MAX_PENALTY = 45;
+/** Warmest-month mean (C): no desert penalty at or below the first, all of it at or above the second. */
+export const DESERT_HEAT_FREE_C = 24;
+export const DESERT_HEAT_FULL_C = 28;
+/** Warmest minus coldest month mean (C): same, for continental deserts with mild summers (the Gobi). */
+export const DESERT_SWING_FREE_C = 9;
+export const DESERT_SWING_FULL_C = 15;
+
+/** What the desert term needs from the whole year: its rain, and where known its warmest and coldest month means. */
+export interface YearClimate {
+  precipMm: number;
+  warmestC?: number;
+  coldestC?: number;
+}
 
 export interface ComfortBreakdown {
   /** Temperature comfort, 0-100 (before penalties). */
@@ -67,6 +87,10 @@ export interface ComfortBreakdown {
   desert: number;
   /** The year's rain this was judged on (mm), when given. */
   annualPrecipMm?: number;
+  /** Share of the desert penalty kept (0-1) after the ocean-climate scaling; absent when the year's temperatures were unknown. */
+  desertShare?: number;
+  /** The warmest month's mean (C) the share was judged on, when known. */
+  warmestC?: number;
   /** Final Comfort Index, 0-100, integer. */
   score: number;
 }
@@ -106,10 +130,35 @@ export function airPenalty(pm25: number): number {
   return (AIR_MAX_PENALTY * (pm25 - AIR_FREE_UGM3)) / (AIR_MAX_UGM3 - AIR_FREE_UGM3);
 }
 
+/** The desert penalty from the year's rain alone, before the ocean-climate scaling. */
 export function desertPenalty(annualPrecipMm: number): number {
   if (annualPrecipMm >= DESERT_FREE_MM_YEAR) return 0;
   if (annualPrecipMm <= DESERT_MAX_MM_YEAR) return DESERT_MAX_PENALTY;
   return (DESERT_MAX_PENALTY * (DESERT_FREE_MM_YEAR - annualPrecipMm)) / (DESERT_FREE_MM_YEAR - DESERT_MAX_MM_YEAR);
+}
+
+const ramp = (v: number, free: number, full: number) => clamp((v - free) / (full - free), 0, 1);
+
+/** Share of the desert penalty a dry place keeps: 1 for a hot or continental year, 0 for a mild ocean one; 1 when unknown. */
+export function desertShare(warmestC?: number, coldestC?: number): number {
+  if (typeof warmestC !== "number" || !Number.isFinite(warmestC)) return 1;
+  const heat = ramp(warmestC, DESERT_HEAT_FREE_C, DESERT_HEAT_FULL_C);
+  const swing = typeof coldestC === "number" && Number.isFinite(coldestC) ? ramp(warmestC - coldestC, DESERT_SWING_FREE_C, DESERT_SWING_FULL_C) : 1;
+  return Math.max(heat, swing);
+}
+
+/** The year the desert term reads, from 12 months or 52 weeks; undefined unless every rain value is known. */
+export function climateYear(rows: ReadonlyArray<{ tempC?: number | null; precipMm?: number | null }>): YearClimate | undefined {
+  const precipMm = annualRain(rows.map((r) => r.precipMm));
+  if (precipMm === undefined) return undefined;
+  const temps = rows.map((r) => r.tempC).filter((t): t is number => typeof t === "number" && Number.isFinite(t));
+  if (temps.length !== rows.length) return { precipMm };
+  return { precipMm, warmestC: Math.max(...temps), coldestC: Math.min(...temps) };
+}
+
+function asYear(year?: number | YearClimate | null): YearClimate | undefined {
+  if (typeof year === "number") return Number.isFinite(year) ? { precipMm: year } : undefined;
+  return year && Number.isFinite(year.precipMm) ? year : undefined;
 }
 
 /** A year's rain (mm) from 12 monthly totals, or 52 weekly ones; undefined unless every value is a number. */
@@ -123,35 +172,37 @@ export function annualRain(precips: ReadonlyArray<number | null | undefined>): n
   return precips.length === 52 ? sum * (365.25 / 364) : sum;
 }
 
-export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number | null, annualPrecipMm?: number | null): ComfortBreakdown {
+export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number | null, yearIn?: number | YearClimate | null): ComfortBreakdown {
   const temp = tempComfort(tempC);
   const rain = rainPenalty(precipMm) * rainShare(tempC, temp);
   const airKnown = typeof pm25 === "number" && Number.isFinite(pm25);
   const air = airKnown ? airPenalty(pm25 as number) : 0;
-  const yearKnown = typeof annualPrecipMm === "number" && Number.isFinite(annualPrecipMm);
-  const desert = yearKnown ? desertPenalty(annualPrecipMm as number) : 0;
+  const year = asYear(yearIn);
+  const share = year && year.warmestC !== undefined ? desertShare(year.warmestC, year.coldestC) : undefined;
+  const desert = year ? desertPenalty(year.precipMm) * (share ?? 1) : 0;
   return {
     temp,
     rain,
     air,
     airKnown,
     desert,
-    ...(yearKnown ? { annualPrecipMm: annualPrecipMm as number } : {}),
+    ...(year ? { annualPrecipMm: year.precipMm } : {}),
+    ...(share !== undefined ? { desertShare: share, warmestC: year!.warmestC } : {}),
     score: Math.round(clamp(temp - rain - air - desert, 0, 100)),
   };
 }
 
 /** The Comfort Index for a month (precip in mm/month) with an optional monthly-mean PM2.5. */
-export function comfortScore(tempC: number, precipMm: number, pm25?: number | null, annualPrecipMm?: number | null): number {
-  return comfortBreakdown(tempC, precipMm, pm25, annualPrecipMm).score;
+export function comfortScore(tempC: number, precipMm: number, pm25?: number | null, year?: number | YearClimate | null): number {
+  return comfortBreakdown(tempC, precipMm, pm25, year).score;
 }
 
 /** Weeks in an average month; converts a mm-per-week normal to the mm-per-month scale the formula uses. */
 export const WEEKS_PER_MONTH = 365.25 / 12 / 7;
 
 /** Comfort Index breakdown for one week-of-year normal (precip in mm/week). */
-export function weeklyComfortBreakdown(tempC: number, precipMmPerWeek: number, pm25?: number | null, annualPrecipMm?: number | null): ComfortBreakdown {
-  return comfortBreakdown(tempC, precipMmPerWeek * WEEKS_PER_MONTH, pm25, annualPrecipMm);
+export function weeklyComfortBreakdown(tempC: number, precipMmPerWeek: number, pm25?: number | null, year?: number | YearClimate | null): ComfortBreakdown {
+  return comfortBreakdown(tempC, precipMmPerWeek * WEEKS_PER_MONTH, pm25, year);
 }
 
 export type AirBand = "clean" | "moderate" | "poor" | "unhealthy" | "hazardous";
@@ -198,13 +249,19 @@ export interface BreakdownRow {
   note: string;
 }
 
+function desertNote(b: ComfortBreakdown): string {
+  const rain = `${Math.round(b.annualPrecipMm as number)} mm of rain a year`;
+  if (b.desertShare === undefined || b.desertShare >= 1 || b.warmestC === undefined) return rain;
+  return `${rain}; a mild ocean climate (warmest month ${Math.round(b.warmestC)}°C) keeps ${Math.round(b.desertShare * 100)}% of the penalty`;
+}
+
 /** The three terms of the Comfort Index as display rows, for every place the index is explained. */
 export function breakdownRows(b: ComfortBreakdown, tempC: number, precipMm: number, pm25?: number | null, rainUnit = "mm a month"): BreakdownRow[] {
   const take = (v: number) => (Math.round(v) === 0 ? "0" : `−${Math.round(v)}`);
   // Desert shows only where it takes something off: elsewhere it is noise.
   const desert: BreakdownRow[] =
     b.annualPrecipMm !== undefined && Math.round(b.desert) > 0
-      ? [{ key: "desert", label: "Desert", points: -Math.round(b.desert), text: take(b.desert), note: `${Math.round(b.annualPrecipMm)} mm of rain a year` }]
+      ? [{ key: "desert", label: "Desert", points: -Math.round(b.desert), text: take(b.desert), note: desertNote(b) }]
       : [];
   return [
     { key: "temp", label: "Temperature", points: Math.round(b.temp), text: `+${Math.round(b.temp)}`, note: `${Math.round(tempC)}°C` },
