@@ -10,15 +10,16 @@ describe("comfortScore — temperature curve (monthly mean)", () => {
     expect(comfortScore(18, 0)).toBe(100);
     expect(comfortScore(20, 0)).toBe(100);
   });
-  it("falls away fast above it: a 26C mean is a ~33C afternoon", () => {
-    expect(comfortScore(22, 0)).toBe(85);
-    expect(comfortScore(24, 0)).toBe(65);
-    expect(comfortScore(26, 0)).toBe(45);
-    expect(comfortScore(30, 0)).toBe(15);
+  it("falls away above it, eased for humid heat (ADR 0023)", () => {
+    expect(comfortScore(22, 0)).toBe(88);
+    expect(comfortScore(24, 0)).toBe(76);
+    expect(comfortScore(26, 0)).toBe(64);
+    expect(comfortScore(28, 0)).toBe(50);
+    expect(comfortScore(30, 0)).toBe(36);
   });
   it("interpolates between curve points", () => {
-    // 22C -> 85, 24C -> 65: 23C sits halfway
-    expect(comfortScore(23, 0)).toBe(75);
+    // 22C -> 88, 24C -> 76: 23C sits halfway
+    expect(comfortScore(23, 0)).toBe(82);
     // 9C -> 50, 13C -> 78: 11C sits halfway
     expect(comfortScore(11, 0)).toBe(64);
   });
@@ -26,8 +27,8 @@ describe("comfortScore — temperature curve (monthly mean)", () => {
     expect(comfortScore(13, 0)).toBe(78);
     expect(comfortScore(4, 0)).toBe(25);
   });
-  it("is 0 at a 34C mean and at -10C, and clamps beyond", () => {
-    expect(comfortScore(34, 0)).toBe(0);
+  it("is 0 at a 36C mean and at -10C, and clamps beyond", () => {
+    expect(comfortScore(36, 0)).toBe(0);
     expect(comfortScore(45, 0)).toBe(0);
     expect(comfortScore(-10, 0)).toBe(0);
     expect(comfortScore(-30, 0)).toBe(0);
@@ -36,22 +37,29 @@ describe("comfortScore — temperature curve (monthly mean)", () => {
 
 describe("comfortScore — calibrated against real climates (2015-2024 means)", () => {
   // [mean C, rain mm] from data/seasonality.json
+  // Deserts are scored with their year's rain, as stored months are (ADR 0018): the desert term,
+  // not the temperature curve, is what keeps them low.
   it("puts Cairo's spring and summer where a visitor would", () => {
-    expect(comfortScore(18.5, 9)).toBe(100); // March
-    expect(comfortScore(22.4, 2)).toBeLessThan(85); // April: ~30C afternoons
-    expect(comfortScore(26.5, 0)).toBeLessThan(45); // May
-    expect(comfortScore(30.7, 0)).toBeLessThan(15); // July
+    expect(comfortScore(18.5, 9, undefined, 25)).toBeLessThanOrEqual(55); // March, best of the year
+    expect(comfortScore(22.4, 2, undefined, 25)).toBeLessThan(45); // April
+    expect(comfortScore(26.5, 0, undefined, 25)).toBeLessThan(20); // May
+    expect(comfortScore(30.7, 0, undefined, 25)).toBe(0); // July
   });
   it("does not call the Gulf pleasant from April on", () => {
-    expect(comfortScore(25.9, 5)).toBeLessThan(50); // Manama, April
-    expect(comfortScore(35.2, 0)).toBe(0); // Manama, July
+    expect(comfortScore(25.9, 5, undefined, 70)).toBeLessThan(25); // Manama, April
+    expect(comfortScore(35.2, 0, undefined, 70)).toBe(0); // Manama, July
+    expect(comfortScore(35.2, 0)).toBeLessThan(5); // even on temperature alone
   });
-  it("marks Madrid's July down and its May up", () => {
-    expect(comfortScore(27.4, 7)).toBeLessThan(40);
+  it("marks Madrid's July well below its May", () => {
+    expect(comfortScore(27.4, 7)).toBeLessThan(55); // fair at best: ~35C afternoons
     expect(comfortScore(18.1, 31)).toBeGreaterThan(95);
   });
   it("still tells a tropical dry season from the monsoon", () => {
-    expect(comfortScore(26.6, 24)).toBeGreaterThan(comfortScore(28.6, 195) + 30); // Bangkok Dec vs Jul
+    expect(comfortScore(26.6, 24)).toBeGreaterThan(comfortScore(28.6, 195) + 25); // Bangkok Dec vs Jul
+  });
+  it("reads a humid tropical best month as fair, not poor (ADR 0023)", () => {
+    expect(comfortScore(27, 70)).toBeGreaterThanOrEqual(51); // Penang, January
+    expect(comfortScore(28.6, 195)).toBeLessThan(40); // Bangkok, July
   });
 });
 
@@ -69,6 +77,11 @@ describe("comfortScore — precipitation penalty", () => {
   it("scales linearly between the free and max thresholds (140mm)", () => {
     // penalty = 35 * (140-30)/(250-30) = 17.5 -> 100-17.5 = 82.5 -> 83
     expect(comfortScore(18, 140)).toBe(83);
+  });
+  it("counts rain for less in a hot month, never in a cool one (ADR 0023)", () => {
+    // 28C: heat score 50, so rain keeps 0.6 + 0.4 * 0.5 = 80% of its 35.
+    expect(comfortScore(28, 250)).toBe(Math.round(50 - 35 * 0.8));
+    expect(comfortScore(17, 400)).toBe(65); // a cool monsoon keeps the full penalty
   });
 });
 

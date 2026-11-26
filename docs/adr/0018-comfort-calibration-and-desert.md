@@ -1,5 +1,7 @@
 # The Comfort Index is calibrated to afternoons and counts deserts
 
+_Amended by ADR 0023: the hot side of the curve is eased and rain counts for less in heat; the numbers below are this ADR's originals._
+
 Builds on ADR 0002 (the Comfort Index) and ADR 0014 (air quality).
 
 The index read Egypt, the Gulf and Spain's interior as pleasant when a visitor would not. Two causes.

@@ -1,12 +1,13 @@
 // Locales: researched home bases, hubs and destinations for a nomadic rotation (ADR 0022).
 //
-// A Locale is a place the owner has researched as somewhere to live for weeks or months
+// A Locale is a place checked as somewhere to live for weeks or months
 // (a base), pass through (a hub) or visit once in a set window (a destination). It can cover
 // more than one City ("Da Nang / Hoi An", "Sri Lanka south coast"); the first city id is the
 // anchor whose Comfort Index and place data stand for the whole locale.
 //
 // Every month of a locale reads, in order: the owner's Personal Window for the anchor city
-// (ADR 0011), the locale's own researched rating, then the Comfort Index. From those months
+// (ADR 0011), then the anchor city's Comfort Index lowered by seasonal hazards. The field
+// check's own month rating rides along unscored (ADR 0024). From those months
 // come the ideal staying windows: the longest runs of great or good months, trimmed to the
 // locale's stay length and, when known, to the passport's day limit. Pure: no React, no fetch.
 
@@ -23,7 +24,7 @@ import {
   type RotationPlace,
   type RotationStay,
 } from "./rotation";
-import { monthName, spanLabel } from "./season";
+import { monthName, spanHas, spanLabel } from "./season";
 import { haversineKm } from "./geo";
 import { proximity } from "./tripRisk";
 import type { MapAnomaly, MeridianEvent } from "../types";
@@ -35,7 +36,7 @@ import dataset from "../../data/locales.json";
 export type LocaleRole = "base" | "hub" | "destination";
 export const LOCALE_ROLES: LocaleRole[] = ["base", "hub", "destination"];
 
-/** The researched rating of one month. */
+/** The field check's rating of one month. */
 export type ResearchLevel = "best" | "good" | "fair" | "avoid";
 
 export interface LocaleNote {
@@ -51,33 +52,41 @@ export interface LocaleEvent {
   kind: "nature" | "festival" | "season";
 }
 
-export type SeasonKind = "peak" | "shoulder" | "avoid";
+/** Tourist season of a month. */
 export type Tourism = "low" | "shoulder" | "high";
 
-/**
- * One of the owner's dated windows from their Notion Travel Seasons: a stretch of the year
- * (MM-DD to MM-DD, wrapping the new year when it ends before it starts) with a condition
- * and a tourist season.
- */
-export interface SeasonWindow {
-  kind: SeasonKind;
-  tourism?: Tourism;
+/** A stretch of the year, MM-DD to MM-DD inclusive, wrapping the new year when it ends before it starts. */
+export interface DayWindow {
   from: string;
   to: string;
-  title: string;
-  notes?: string;
 }
 
-/** The owner's own 1–10 scores from their research, where the research has them. */
+export type SeasonKind = "peak" | "shoulder" | "avoid";
+
+/** One of the Field Check's dated windows: the year cut at the dates a source supports. Not scored. */
+export interface SeasonWindow extends DayWindow {
+  kind: SeasonKind;
+  tourism?: Tourism;
+  title: string;
+  /** The figure that sets the dates. */
+  why?: string;
+}
+
+/**
+ * The field check's 1–10 scores, each measured against a fixed anchor (ADR 0024): climate is
+ * months rated best or good, air is annual PM2.5, cost is the all-in month in EUR, longstay is
+ * how long a remote worker on an EU, US or UK passport can legally stay.
+ */
 export interface LocaleScores {
   climate: number;
-  health: number;
-  food: number;
+  air: number;
   cost: number;
-  connect: number;
-  safe: number;
-  qol: number;
-  overall: number;
+  safety: number;
+  health: number;
+  internet: number;
+  food: number;
+  nomad: number;
+  longstay: number;
 }
 
 export interface Locale {
@@ -91,24 +100,23 @@ export interface Locale {
   /** Where in the locale, when the cities are only nearby ("Kotor; Tivat is the dataset's city"). */
   area?: string;
   summary: string;
-  /** Twelve researched ratings, January first. */
+  /** Twelve month ratings from the field check, January first. Not scored. */
   months: ResearchLevel[];
-  notes: LocaleNote[];
-  /** The owner's Travel Seasons windows. They set a month before the research does. */
-  seasons?: SeasonWindow[];
+  monthNotes: LocaleNote[];
+  scores: LocaleScores;
   stay: { minWeeks: number; idealWeeks: number; maxWeeks: number; why: string };
-  /** All-in cost for one person, as researched. `per: "trip"` for a destination priced per visit. */
+  /** All-in cost for one person. `per: "trip"` for a destination priced per visit. */
   cost?: { min: number; max: number; currency: string; per: "month" | "trip"; note?: string };
-  scores?: LocaleScores;
-  /** Place in the research's asymmetry ranking (price against quality), 1 = widest gap. */
-  asymmetry?: number;
   entry?: { summary: string; source: string; checked: string };
   events?: LocaleEvent[];
   airport?: string;
-  /** Weeks ahead to book a stay here, when the research says so. */
+  /** Weeks ahead to book a stay here. */
   leadWeeks?: LeadTime;
-  /** Where the review found the owner's original notes wrong or out of date. */
-  corrections?: string;
+  /** The Field Check's dated windows, covering the year without gaps or overlaps. */
+  seasons?: SeasonWindow[];
+  /** What the field check could not pin down, or what is changing. */
+  caveats?: string;
+  sources: string[];
 }
 
 export interface LocaleDataset {
@@ -182,20 +190,20 @@ export interface LocaleMonth {
   hazard?: HazardHit;
   /** Tourist season from measured visitor nights. */
   tourism?: Tourism;
-  /** What the owner's notes say about the month (Travel Seasons first, then the research). Not scored. */
-  note?: { level: FitLevel; text: string; from: "seasons" | "research" };
-  /** The notes read two or more levels away from the level shown. */
-  noteDisagrees?: boolean;
+  /** The field check's rating of the month, with its reason. Not scored. */
+  research?: { level: FitLevel; text: string };
+  /** The field check reads two or more levels away from the level shown. */
+  researchDiffers?: boolean;
 }
 
 /** The note that explains a month, the one matching its rating first. */
-export function noteFor(l: Pick<Locale, "notes" | "months">, month: number): LocaleNote | undefined {
-  const hits = l.notes.filter((n) => n.months.includes(month));
+export function noteFor(l: Pick<Locale, "monthNotes" | "months">, month: number): LocaleNote | undefined {
+  const hits = l.monthNotes.filter((n) => n.months.includes(month));
   const level = l.months[month - 1];
   return hits.find((n) => n.kind === level) ?? hits[0];
 }
 
-// ── Travel Seasons windows ───────────────────────────────────────────
+// ── Day windows ──────────────────────────────────────────────────────
 
 /** Days in each month of a common year: windows are read without a year. */
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -205,37 +213,28 @@ const dayOfYear = (mmdd: string): number => {
 };
 
 /** The window's days of the year (0–364), as one or two [start, end) ranges. */
-export function windowRanges(w: Pick<SeasonWindow, "from" | "to">): [number, number][] {
+export function windowRanges(w: DayWindow): [number, number][] {
   const a = dayOfYear(w.from);
   const b = dayOfYear(w.to) + 1;
   return a < b ? [[a, b]] : [[a, 365], [0, b]];
 }
 
 /** Days of a month (1–12) that a window covers. */
-export function daysInMonth(w: Pick<SeasonWindow, "from" | "to">, month: number): number {
+export function daysInMonth(w: DayWindow, month: number): number {
   const ms = MONTH_DAYS.slice(0, month - 1).reduce((x, y) => x + y, 0);
   const me = ms + MONTH_DAYS[month - 1];
   return windowRanges(w).reduce((n, [a, b]) => n + Math.max(0, Math.min(b, me) - Math.max(a, ms)), 0);
 }
 
-const SEASON_ORDER: SeasonKind[] = ["avoid", "peak", "shoulder"];
+export const SEASON_LABEL: Record<SeasonKind, string> = { peak: "Peak", shoulder: "Shoulder", avoid: "Avoid" };
 
-/** The window covering most of a month, when it covers at least half of it; avoid wins ties. */
-export function seasonFor(l: Pick<Locale, "seasons">, month: number): SeasonWindow | undefined {
-  let best: SeasonWindow | undefined;
-  let bestDays = 0;
-  for (const w of l.seasons ?? []) {
-    const n = daysInMonth(w, month);
-    if (n > bestDays || (n === bestDays && best && SEASON_ORDER.indexOf(w.kind) < SEASON_ORDER.indexOf(best.kind))) {
-      best = w;
-      bestDays = n;
-    }
-  }
-  return bestDays > 0 && bestDays * 2 >= MONTH_DAYS[month - 1] ? best : undefined;
+/** Days of the year (0–364) covered by each window: 365 entries, each the count of windows covering that day. */
+export function seasonCoverage(windows: DayWindow[]): number[] {
+  const out = Array<number>(365).fill(0);
+  for (const w of windows) for (const [a, b] of windowRanges(w)) for (let d = a; d < b; d++) out[d]++;
+  return out;
 }
 
-const SEASON_FIT: Record<SeasonKind, FitLevel> = { peak: "great", shoulder: "fair", avoid: "avoid" };
-export const SEASON_LABEL: Record<SeasonKind, string> = { peak: "Peak", shoulder: "Shoulder", avoid: "Avoid" };
 export const TOURISM_LABEL: Record<Tourism, string> = { low: "Low season", shoulder: "Shoulder season", high: "High season" };
 
 export interface Segment {
@@ -249,7 +248,7 @@ export interface Segment {
  * or two segments, as fractions of the twelve months. Every month has the same width, so a
  * day's position is its month's place plus how far into the month it is.
  */
-export function windowSegments(w: Pick<SeasonWindow, "from" | "to">, startMonth: number): Segment[] {
+export function windowSegments(w: DayWindow, startMonth: number): Segment[] {
   return rangeSegments(windowRanges(w), startMonth);
 }
 
@@ -332,33 +331,31 @@ export function crowdsFromEvents(events: Pick<MeridianEvent, "kind" | "tags" | "
   return out.map((t) => t ?? "low");
 }
 
-/** The owner's notes for a month: their Travel Seasons window, else the research rating. */
-export function notesFor(l: Locale, month: number): LocaleMonth["note"] {
-  const season = seasonFor(l, month);
-  if (season) return { level: SEASON_FIT[season.kind], text: season.title, from: "seasons" };
+/** The field check's reading of a month. */
+export function researchFor(l: Locale, month: number): LocaleMonth["research"] {
   const r = l.months[month - 1];
-  if (r) return { level: RESEARCH_FIT[r], text: noteFor(l, month)?.reason ?? RESEARCH_LABEL[r], from: "research" };
-  return undefined;
+  if (!r) return undefined;
+  return { level: RESEARCH_FIT[r], text: noteFor(l, month)?.reason ?? RESEARCH_LABEL[r] };
 }
 
 /**
  * One month of a locale from Meridian's own data. The owner's rotation window wins; else the
  * anchor city's Comfort Index, lowered by any seasonal hazard in reach (one level at "watch",
- * to avoid at "caution"). The owner's notes ride along unscored, flagged when they disagree.
+ * to avoid at "caution"). The field check rides along unscored, flagged when it differs.
  */
 export function localeMonth(l: Locale, month: number, sig: LocaleSignals = {}): LocaleMonth {
   const score = sig.comfort?.(anchorOf(l))?.[month - 1]?.score;
   const c = typeof score === "number" && Number.isFinite(score) ? Math.round(score) : undefined;
   const tourism = sig.crowds?.[month - 1];
   const hazard = (sig.hazards ?? []).filter((h) => h.months.includes(month)).sort((a, b) => b.score - a.score)[0];
-  const note = notesFor(l, month);
+  const research = researchFor(l, month);
   const finish = (m: LocaleMonth): LocaleMonth => {
     const out: LocaleMonth = { ...m };
     if (c !== undefined) out.comfort = c;
     if (tourism) out.tourism = tourism;
-    if (note) {
-      out.note = note;
-      out.noteDisagrees = m.level !== "unknown" && Math.abs(FIT_RANK[m.level] - FIT_RANK[note.level]) >= 2;
+    if (research) {
+      out.research = research;
+      out.researchDiffers = m.level !== "unknown" && Math.abs(FIT_RANK[m.level] - FIT_RANK[research.level]) >= 2;
     }
     return out;
   };
@@ -390,7 +387,18 @@ export function weekLevels(weeks: { score: number }[] | null | undefined): FitLe
   return weeks.map((w) => (Number.isFinite(w.score) ? comfortFit(w.score) : "unknown"));
 }
 
-/** How close to its best month a month must be to join a "best it gets" run, in Comfort points. */
+/** Meridian Beauty percentile (among all cities) at which a place justifies a base even when it is never comfortable. */
+export const BEAUTY_UNLOCK = 85;
+
+/** Percentile (0–100) of a value among all values, as the share at or below it. */
+export function percentileOf(value: number | undefined, all: number[]): number | null {
+  if (value === undefined || !all.length) return null;
+  let n = 0;
+  for (const v of all) if (v <= value) n++;
+  return Math.round((100 * n) / all.length);
+}
+
+/** How close to its best month a month must be to join a "worth it" run, in Comfort points. */
 export const RELATIVE_BAND = 10;
 
 /** Average weeks in a month. */
@@ -410,7 +418,7 @@ export interface StayWindow {
   capped: boolean;
   /** True when the run is only fair months. */
   fallback: boolean;
-  /** True when no month is even fair and the run is the place's own best months (the best it gets). */
+  /** True when no month is even fair and Beauty justifies a base anyway: the run is the place's most tolerable months. */
   relative: boolean;
 }
 
@@ -443,7 +451,7 @@ export function monthRuns(ok: (month: number) => boolean): number[][] {
  * months, placed on the stretch of the run with the most great months; its weeks are the
  * locale's range cut to the run and to `capDays`, the passport's day limit, when given.
  */
-export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1): StayWindow[] {
+export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1, beautyPct?: number | null): StayWindow[] {
   const level = (m: number) => months[m - 1]?.level ?? "unknown";
   let fallback = false;
   let relative = false;
@@ -452,15 +460,23 @@ export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number |
     runs = monthRuns((m) => level(m) === "fair");
     fallback = true;
   }
-  if (!runs.length) {
-    // Never fair: the place's own best months, within RELATIVE_BAND Comfort points of its peak.
+  if ((!runs.length || fallback) && (beautyPct ?? 0) >= BEAUTY_UNLOCK) {
+    // Never better than fair, but beautiful enough to justify a base: its most tolerable months,
+    // within RELATIVE_BAND Comfort points of its peak, when that stretch is longer than the fair one.
     const scores = months.map((m) => (m.level === "avoid" ? undefined : m.comfort));
     const peak = Math.max(...scores.map((c) => c ?? -1));
     if (peak >= 0) {
-      runs = monthRuns((m) => scores[m - 1] !== undefined && scores[m - 1]! >= peak - RELATIVE_BAND);
-      relative = runs.length > 0;
+      const tolerable = monthRuns((m) => scores[m - 1] !== undefined && scores[m - 1]! >= peak - RELATIVE_BAND);
+      const longest = (rs: number[][]) => Math.max(0, ...rs.map((r) => r.length));
+      if (longest(tolerable) > longest(runs)) {
+        // One worth-it window: the longest tolerable stretch, not every month that scrapes in.
+        runs = [tolerable.reduce((a, b) => (b.length > a.length ? b : a))];
+        relative = true;
+        fallback = false;
+      }
     }
   }
+
   const out = runs.map((run): StayWindow => {
     const runWeeks = run.length * WEEKS_PER_MONTH;
     const capWeeks = capDays && capDays > 0 ? capDays / 7 : Infinity;
@@ -521,16 +537,58 @@ export interface MonthPick {
   fit: LocaleMonth;
 }
 
-/** Locales ranked for one month: fit first, then the owner's overall score, then name. */
-export function bestForMonth(locales: Locale[], years: Map<string, LocaleMonth[]>, month: number): MonthPick[] {
+/**
+ * Locales ranked for one month. A month inside a "worth it" window counts as fair, so a
+ * beautiful place shows in its most tolerable months; then fit, then Beauty, then name.
+ */
+export function bestForMonth(
+  locales: Locale[],
+  years: Map<string, LocaleMonth[]>,
+  month: number,
+  opts: { beauty?: Map<string, number>; windows?: Map<string, StayWindow[]> } = {}
+): MonthPick[] {
+  const effective = (l: Locale, f: LocaleMonth): number => {
+    const worth = opts.windows?.get(l.id)?.some((w) => w.relative && spanHas(w.run, month));
+    return Math.max(FIT_RANK[f.level], worth ? FIT_RANK.fair : -1);
+  };
   return locales
     .map((locale) => ({ locale, fit: years.get(locale.id)?.[month - 1] ?? { month, level: "unknown" as FitLevel, source: "none" as const, why: "" } }))
     .sort(
       (a, b) =>
-        FIT_RANK[b.fit.level] - FIT_RANK[a.fit.level] ||
-        (b.locale.scores?.overall ?? 0) - (a.locale.scores?.overall ?? 0) ||
+        effective(b.locale, b.fit) - effective(a.locale, a.fit) ||
+        (opts.beauty?.get(b.locale.id) ?? 0) - (opts.beauty?.get(a.locale.id) ?? 0) ||
         a.locale.name.localeCompare(b.locale.name)
     );
+}
+
+/** Weights of the field check's overall score; they sum to 1 (ADR 0024). */
+export const SCORE_WEIGHTS: Record<keyof LocaleScores, number> = {
+  climate: 0.15,
+  air: 0.1,
+  cost: 0.14,
+  safety: 0.12,
+  health: 0.08,
+  internet: 0.1,
+  food: 0.07,
+  nomad: 0.1,
+  longstay: 0.14,
+};
+
+/** The field check's overall score, 1–10, one decimal. */
+export function researchScore(l: Pick<Locale, "scores">): number {
+  let sum = 0;
+  for (const k of Object.keys(SCORE_WEIGHTS) as (keyof LocaleScores)[]) sum += SCORE_WEIGHTS[k] * l.scores[k];
+  return Math.round(sum * 10) / 10;
+}
+
+/** Rank (1 = best) of every locale among those of its role, by the field check's overall score. */
+export function researchRanks(locales: Locale[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const role of LOCALE_ROLES) {
+    const list = locales.filter((l) => l.role === role).sort((a, b) => researchScore(b) - researchScore(a) || a.name.localeCompare(b.name));
+    list.forEach((l, i) => out.set(l.id, i + 1));
+  }
+  return out;
 }
 
 export function fitRank(level: FitLevel): number {
@@ -547,14 +605,14 @@ export function meanOf(values: (number | undefined | null)[]): number | null {
 
 /**
  * An idea stay for the next time a window comes round, ready for the rotation's stay API.
- * Its nights are the window's weeks, its budget the research's upper cost (as written, never
- * converted), and its lead time the locale's when the research gives one.
+ * Its nights are the window's weeks, its budget the field check's upper cost (as written, never
+ * converted), and its lead time the locale's when it has one.
  */
 export function stayFromLocale(l: Locale, place: RotationPlace, w: StayWindow, today: string): RotationStay {
   const hub = l.role === "hub";
   const monthly = l.cost && l.cost.per === "month" ? { amount: l.cost.max, currency: l.cost.currency } : undefined;
   const notes = [
-    `From locale research: ${l.name}. Ideal ${windowText(w)}.`,
+    `From Locales: ${l.name}. Ideal ${windowText(w)}.`,
     l.months.length ? `Best ${l.months.map((r, i) => (r === "best" ? monthName(i + 1) : null)).filter(Boolean).join(", ") || "—"}.` : "",
     l.entry?.summary ? `Entry: ${l.entry.summary}` : "",
   ]

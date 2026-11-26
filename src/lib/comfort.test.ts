@@ -17,8 +17,8 @@ import {
 describe("comfortBreakdown", () => {
   it("splits the index into temperature, rain and air", () => {
     const b = comfortBreakdown(24, 140, 42.5);
-    expect(b.temp).toBe(65); // TEMP_CURVE point
-    expect(b.rain).toBeCloseTo(17.5, 5); // 35 * (140-30)/220
+    expect(b.temp).toBe(76); // TEMP_CURVE point
+    expect(b.rain).toBeCloseTo(17.5 * (0.6 + 0.4 * 0.76), 5); // 35 * (140-30)/220, eased for 24C heat
     expect(b.air).toBeCloseTo(20, 5); // 40 * (42.5-10)/65
     expect(b.airKnown).toBe(true);
     expect(b.score).toBe(Math.round(b.temp - b.rain - b.air));
@@ -26,7 +26,7 @@ describe("comfortBreakdown", () => {
 
   it("is unchanged from the two-term index when no PM2.5 is known", () => {
     expect(comfortScore(18, 140)).toBe(83); // 100 - 35 * 110/220
-    expect(comfortScore(26, 0)).toBe(45);
+    expect(comfortScore(26, 0)).toBe(64);
     const b = comfortBreakdown(18, 140);
     expect(b.airKnown).toBe(false);
     expect(b.air).toBe(0);
@@ -82,17 +82,18 @@ describe("tempComfort", () => {
     expect(tempComfort(16)).toBe(100);
     expect(tempComfort(20)).toBe(100);
   });
-  it("falls away fast above it and more gently below", () => {
-    expect(tempComfort(22)).toBe(85);
-    expect(tempComfort(26)).toBe(45);
-    expect(tempComfort(30)).toBe(15);
-    expect(tempComfort(34)).toBe(0);
+  it("falls away above it (eased for humid heat, ADR 0023) and more gently below", () => {
+    expect(tempComfort(22)).toBe(88);
+    expect(tempComfort(26)).toBe(64);
+    expect(tempComfort(30)).toBe(36);
+    expect(tempComfort(34)).toBe(9);
+    expect(tempComfort(36)).toBe(0);
     expect(tempComfort(13)).toBe(78);
     expect(tempComfort(4)).toBe(25);
     expect(tempComfort(-10)).toBe(0);
   });
   it("interpolates between points and stays flat past the ends", () => {
-    expect(tempComfort(23)).toBe(75);
+    expect(tempComfort(23)).toBe(82);
     expect(tempComfort(45)).toBe(0);
     expect(tempComfort(-30)).toBe(0);
     expect(tempComfort(Number.NaN)).toBe(0);
@@ -101,7 +102,7 @@ describe("tempComfort", () => {
   it("scores weekly rain on the monthly scale", () => {
     // 50 mm in a week is ~217 mm over an average month.
     const w = weeklyComfortBreakdown(22, 50);
-    expect(w.rain).toBeCloseTo((35 * (50 * (365.25 / 12 / 7) - 30)) / 220, 5);
+    expect(w.rain).toBeCloseTo(((35 * (50 * (365.25 / 12 / 7) - 30)) / 220) * (0.6 + 0.4 * 0.88), 5); // 22C: heat score 88
   });
 });
 
@@ -109,7 +110,7 @@ describe("breakdownRows", () => {
   it("lists temperature, rain and air with the points each is worth", () => {
     const rows = breakdownRows(comfortBreakdown(24, 140, 42.5), 24, 140, 42.5);
     expect(rows.map((r) => r.key)).toEqual(["temp", "rain", "air"]);
-    expect(rows.map((r) => r.text)).toEqual(["+65", "−18", "−20"]);
+    expect(rows.map((r) => r.text)).toEqual(["+76", "−16", "−20"]);
     expect(rows[2]!.note).toBe("PM2.5 43 µg/m³ (Poor air)");
   });
   it("says so when air quality is unknown instead of showing a clean result", () => {
