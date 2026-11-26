@@ -22,7 +22,7 @@ A continent or subregion grouping of cities, used for aggregate views.
 
 **Comfort Index**:
 The 0–100 monthly seasonality score for a city, derived from multi-year climate
-normals (temperature comfort minus precipitation penalty minus air penalty minus desert penalty, ADR 0014, ADR 0018).
+normals (temperature comfort minus precipitation penalty minus air penalty minus desert penalty, ADR 0014, ADR 0018, ADR 0023).
 Deliberately labeled an index, not "best time" truth. Shown as three terms wherever it is explained.
 _Avoid_: weather score, climate score
 
@@ -442,8 +442,8 @@ A locale visited once in its window and left, such as Bhutan or the South Island
 
 **Ideal Stay**:
 The stretch of a locale's good months to be there, at the locale's ideal length, cut to the run of
-good months and the owner's passport day limit; for a place never comfortable, its own best months
-("best it gets"). Shown as a bracket on the Locales calendar.
+good months and the owner's passport day limit; for a place in the top 15% for Beauty that is never
+better than fair, its most tolerable months ("worth it", ADR 0023). Shown as a bracket on the Locales calendar.
 _Avoid_: best time
 
 ### Solver and re-planning (ADR 0015)

@@ -96,7 +96,11 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
                   <span className="loc-muted">
                     {" "}
                     · good from {spanLabel(w.run)} ({w.runMonths} {w.runMonths === 1 ? "month" : "months"}
-                    {w.great ? `, ${w.great} great` : ""}){w.relative ? " · never comfortable here: the best it gets" : w.fallback ? " · only fair months" : ""}
+                    {w.great ? `, ${w.great} great` : ""}){w.relative
+                      ? ` · rarely comfortable here, but its Beauty (top ${Math.max(1, 100 - (view.beautyPct ?? 0))}% of cities) justifies its most tolerable months`
+                      : w.fallback
+                        ? " · only fair months"
+                        : ""}
                     {w.capped && cap?.days ? ` · cut to ${cap.days} days by entry rules` : ""}
                   </span>
                 </div>
@@ -148,6 +152,18 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
 
         <SectionHeader level={3} title="Metrics" meta={anchor ? `Meridian figures for ${anchor.name}` : undefined} />
         <div className="loc-metrics">
+          {view.beauty !== null && (
+            <div className="loc-metric" title={METRIC_BY_ID.get("beauty")!.basis}>
+              <span className="loc-metric-label">Beauty</span>
+              <span className="loc-metric-value">
+                {Math.round(view.beauty)}
+                {view.beautyPct !== null && <span className="loc-muted"> · top {Math.max(1, 100 - view.beautyPct)}%</span>}
+              </span>
+              <span className="loc-meter">
+                <span style={{ width: `${view.beauty}%` }} />
+              </span>
+            </div>
+          )}
           {LOCALE_METRICS.map((id) => {
             const v = metrics[id]?.get(anchorOf(locale));
             const def = METRIC_BY_ID.get(id)!;

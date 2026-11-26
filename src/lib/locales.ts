@@ -23,7 +23,7 @@ import {
   type RotationPlace,
   type RotationStay,
 } from "./rotation";
-import { monthName, spanLabel } from "./season";
+import { monthName, spanHas, spanLabel } from "./season";
 import { haversineKm } from "./geo";
 import { proximity } from "./tripRisk";
 import type { MapAnomaly, MeridianEvent } from "../types";
@@ -390,7 +390,18 @@ export function weekLevels(weeks: { score: number }[] | null | undefined): FitLe
   return weeks.map((w) => (Number.isFinite(w.score) ? comfortFit(w.score) : "unknown"));
 }
 
-/** How close to its best month a month must be to join a "best it gets" run, in Comfort points. */
+/** Meridian Beauty percentile (among all cities) at which a place justifies a base even when it is never comfortable. */
+export const BEAUTY_UNLOCK = 85;
+
+/** Percentile (0–100) of a value among all values, as the share at or below it. */
+export function percentileOf(value: number | undefined, all: number[]): number | null {
+  if (value === undefined || !all.length) return null;
+  let n = 0;
+  for (const v of all) if (v <= value) n++;
+  return Math.round((100 * n) / all.length);
+}
+
+/** How close to its best month a month must be to join a "worth it" run, in Comfort points. */
 export const RELATIVE_BAND = 10;
 
 /** Average weeks in a month. */
@@ -410,7 +421,7 @@ export interface StayWindow {
   capped: boolean;
   /** True when the run is only fair months. */
   fallback: boolean;
-  /** True when no month is even fair and the run is the place's own best months (the best it gets). */
+  /** True when no month is even fair and Beauty justifies a base anyway: the run is the place's most tolerable months. */
   relative: boolean;
 }
 
@@ -443,7 +454,7 @@ export function monthRuns(ok: (month: number) => boolean): number[][] {
  * months, placed on the stretch of the run with the most great months; its weeks are the
  * locale's range cut to the run and to `capDays`, the passport's day limit, when given.
  */
-export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1): StayWindow[] {
+export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1, beautyPct?: number | null): StayWindow[] {
   const level = (m: number) => months[m - 1]?.level ?? "unknown";
   let fallback = false;
   let relative = false;
@@ -452,15 +463,23 @@ export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number |
     runs = monthRuns((m) => level(m) === "fair");
     fallback = true;
   }
-  if (!runs.length) {
-    // Never fair: the place's own best months, within RELATIVE_BAND Comfort points of its peak.
+  if ((!runs.length || fallback) && (beautyPct ?? 0) >= BEAUTY_UNLOCK) {
+    // Never better than fair, but beautiful enough to justify a base: its most tolerable months,
+    // within RELATIVE_BAND Comfort points of its peak, when that stretch is longer than the fair one.
     const scores = months.map((m) => (m.level === "avoid" ? undefined : m.comfort));
     const peak = Math.max(...scores.map((c) => c ?? -1));
     if (peak >= 0) {
-      runs = monthRuns((m) => scores[m - 1] !== undefined && scores[m - 1]! >= peak - RELATIVE_BAND);
-      relative = runs.length > 0;
+      const tolerable = monthRuns((m) => scores[m - 1] !== undefined && scores[m - 1]! >= peak - RELATIVE_BAND);
+      const longest = (rs: number[][]) => Math.max(0, ...rs.map((r) => r.length));
+      if (longest(tolerable) > longest(runs)) {
+        // One worth-it window: the longest tolerable stretch, not every month that scrapes in.
+        runs = [tolerable.reduce((a, b) => (b.length > a.length ? b : a))];
+        relative = true;
+        fallback = false;
+      }
     }
   }
+
   const out = runs.map((run): StayWindow => {
     const runWeeks = run.length * WEEKS_PER_MONTH;
     const capWeeks = capDays && capDays > 0 ? capDays / 7 : Infinity;
@@ -522,13 +541,26 @@ export interface MonthPick {
 }
 
 /** Locales ranked for one month: fit first, then the owner's overall score, then name. */
-export function bestForMonth(locales: Locale[], years: Map<string, LocaleMonth[]>, month: number): MonthPick[] {
+/**
+ * Locales ranked for one month. A month inside a "worth it" window counts as fair, so a
+ * beautiful place shows in its most tolerable months; then fit, then Beauty, then name.
+ */
+export function bestForMonth(
+  locales: Locale[],
+  years: Map<string, LocaleMonth[]>,
+  month: number,
+  opts: { beauty?: Map<string, number>; windows?: Map<string, StayWindow[]> } = {}
+): MonthPick[] {
+  const effective = (l: Locale, f: LocaleMonth): number => {
+    const worth = opts.windows?.get(l.id)?.some((w) => w.relative && spanHas(w.run, month));
+    return Math.max(FIT_RANK[f.level], worth ? FIT_RANK.fair : -1);
+  };
   return locales
     .map((locale) => ({ locale, fit: years.get(locale.id)?.[month - 1] ?? { month, level: "unknown" as FitLevel, source: "none" as const, why: "" } }))
     .sort(
       (a, b) =>
-        FIT_RANK[b.fit.level] - FIT_RANK[a.fit.level] ||
-        (b.locale.scores?.overall ?? 0) - (a.locale.scores?.overall ?? 0) ||
+        effective(b.locale, b.fit) - effective(a.locale, a.fit) ||
+        (opts.beauty?.get(b.locale.id) ?? 0) - (opts.beauty?.get(a.locale.id) ?? 0) ||
         a.locale.name.localeCompare(b.locale.name)
     );
 }

@@ -14,6 +14,7 @@ import {
   crowdsFromEvents,
   hazardHits,
   localeYear,
+  percentileOf,
   stayWindows,
   weekLevels,
   type HazardHit,
@@ -45,6 +46,9 @@ export interface LocaleView {
   cap: EntryCap | null;
   profile?: PlaceProfile;
   hazards: HazardHit[];
+  /** Meridian Beauty of the anchor city (0–100) and its percentile among all cities. */
+  beauty: number | null;
+  beautyPct: number | null;
   /** Festivals, highlights and sky events from Meridian's live events (not tourism or climate seasons). */
   events: MeridianEvent[];
 }
@@ -71,7 +75,7 @@ export function useLocaleData() {
   const cities = useMeridianStore((s) => s.cities);
   const seasonality = useMeridianStore((s) => s.seasonality);
   const mergeSeasonality = useMeridianStore((s) => s.mergeSeasonality);
-  const { surfaces, error: surfaceError } = useMetricSurfaces(LOCALE_METRICS);
+  const { surfaces, error: surfaceError } = useMetricSurfaces([...LOCALE_METRICS, "beauty"]);
   const visa = useVisa();
   const rotation = useRotation((s) => s.data);
   const loadRotation = useRotation((s) => s.load);
@@ -109,7 +113,8 @@ export function useLocaleData() {
         .catch(() => setEvents([]));
   }, [anchors, allIds]);
 
-  const metrics: MetricIndex = useMemo(() => indexSurfaces(surfaces as Record<string, never>, LOCALE_METRICS), [surfaces]);
+  const metrics: MetricIndex = useMemo(() => indexSurfaces(surfaces as Record<string, never>, [...LOCALE_METRICS, "beauty"]), [surfaces]);
+  const beautyAll = useMemo(() => [...(metrics.beauty?.values() ?? [])], [metrics]);
   const profiles = useMemo(() => new Map((unlocked ? rotation?.places ?? [] : []).map((p) => [p.cityId, p])), [rotation, unlocked]);
   const cityById = useMemo(() => new Map(cities.map((c) => [c.id, c])), [cities]);
 
@@ -126,19 +131,23 @@ export function useLocaleData() {
       const crowds = crowdsFromEvents(mine.filter((e) => e.cityIds.includes(id)));
       const year = localeYear(locale, { profile, comfort, hazards, crowds });
       const cap = visa.data && visa.passports.length ? entryCap(locale, visa.data, visa.passports) : null;
+      const beauty = metrics.beauty?.get(id);
+      const beautyPct = percentileOf(beauty, beautyAll);
       return {
+        beauty: beauty ?? null,
+        beautyPct,
         locale,
         year,
         // A rotation window overrides months, so weekly comfort would contradict it: draw months then.
         weeks: profile?.windows.length ? null : weekLevels(weekly?.[id]),
-        windows: stayWindows(locale, year, cap?.days, fromMonth),
+        windows: stayWindows(locale, year, cap?.days, fromMonth, beautyPct),
         cap,
         profile,
         hazards,
         events: mine.filter((e) => e.kind !== "season" && e.recurring),
       };
     });
-  }, [seasonality, profiles, visa.data, visa.passports, anomalies, events, weekly, cityById]);
+  }, [seasonality, profiles, visa.data, visa.passports, anomalies, events, weekly, cityById, metrics, beautyAll]);
 
   const comfortLoaded = anchors.some((id) => seasonality[id]);
   return { views, metrics, surfaceError, unlocked, comfortLoaded, signedInVisa: !!visa.data && visa.passports.length > 0 };

@@ -4,9 +4,14 @@
 //   score = temperature comfort - rain penalty - air penalty - desert penalty, clamped to 0-100.
 //
 // Temperature is the month's MEAN daily temperature (average of day high and night low). A
-// 16-20C mean scores 100: afternoons around 21-27C. Above it the score falls away fast, since
-// afternoons run 6-8C over the mean (more in deserts): a 26C mean is a ~33C afternoon, a 30C
-// mean ~37C. Below it falls away more gently: cold can be dressed for. See TEMP_CURVE. Rain subtracts 0 at <=30mm/month, scaling to 35 at >=250mm/month. Air subtracts
+// 16-20C mean scores 100: afternoons around 21-27C. Above it the score falls away, reaching 0 at a
+// 36C mean; ADR 0023 eased the hot side so humid tropical months (27-28C means, small day-night
+// range) read fair rather than poor, while deserts stay low through the desert term. Below 16C it
+// falls away gently: cold can be dressed for. See TEMP_CURVE. Rain subtracts 0 at <=30mm/month,
+// scaling to 35 at >=250mm/month; in a month hotter than the 16-20C band the heat score has
+// already counted the mugginess, so rain takes off less (down to 60% of it as the heat score
+// falls to 0) rather than counting the same humidity twice. A cool monsoon keeps the full
+// penalty. Air subtracts
 // 0 at a monthly mean PM2.5 of <=10 ug/m3, scaling to 40 at >=75 ug/m3 (the WHO 24-hour interim target 1). A month with no
 // air-quality figure has no air penalty applied (and says so), never an assumed one.
 //
@@ -25,18 +30,21 @@ export const TEMP_CURVE: ReadonlyArray<readonly [number, number]> = [
   [13, 78],
   [16, 100],
   [20, 100],
-  [22, 85],
-  [24, 65],
-  [26, 45],
-  [28, 28],
-  [30, 15],
-  [32, 6],
-  [34, 0],
+  [22, 88],
+  [24, 76],
+  [26, 64],
+  [28, 50],
+  [30, 36],
+  [32, 22],
+  [34, 9],
+  [36, 0],
 ];
 
 export const PRECIP_FREE_MM = 30;
 export const PRECIP_MAX_MM = 250;
 export const PRECIP_MAX_PENALTY = 35;
+/** In heat, rain counts for less: at a 0 temperature score it keeps this share; at 100 (or any cool month) all of it. */
+export const HOT_RAIN_SHARE = 0.6;
 
 export const AIR_FREE_UGM3 = 10;
 export const AIR_MAX_UGM3 = 75;
@@ -49,7 +57,7 @@ export const DESERT_MAX_PENALTY = 45;
 export interface ComfortBreakdown {
   /** Temperature comfort, 0-100 (before penalties). */
   temp: number;
-  /** Rain penalty, 0-35 points subtracted. */
+  /** Rain penalty, 0-35 points subtracted (less in a hot month, see HOT_RAIN_SHARE). */
   rain: number;
   /** Air-quality penalty, 0-40 points subtracted; 0 when `airKnown` is false. */
   air: number;
@@ -86,6 +94,12 @@ export function rainPenalty(precipMm: number): number {
   return (PRECIP_MAX_PENALTY * (precipMm - PRECIP_FREE_MM)) / (PRECIP_MAX_MM - PRECIP_FREE_MM);
 }
 
+/** Share of the rain penalty that applies: all of it at or below 20C, less as the heat score falls. */
+export function rainShare(tempC: number, temp = tempComfort(tempC)): number {
+  if (!(tempC > 20)) return 1;
+  return HOT_RAIN_SHARE + (1 - HOT_RAIN_SHARE) * (temp / 100);
+}
+
 export function airPenalty(pm25: number): number {
   if (pm25 <= AIR_FREE_UGM3) return 0;
   if (pm25 >= AIR_MAX_UGM3) return AIR_MAX_PENALTY;
@@ -111,7 +125,7 @@ export function annualRain(precips: ReadonlyArray<number | null | undefined>): n
 
 export function comfortBreakdown(tempC: number, precipMm: number, pm25?: number | null, annualPrecipMm?: number | null): ComfortBreakdown {
   const temp = tempComfort(tempC);
-  const rain = rainPenalty(precipMm);
+  const rain = rainPenalty(precipMm) * rainShare(tempC, temp);
   const airKnown = typeof pm25 === "number" && Number.isFinite(pm25);
   const air = airKnown ? airPenalty(pm25 as number) : 0;
   const yearKnown = typeof annualPrecipMm === "number" && Number.isFinite(annualPrecipMm);

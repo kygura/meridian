@@ -12,6 +12,7 @@ import {
   localeMonth,
   localeYear,
   monthRuns,
+  percentileOf,
   rangeSegments,
   seasonFor,
   spanSegments,
@@ -23,6 +24,7 @@ import {
   windowSegments,
   type Locale,
   type LocaleSignals,
+  type StayWindow,
   type ResearchLevel,
 } from "./locales";
 import cityData from "../../data/city-data.json";
@@ -176,12 +178,23 @@ describe("stayWindows", () => {
     expect(w.run).toEqual({ start: 1, end: 4 });
   });
 
-  it("falls back to the place's own best months when none is even fair", () => {
+  it("lets Beauty justify a base on the most tolerable months when none is even fair", () => {
     const l = make();
     const comfort = () => [30, 28, 10, 0, 0, 0, 0, 0, 0, 5, 20, 35].map((score) => ({ score }));
-    const [w] = stayWindows(l, year(l, { comfort }));
+    const [w] = stayWindows(l, year(l, { comfort }), null, 1, 90);
     expect(w.relative).toBe(true);
     expect(w.run).toEqual({ start: 12, end: 2 });
+    expect(stayWindows(l, year(l, { comfort }), null, 1, 60)).toEqual([]);
+    expect(stayWindows(l, year(l, { comfort }))).toEqual([]);
+  });
+
+  it("widens a thin fair window to the most tolerable months for a beautiful place", () => {
+    const l = make();
+    const comfort = () => [55, 48, 46, 20, 0, 0, 0, 0, 0, 10, 30, 47].map((score) => ({ score }));
+    expect(stayWindows(l, year(l, { comfort }))[0]).toMatchObject({ run: { start: 1, end: 1 }, fallback: true, relative: false });
+    const ws = stayWindows(l, year(l, { comfort }), null, 1, 95);
+    expect(ws).toHaveLength(1);
+    expect(ws[0]).toMatchObject({ run: { start: 12, end: 3 }, fallback: false, relative: true });
   });
 
   it("ranks windows with more great months first", () => {
@@ -205,7 +218,24 @@ describe("weeksText", () => {
   });
 });
 
+describe("percentileOf", () => {
+  it("is the share of values at or below", () => {
+    expect(percentileOf(5, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).toBe(50);
+    expect(percentileOf(undefined, [1])).toBeNull();
+  });
+});
+
 describe("bestForMonth", () => {
+  it("counts a worth-it window as fair and breaks ties by Beauty", () => {
+    const a = make({ id: "a", name: "A" });
+    const b = make({ id: "b", name: "B" });
+    const c = make({ id: "c", name: "C" });
+    const comfort = () => C("pppppppppppp")();
+    const years = new Map([a, b, c].map((l) => [l.id, year(l, { comfort })]));
+    const worth = { run: { start: 1, end: 2 }, relative: true } as unknown as StayWindow;
+    const picks = bestForMonth([a, b, c], years, 1, { beauty: new Map([["b", 70], ["c", 90]]), windows: new Map([["a", [worth]]]) });
+    expect(picks.map((p) => p.locale.id)).toEqual(["a", "c", "b"]);
+  });
   it("ranks by fit, then name", () => {
     const a = make({ id: "a", name: "A" });
     const b = make({ id: "b", name: "B", cityIds: ["bangkok-thailand"] });

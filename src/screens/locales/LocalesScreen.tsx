@@ -1,8 +1,9 @@
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { Page, PageHeader, SectionHeader, Segmented, Select, cx } from "../../ui";
 import { FIT_LABEL, type FitLevel } from "../../lib/rotation";
-import { monthName } from "../../lib/season";
+import { monthName, spanHas } from "../../lib/season";
 import {
+  BEAUTY_UNLOCK,
   LOCALE_DATA,
   anchorOf,
   bestForMonth,
@@ -23,7 +24,7 @@ import "../rotation/rotation.css";
 import "./locales.css";
 
 type RoleFilter = "all" | LocaleRole;
-type SortKey = "region" | "meridian" | "cost" | "month";
+type SortKey = "region" | "meridian" | "beauty" | "cost" | "month";
 
 export const ROLE_LABEL: Record<LocaleRole, string> = { base: "Base", hub: "Hub", destination: "Destination" };
 const RAMP: FitLevel[] = ["avoid", "poor", "fair", "good", "great"];
@@ -83,14 +84,20 @@ export default function LocalesScreen() {
         return [...list].sort((a, b) => order.indexOf(a.locale.region) - order.indexOf(b.locale.region) || byName(a, b));
       case "meridian":
         return [...list].sort((a, b) => byScore(a, b) || byName(a, b));
+      case "beauty":
+        return [...list].sort((a, b) => (b.beauty ?? -1) - (a.beauty ?? -1) || byName(a, b));
       case "cost":
         return [...list].sort((a, b) => (afford(b) ?? -1) - (afford(a) ?? -1) || byName(a, b));
       case "month":
-        return [...list].sort((a, b) => fitRank(b.year[focus - 1].level) - fitRank(a.year[focus - 1].level) || byScore(a, b) || byName(a, b));
+        return [...list].sort(
+          (a, b) => monthRank(b, focus) - monthRank(a, focus) || (b.beauty ?? -1) - (a.beauty ?? -1) || byScore(a, b) || byName(a, b)
+        );
     }
   }, [views, role, sort, focus, metrics]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const years = useMemo(() => new Map(views.map((v) => [v.locale.id, v.year])), [views]);
+  const beautyMap = useMemo(() => new Map(views.map((v) => [v.locale.id, v.beauty ?? 0])), [views]);
+  const windowMap = useMemo(() => new Map(views.map((v) => [v.locale.id, v.windows])), [views]);
   const bases = useMemo(() => views.filter((v) => v.locale.role === "base").map((v) => v.locale), [views]);
   const openView = open ? views.find((v) => v.locale.id === open) : undefined;
   const focusIndex = months.findIndex((m) => m.month === focus);
@@ -141,6 +148,7 @@ export default function LocalesScreen() {
               { value: "region", label: "Region" },
               { value: "month", label: `Best in ${monthName(focus, "long")}` },
               { value: "meridian", label: "Meridian score" },
+              { value: "beauty", label: "Most beautiful" },
               { value: "cost", label: "Most affordable" },
             ]}
           />
@@ -277,7 +285,7 @@ export default function LocalesScreen() {
                           {monthName(main.stay.start)}
                           {main.stay.end !== main.stay.start ? `–${monthName(main.stay.end)}` : ""}
                           {main.capped && <span className="loc-stay-cap"> · visa</span>}
-                          {main.relative && <span className="loc-stay-rel">best it gets</span>}
+                          {main.relative && <span className="loc-stay-rel">worth it for its beauty</span>}
                         </span>
                       </>
                     ) : (
@@ -305,7 +313,7 @@ export default function LocalesScreen() {
           </span>
           <span className="loc-legend-item">
             <span className="loc-legend-ideal loc-ideal--relative" />
-            Best it gets (never comfortable)
+            Worth it for its beauty: most tolerable months
           </span>
           <span className="loc-legend-item">
             <span className="loc-legend-crowd" />
@@ -322,7 +330,8 @@ export default function LocalesScreen() {
         </div>
         <p className="loc-note">
           Fit is the anchor city’s Comfort Index (temperature, rain, air), weekly where Meridian has weekly normals, lowered in
-          months a seasonal hazard reaches it{unlocked ? "; your rotation’s own windows come first" : ""}. Tourist peaks are
+          months a seasonal hazard reaches it. A place in Meridian’s top {100 - BEAUTY_UNLOCK}% for Beauty that is never
+          comfortable gets a base window on its most tolerable months, drawn dashed{unlocked ? "; your rotation’s own windows come first" : ""}. Tourist peaks are
           measured visitor nights. Stay lengths are cut to the run of good months
           {signedInVisa ? " and your passport’s day limit" : "; sign in to cut them to your passport’s day limit"}. Your notes
           and Travel Seasons are in each locale, not in the score.{!comfortLoaded && " Climate data is loading."}
@@ -333,7 +342,10 @@ export default function LocalesScreen() {
         <SectionHeader id="loc-where" title="Where to base yourself" meta="Top three bases each month" />
         <div className="loc-where">
           {months.map(({ month, year }, i) => {
-            const picks = bestForMonth(bases, years, month).slice(0, 3);
+            const picks = bestForMonth(bases, years, month, { beauty: beautyMap, windows: windowMap }).slice(0, 3);
+            const worth = views
+              .filter((x) => x.locale.role === "base" && x.windows.some((w) => w.relative && spanHas(w.run, month)) && !picks.some((p) => p.locale.id === x.locale.id))
+              .sort((a, b) => (b.beauty ?? 0) - (a.beauty ?? 0))[0];
             return (
               <div key={i} className={cx("loc-where-month", month === focus && "loc-where-month--focus")}>
                 <button type="button" className="loc-where-head" onClick={() => pickMonth(month)}>
@@ -349,6 +361,15 @@ export default function LocalesScreen() {
                     </li>
                   ))}
                 </ol>
+                {worth && (
+                  <div className="loc-where-worth">
+                    <span className="loc-where-worth-label">Worth it for its beauty</span>
+                    <button type="button" onClick={() => setOpen(worth.locale.id)} title="Rarely comfortable, but in Meridian’s top 15% for Beauty">
+                      <span className="loc-swatch-dashed" />
+                      {worth.locale.name}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -362,6 +383,12 @@ export default function LocalesScreen() {
       {openView && <LocaleSheet view={openView} metrics={metrics} unlocked={unlocked} onClose={() => setOpen(null)} />}
     </Page>
   );
+}
+
+/** Fit of a month for ranking: a month inside a "worth it" window counts as fair. */
+function monthRank(v: LocaleView, month: number): number {
+  const worth = v.windows.some((w) => w.relative && spanHas(w.run, month));
+  return Math.max(fitRank(v.year[month - 1].level), worth ? fitRank("fair") : -1);
 }
 
 function roleCount(views: LocaleView[]): string {

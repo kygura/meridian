@@ -236,7 +236,8 @@
   pointer-events: none;
   box-shadow: 0 0 0 1px var(--surface);
 }
-.loc-ideal--relative { border-style: dashed; }
+.loc-ideal--relative,
+.loc-legend-ideal.loc-ideal--relative { border-style: dashed; }
 .loc-stay-rel { display: block; font-size: 9px; letter-spacing: 0.04em; color: var(--muted); }
 .loc-today {
   position: absolute;
@@ -309,7 +310,11 @@
   margin-bottom: var(--space-2);
 }
 .loc-where ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.loc-where li button {
+.loc-where-worth { margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px dashed var(--border-strong); font-size: var(--text-xs); }
+.loc-where-worth-label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: var(--label-tracking); text-transform: uppercase; color: var(--muted); }
+.loc-swatch-dashed { display: inline-block; width: 12px; height: 12px; border: 1.5px dashed var(--ink); flex: none; }
+.loc-where li button,
+.loc-where-worth button {
   all: unset;
   display: inline-flex;
   align-items: center;
@@ -382,3 +387,7 @@
   .loc-today-flag { display: none; }
   .loc-name-sub .loc-score { display: none; }
 }
+.loc-where li button,
+.loc-where-worth button { max-width: 100%; overflow-wrap: anywhere; align-items: flex-start; }
+.loc-where li button .rotation-swatch,
+.loc-where-worth button .loc-swatch-dashed { margin-top: 3px; }
