@@ -1,0 +1,297 @@
+
+.loc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-5);
+}
+.loc-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.loc-muted { color: var(--muted); }
+
+/* ── Calendar grid ── */
+.loc-cal {
+  --loc-name: minmax(150px, 220px);
+  --loc-stay: 78px;
+  overflow-x: auto;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  -webkit-overflow-scrolling: touch;
+}
+.loc-row,
+.loc-region {
+  display: grid;
+  grid-template-columns: var(--loc-name) repeat(12, minmax(26px, 1fr)) var(--loc-stay);
+  min-width: 560px;
+  align-items: stretch;
+}
+.loc-row + .loc-row,
+.loc-group + .loc-group .loc-row { border-top: 1px solid var(--border); }
+.loc-row--head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-strong);
+}
+.loc-region {
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: var(--space-3) 0 var(--space-1);
+  border-top: 1px solid var(--border-strong);
+}
+.loc-region > span {
+  grid-column: 1 / 2;
+  position: sticky;
+  left: 0;
+  white-space: nowrap;
+}
+
+.loc-name {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px var(--space-3) 6px 0;
+  min-width: 0;
+  cursor: pointer;
+  /* Stays put while the months scroll sideways on narrow screens. */
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+}
+.loc-row--head .loc-name { background: var(--surface); }
+.loc-row--head .loc-name,
+.loc-row--head .loc-stay {
+  cursor: default;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.loc-name:focus-visible,
+.loc-cell:focus-visible,
+.loc-mhead:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.loc-name-main {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.loc-name:hover .loc-name-main { color: var(--accent-text); }
+.loc-name-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.loc-role {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 4px;
+  border: 1px solid var(--border-strong);
+}
+.loc-role--base { border-color: var(--success); color: var(--success); }
+.loc-role--destination { border-color: var(--accent); color: var(--accent-text); }
+.loc-score {
+  font-family: var(--mono);
+  color: var(--text);
+  margin-left: auto;
+}
+
+.loc-mhead {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  color: var(--muted);
+  padding: var(--space-2) 0 var(--space-1);
+  cursor: pointer;
+  border-left: 1px solid transparent;
+}
+.loc-mhead:hover { color: var(--text); }
+.loc-mhead--focus { color: var(--text); font-weight: var(--weight-semibold); box-shadow: inset 0 -2px 0 var(--accent); }
+.loc-mhead--year { border-left-color: var(--border-strong); }
+.loc-mhead-year { display: block; font-size: 9px; color: var(--subtle); }
+.loc-mhead-short { display: none; }
+
+.loc-cell {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  min-height: 40px;
+  margin: 3px 1px;
+  cursor: pointer;
+}
+.loc-cell--focus { outline: 1px solid var(--rule); outline-offset: 1px; }
+.loc-cell:hover { filter: brightness(0.94); }
+
+/* Ideal stay: a solid ink bar across the bottom of the months, capped at the ends. */
+.loc-bar {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 4px;
+  height: 6px;
+  background: var(--ink);
+}
+.loc-bar--start { left: 4px; border-top-left-radius: 3px; border-bottom-left-radius: 3px; }
+.loc-bar--end { right: 4px; border-top-right-radius: 3px; border-bottom-right-radius: 3px; }
+.loc-run {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 6px;
+  height: 2px;
+  background: var(--ink);
+  opacity: 0.45;
+}
+.loc-ev {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+.loc-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+.loc-mark--disagree { border-width: 7px 7px 0 0; border-color: var(--info) transparent transparent transparent; }
+.loc-mark--personal { top: auto; bottom: 0; border-width: 0 0 7px 7px; border-color: transparent transparent var(--ink) transparent; left: auto; right: 0; }
+.loc-mark--static,
+.loc-ev--static { position: static; display: inline-block; }
+
+.loc-stay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding-left: var(--space-2);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.loc-stay-cap { font-size: 9px; color: var(--warning); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.loc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.loc-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.loc-legend-bar { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: var(--ink); }
+.loc-legend-run { display: inline-block; width: 18px; height: 2px; background: var(--ink); opacity: 0.45; }
+.loc-note { font-size: var(--text-xs); color: var(--muted); margin: var(--space-2) 0 var(--space-6); max-width: 72ch; }
+.loc-sources { margin-top: var(--space-5); }
+
+/* ── Where to base yourself ── */
+.loc-where {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.loc-where-month { background: var(--surface); padding: var(--space-3); }
+.loc-where-month--focus { box-shadow: inset 0 2px 0 var(--accent); }
+.loc-where-head {
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+.loc-where ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.loc-where button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.loc-where button:hover { color: var(--accent-text); }
+.loc-where button:focus-visible { box-shadow: var(--focus-ring); }
+
+/* ── Sheet ── */
+.loc-sheet { display: grid; gap: var(--space-3); font-size: var(--text-sm); }
+.loc-sheet p { margin: 0; }
+.loc-sheet-role { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--label-tracking); text-transform: uppercase; color: var(--muted); }
+.loc-months { display: grid; gap: 4px; }
+.loc-month { display: grid; grid-template-columns: 44px 1fr 32px; gap: var(--space-2); align-items: center; }
+.loc-month-chip {
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  text-align: center;
+  padding: 3px 0;
+  color: var(--ink);
+}
+.loc-month-why { font-size: var(--text-xs); }
+.loc-month-comfort { font-family: var(--mono); font-size: var(--text-xs); text-align: right; color: var(--muted); }
+.loc-month-comfort--disagree { color: var(--info); font-weight: var(--weight-semibold); }
+.loc-windows { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.loc-window {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+}
+.loc-metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-3); }
+.loc-metric { display: grid; gap: 2px; }
+.loc-metric-label { font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--label-tracking); text-transform: uppercase; color: var(--muted); }
+.loc-metric-value { font-family: var(--mono); font-size: var(--text-md); }
+.loc-meter { display: block; height: 3px; background: var(--surface-3); }
+.loc-meter > span { display: block; height: 100%; background: var(--ink-2); }
+.loc-scores { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-family: var(--mono); font-size: var(--text-xs); }
+.loc-score-item--overall { font-weight: var(--weight-semibold); }
+.loc-events { margin: 0; padding-left: var(--space-4); display: grid; gap: 2px; }
+.loc-link { color: var(--accent-text); display: inline-flex; align-items: center; gap: 2px; }
+.loc-sheet-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-2); font-size: var(--text-xs); }
+
+@media (max-width: 640px) {
+  .loc-cal { --loc-name: 128px; --loc-stay: 60px; }
+  .loc-mhead-long { display: none; }
+  .loc-mhead-short { display: inline; }
+  .loc-cell { min-height: 34px; margin: 2px 0; }
+  .loc-name-sub .loc-score { display: none; }
+}

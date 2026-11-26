@@ -13,6 +13,7 @@ export type Route =
   | { view: "inbox" }
   | { view: "world" }
   | { view: "rotation" }
+  | { view: "locales" }
   | { view: "scout" };
 
 export type View = Route["view"];
@@ -45,6 +46,7 @@ export function parseHash(hash: string): Route {
   if (path === "/inbox") return { view: "inbox" };
   if (path === "/world") return { view: "world" };
   if (path === "/rotation") return { view: "rotation" };
+  if (path === "/locales") return { view: "locales" };
   if (path === "/scout") return { view: "scout" };
 
   // Trips
@@ -85,6 +87,8 @@ export function routePath(route: Route): string {
       return "/world";
     case "rotation":
       return "/rotation";
+    case "locales":
+      return "/locales";
     case "scout":
       return "/scout";
     case "trips":

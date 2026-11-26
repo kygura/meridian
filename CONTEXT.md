@@ -419,6 +419,26 @@ scheduler on a long-running server or from Vercel Cron.
 What the service worker keeps of the owner's data for offline reading. Emptied on sign-out
 and on any 401, and never holds sign-in state or share links.
 
+### Locales (ADR 0022)
+
+**Locale**:
+A researched place to live in or pass through on the rotation: a base, a hub or a destination,
+covering one or more Cities (the first is the anchor), with researched month ratings and reasons,
+a stay range, cost, the owner's scores, the entry route and events (`data/locales.json`). Research,
+not a commitment; a Rotation Stay is the commitment.
+_Avoid_: destination (alone), location, place (see City, Open Place)
+
+**Hub** (of a Locale):
+A locale held for a few days between bases, such as Bangkok or Istanbul. Becomes a Pass-through.
+
+**Destination** (of a Locale):
+A locale visited once in its window and left, such as Bhutan or the South Island.
+
+**Ideal Stay**:
+The stretch of a locale's good months to be there, at the locale's ideal length, cut to the run of
+good months and the owner's passport day limit. Shown as a bar on the Locales calendar.
+_Avoid_: best time
+
 ### Solver and re-planning (ADR 0015)
 
 **Rotation Solver**:

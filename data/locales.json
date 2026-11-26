@@ -1,0 +1,2626 @@
+{
+ "version": 1,
+ "checked": "2026-11-26",
+ "sources": [
+  "Owner's Notion research (Numbeo 2026, CEOWORLD 2025, OAG Megahubs 2025, TasteAtlas 25/26, EIU, Global Peace Index)",
+  "entry rules per locale, linked",
+  "month ratings reviewed for climate, monsoon, typhoon and air"
+ ],
+ "method": "Month ratings: the owner's best/avoid months, reviewed against climate, monsoon, typhoon and air-quality seasons. Stay lengths: how long the place holds up as a base, cut later to the run of good months and the passport's day limit.",
+ "regions": [
+  "SE & East Asia",
+  "Indian Subcontinent",
+  "Southern Europe & Mediterranean",
+  "Latin America & Atlantic",
+  "Pacific & Oceania"
+ ],
+ "locales": [
+  {
+   "id": "chiang-mai",
+   "name": "Chiang Mai",
+   "country": "Thailand",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "chiang-mai-thailand"
+   ],
+   "summary": "The original nomad capital. Unbeatable cost to quality, Thai food everywhere, mountain temples and a deep expat infrastructure. Leave before February: burning season is a real respiratory hazard.",
+   "months": [
+    "good",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      2,
+      3,
+      4
+     ],
+     "kind": "avoid",
+     "reason": "burning season, PM2.5 often >100, plus heat"
+    },
+    {
+     "months": [
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "kind": "fair",
+     "reason": "rainy season, humid but green and cheap"
+    },
+    {
+     "months": [
+      11,
+      12
+     ],
+     "kind": "best",
+     "reason": "cool, dry, clear air; peak season prices"
+    },
+    {
+     "months": [
+      1
+     ],
+     "kind": "good",
+     "reason": "cool; smoke can start late Jan"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Slow base; DTV allows 180d per entry, avoid Feb-Apr by moving"
+   },
+   "cost": {
+    "min": 800,
+    "max": 1500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 7.5,
+    "health": 8.0,
+    "food": 9.5,
+    "cost": 9.5,
+    "connect": 7.0,
+    "safe": 8.0,
+    "qol": 8.0,
+    "overall": 8.1
+   },
+   "entry": {
+    "summary": "Thailand DTV: 5-yr multiple entry, up to 180 days per entry, extendable once by 180 (fee ~10,000 THB, foreign-source income, age 20+, funds proof). Visa-exempt stays are shorter; check current exemption length",
+    "source": "https://budapest.thaiembassy.org/en/publicservice/destination-thailand-visa-dtv",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 11,
+     "name": "Yi Peng / Loy Krathong lanterns",
+     "kind": "festival"
+    },
+    {
+     "month": 4,
+     "name": "Songkran (water festival)",
+     "kind": "festival"
+    },
+    {
+     "month": 2,
+     "name": "Burning-season smoke peak begins",
+     "kind": "season"
+    }
+   ],
+   "airport": "CNX",
+   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident."
+  },
+  {
+   "id": "da-nang-hoi-an",
+   "name": "Da Nang / Hoi An",
+   "country": "Vietnam",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "da-nang-vietnam"
+   ],
+   "area": "Da Nang with Hoi An 30 km south; Hoi An is not in the city data",
+   "summary": "Beach city paired with an ancient UNESCO town. Elite street food at almost no cost. No nomad visa; the 90-day e-visa and a border run reset the clock. Typhoon season is severe.",
+   "months": [
+    "fair",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      2,
+      3,
+      4,
+      5
+     ],
+     "kind": "best",
+     "reason": "dry, warm, sea calm; best beach window"
+    },
+    {
+     "months": [
+      9,
+      10,
+      11
+     ],
+     "kind": "avoid",
+     "reason": "typhoon and flood peak (Oct-Nov worst)"
+    },
+    {
+     "months": [
+      12,
+      1
+     ],
+     "kind": "fair",
+     "reason": "cool, drizzly, grey; 17-22C"
+    },
+    {
+     "months": [
+      6,
+      7
+     ],
+     "kind": "good",
+     "reason": "hot (35C+) but dry; fine by the sea"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 10,
+    "maxWeeks": 13,
+    "why": "E-visa is 90 days; plan 2-3 months then visa exit"
+   },
+   "cost": {
+    "min": 800,
+    "max": 1300,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 7.5,
+    "health": 6.5,
+    "food": 9.5,
+    "cost": 9.5,
+    "connect": 6.5,
+    "safe": 8.5,
+    "qol": 8.0,
+    "overall": 7.9
+   },
+   "asymmetry": 3,
+   "entry": {
+    "summary": "No nomad visa. 90-day e-visa for all nationalities (US$25 single / US$50 multiple), not extendable inside Vietnam; remote work on it is a grey area; visa run to Cambodia/Laos/Thailand typical",
+    "source": "https://freakingnomads.com/news/vietnam-offers-90-day-e-visas-to-all-countries-and-territories/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 3,
+     "name": "Dry season opens, sea calm",
+     "kind": "season"
+    },
+    {
+     "month": 6,
+     "name": "Hoi An lantern full-moon nights (monthly)",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Typhoon/flood risk peaks",
+     "kind": "season"
+    }
+   ],
+   "airport": "DAD",
+   "corrections": "Best window is Feb-May rather than Dec-Mar: Dec-Jan are cool and wet in central Vietnam. Typhoon/flood risk runs Sep-Nov (Oct-Nov worst), confirming avoid. 'No DNV' confirmed; e-visa now 90 days for all."
+  },
+  {
+   "id": "bali",
+   "name": "Bali",
+   "country": "Indonesia",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "denpasar-indonesia"
+   ],
+   "area": "Canggu for the scene, Ubud for the spiritual, Amed (north coast, drier) for diving and quiet; Denpasar stands in for the island",
+   "summary": "The benchmark nomad ecosystem: private pool villas under €700 a month. The wet season is real; Amed sits in a rain shadow.",
+   "months": [
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "good",
+    "good",
+    "best",
+    "good",
+    "fair",
+    "avoid"
+   ],
+   "notes": [
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "avoid",
+     "reason": "wet season, heavy daily rain, flooding in Canggu"
+    },
+    {
+     "months": [
+      5,
+      6,
+      9
+     ],
+     "kind": "best",
+     "reason": "dry season, sunny, lower humidity"
+    },
+    {
+     "months": [
+      3,
+      11
+     ],
+     "kind": "fair",
+     "reason": "rains fading/starting; shoulder"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Visas are 60d/1yr; a few months per stay avoids immigration hassle"
+   },
+   "cost": {
+    "min": 1300,
+    "max": 2500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 8.0,
+    "health": 5.5,
+    "food": 8.0,
+    "cost": 8.0,
+    "connect": 7.0,
+    "safe": 7.5,
+    "qol": 8.5,
+    "overall": 7.4
+   },
+   "entry": {
+    "summary": "E33G Remote Worker Visa: 1 yr, needs ~US$60,000/yr income from foreign employer/clients, fee ~Rp7M; alternative is VOA 30 days extendable once. Tourist levy Rp150,000 on arrival",
+    "source": "https://evisa.imigrasi.go.id/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 3,
+     "name": "Nyepi (day of silence)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Peak tourist season",
+     "kind": "season"
+    },
+    {
+     "month": 12,
+     "name": "Rainy season, flooding",
+     "kind": "season"
+    }
+   ],
+   "airport": "DPS",
+   "corrections": "Months confirmed, but Mar/Nov are shoulder rather than clean. E33G threshold ~US$60k/yr and the 4-yr tax holiday does not apply automatically; enforcement inconsistent. Sources conflict on renewal (once vs up to 5x). Note Nyepi (Mar) shuts the island and airport for 24h."
+  },
+  {
+   "id": "bangkok",
+   "name": "Bangkok",
+   "country": "Thailand",
+   "region": "SE & East Asia",
+   "role": "hub",
+   "cityIds": [
+    "bangkok-thailand"
+   ],
+   "summary": "Asia's most connected city: the hub you pass through. World-class hospitals (Bumrungrad), incredible food, everything works. Not a slow base.",
+   "months": [
+    "good",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "best",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5
+     ],
+     "kind": "avoid",
+     "reason": "hottest (38C+), humid, storms"
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "cool/dry but PM2.5 spikes Dec-Feb are common"
+    },
+    {
+     "months": [
+      11
+     ],
+     "kind": "best",
+     "reason": "end of rains, comfortable, Loy Krathong"
+    },
+    {
+     "months": [
+      9,
+      10
+     ],
+     "kind": "fair",
+     "reason": "peak rain and river flooding risk"
+    }
+   ],
+   "stay": {
+    "minWeeks": 0.3,
+    "idealWeeks": 0.6,
+    "maxWeeks": 1.5,
+    "why": "Hub: flights, hospitals and visa runs; two to ten nights between bases, not a slow-living base"
+   },
+   "cost": {
+    "min": 1000,
+    "max": 2500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Thailand DTV: 5-yr multiple entry, up to 180 days per entry, extendable once by 180 (fee ~10,000 THB, foreign-source income, age 20+, funds proof). Visa-exempt stays are shorter; check current exemption length",
+    "source": "https://budapest.thaiembassy.org/en/publicservice/destination-thailand-visa-dtv",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 4,
+     "name": "Songkran",
+     "kind": "festival"
+    },
+    {
+     "month": 11,
+     "name": "Loy Krathong",
+     "kind": "festival"
+    }
+   ],
+   "airport": "BKK",
+   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident."
+  },
+  {
+   "id": "taipei",
+   "name": "Taipei (+ Hualien/Taitung)",
+   "country": "Taiwan",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "taipei-taiwan",
+    "hualien-taiwan",
+    "taitung-taiwan"
+   ],
+   "area": "Taipei, plus the east coast (Hualien, Taitung) as an add-on",
+   "summary": "Top-ranked healthcare for years running: use it as the annual medical hub. The east coast has Pacific cliffs and almost no expats. The Gold Card is one of Asia's best long-stay programmes.",
+   "months": [
+    "fair",
+    "fair",
+    "good",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "best",
+    "best",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      6,
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "hot, humid 33C+, typhoon season"
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "dry, mild, best light and hiking weather"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "cool, grey and drizzly in Taipei; east coast milder"
+    },
+    {
+     "months": [
+      9
+     ],
+     "kind": "fair",
+     "reason": "typhoons hit the east coast (Hualien/Taitung) hardest"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 10,
+    "maxWeeks": 26,
+    "why": "Slow base for healthcare/culture; east coast as 2-4 week add-on"
+   },
+   "cost": {
+    "min": 1200,
+    "max": 2200,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 5,
+   "entry": {
+    "summary": "Visa-free 90 days for most Western passports. Employment Gold Card (1-5 yr, open work rights) via professional field or salary route (reported ~NT$160k/month avg; verify on official site)",
+    "source": "https://goldcard.nat.gov.tw/en/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Lantern Festival (Pingxi)",
+     "kind": "festival"
+    },
+    {
+     "month": 3,
+     "name": "Mar-Apr best light in Taitung rice fields",
+     "kind": "nature"
+    },
+    {
+     "month": 7,
+     "name": "Typhoon season ramps up",
+     "kind": "season"
+    }
+   ],
+   "airport": "TPE",
+   "corrections": "East coast is not separate row: treated here. Typhoon risk to Hualien/Taitung peaks Aug-Oct, so Oct (best) is east-coast marginal early. Hualien had a major quake in Apr 2024; check infrastructure. Gold Card amended act effective 1 Jan 2026 (secondary source); salary threshold unverified."
+  },
+  {
+   "id": "tokyo-kyoto",
+   "name": "Tokyo / Kyoto",
+   "country": "Japan",
+   "region": "SE & East Asia",
+   "role": "destination",
+   "cityIds": [
+    "tokyo-japan",
+    "kyoto-japan"
+   ],
+   "summary": "Tokyo for density and food, Kyoto for aesthetic coherence. Time it for cherry blossom (late March) or autumn colour (November). Expensive, but fair for what it gives.",
+   "months": [
+    "fair",
+    "fair",
+    "best",
+    "best",
+    "good",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "best",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      3,
+      4
+     ],
+     "kind": "best",
+     "reason": "sakura (late Mar-early Apr); extreme crowds and prices"
+    },
+    {
+     "months": [
+      6,
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "tsuyu rain then 35C+ heat and humidity"
+    },
+    {
+     "months": [
+      11
+     ],
+     "kind": "best",
+     "reason": "koyo autumn colour, mild, dry"
+    },
+    {
+     "months": [
+      9
+     ],
+     "kind": "fair",
+     "reason": "still hot, typhoon season"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "cold but dry and sunny; fewer crowds"
+    }
+   ],
+   "stay": {
+    "minWeeks": 2,
+    "idealWeeks": 4,
+    "maxWeeks": 12,
+    "why": "High cost; Japan DNV is 6 months max, no renewal"
+   },
+   "cost": {
+    "min": 2500,
+    "max": 3800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Visa-free 90 days for most Western passports (no work). Digital Nomad visa: up to 6 months, no extension, income >= JPY10M/yr, medical insurance >= JPY10M, ~50 eligible countries, 6-month gap before reapplying",
+    "source": "https://www.mofa.go.jp/ca/fna/pagewe_000001_00046.html",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 3,
+     "name": "Sakura (cherry blossom)",
+     "kind": "nature"
+    },
+    {
+     "month": 4,
+     "name": "Golden Week (late Apr-early May) crowds",
+     "kind": "season"
+    },
+    {
+     "month": 11,
+     "name": "Koyo autumn leaves",
+     "kind": "nature"
+    }
+   ],
+   "airport": "HND",
+   "corrections": "Fees reportedly raised from July 2026 (single-entry ~JPY15,000, unverified). Mar-Apr best months also mean peak prices; book accommodation early."
+  },
+  {
+   "id": "penang",
+   "name": "Penang (George Town)",
+   "country": "Malaysia",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "george-town-malaysia"
+   ],
+   "area": "George Town",
+   "summary": "Colonial George Town: street art, shophouses and the best street food in Asia. English everywhere, world-class private hospitals at a fraction of Western prices. Friction: the call to prayer five times a day.",
+   "months": [
+    "best",
+    "best",
+    "good",
+    "good",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "fair",
+    "good",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "best",
+     "reason": "driest and sunniest on the island"
+    },
+    {
+     "months": [
+      9,
+      10
+     ],
+     "kind": "fair",
+     "reason": "wettest months; heavy afternoon storms"
+    },
+    {
+     "months": [
+      8,
+      9
+     ],
+     "kind": "fair",
+     "reason": "occasional regional haze"
+    },
+    {
+     "months": [
+      5,
+      6,
+      7,
+      8
+     ],
+     "kind": "fair",
+     "reason": "hot and humid, SW monsoon showers"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Year-round viable; cheap, great food, good healthcare"
+   },
+   "cost": {
+    "min": 900,
+    "max": 1300,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "DE Rantau Nomad Pass (MDEC): 12-month pass, up to 3 renewals; income USD24,000/yr (tech) or USD60,000/yr (non-tech) per MDEC FAQ; visa-free 90 days for most Western passports",
+    "source": "https://www.mdec.my/api/media/file/DE-Rantau_Pass_FAQ_v10.pdf",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Chinese New Year / Thaipusam",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "George Town Festival",
+     "kind": "festival"
+    },
+    {
+     "month": 12,
+     "name": "Cool dry season peak",
+     "kind": "season"
+    }
+   ],
+   "airport": "PEN",
+   "corrections": "Reports of 4-year stays and USD36k tech threshold from Dec 2026 conflict with MDEC FAQ v10 (Aug 2026): treat as unverified. Late Sep-Nov is the wettest period, so 'year-round viable' holds but Oct-Nov is fair, not good."
+  },
+  {
+   "id": "goa",
+   "name": "Goa",
+   "country": "India",
+   "region": "Indian Subcontinent",
+   "role": "base",
+   "cityIds": [
+    "panaji-india"
+   ],
+   "area": "North (Arambol, Anjuna, Vagator) for the scene, south (Palolem, Agonda) for quiet; Panaji stands in",
+   "summary": "Portuguese-Catholic India: relaxed, English-speaking, with a real arts and music underground. Only viable November to February or March.",
+   "months": [
+    "best",
+    "best",
+    "fair",
+    "avoid",
+    "avoid",
+    "avoid",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "best",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      6,
+      7,
+      8,
+      9
+     ],
+     "kind": "avoid",
+     "reason": "heavy SW monsoon, rough seas, most shacks closed"
+    },
+    {
+     "months": [
+      4,
+      5
+     ],
+     "kind": "avoid",
+     "reason": "very hot and humid (35C+), pre-monsoon"
+    },
+    {
+     "months": [
+      11,
+      12,
+      1,
+      2
+     ],
+     "kind": "best",
+     "reason": "dry, 25-32C; Dec-Jan very high prices"
+    },
+    {
+     "months": [
+      10
+     ],
+     "kind": "fair",
+     "reason": "shacks reopening, humidity lingering"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 10,
+    "maxWeeks": 16,
+    "why": "Tourist e-visa caps stays; use Nov-Mar only"
+   },
+   "cost": {
+    "min": 600,
+    "max": 1000,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 6,
+   "entry": {
+    "summary": "No nomad visa. e-Tourist visa 30-day / 1-yr / 5-yr; 1-yr and 5-yr allow 90 days per visit (180 for US/UK/Canada), 180-day calendar-year cap; remote work not authorised on tourist visa. Apply 4-120 days ahead",
+    "source": "https://indianvisaonline.gov.in/evisa/tvoa.html",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 12,
+     "name": "Peak season (Christmas/NYE) prices spike",
+     "kind": "season"
+    },
+    {
+     "month": 2,
+     "name": "Carnival",
+     "kind": "festival"
+    },
+    {
+     "month": 6,
+     "name": "Monsoon onset",
+     "kind": "season"
+    }
+   ],
+   "airport": "GOI",
+   "corrections": "Cheap but legally grey for remote work: e-Tourist visa does not authorise employment. 180-day-per-calendar-year cap for e-Tourist plus paper tourist visas. Fees for 30-day visa vary by season/source. New Mopa airport (GOX) exists alongside Dabolim (GOI)."
+  },
+  {
+   "id": "sri-lanka-south",
+   "name": "Sri Lanka south coast (Galle/Mirissa/Weligama)",
+   "country": "Sri Lanka",
+   "region": "Indian Subcontinent",
+   "role": "base",
+   "cityIds": [
+    "galle-sri-lanka",
+    "matara-sri-lanka"
+   ],
+   "area": "Galle, Mirissa, Weligama",
+   "summary": "Maximum asymmetry: post-crisis prices haven't corrected. Galle Fort is one of Asia's most atmospheric towns; blue whales off Mirissa December to April. The south coast is dry while the north-east is wet, and the reverse.",
+   "months": [
+    "best",
+    "best",
+    "best",
+    "good",
+    "avoid",
+    "avoid",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "kind": "avoid",
+     "reason": "SW monsoon: rough surf, rain, many places shut"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2,
+      3
+     ],
+     "kind": "best",
+     "reason": "dry, calm sea; peak season prices"
+    },
+    {
+     "months": [
+      11,
+      4
+     ],
+     "kind": "good",
+     "reason": "blue whale and surf season on the south coast"
+    },
+    {
+     "months": [
+      10
+     ],
+     "kind": "fair",
+     "reason": "inter-monsoon thunderstorms"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 10,
+    "maxWeeks": 26,
+    "why": "Slow beach base; DNV allows a year"
+   },
+   "cost": {
+    "min": 700,
+    "max": 1200,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 1,
+   "entry": {
+    "summary": "Digital Nomad Visa launched 2026: up to 1 yr, renewable annually, ~USD2,000/mo foreign income (+USD500/dependant), ~USD500 fee, health insurance; no local income. ETA tourist visa otherwise",
+    "source": "https://www.immigration.gov.lk/content/files/visa/digital_nomad/Digital%20Nomad%20Visa%20Category.pdf",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 12,
+     "name": "Blue whale season Mirissa (Nov-Apr)",
+     "kind": "nature"
+    },
+    {
+     "month": 4,
+     "name": "Sinhala/Tamil New Year",
+     "kind": "festival"
+    },
+    {
+     "month": 2,
+     "name": "Peak surf/season",
+     "kind": "season"
+    }
+   ],
+   "airport": "CMB",
+   "corrections": "Threshold appears to be USD2,000/mo (owner: USD1,500); one source says it was raised from 1,500. Fee ~USD500 confirmed; launch date reported Feb or Apr 2026 (conflicting). Verify on immigration.gov.lk."
+  },
+  {
+   "id": "bhutan",
+   "name": "Bhutan (Paro/Thimphu/Punakha)",
+   "country": "Bhutan",
+   "region": "Indian Subcontinent",
+   "role": "destination",
+   "cityIds": [
+    "thimphu-bhutan"
+   ],
+   "area": "Paro, Thimphu, Punakha; book through a licensed operator",
+   "summary": "Not a base: a pilgrimage. The Sustainable Development Fee is the filter by design. Tiger's Nest, Punakha Dzong, the Haa Valley. Go 10 to 14 days in spring or autumn.",
+   "months": [
+    "fair",
+    "fair",
+    "best",
+    "best",
+    "best",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "best",
+    "best",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      3,
+      4,
+      5
+     ],
+     "kind": "best",
+     "reason": "spring festivals, rhododendrons, clear views"
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "post-monsoon clarity; Himalaya views, festivals"
+    },
+    {
+     "months": [
+      6,
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "monsoon, landslides, leeches"
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "cold, clear; higher passes snowed"
+    }
+   ],
+   "stay": {
+    "minWeeks": 1.5,
+    "idealWeeks": 2,
+    "maxWeeks": 2.5,
+    "why": "Pilgrimage/trek trip, not a base; SDF accrues per night"
+   },
+   "cost": {
+    "min": 3000,
+    "max": 3500,
+    "currency": "EUR",
+    "per": "trip",
+    "note": "Cost is for a 10-14 day trip, not monthly"
+   },
+   "entry": {
+    "summary": "Tourism only via licensed operator/guide; Sustainable Development Fee USD100/adult/night (USD50 age 6-11), visa USD40; SDF 50% waiver extended to 31 Dec 2029; Indian nationals pay a separate lower rate",
+    "source": "https://www.nationthailand.com/news/tourism/40070380",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 4,
+     "name": "Paro Tshechu (lunar-calendar, Mar-Apr)",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Thimphu Tshechu (lunar, Sep-Oct)",
+     "kind": "festival"
+    },
+    {
+     "month": 11,
+     "name": "Black-necked crane festival, Phobjikha",
+     "kind": "festival"
+    }
+   ],
+   "airport": "PBH",
+   "corrections": "SDF is USD100 per night (owner said per day: same thing) plus USD40 visa. Reduced rate now runs to 31 Dec 2029 per Dept of Tourism; older guides say Aug 2027. Cost band is for ~2 weeks, not monthly."
+  },
+  {
+   "id": "valencia",
+   "name": "Valencia",
+   "country": "Spain",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "valencia-spain"
+   ],
+   "summary": "The most complete European base: Mediterranean food, walkable, beaches and mountains, strong healthcare, high-speed rail everywhere. August heat is extreme: leave, or go to the Canaries.",
+   "months": [
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "fair",
+    "avoid",
+    "best",
+    "best",
+    "good",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5,
+      6,
+      9,
+      10
+     ],
+     "kind": "best",
+     "reason": "warm, sunny, sea warm by Jun; terraces open"
+    },
+    {
+     "months": [
+      8
+     ],
+     "kind": "avoid",
+     "reason": "hot (32C+), humid, locals away, many shops shut"
+    },
+    {
+     "months": [
+      3
+     ],
+     "kind": "good",
+     "reason": "Fallas (15-19 Mar): great but loud and booked out"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Spain DNV gives 1-3 yrs; strong coworking and expat scene"
+   },
+   "cost": {
+    "min": 1300,
+    "max": 2800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 9.0,
+    "health": 8.5,
+    "food": 9.5,
+    "cost": 7.5,
+    "connect": 7.5,
+    "safe": 8.5,
+    "qol": 9.0,
+    "overall": 8.4
+   },
+   "entry": {
+    "summary": "Spain DNV (Digital Nomad visa): income >= 200% SMI (~EUR2,850/mo in 2026), >=80% non-Spanish clients, 1 yr (abroad) or 3 yr (in-Spain), private health insurance; Schengen 90/180 otherwise",
+    "source": "https://www.idealista.com/en/news/node/912520",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 3,
+     "name": "Las Fallas",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "Heat peak, city empties",
+     "kind": "season"
+    },
+    {
+     "month": 10,
+     "name": "Storm (DANA) risk window",
+     "kind": "season"
+    }
+   ],
+   "airport": "VLC",
+   "corrections": "Tax: DNV holders may opt for the 24% flat 'Beckham' regime up to EUR600k via Modelo 149 within 6 months; sources disagree on whether freelancers qualify. Otherwise 19-47% on worldwide income. Enforcement and renewal scrutiny tightened in 2026."
+  },
+  {
+   "id": "madeira",
+   "name": "Madeira (Funchal)",
+   "country": "Portugal",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "funchal-portugal"
+   ],
+   "area": "South coast: Funchal, Calheta, Câmara de Lobos",
+   "summary": "Possibly the best year-round climate on Earth; the south coast stays sunny. Extraordinary levada hiking. May's Flower Festival is the peak; New Year fireworks are a world-record event.",
+   "months": [
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "best",
+    "good",
+    "good",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5,
+      6,
+      9
+     ],
+     "kind": "best",
+     "reason": "mild and sunny; levada hikes at best"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "good",
+     "reason": "busy, warm, wildfire smoke risk some years"
+    },
+    {
+     "months": [
+      12
+     ],
+     "kind": "good",
+     "reason": "NYE fireworks; high prices, packed"
+    },
+    {
+     "months": [
+      1,
+      2,
+      3
+     ],
+     "kind": "good",
+     "reason": "mild 16-19C, some Atlantic rain; very cheap"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 26,
+    "why": "Mild all year; nomad village helps; island fever past ~3 months"
+   },
+   "cost": {
+    "min": 1400,
+    "max": 2500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 9.5,
+    "health": 7.5,
+    "food": 8.0,
+    "cost": 7.0,
+    "connect": 6.5,
+    "safe": 9.5,
+    "qol": 9.0,
+    "overall": 8.0
+   },
+   "entry": {
+    "summary": "Portugal D8 remote-work visa: income >= EUR3,680/mo (4x minimum wage EUR920 in 2026), 3 months avg proven; Schengen 90/180 otherwise. Free Digital Nomads Madeira (Ponta do Sol) community",
+    "source": "https://www.imidaily.com/portugal-digital-nomad-visa/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 5,
+     "name": "Flower Festival",
+     "kind": "festival"
+    },
+    {
+     "month": 12,
+     "name": "NYE fireworks",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "Peak crowds and prices",
+     "kind": "season"
+    }
+   ],
+   "airport": "FNC",
+   "corrections": "D8 threshold EUR3,680/mo is the figure most sources give (one outlier EUR3,480). IFICI does not cover typical nomads; most D8 holders pay standard IRS 14.5-48%."
+  },
+  {
+   "id": "canary-islands",
+   "name": "Canary Islands (Las Palmas, Tenerife, La Palma)",
+   "country": "Spain",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "las-palmas-spain",
+    "santa-cruz-de-tenerife-spain"
+   ],
+   "area": "Las Palmas for nomad infrastructure, Tenerife for landscape, La Palma for stars",
+   "summary": "Trade winds make July the best month here while the rest of Europe overheats. The year-round fallback.",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "good",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      3,
+      4,
+      5,
+      9,
+      10
+     ],
+     "kind": "best",
+     "reason": "warm, sunny, fewer crowds than winter"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "good",
+     "reason": "trade winds keep it comfortable; school-holiday prices"
+    },
+    {
+     "months": [
+      11,
+      12,
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "mild 18-22C, peak-season prices; north islands rainier"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 13,
+    "maxWeeks": 26,
+    "why": "Year-round viable; Las Palmas has city + beach + coworking"
+   },
+   "cost": {
+    "min": 1400,
+    "max": 2500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Spain DNV (see Valencia): ~EUR2,850/mo income, 1-3 yrs; Schengen 90/180 otherwise. Canarias IGIC (7%) instead of VAT",
+    "source": "https://www.idealista.com/en/news/node/912520",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Carnaval Las Palmas / Santa Cruz",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "Peak holiday prices",
+     "kind": "season"
+    },
+    {
+     "month": 1,
+     "name": "Whale/dolphin watching Tenerife (year-round)",
+     "kind": "nature"
+    }
+   ],
+   "airport": "LPA",
+   "corrections": "Owner's 'best Mar-Oct' is conservative; Nov-Feb is peak winter-sun season, comfortable but pricier. Same Spain DNV and Beckham-regime caveats as Valencia."
+  },
+  {
+   "id": "lisbon-cascais",
+   "name": "Lisbon / Cascais",
+   "country": "Portugal",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "lisbon-portugal",
+    "cascais-portugal"
+   ],
+   "summary": "Atlantic city with direct flights to the Americas and Africa. Cascais for a quiet coastal village, Lisbon for culture, nightlife and infrastructure.",
+   "months": [
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "best",
+    "fair",
+    "avoid",
+    "best",
+    "best",
+    "fair",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5,
+      6,
+      9,
+      10
+     ],
+     "kind": "best",
+     "reason": "warm, long light, sea swimmable by Jun"
+    },
+    {
+     "months": [
+      8
+     ],
+     "kind": "avoid",
+     "reason": "hot (30C+), crowded, many locals away"
+    },
+    {
+     "months": [
+      11
+     ],
+     "kind": "fair",
+     "reason": "Web Summit (early Nov) spikes prices; rain returns"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "mild but wet and grey; cheapest rents"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Strong community; prices rising fast; Cascais calmer"
+   },
+   "cost": {
+    "min": 2000,
+    "max": 3500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Portugal D8 remote-work visa: income >= EUR3,680/mo (2026), proof of 3 months; Schengen 90/180 otherwise",
+    "source": "https://www.imidaily.com/portugal-digital-nomad-visa/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 6,
+     "name": "Santos Populares (Jun 12-13)",
+     "kind": "festival"
+    },
+    {
+     "month": 11,
+     "name": "Web Summit (price spike)",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "Warm sea, fewer tourists",
+     "kind": "season"
+    }
+   ],
+   "airport": "LIS",
+   "corrections": "NHR was replaced by IFICI (2024), a narrow regime for qualifying R&D/tech/high-value roles with 20% flat rate for 10 yrs; D8 holders do not get it automatically. D8 threshold rose with minimum wage to EUR3,680/mo."
+  },
+  {
+   "id": "montenegro",
+   "name": "Montenegro (Kotor/Budva)",
+   "country": "Montenegro",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "tivat-montenegro"
+   ],
+   "area": "Kotor and Budva; Tivat, between them, is the city in the data",
+   "summary": "Adriatic fjord town with a UNESCO old town, a 9% flat tax and NATO membership. Not Schengen: useful when Schengen days run low. May and June come before crowds overwhelm the small infrastructure.",
+   "months": [
+    "fair",
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "avoid",
+    "avoid",
+    "best",
+    "good",
+    "fair",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      5,
+      6,
+      9
+     ],
+     "kind": "best",
+     "reason": "warm, sea 22-25C, uncrowded"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "packed, 35C+, price spikes in Budva/Kotor"
+    },
+    {
+     "months": [
+      11,
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "Kotor bay very rainy; coastal off-season, many places shut"
+    },
+    {
+     "months": [
+      4,
+      10
+     ],
+     "kind": "good",
+     "reason": "pleasant, fewer crowds"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 13,
+    "why": "Outside Schengen: a buffer of up to 90 days in-country; coastal off-season is quiet"
+   },
+   "cost": {
+    "min": 1000,
+    "max": 1500,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 4,
+   "entry": {
+    "summary": "Non-EU/non-Schengen: visa-free 90 days for most Western passports. Digital nomad residence permit (2 yrs, renewable) is legislated only to 31 Dec 2026 with no announced replacement; D visa for 91-180 days exists",
+    "source": "https://www.fragomen.com/insights/montenegro-digital-nomad-permit-visa-pathways-available.html",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 7,
+     "name": "Summer high season",
+     "kind": "season"
+    },
+    {
+     "month": 8,
+     "name": "Kotor Fašinada boat festival (Jul), Budva events",
+     "kind": "festival"
+    }
+   ],
+   "airport": "TIV",
+   "corrections": "Digital-nomad permit scheme reported to sunset 31 Dec 2026 (secondary source; verify with Ministry of Interior). Montenegro is an EU candidate; ETIAS not needed to enter Montenegro itself, but Schengen legs still count 90/180."
+  },
+  {
+   "id": "albanian-riviera",
+   "name": "Albanian Riviera (Saranda/Himara)",
+   "country": "Albania",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "vlor-albania"
+   ],
+   "area": "Saranda and Himara; Vlorë is the nearest city in the data",
+   "summary": "What Croatia was fifteen years ago: pre-EU prices, raw and unsaturated, Corfu 30 minutes by ferry. Infrastructure still developing: a builder's window, not a polished destination.",
+   "months": [
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "best",
+    "best",
+    "good",
+    "good",
+    "best",
+    "good",
+    "avoid",
+    "avoid"
+   ],
+   "notes": [
+    {
+     "months": [
+      5,
+      6,
+      9
+     ],
+     "kind": "best",
+     "reason": "warm, sea swimmable, not yet packed"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "good",
+     "reason": "hot and busy; coastal prices peak"
+    },
+    {
+     "months": [
+      11,
+      12,
+      1,
+      2,
+      3
+     ],
+     "kind": "avoid",
+     "reason": "off-season: shops/restaurants closed, wet and cold"
+    },
+    {
+     "months": [
+      4
+     ],
+     "kind": "fair",
+     "reason": "some places open; weather mixed"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 26,
+    "why": "Seasonal coast; basic services outside summer"
+   },
+   "cost": {
+    "min": 800,
+    "max": 1200,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 2,
+   "entry": {
+    "summary": "Visa-free 90 days in 180 for EU/UK and most Western passports; 1 year visa-free only for US citizens (reported; police registration after 90 days). Residence/Unique Permit route exists for remote workers",
+    "source": "https://en.wikipedia.org/wiki/Visa_policy_of_Albania",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 7,
+     "name": "Peak beach season",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "Warm sea, calm",
+     "kind": "season"
+    }
+   ],
+   "airport": "TIA",
+   "corrections": "The '1-year no-visa entry' applies to US citizens only (reset needs 90 days out); everyone else gets 90 days. Some sites overstate it, and some border officers default to a 90-day stamp. Main airport TIA (3-4 hr drive); Corfu (CFU) is nearer to Saranda via ferry."
+  },
+  {
+   "id": "crete-chania",
+   "name": "Crete (Chania)",
+   "country": "Greece",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "iraklio-greece"
+   ],
+   "area": "Chania; Heraklion is the city in the data",
+   "summary": "The sunniest part of Greece, with one of the world's healthiest diets. Samaria Gorge. Chania is the most liveable town; Heraklion has direct European flights all year.",
+   "months": [
+    "fair",
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "avoid",
+    "avoid",
+    "best",
+    "best",
+    "good",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      5,
+      6,
+      9,
+      10
+     ],
+     "kind": "best",
+     "reason": "warm, sea swimmable, trails open, fewer crowds"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "35-40C, meltemi wind, crowds, peak prices"
+    },
+    {
+     "months": [
+      4,
+      11
+     ],
+     "kind": "good",
+     "reason": "mild; wildflowers in Apr; some places shut Nov"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2,
+      3
+     ],
+     "kind": "fair",
+     "reason": "mild but rainy; many seasonal businesses closed"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 10,
+    "maxWeeks": 26,
+    "why": "Good long base; off-season is quiet but liveable in Chania"
+   },
+   "cost": {
+    "min": 1200,
+    "max": 1800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Greece Digital Nomad visa: ~EUR3,500/mo net, 12 months renewable (max ~24 months); from 5 Feb 2026 apply at a Greek consulate (in-country applications abolished); Schengen 90/180 otherwise",
+    "source": "https://greekcitytimes.com/2026/11/07/greece-digital-nomad-rules-2026-tourist-entry/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 4,
+     "name": "Orthodox Easter",
+     "kind": "festival"
+    },
+    {
+     "month": 9,
+     "name": "Warm sea, harvest",
+     "kind": "season"
+    },
+    {
+     "month": 7,
+     "name": "Meltemi wind and heat peak",
+     "kind": "season"
+    }
+   ],
+   "airport": "CHQ",
+   "corrections": "Application route changed 5 Feb 2026 (Law 5275/2026): consulate-only. Tax: 50% income tax exemption for up to 7 yrs is a separate regime with conditions (one source): verify."
+  },
+  {
+   "id": "puglia",
+   "name": "South Puglia (Polignano a Mare / Alberobello)",
+   "country": "Italy",
+   "region": "Southern Europe & Mediterranean",
+   "role": "base",
+   "cityIds": [
+    "bari-italy"
+   ],
+   "area": "Polignano a Mare and Alberobello; Bari is the city in the data",
+   "summary": "Adriatic cliffs and trulli: Amalfi quality at half the price, Bari airport 30 minutes away. Italian bureaucracy is the friction; everything else is exceptional.",
+   "months": [
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "avoid",
+    "avoid",
+    "best",
+    "good",
+    "fair",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      5,
+      6,
+      9
+     ],
+     "kind": "best",
+     "reason": "warm, sea swimmable, long evenings"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "hot, packed, double prices, Ferragosto"
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "avoid",
+     "reason": "coastal towns largely shut, cold and rainy"
+    },
+    {
+     "months": [
+      4,
+      10
+     ],
+     "kind": "good",
+     "reason": "pleasant, some beach clubs closed"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 13,
+    "why": "Seasonal; Bari airport hub; Italy DNV newly operational"
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2200,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Italy Digital Nomad visa (decree 2 Mar 2026; consulates from 18 Mar 2026): income ~EUR28,000/yr (sources EUR25,500-28,000), 1 yr renewable; Schengen 90/180 otherwise",
+    "source": "https://remoteworkeurope.eu/insights/italy-digital-nomad-visa-complete-guide-2026/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 8,
+     "name": "Ferragosto peak",
+     "kind": "season"
+    },
+    {
+     "month": 7,
+     "name": "Locorotondo/Valle d'Itria summer festivals",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Olive harvest",
+     "kind": "nature"
+    }
+   ],
+   "airport": "BRI",
+   "corrections": "Italy's DNV was only operational from Mar 2026; income figure varies by consulate. Month ratings leave Mar as fair (cold sea, shut beach clubs)."
+  },
+  {
+   "id": "istanbul",
+   "name": "Istanbul",
+   "country": "Turkey",
+   "region": "Southern Europe & Mediterranean",
+   "role": "hub",
+   "cityIds": [
+    "istanbul-turkey"
+   ],
+   "summary": "The best Asia–Europe routing hub (OAG's second-largest megahub). A few nights between legs, not a base.",
+   "months": [
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "good",
+    "fair",
+    "fair",
+    "best",
+    "best",
+    "good",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5,
+      9,
+      10
+     ],
+     "kind": "best",
+     "reason": "mild, dry; best light and walkability"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "fair",
+     "reason": "hot and humid, crowded old city"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "cold, damp, grey; cheap flights"
+    }
+   ],
+   "stay": {
+    "minWeeks": 0.3,
+    "idealWeeks": 0.6,
+    "maxWeeks": 1.5,
+    "why": "Asia-Europe routing hub; 1-4 nights or a long layover, not a base"
+   },
+   "cost": {
+    "min": 1200,
+    "max": 2200,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Estimate; owner gave no band and costs shift with lira"
+   },
+   "entry": {
+    "summary": "Visa-free up to 90 days in 180 for most EU/US/UK passports; e-visa for others. Turkish Airlines stopover/layover programmes (check eligibility and conditions)",
+    "source": "https://www.mfa.gov.tr/visa-information-for-foreigners.en.mfa",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 4,
+     "name": "Tulip Festival",
+     "kind": "nature"
+    },
+    {
+     "month": 9,
+     "name": "Autumn shoulder, calm",
+     "kind": "season"
+    }
+   ],
+   "airport": "IST",
+   "corrections": "Owner gave no cost band: EUR1,200-2,200 is an estimate and lira inflation makes it volatile. Turkey remains a major Asia-Europe hub via IST; verify THY stopover offers on turkishairlines.com."
+  },
+  {
+   "id": "medellin",
+   "name": "Medellin",
+   "country": "Colombia",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "medell-n-colombia"
+   ],
+   "area": "El Poblado for nomad density, Laureles for a local feel",
+   "summary": "Eternal spring at 1,500 m. Two rainy seasons; be there in the dry windows. The Flower Festival in August is the city's defining event.",
+   "months": [
+    "best",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "good",
+    "best",
+    "good",
+    "avoid",
+    "avoid",
+    "fair",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      4,
+      5,
+      9,
+      10
+     ],
+     "kind": "avoid",
+     "reason": "long rains, flooding, landslide risk"
+    },
+    {
+     "months": [
+      2
+     ],
+     "kind": "good",
+     "reason": "driest; Alumbrados lights Dec-Jan crowd prices"
+    },
+    {
+     "months": [
+      3
+     ],
+     "kind": "fair",
+     "reason": "air-quality episodes in the valley (PM2.5)"
+    },
+    {
+     "months": [
+      7
+     ],
+     "kind": "best",
+     "reason": "drier, breezy, comfortable"
+    },
+    {
+     "months": [
+      8
+     ],
+     "kind": "good",
+     "reason": "Feria de las Flores: fun but crowded, higher prices"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Year-round 22-28C; Visa V gives 2 years"
+   },
+   "cost": {
+    "min": 1000,
+    "max": 2000,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Digital Nomad Visa (V): up to 2 yrs, income >= 3x monthly minimum wage (~COP5.25M, ~USD1,400-1,700) for 3 months, foreign clients/employer; tourist entry 90 days extendable to 180/yr",
+    "source": "https://www.riotimesonline.com/colombia-digital-nomad-visa-2026/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 8,
+     "name": "Feria de las Flores",
+     "kind": "festival"
+    },
+    {
+     "month": 12,
+     "name": "Alumbrados (Christmas lights)",
+     "kind": "festival"
+    },
+    {
+     "month": 4,
+     "name": "Rainy season peak",
+     "kind": "season"
+    }
+   ],
+   "airport": "MDE",
+   "corrections": "Owner's best/avoid months match Medellin's two rainy peaks (Mar-May, Sep-Nov). Add air-quality episodes Feb-Mar (PM2.5 alerts). Jul is best; Jan-Feb good. USD equivalent of 3x SMMLV varies by source (about USD1,400-1,700). Jul-Aug dry spell is milder but Aug has Feria prices."
+  },
+  {
+   "id": "buenos-aires",
+   "name": "Buenos Aires",
+   "country": "Argentina",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "buenos-aires-argentina"
+   ],
+   "summary": "European architecture, steak and wine, tango and a thriving arts scene at a fraction of European prices. Jacarandas bloom in spring (October–November). Avoid the sweltering summer.",
+   "months": [
+    "avoid",
+    "avoid",
+    "good",
+    "best",
+    "best",
+    "fair",
+    "fair",
+    "fair",
+    "best",
+    "best",
+    "best",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "avoid",
+     "reason": "hot and very humid (30-35C), power cuts, locals away"
+    },
+    {
+     "months": [
+      4,
+      5
+     ],
+     "kind": "best",
+     "reason": "autumn: mild, dry-ish, cultural season"
+    },
+    {
+     "months": [
+      9,
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "spring: jacarandas bloom (Nov), mild"
+    },
+    {
+     "months": [
+      6,
+      7,
+      8
+     ],
+     "kind": "fair",
+     "reason": "cool (5-15C), damp, poorly heated flats"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 16,
+    "why": "Great value; prices swing with exchange rate; avoid Dec-Feb"
+   },
+   "cost": {
+    "min": 800,
+    "max": 1800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Digital Nomad visa (Disposicion DNM 758/2022): 180 days, renewable once for 180; sources cite ~USD2,500/mo but no official numeric minimum; no Argentine clients allowed; visa-free 90 days for many nationalities",
+    "source": "https://www.argentinavisalaw.com/visas/digital-nomad",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 3,
+     "name": "Tango Festival & World Cup (Aug)",
+     "kind": "festival"
+    },
+    {
+     "month": 11,
+     "name": "Jacaranda bloom",
+     "kind": "nature"
+    },
+    {
+     "month": 10,
+     "name": "Spring weather peak",
+     "kind": "season"
+    }
+   ],
+   "airport": "EZE",
+   "corrections": "Owner's 'best Apr-Oct' is too wide: Jun-Aug is cold and damp; best are Mar-May and Sep-Nov. Income minimum unverified (USD1,500-2,500 cited). Costs swing with the peso: re-check before booking."
+  },
+  {
+   "id": "azores",
+   "name": "Azores (Sao Miguel / Ponta Delgada)",
+   "country": "Portugal",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "ponta-delgada-portugal"
+   ],
+   "area": "São Miguel",
+   "summary": "Europe's most dramatic island nature: crater lakes, hot springs, whales, black sand. Driest in July and August. Very little rental supply: book 8 to 10 weeks ahead.",
+   "months": [
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "avoid",
+    "avoid"
+   ],
+   "notes": [
+    {
+     "months": [
+      6,
+      7,
+      8,
+      9
+     ],
+     "kind": "best",
+     "reason": "warmest and driest; hydrangeas; boat/hike trips run"
+    },
+    {
+     "months": [
+      11,
+      12,
+      1,
+      2,
+      3
+     ],
+     "kind": "avoid",
+     "reason": "wet, windy, flight cancellations; many places shut"
+    },
+    {
+     "months": [
+      5,
+      10
+     ],
+     "kind": "good",
+     "reason": "mild, Whale season ongoing; Senhor Santo Cristo (May)"
+    },
+    {
+     "months": [
+      4
+     ],
+     "kind": "fair",
+     "reason": "changeable weather"
+    }
+   ],
+   "stay": {
+    "minWeeks": 2,
+    "idealWeeks": 4,
+    "maxWeeks": 13,
+    "why": "Small island; 2-4 weeks per trip is plenty; book 8-10 weeks ahead in summer"
+   },
+   "cost": {
+    "min": 1100,
+    "max": 1800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 7.5,
+    "health": 7.0,
+    "food": 7.5,
+    "cost": 8.5,
+    "connect": 5.5,
+    "safe": 9.5,
+    "qol": 8.5,
+    "overall": 7.6
+   },
+   "entry": {
+    "summary": "Portugal D8 remote-work visa: income >= EUR3,680/mo; Schengen 90/180 otherwise; Azores has no separate nomad visa",
+    "source": "https://www.imidaily.com/portugal-digital-nomad-visa/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 5,
+     "name": "Festas do Senhor Santo Cristo dos Milagres",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Hydrangea bloom (Jun-Aug)",
+     "kind": "nature"
+    },
+    {
+     "month": 4,
+     "name": "Whale-watching season opens (Apr-Oct)",
+     "kind": "nature"
+    }
+   ],
+   "airport": "PDL",
+   "leadWeeks": {
+    "min": 8,
+    "max": 10
+   },
+   "corrections": "Jul-Aug are best for weather but also peak prices and fewest rental options: book early. 'Viable Apr-Oct' confirmed."
+  },
+  {
+   "id": "cape-town",
+   "name": "Cape Town",
+   "country": "South Africa",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "cape-town-south-africa"
+   ],
+   "summary": "Table Mountain, the Winelands and the best restaurant scene in Africa. Its summer lines up with the European winter. Safety needs protocol: Uber, known areas, nothing on show.",
+   "months": [
+    "good",
+    "best",
+    "best",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "good",
+    "good",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      2,
+      3
+     ],
+     "kind": "best",
+     "reason": "hot, dry, calm; best beach and wine weather"
+    },
+    {
+     "months": [
+      6,
+      7
+     ],
+     "kind": "avoid",
+     "reason": "cold, wet cold fronts, short days"
+    },
+    {
+     "months": [
+      12,
+      1
+     ],
+     "kind": "good",
+     "reason": "peak summer; crowds and peak prices; Cape Doctor wind"
+    },
+    {
+     "months": [
+      9
+     ],
+     "kind": "good",
+     "reason": "wildflowers, whales (Hermanus) Jun-Nov"
+    },
+    {
+     "months": [
+      10
+     ],
+     "kind": "good",
+     "reason": "spring: warming, lower prices than summer"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Great base with Remote Work Visa; winter is rainy but cheaper"
+   },
+   "cost": {
+    "min": 1000,
+    "max": 2000,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "scores": {
+    "climate": 8.5,
+    "health": 6.5,
+    "food": 8.0,
+    "cost": 8.0,
+    "connect": 7.0,
+    "safe": 4.5,
+    "qol": 8.0,
+    "overall": 7.2
+   },
+   "entry": {
+    "summary": "South Africa Remote Work (visitor) visa: income >= ~ZAR650,796/yr, valid up to 36 months, not a work permit; visa-free 90 days for many Western passports",
+    "source": "https://www.travelandtourworld.com/news/article/bkdw087bwgzc/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Cape Town Jazz / beach season peak",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "West Coast wildflowers & whale season",
+     "kind": "nature"
+    },
+    {
+     "month": 1,
+     "name": "Peak summer prices",
+     "kind": "season"
+    }
+   ],
+   "airport": "CPT",
+   "corrections": "Owner's best (Jan-Mar, Sep-Oct) fine, but winter Jun-Aug is cold and wet, so 'year-round viable' is optimistic. Older sources cite ZAR1M threshold; 2026 sources give ~ZAR650,796. Check safety and load-shedding."
+  },
+  {
+   "id": "cape-verde",
+   "name": "Cape Verde (Sal / Sao Vicente-Mindelo)",
+   "country": "Cape Verde",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "mindelo-cabo-verde",
+    "espargos-cape-verde"
+   ],
+   "area": "São Vicente (Mindelo) for culture, Sal (Espargos) for kitesurfing",
+   "summary": "Mid-Atlantic, African and Portuguese culture, a kitesurfing capital 3.5 hours from Lisbon. Underrated and cheap.",
+   "months": [
+    "good",
+    "best",
+    "good",
+    "best",
+    "best",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "good"
+   ],
+   "notes": [
+    {
+     "months": [
+      8,
+      9
+     ],
+     "kind": "avoid",
+     "reason": "rainy season: hot (30C), very humid, storms"
+    },
+    {
+     "months": [
+      12,
+      1
+     ],
+     "kind": "good",
+     "reason": "dry, strong NE trades (kite/windsurf); dusty haze possible"
+    },
+    {
+     "months": [
+      2
+     ],
+     "kind": "best",
+     "reason": "Mindelo Carnaval, dry and warm"
+    },
+    {
+     "months": [
+      4,
+      5
+     ],
+     "kind": "best",
+     "reason": "dry, warm, calmer winds"
+    },
+    {
+     "months": [
+      7
+     ],
+     "kind": "fair",
+     "reason": "hot and humid, rains begin"
+    }
+   ],
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 26,
+    "why": "Sal is small; Mindelo has culture; 1-2 months each"
+   },
+   "cost": {
+    "min": 900,
+    "max": 1400,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "asymmetry": 7,
+   "entry": {
+    "summary": "Remote Working Programme: up to 6 months, renewable to 12; income evidence (sources vary: EUR1,500 savings vs ~USD2,424/mo); apply online. Entry otherwise requires pre-arrival EASE registration and airport security fee",
+    "source": "https://www.fragomen.com/countries/cape-verde.html",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Mindelo Carnaval",
+     "kind": "festival"
+    },
+    {
+     "month": 1,
+     "name": "Peak wind season for kite/windsurf (Dec-Mar)",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "Rainy season peak",
+     "kind": "season"
+    }
+   ],
+   "airport": "SID",
+   "corrections": "Owner wrote Aug-Sep 'highest winds': wrong. Winds peak Dec-Mar; Aug-Oct is the rainy, hot, humid season (peak Sep). Dry season roughly Nov-Jun. Income threshold sources conflict."
+  },
+  {
+   "id": "costa-rica-nicoya",
+   "name": "Nicoya Peninsula",
+   "country": "Costa Rica",
+   "region": "Latin America & Atlantic",
+   "role": "base",
+   "cityIds": [
+    "nicoya-costa-rica",
+    "liberia-costa-rica"
+   ],
+   "area": "Nicoya Peninsula; Liberia is the airport",
+   "summary": "A Blue Zone on the Pacific, with Central America's best political stability and healthcare. World-class biodiversity.",
+   "months": [
+    "best",
+    "best",
+    "best",
+    "good",
+    "fair",
+    "fair",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "fair",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      12,
+      1,
+      2,
+      3
+     ],
+     "kind": "best",
+     "reason": "dry, sunny, calm sea; peak season prices"
+    },
+    {
+     "months": [
+      9,
+      10
+     ],
+     "kind": "avoid",
+     "reason": "heaviest rain, flooded roads, shut businesses"
+    },
+    {
+     "months": [
+      7
+     ],
+     "kind": "good",
+     "reason": "'veranillo' mid-summer dry spell"
+    },
+    {
+     "months": [
+      5,
+      6,
+      8
+     ],
+     "kind": "fair",
+     "reason": "green season: morning sun, afternoon storms"
+    }
+   ],
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Visa gives 1 yr + 1 yr extension; dry season is peak"
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2200,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Digital Nomad (Rentista a distancia) visa: income >= USD3,000/mo (USD4,000 family), 12 months, extendable 12 months (extension linked to ~180 days spent in CR); tourist entry up to 90 days",
+    "source": "https://www.riotimesonline.com/costa-rica-digital-nomad-visa-2026/",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 1,
+     "name": "Dry season peak",
+     "kind": "season"
+    },
+    {
+     "month": 10,
+     "name": "Peak rains, many closures",
+     "kind": "season"
+    },
+    {
+     "month": 7,
+     "name": "Veranillo dry spell",
+     "kind": "season"
+    }
+   ],
+   "airport": "LIR",
+   "corrections": "Extension and 180-day requirement are inconsistently described: verify on Migracion/TramiteYa. Rentista alternative USD2,500/mo with path to residence. Month judgement agrees with owner; Apr is hot (35C) and Jul has a brief dry spell."
+  },
+  {
+   "id": "new-zealand-south-island",
+   "name": "New Zealand South Island (Queenstown/Wanaka)",
+   "country": "New Zealand",
+   "region": "Pacific & Oceania",
+   "role": "destination",
+   "cityIds": [
+    "queenstown-new-zealand"
+   ],
+   "area": "Queenstown, Wanaka, Milford Sound, Fiordland; a car is essential",
+   "summary": "Southern summer, while Europe is in winter. Can be bolted onto the South-East Asia leg via Bali, Sydney and Queenstown.",
+   "months": [
+    "best",
+    "best",
+    "good",
+    "good",
+    "fair",
+    "avoid",
+    "avoid",
+    "avoid",
+    "fair",
+    "good",
+    "good",
+    "best"
+   ],
+   "notes": [
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "best",
+     "reason": "long days, warm, outdoor season; peak prices"
+    },
+    {
+     "months": [
+      3,
+      4
+     ],
+     "kind": "good",
+     "reason": "autumn colours, quieter, still warm"
+    },
+    {
+     "months": [
+      6,
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "cold, snow, expensive ski-season prices"
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "good",
+     "reason": "spring: lupins, longer days, fewer crowds"
+    }
+   ],
+   "stay": {
+    "minWeeks": 3,
+    "idealWeeks": 8,
+    "maxWeeks": 13,
+    "why": "Visa-waiver stay is capped at 3 months (6 for UK); high cost"
+   },
+   "cost": {
+    "min": 2800,
+    "max": 3800,
+    "currency": "EUR",
+    "per": "month"
+   },
+   "entry": {
+    "summary": "Visitor visa / NZeTA: remote work for overseas employer allowed since 27 Jan 2025 (not for NZ clients, incidental to travel); NZeTA stays 3 months (UK 6); IVL tourist levy applies; no dedicated nomad visa",
+    "source": "https://www.immigration.govt.nz/visit/checking-or-changing-the-conditions-of-your-visitor-visa-or-nzeta/working-remotely-in-new-zealand-on-a-visitor-visa",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 12,
+     "name": "Lupin bloom, long days",
+     "kind": "nature"
+    },
+    {
+     "month": 4,
+     "name": "Arrowtown Autumn Festival (autumn colours)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Ski season (Jun-Sep) price spike",
+     "kind": "season"
+    }
+   ],
+   "airport": "ZQN",
+   "corrections": "Remote work on visitor visa/NZeTA confirmed legal (Jan 2025 rule); tax: >92 days in 12 months may trigger NZ tax obligations. NZ tax rules for visitors changed 1 Apr 2026: check. Winter 'avoid' is for slow living; skiers will disagree."
+  }
+ ]
+}
