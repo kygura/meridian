@@ -48,6 +48,23 @@ export interface LocaleEvent {
   kind: "nature" | "festival" | "season";
 }
 
+export type SeasonKind = "peak" | "shoulder" | "avoid";
+export type Tourism = "low" | "shoulder" | "high";
+
+/**
+ * One of the owner's dated windows from their Notion Travel Seasons: a stretch of the year
+ * (MM-DD to MM-DD, wrapping the new year when it ends before it starts) with a condition
+ * and a tourist season.
+ */
+export interface SeasonWindow {
+  kind: SeasonKind;
+  tourism?: Tourism;
+  from: string;
+  to: string;
+  title: string;
+  notes?: string;
+}
+
 /** The owner's own 1–10 scores from their research, where the research has them. */
 export interface LocaleScores {
   climate: number;
@@ -74,6 +91,8 @@ export interface Locale {
   /** Twelve researched ratings, January first. */
   months: ResearchLevel[];
   notes: LocaleNote[];
+  /** The owner's Travel Seasons windows. They set a month before the research does. */
+  seasons?: SeasonWindow[];
   stay: { minWeeks: number; idealWeeks: number; maxWeeks: number; why: string };
   /** All-in cost for one person, as researched. `per: "trip"` for a destination priced per visit. */
   cost?: { min: number; max: number; currency: string; per: "month" | "trip"; note?: string };
@@ -129,7 +148,9 @@ export interface LocaleMonth {
   /** 1–12. */
   month: number;
   level: FitLevel;
-  source: "personal" | "research" | "comfort" | "none";
+  source: "personal" | "seasons" | "research" | "comfort" | "none";
+  /** The tourist season of the owner's window covering most of the month. */
+  tourism?: Tourism;
   why: string;
   /** The anchor city's Comfort Index for the month, when known. */
   comfort?: number;
@@ -142,6 +163,100 @@ export function noteFor(l: Pick<Locale, "notes" | "months">, month: number): Loc
   const hits = l.notes.filter((n) => n.months.includes(month));
   const level = l.months[month - 1];
   return hits.find((n) => n.kind === level) ?? hits[0];
+}
+
+// ── Travel Seasons windows ───────────────────────────────────────────
+
+/** Days in each month of a common year: windows are read without a year. */
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const dayOfYear = (mmdd: string): number => {
+  const [m, d] = mmdd.split("-").map(Number);
+  return MONTH_DAYS.slice(0, m - 1).reduce((a, b) => a + b, 0) + Math.min(d, MONTH_DAYS[m - 1]) - 1;
+};
+
+/** The window's days of the year (0–364), as one or two [start, end) ranges. */
+export function windowRanges(w: Pick<SeasonWindow, "from" | "to">): [number, number][] {
+  const a = dayOfYear(w.from);
+  const b = dayOfYear(w.to) + 1;
+  return a < b ? [[a, b]] : [[a, 365], [0, b]];
+}
+
+/** Days of a month (1–12) that a window covers. */
+export function daysInMonth(w: Pick<SeasonWindow, "from" | "to">, month: number): number {
+  const ms = MONTH_DAYS.slice(0, month - 1).reduce((x, y) => x + y, 0);
+  const me = ms + MONTH_DAYS[month - 1];
+  return windowRanges(w).reduce((n, [a, b]) => n + Math.max(0, Math.min(b, me) - Math.max(a, ms)), 0);
+}
+
+const SEASON_ORDER: SeasonKind[] = ["avoid", "peak", "shoulder"];
+
+/** The window covering most of a month, when it covers at least half of it; avoid wins ties. */
+export function seasonFor(l: Pick<Locale, "seasons">, month: number): SeasonWindow | undefined {
+  let best: SeasonWindow | undefined;
+  let bestDays = 0;
+  for (const w of l.seasons ?? []) {
+    const n = daysInMonth(w, month);
+    if (n > bestDays || (n === bestDays && best && SEASON_ORDER.indexOf(w.kind) < SEASON_ORDER.indexOf(best.kind))) {
+      best = w;
+      bestDays = n;
+    }
+  }
+  return bestDays > 0 && bestDays * 2 >= MONTH_DAYS[month - 1] ? best : undefined;
+}
+
+const SEASON_FIT: Record<SeasonKind, FitLevel> = { peak: "great", shoulder: "fair", avoid: "avoid" };
+export const SEASON_LABEL: Record<SeasonKind, string> = { peak: "Peak", shoulder: "Shoulder", avoid: "Avoid" };
+export const TOURISM_LABEL: Record<Tourism, string> = { low: "Low season", shoulder: "Shoulder season", high: "High season" };
+
+export interface Segment {
+  /** Fractions of the twelve months shown, 0–1. */
+  left: number;
+  width: number;
+}
+
+/**
+ * Where a window falls on a calendar of twelve months starting at `startMonth` (1–12): one
+ * or two segments, as fractions of the twelve months. Every month has the same width, so a
+ * day's position is its month's place plus how far into the month it is.
+ */
+export function windowSegments(w: Pick<SeasonWindow, "from" | "to">, startMonth: number): Segment[] {
+  const S = dayOfYear(`${String(startMonth).padStart(2, "0")}-01`);
+  /** Calendar position, in months, of a day `rel` days after the calendar starts (0–365). */
+  const pos = (rel: number): number => {
+    let m = startMonth - 1;
+    let k = 0;
+    while (k < 12 && rel >= MONTH_DAYS[m]) {
+      rel -= MONTH_DAYS[m];
+      m = (m + 1) % 12;
+      k++;
+    }
+    return k + (k < 12 ? rel / MONTH_DAYS[m] : 0);
+  };
+  const out: Segment[] = [];
+  for (const [a, b] of windowRanges(w)) {
+    // Split at the calendar's start so every piece runs forward on it.
+    const pieces: [number, number][] = a < S && b > S ? [[a, S], [S, b]] : [[a, b]];
+    for (const [x, y] of pieces) {
+      const rx = (x - S + 365) % 365;
+      const ry = rx + (y - x);
+      out.push({ left: pos(rx) / 12, width: (pos(ry) - pos(rx)) / 12 });
+    }
+  }
+  // Join pieces that touch (a window wrapping December into January on a January calendar).
+  const sorted = out.filter((g) => g.width > 1e-9).sort((p, q) => p.left - q.left);
+  const joined: Segment[] = [];
+  for (const g of sorted) {
+    const last = joined[joined.length - 1];
+    if (last && Math.abs(last.left + last.width - g.left) < 1e-9) last.width += g.width;
+    else joined.push({ ...g });
+  }
+  return joined;
+}
+
+/** A month span (whole months) on the same calendar. */
+export function spanSegments(span: MonthSpan, startMonth: number): Segment[] {
+  const endDay = MONTH_DAYS[span.end - 1];
+  return windowSegments({ from: `${String(span.start).padStart(2, "0")}-01`, to: `${String(span.end).padStart(2, "0")}-${endDay}` }, startMonth);
 }
 
 export function localeMonth(l: Locale, month: number, profile?: PlaceProfile, comfort?: ComfortLookup): LocaleMonth {
@@ -158,7 +273,13 @@ export function localeMonth(l: Locale, month: number, profile?: PlaceProfile, co
   if (w) {
     const level: FitLevel = w.kind === "peak" ? "great" : w.kind === "shoulder" ? "fair" : "avoid";
     const label = w.kind === "peak" ? "Your peak" : w.kind === "shoulder" ? "Your shoulder" : "You avoid";
-    return withComfort({ month, level, source: "personal", why: w.reason ? `${label}: ${w.reason}` : label });
+    const t = seasonFor(l, month)?.tourism;
+    return withComfort({ month, level, source: "personal", why: w.reason ? `${label}: ${w.reason}` : label, ...(t ? { tourism: t } : {}) });
+  }
+  const season = seasonFor(l, month);
+  const tourism = season?.tourism;
+  if (season) {
+    return withComfort({ month, level: SEASON_FIT[season.kind], source: "seasons", why: `Your seasons: ${season.title}`, ...(tourism ? { tourism } : {}) });
   }
   const r = l.months[month - 1];
   if (r) {
@@ -224,7 +345,7 @@ export function monthRuns(ok: (month: number) => boolean): number[][] {
  * months, placed on the stretch of the run with the most great months; its weeks are the
  * locale's range cut to the run and to `capDays`, the passport's day limit, when given.
  */
-export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null): StayWindow[] {
+export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number | null, fromMonth = 1): StayWindow[] {
   const level = (m: number) => months[m - 1]?.level ?? "unknown";
   let fallback = false;
   let runs = monthRuns((m) => level(m) === "great" || level(m) === "good");
@@ -240,13 +361,18 @@ export function stayWindows(l: Locale, months: LocaleMonth[], capDays?: number |
     const ideal = Math.max(min, Math.min(l.stay.idealWeeks, max));
     const stayLen = Math.min(run.length, Math.max(1, Math.round(ideal / WEEKS_PER_MONTH)));
     // Slide a stayLen-month frame along the run; keep the one with most great months (earliest on ties).
+    // Ties go to the frame with fewer high-season months (crowds and prices), then to the one starting soonest from `fromMonth`.
     let best = 0;
-    let bestGreat = -1;
+    let bestScore = -Infinity;
     for (let i = 0; i + stayLen <= run.length; i++) {
-      const g = run.slice(i, i + stayLen).filter((m) => level(m) === "great").length;
-      if (g > bestGreat) {
+      const frame = run.slice(i, i + stayLen);
+      const score =
+        frame.filter((m) => level(m) === "great").length * 100 -
+        frame.filter((m) => months[m - 1]?.tourism === "high").length * 10 -
+        ((frame[0] - fromMonth + 12) % 12) / 12;
+      if (score > bestScore) {
         best = i;
-        bestGreat = g;
+        bestScore = score;
       }
     }
     const frame = run.slice(best, best + stayLen);

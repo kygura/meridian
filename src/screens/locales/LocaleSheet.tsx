@@ -7,7 +7,7 @@ import { navigate } from "../../lib/router";
 import { FIT_LABEL, placeFromCity } from "../../lib/rotation";
 import { monthName, spanLabel } from "../../lib/season";
 import { METRIC_BY_ID, type MetricIndex } from "../../lib/cityMetrics";
-import { RESEARCH_LABEL, anchorOf, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
+import { RESEARCH_LABEL, SEASON_LABEL, anchorOf, stayFromLocale, weeksText, windowText, type LocaleScores } from "../../lib/locales";
 import { todayIso } from "../../lib/rotation";
 import { useRotation } from "../rotation/useRotation";
 import { LOCALE_METRICS, type LocaleView } from "./useLocaleData";
@@ -40,6 +40,9 @@ const ENTRY_TEXT: Record<string, string> = {
   "no-admission": "No entry",
   unknown: "No data",
 };
+
+/** "02-14" → "14 Feb". */
+const dayText = (mmdd: string) => `${Number(mmdd.slice(3))} ${monthName(Number(mmdd.slice(0, 2)))}`;
 
 export interface LocaleSheetProps {
   view: LocaleView;
@@ -83,13 +86,14 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
         <p className="loc-sheet-role">{ROLE_TEXT[locale.role]}</p>
         <p>{locale.summary}</p>
 
-        <SectionHeader level={3} title="Months" meta={view.profile ? "Your windows override the research" : "Research first, Comfort Index where silent"} />
+        <SectionHeader level={3} title="Months" meta={view.profile ? "Your rotation windows, then your seasons, then research" : "Your seasons first, then research, then the Comfort Index"} />
         <div className="loc-months" role="list">
           {year.map((m) => (
             <div key={m.month} className="loc-month" role="listitem">
               <span className={cx("loc-month-chip", `rotation-fit--${m.level}`, `rotation-fit--${m.level}`)}>{monthName(m.month)}</span>
               <span className="loc-month-why">
                 <strong>{m.source === "research" ? RESEARCH_LABEL[locale.months[m.month - 1]] : FIT_LABEL[m.level]}</strong>
+                {m.tourism && <span className="loc-muted"> · tourism: {m.tourism}</span>}
                 {m.why && m.why !== RESEARCH_LABEL[locale.months[m.month - 1]] ? ` · ${m.why}` : ""}
                 {m.source === "personal" && <em> (yours)</em>}
               </span>
@@ -99,6 +103,28 @@ export function LocaleSheet({ view, metrics, unlocked, onClose }: LocaleSheetPro
             </div>
           ))}
         </div>
+
+        {locale.seasons?.length ? (
+          <>
+            <SectionHeader level={3} title="Your Travel Seasons" meta="From your Notion database" />
+            <ul className="loc-seasons">
+              {locale.seasons.map((w, i) => (
+                <li key={i}>
+                  <span className={cx("loc-season", `loc-season--${w.kind}`, "loc-season--static")}>{SEASON_LABEL[w.kind]}</span>
+                  <div>
+                    <strong>{w.title}</strong>
+                    <span className="loc-muted">
+                      {" "}
+                      · {dayText(w.from)} – {dayText(w.to)}
+                      {w.tourism ? ` · tourism: ${w.tourism}` : ""}
+                    </span>
+                    {w.notes && <p className="loc-muted">{w.notes}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
 
         <SectionHeader level={3} title="When to stay" meta={`Research range ${weeksText({ min: locale.stay.minWeeks, max: locale.stay.maxWeeks })}`} />
         <p className="loc-muted">{locale.stay.why}</p>

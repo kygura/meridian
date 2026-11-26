@@ -428,6 +428,12 @@ a stay range, cost, the owner's scores, the entry route and events (`data/locale
 not a commitment; a Rotation Stay is the commitment.
 _Avoid_: destination (alone), location, place (see City, Open Place)
 
+**Travel Seasons**:
+The owner's dated windows for a locale (peak, shoulder or avoid, with a tourist season), from their
+Notion database of that name. They set a locale's month before its research does; the rotation's
+Personal Windows still come first.
+_Avoid_: Season (that's a Trip's months)
+
 **Hub** (of a Locale):
 A locale held for a few days between bases, such as Bangkok or Istanbul. Becomes a Pass-through.
 

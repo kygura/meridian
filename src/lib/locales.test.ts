@@ -7,7 +7,11 @@ import {
   localeById,
   localeMonth,
   localeYear,
+  daysInMonth,
   monthRuns,
+  seasonFor,
+  spanSegments,
+  windowSegments,
   stayFromLocale,
   stayWindows,
   weeksText,
@@ -155,5 +159,78 @@ describe("stayFromLocale", () => {
     const s = stayFromLocale(l, { cityId: "bangkok-thailand", name: "Bangkok", lat: 13.75, lng: 100.5 }, w, "2026-11-26");
     expect(s.kind).toBe("pass-through");
     expect(s.maxNights!).toBeLessThanOrEqual(11);
+  });
+});
+
+describe("Travel Seasons windows", () => {
+  const l = make("gaaafffffgbb", {
+    seasons: [
+      { kind: "peak", tourism: "high", from: "11-01", to: "02-14", title: "Dry peak" },
+      { kind: "avoid", tourism: "low", from: "02-15", to: "04-30", title: "Burning season" },
+    ],
+  });
+
+  it("counts a window's days in a month, wrapping the new year", () => {
+    expect(daysInMonth({ from: "11-01", to: "02-14" }, 12)).toBe(31);
+    expect(daysInMonth({ from: "11-01", to: "02-14" }, 2)).toBe(14);
+    expect(daysInMonth({ from: "02-15", to: "04-30" }, 2)).toBe(14);
+    expect(daysInMonth({ from: "03-25", to: "04-10" }, 4)).toBe(10);
+  });
+
+  it("sets a month when a window covers half of it, avoid winning ties", () => {
+    expect(seasonFor(l, 1)?.title).toBe("Dry peak");
+    expect(seasonFor(l, 2)?.title).toBe("Burning season");
+    expect(seasonFor(l, 6)).toBeUndefined();
+  });
+
+  it("reads the windows before the research and keeps their tourist season", () => {
+    expect(localeMonth(l, 1)).toMatchObject({ level: "great", source: "seasons", tourism: "high" });
+    expect(localeMonth(l, 3)).toMatchObject({ level: "avoid", source: "seasons" });
+    expect(localeMonth(l, 6)).toMatchObject({ level: "fair", source: "research" });
+  });
+
+  it("prefers the frame with fewer high-season months on a tie", () => {
+    const m = make("bbbbbbbbbbbb", {
+      stay: { minWeeks: 4, idealWeeks: 4, maxWeeks: 8, why: "" },
+      seasons: [{ kind: "peak", tourism: "high", from: "01-01", to: "06-30", title: "Busy" }],
+    });
+    expect(stayWindows(m, localeYear(m))[0].stay).toEqual({ start: 7, end: 7 });
+  });
+});
+
+describe("soonest frame", () => {
+  it("breaks a tie by the frame starting soonest from the given month", () => {
+    const m = make("bbbbbbbbbbbb", { stay: { minWeeks: 4, idealWeeks: 4, maxWeeks: 8, why: "" } });
+    expect(stayWindows(m, localeYear(m), null, 11)[0].stay).toEqual({ start: 11, end: 11 });
+    expect(stayWindows(m, localeYear(m))[0].stay).toEqual({ start: 1, end: 1 });
+  });
+});
+
+describe("windowSegments", () => {
+  const close = (got: { left: number; width: number }[], want: [number, number][]) => {
+    expect(got).toHaveLength(want.length);
+    got.forEach((g, i) => {
+      expect(g.left * 12).toBeCloseTo(want[i][0], 3);
+      expect(g.width * 12).toBeCloseTo(want[i][1], 3);
+    });
+  };
+
+  it("places a window in months from the calendar's start", () => {
+    close(windowSegments({ from: "03-01", to: "05-31" }, 1), [[2, 3]]);
+    close(windowSegments({ from: "03-01", to: "05-31" }, 11), [[4, 3]]);
+  });
+
+  it("splits a window that crosses the calendar's start", () => {
+    // Nov 1 – Feb 14 on a calendar starting in December: Dec–mid-Feb first, then November at the end.
+    close(windowSegments({ from: "11-01", to: "02-14" }, 12), [[0, 2.5], [11, 1]]);
+  });
+
+  it("keeps a wrapping window whole when the calendar starts in January", () => {
+    close(windowSegments({ from: "11-01", to: "02-14" }, 1), [[0, 1.5], [10, 2]]);
+    close(windowSegments({ from: "01-01", to: "12-31" }, 7), [[0, 12]]);
+  });
+
+  it("draws a month span as whole months", () => {
+    close(spanSegments({ start: 11, end: 1 }, 11), [[0, 3]]);
   });
 });

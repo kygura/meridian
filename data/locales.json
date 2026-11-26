@@ -3,10 +3,11 @@
  "checked": "2026-11-26",
  "sources": [
   "Owner's Notion research (Numbeo 2026, CEOWORLD 2025, OAG Megahubs 2025, TasteAtlas 25/26, EIU, Global Peace Index)",
+  "Owner's Notion Travel Seasons (dated peak, shoulder and avoid windows with tourist season)",
   "entry rules per locale, linked",
   "month ratings reviewed for climate, monsoon, typhoon and air"
  ],
- "method": "Month ratings: the owner's best/avoid months, reviewed against climate, monsoon, typhoon and air-quality seasons. Stay lengths: how long the place holds up as a base, cut later to the run of good months and the passport's day limit.",
+ "method": "Each month reads the owner's Travel Seasons windows first (a window covering at least half of the month sets it), then the reviewed research ratings. Stay lengths: how long the place holds up as a base, cut to the run of good months and the passport's day limit.",
  "regions": [
   "SE & East Asia",
   "Indian Subcontinent",
@@ -121,7 +122,33 @@
     }
    ],
    "airport": "CNX",
-   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident."
+   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "02-14",
+     "title": "Dry peak",
+     "notes": "Nov–mid-Feb. 18–28°C, clear skies. Leave by 14 February."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "02-15",
+     "to": "04-30",
+     "title": "Burning season — avoid",
+     "notes": "Mid-Feb–Apr. Hazardous air from agricultural burning: a health risk, not discomfort."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "05-01",
+     "to": "10-31",
+     "title": "Wet season",
+     "notes": "May–Oct. Daily rain, lush, cooler than the coast, very cheap."
+    }
+   ]
   },
   {
    "id": "da-nang-hoi-an",
@@ -231,7 +258,33 @@
     }
    ],
    "airport": "DAD",
-   "corrections": "Best window is Feb-May rather than Dec-Mar: Dec-Jan are cool and wet in central Vietnam. Typhoon/flood risk runs Sep-Nov (Oct-Nov worst), confirming avoid. 'No DNV' confirmed; e-visa now 90 days for all."
+   "corrections": "Best window is Feb-May rather than Dec-Mar: Dec-Jan are cool and wet in central Vietnam. Typhoon/flood risk runs Sep-Nov (Oct-Nov worst), confirming avoid. 'No DNV' confirmed; e-visa now 90 days for all.",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "09-01",
+     "to": "11-15",
+     "title": "Typhoon season — avoid",
+     "notes": "Sep–mid-Nov. Active typhoons; Hoi An floods Oct–Nov."
+    },
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "12-01",
+     "to": "04-30",
+     "title": "Dry peak",
+     "notes": "Dec–Apr. 20–30°C, clear, calm sea. Peak prices Dec–Feb."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "05-01",
+     "to": "08-31",
+     "title": "Wet shoulder",
+     "notes": "May–Aug. Hot and humid but no typhoon risk. Quiet and cheap."
+    }
+   ]
   },
   {
    "id": "bali",
@@ -331,7 +384,25 @@
     }
    ],
    "airport": "DPS",
-   "corrections": "Months confirmed, but Mar/Nov are shoulder rather than clean. E33G threshold ~US$60k/yr and the 4-yr tax holiday does not apply automatically; enforcement inconsistent. Sources conflict on renewal (once vs up to 5x). Note Nyepi (Mar) shuts the island and airport for 24h."
+   "corrections": "Months confirmed, but Mar/Nov are shoulder rather than clean. E33G threshold ~US$60k/yr and the 4-yr tax holiday does not apply automatically; enforcement inconsistent. Sources conflict on renewal (once vs up to 5x). Note Nyepi (Mar) shuts the island and airport for 24h.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "04-01",
+     "to": "10-15",
+     "title": "Dry peak",
+     "notes": "Apr–mid-Oct. Jul–Aug crowds; June and September are the sweet spot."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "11-01",
+     "to": "03-31",
+     "title": "Wet season",
+     "notes": "Nov–Mar. Afternoon rain, clear mornings; Amed much drier. Prices drop 20–40%."
+    }
+   ]
   },
   {
    "id": "bangkok",
@@ -420,7 +491,25 @@
     }
    ],
    "airport": "BKK",
-   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident."
+   "corrections": "DTV terms confirmed (5 yr, 180 days/entry). 2026 guides say financial proof was tightened but give no figure; verify with e-Visa portal. Staying >180 days/yr can make you a Thai tax resident.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "03-31",
+     "title": "Dry peak",
+     "notes": "Nov–Mar. 25–32°C, the quality window for the city."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "04-01",
+     "to": "10-31",
+     "title": "Hot and wet",
+     "notes": "Apr–Oct. Songkran in April, heavy rain May–Oct. Use as short transit only."
+    }
+   ]
   },
   {
    "id": "taipei",
@@ -520,7 +609,25 @@
     }
    ],
    "airport": "TPE",
-   "corrections": "East coast is not separate row: treated here. Typhoon risk to Hualien/Taitung peaks Aug-Oct, so Oct (best) is east-coast marginal early. Hualien had a major quake in Apr 2024; check infrastructure. Gold Card amended act effective 1 Jan 2026 (secondary source); salary threshold unverified."
+   "corrections": "East coast is not separate row: treated here. Typhoon risk to Hualien/Taitung peaks Aug-Oct, so Oct (best) is east-coast marginal early. Hualien had a major quake in Apr 2024; check infrastructure. Gold Card amended act effective 1 Jan 2026 (secondary source); salary threshold unverified.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "10-01",
+     "to": "05-31",
+     "title": "Best window",
+     "notes": "Oct–May. 15–28°C, minimal typhoon risk. Cherry blossoms at Yangmingshan in March."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "07-01",
+     "to": "09-30",
+     "title": "Typhoon season",
+     "notes": "Jul–Sep. Typhoons plus extreme heat and humidity. Avoid for extended stays."
+    }
+   ]
   },
   {
    "id": "tokyo-kyoto",
@@ -624,7 +731,33 @@
     }
    ],
    "airport": "HND",
-   "corrections": "Fees reportedly raised from July 2026 (single-entry ~JPY15,000, unverified). Mar-Apr best months also mean peak prices; book accommodation early."
+   "corrections": "Fees reportedly raised from July 2026 (single-entry ~JPY15,000, unverified). Mar-Apr best months also mean peak prices; book accommodation early.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "10-20",
+     "to": "11-30",
+     "title": "Autumn koyo",
+     "notes": "Late Oct–Nov. Kyoto temples at their best, 12–20°C. Slightly less crowded than sakura."
+    },
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "03-25",
+     "to": "04-10",
+     "title": "Sakura",
+     "notes": "Late Mar–early Apr. Tokyo peaks about 1 April, Kyoto about 4 April. Book 10–12 weeks ahead."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "08-31",
+     "title": "Summer — avoid",
+     "notes": "Jul–Aug. 35°C+ and oppressive humidity, at high-season prices."
+    }
+   ]
   },
   {
    "id": "penang",
@@ -723,7 +856,25 @@
     }
    ],
    "airport": "PEN",
-   "corrections": "Reports of 4-year stays and USD36k tech threshold from Dec 2026 conflict with MDEC FAQ v10 (Aug 2026): treat as unverified. Late Sep-Nov is the wettest period, so 'year-round viable' holds but Oct-Nov is fair, not good."
+   "corrections": "Reports of 4-year stays and USD36k tech threshold from Dec 2026 conflict with MDEC FAQ v10 (Aug 2026): treat as unverified. Late Sep-Nov is the wettest period, so 'year-round viable' holds but Oct-Nov is fair, not good.",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "10-01",
+     "to": "12-14",
+     "title": "NE monsoon",
+     "notes": "Oct–mid-Dec. Flooding risk in some years."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "12-15",
+     "to": "09-30",
+     "title": "Dry peak (west coast)",
+     "notes": "Dec–Sep. George Town is sheltered from the NE monsoon."
+    }
+   ]
   },
   {
    "id": "goa",
@@ -823,7 +974,25 @@
     }
    ],
    "airport": "GOI",
-   "corrections": "Cheap but legally grey for remote work: e-Tourist visa does not authorise employment. 180-day-per-calendar-year cap for e-Tourist plus paper tourist visas. Fees for 30-day visa vary by season/source. New Mopa airport (GOX) exists alongside Dabolim (GOI)."
+   "corrections": "Cheap but legally grey for remote work: e-Tourist visa does not authorise employment. 180-day-per-calendar-year cap for e-Tourist plus paper tourist visas. Fees for 30-day visa vary by season/source. New Mopa airport (GOX) exists alongside Dabolim (GOI).",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "02-28",
+     "title": "Dry peak",
+     "notes": "Nov–Feb. The only viable window: 24–32°C, no rain, calm sea. Dec–Jan is party season; Feb quieter."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "06-01",
+     "to": "10-31",
+     "title": "Monsoon — avoid",
+     "notes": "Jun–Oct. Extreme monsoon, businesses closed, roads flood."
+    }
+   ]
   },
   {
    "id": "sri-lanka-south",
@@ -925,7 +1094,25 @@
     }
    ],
    "airport": "CMB",
-   "corrections": "Threshold appears to be USD2,000/mo (owner: USD1,500); one source says it was raised from 1,500. Fee ~USD500 confirmed; launch date reported Feb or Apr 2026 (conflicting). Verify on immigration.gov.lk."
+   "corrections": "Threshold appears to be USD2,000/mo (owner: USD1,500); one source says it was raised from 1,500. Fee ~USD500 confirmed; launch date reported Feb or Apr 2026 (conflicting). Verify on immigration.gov.lk.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "04-15",
+     "title": "Dry peak",
+     "notes": "Nov–mid-Apr. Fully dry; blue whales off Mirissa Dec–Apr. High-season prices Dec–Feb."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "05-01",
+     "to": "09-30",
+     "title": "SW monsoon — avoid",
+     "notes": "May–Sep. Rough seas and heavy rain; many guesthouses close. Go east instead."
+    }
+   ]
   },
   {
    "id": "bhutan",
@@ -1024,16 +1211,43 @@
     }
    ],
    "airport": "PBH",
-   "corrections": "SDF is USD100 per night (owner said per day: same thing) plus USD40 visa. Reduced rate now runs to 31 Dec 2029 per Dept of Tourism; older guides say Aug 2027. Cost band is for ~2 weeks, not monthly."
+   "corrections": "SDF is USD100 per night (owner said per day: same thing) plus USD40 visa. Reduced rate now runs to 31 Dec 2029 per Dept of Tourism; older guides say Aug 2027. Cost band is for ~2 weeks, not monthly.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "03-01",
+     "to": "05-31",
+     "title": "Spring window",
+     "notes": "Mar–May. Rhododendrons, Paro Tshechu (Mar/Apr). Book the operator two months ahead."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "06-01",
+     "to": "09-30",
+     "title": "Monsoon — avoid",
+     "notes": "Jun–Sep. Heavy rain, leeches, passes closed. The SDF is still due."
+    },
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "10-01",
+     "to": "11-30",
+     "title": "Autumn window",
+     "notes": "Oct–Nov. Thimphu Tshechu (Oct), clear Himalayan views."
+    }
+   ]
   },
   {
    "id": "valencia",
-   "name": "Valencia",
+   "name": "Valencia / Málaga",
    "country": "Spain",
    "region": "Southern Europe & Mediterranean",
    "role": "base",
    "cityIds": [
-    "valencia-spain"
+    "valencia-spain",
+    "m-laga-spain"
    ],
    "summary": "The most complete European base: Mediterranean food, walkable, beaches and mountains, strong healthcare, high-speed rail everywhere. August heat is extreme: leave, or go to the Canaries.",
    "months": [
@@ -1122,7 +1336,34 @@
     }
    ],
    "airport": "VLC",
-   "corrections": "Tax: DNV holders may opt for the 24% flat 'Beckham' regime up to EUR600k via Modelo 149 within 6 months; sources disagree on whether freelancers qualify. Otherwise 19-47% on worldwide income. Enforcement and renewal scrutiny tightened in 2026."
+   "corrections": "Tax: DNV holders may opt for the 24% flat 'Beckham' regime up to EUR600k via Modelo 149 within 6 months; sources disagree on whether freelancers qualify. Otherwise 19-47% on worldwide income. Enforcement and renewal scrutiny tightened in 2026.",
+   "area": "Valencia; Málaga shares its windows in your Travel Seasons",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-15",
+     "to": "06-30",
+     "title": "Spring peak",
+     "notes": "Mid-Mar–Jun. 20–28°C. Fallas (Mar), Semana Santa (Apr). Beaches open, not packed."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "08-31",
+     "title": "Summer — avoid",
+     "notes": "Jul–Aug. 35–40°C+ and the year's highest prices. Move to the Canaries or Latin America."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "09-01",
+     "to": "10-31",
+     "title": "Autumn window",
+     "notes": "Sep–Oct. 24–30°C, crowds gone, sea warm. The return window from the Latin America leg."
+    }
+   ]
   },
   {
    "id": "madeira",
@@ -1230,7 +1471,25 @@
     }
    ],
    "airport": "FNC",
-   "corrections": "D8 threshold EUR3,680/mo is the figure most sources give (one outlier EUR3,480). IFICI does not cover typical nomads; most D8 holders pay standard IRS 14.5-48%."
+   "corrections": "D8 threshold EUR3,680/mo is the figure most sources give (one outlier EUR3,480). IFICI does not cover typical nomads; most D8 holders pay standard IRS 14.5-48%.",
+   "seasons": [
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "11-01",
+     "to": "02-28",
+     "title": "Wetter winter",
+     "notes": "Nov–Feb. More rain and cloud, still 18–21°C. New Year fireworks. Much cheaper."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "10-31",
+     "title": "Peak window",
+     "notes": "Mar–Oct. May hydrangeas, Sep wine harvest. Stay on the south coast."
+    }
+   ]
   },
   {
    "id": "canary-islands",
@@ -1324,7 +1583,17 @@
     }
    ],
    "airport": "LPA",
-   "corrections": "Owner's 'best Mar-Oct' is conservative; Nov-Feb is peak winter-sun season, comfortable but pricier. Same Spain DNV and Beckham-regime caveats as Valencia."
+   "corrections": "Owner's 'best Mar-Oct' is conservative; Nov-Feb is peak winter-sun season, comfortable but pricier. Same Spain DNV and Beckham-regime caveats as Valencia.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "01-01",
+     "to": "12-31",
+     "title": "Year-round",
+     "notes": "20–28°C always. Jun–Sep escapes the mainland heat, Dec–Feb the northern winter. No avoid window."
+    }
+   ]
   },
   {
    "id": "lisbon-cascais",
@@ -1517,7 +1786,33 @@
     }
    ],
    "airport": "TIV",
-   "corrections": "Digital-nomad permit scheme reported to sunset 31 Dec 2026 (secondary source; verify with Ministry of Interior). Montenegro is an EU candidate; ETIAS not needed to enter Montenegro itself, but Schengen legs still count 90/180."
+   "corrections": "Digital-nomad permit scheme reported to sunset 31 Dec 2026 (secondary source; verify with Ministry of Interior). Montenegro is an EU candidate; ETIAS not needed to enter Montenegro itself, but Schengen legs still count 90/180.",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "11-01",
+     "to": "03-31",
+     "title": "Off season",
+     "notes": "Nov–Mar. Cold and wet; most coastal places closed."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "04-15",
+     "to": "06-30",
+     "title": "Peak window",
+     "notes": "Mid-Apr–Jun. 20–28°C before the crowds. Not Schengen: a buffer when 90/180 days run low."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "09-01",
+     "to": "10-15",
+     "title": "Shoulder",
+     "notes": "Sep–mid-Oct. 22–26°C, crowds gone, sea still warm."
+    }
+   ]
   },
   {
    "id": "albanian-riviera",
@@ -1612,7 +1907,33 @@
     }
    ],
    "airport": "TIA",
-   "corrections": "The '1-year no-visa entry' applies to US citizens only (reset needs 90 days out); everyone else gets 90 days. Some sites overstate it, and some border officers default to a 90-day stamp. Main airport TIA (3-4 hr drive); Corfu (CFU) is nearer to Saranda via ferry."
+   "corrections": "The '1-year no-visa entry' applies to US citizens only (reset needs 90 days out); everyone else gets 90 days. Some sites overstate it, and some border officers default to a 90-day stamp. Main airport TIA (3-4 hr drive); Corfu (CFU) is nearer to Saranda via ferry.",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "11-01",
+     "to": "03-31",
+     "title": "Off season",
+     "notes": "Nov–Mar. Cold and wet; most coastal places closed."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "04-15",
+     "to": "06-30",
+     "title": "Peak window",
+     "notes": "Mid-Apr–Jun. 20–28°C before the crowds. Not Schengen: a buffer when 90/180 days run low."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "09-01",
+     "to": "10-15",
+     "title": "Shoulder",
+     "notes": "Sep–mid-Oct. 22–26°C, crowds gone, sea still warm."
+    }
+   ]
   },
   {
    "id": "crete-chania",
@@ -1997,7 +2318,33 @@
     }
    ],
    "airport": "MDE",
-   "corrections": "Owner's best/avoid months match Medellin's two rainy peaks (Mar-May, Sep-Nov). Add air-quality episodes Feb-Mar (PM2.5 alerts). Jul is best; Jan-Feb good. USD equivalent of 3x SMMLV varies by source (about USD1,400-1,700). Jul-Aug dry spell is milder but Aug has Feria prices."
+   "corrections": "Owner's best/avoid months match Medellin's two rainy peaks (Mar-May, Sep-Nov). Add air-quality episodes Feb-Mar (PM2.5 alerts). Jul is best; Jan-Feb good. USD equivalent of 3x SMMLV varies by source (about USD1,400-1,700). Jul-Aug dry spell is milder but Aug has Feria prices.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "12-01",
+     "to": "02-28",
+     "title": "Dry window",
+     "notes": "Dec–Feb. First dry season, 22°C. Christmas lights in El Centro. Affordable."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "03-01",
+     "to": "05-31",
+     "title": "Rainy season",
+     "notes": "Mar–May (and Sep–Nov). Afternoon showers, clear mornings. Not a hard avoid."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "06-01",
+     "to": "08-31",
+     "title": "Mid-year dry window",
+     "notes": "Jun–Aug. Feria de las Flores in August, the year's biggest cultural event."
+    }
+   ]
   },
   {
    "id": "buenos-aires",
@@ -2094,7 +2441,33 @@
     }
    ],
    "airport": "EZE",
-   "corrections": "Owner's 'best Apr-Oct' is too wide: Jun-Aug is cold and damp; best are Mar-May and Sep-Nov. Income minimum unverified (USD1,500-2,500 cited). Costs swing with the peso: re-check before booking."
+   "corrections": "Owner's 'best Apr-Oct' is too wide: Jun-Aug is cold and damp; best are Mar-May and Sep-Nov. Income minimum unverified (USD1,500-2,500 cited). Costs swing with the peso: re-check before booking.",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "12-15",
+     "to": "02-28",
+     "title": "Summer — avoid",
+     "notes": "Mid-Dec–Feb. 35°C+ with humidity. Most porteños leave the city. Not ideal for a stay."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "05-31",
+     "title": "Autumn peak",
+     "notes": "Mar–May. 14–28°C. Low tourist season, so cheap."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "09-01",
+     "to": "11-30",
+     "title": "Spring peak",
+     "notes": "Sep–Nov. Jacaranda bloom in October across Palermo. 16–26°C."
+    }
+   ]
   },
   {
    "id": "azores",
@@ -2319,7 +2692,25 @@
     }
    ],
    "airport": "CPT",
-   "corrections": "Owner's best (Jan-Mar, Sep-Oct) fine, but winter Jun-Aug is cold and wet, so 'year-round viable' is optimistic. Older sources cite ZAR1M threshold; 2026 sources give ~ZAR650,796. Check safety and load-shedding."
+   "corrections": "Owner's best (Jan-Mar, Sep-Oct) fine, but winter Jun-Aug is cold and wet, so 'year-round viable' is optimistic. Older sources cite ZAR1M threshold; 2026 sources give ~ZAR650,796. Check safety and load-shedding.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-15",
+     "to": "03-31",
+     "title": "Summer peak",
+     "notes": "Mid-Nov–Mar. 24–30°C, dry heat, Stellenbosch harvest. Busy and expensive Dec–Jan; Feb–Mar is the sweet spot."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "07-01",
+     "to": "10-31",
+     "title": "Whale season",
+     "notes": "Jul–Oct. Mild winter (12–18°C). Southern right whales at Hermanus. Cheapest prices of the year."
+    }
+   ]
   },
   {
    "id": "cape-verde",
@@ -2620,7 +3011,236 @@
     }
    ],
    "airport": "ZQN",
-   "corrections": "Remote work on visitor visa/NZeTA confirmed legal (Jan 2025 rule); tax: >92 days in 12 months may trigger NZ tax obligations. NZ tax rules for visitors changed 1 Apr 2026: check. Winter 'avoid' is for slow living; skiers will disagree."
+   "corrections": "Remote work on visitor visa/NZeTA confirmed legal (Jan 2025 rule); tax: >92 days in 12 months may trigger NZ tax obligations. NZ tax rules for visitors changed 1 Apr 2026: check. Winter 'avoid' is for slow living; skiers will disagree.",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "12-01",
+     "to": "03-15",
+     "title": "Summer peak",
+     "notes": "Dec–mid-Mar. 20–28°C, all Great Walks open. Queenstown and Wanaka busy: book 3 months ahead."
+    },
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "06-01",
+     "to": "08-31",
+     "title": "Winter",
+     "notes": "Jun–Aug. Skiing if that's the goal; otherwise cold and most tracks closed."
+    }
+   ]
+  },
+  {
+   "id": "seoul",
+   "name": "Seoul",
+   "country": "South Korea",
+   "region": "SE & East Asia",
+   "role": "base",
+   "cityIds": [
+    "seoul-korea-south"
+   ],
+   "summary": "Dense, efficient and safe, with excellent healthcare and food at every hour. Spring blossom and autumn foliage are the windows; summer monsoon and the dry, freezing winter are not.",
+   "months": [
+    "fair",
+    "fair",
+    "good",
+    "best",
+    "best",
+    "good",
+    "avoid",
+    "avoid",
+    "good",
+    "best",
+    "good",
+    "fair"
+   ],
+   "notes": [
+    {
+     "months": [
+      4
+     ],
+     "kind": "best",
+     "reason": "cherry blossom, 10–20°C"
+    },
+    {
+     "months": [
+      5
+     ],
+     "kind": "best",
+     "reason": "warm and dry before the monsoon"
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "avoid",
+     "reason": "jangma monsoon then humid 30°C+ heat"
+    },
+    {
+     "months": [
+      10
+     ],
+     "kind": "best",
+     "reason": "autumn foliage, clear dry air"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "fair",
+     "reason": "dry but freezing, often below −5°C"
+    },
+    {
+     "months": [
+      3
+     ],
+     "kind": "good",
+     "reason": "mild; yellow dust and haze some days"
+    }
+   ],
+   "stay": {
+    "minWeeks": 2,
+    "idealWeeks": 6,
+    "maxWeeks": 13,
+    "why": "Expensive base; visa-free stays run 90 days for most EU passports"
+   },
+   "cost": {
+    "min": 1800,
+    "max": 3000,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Estimate; not in your research"
+   },
+   "entry": {
+    "summary": "Visa-free 90 days for most EU passports (check whether K-ETA applies to yours). The workation visa (F-1-D) allows up to 2 years for remote workers with income of about twice Korea's GNI per capita.",
+    "source": "https://www.hikorea.go.kr",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 4,
+     "name": "Cherry blossom",
+     "kind": "nature"
+    },
+    {
+     "month": 10,
+     "name": "Autumn foliage",
+     "kind": "nature"
+    }
+   ],
+   "airport": "ICN"
+  },
+  {
+   "id": "sri-lanka-east",
+   "name": "Sri Lanka east coast",
+   "country": "Sri Lanka",
+   "region": "Indian Subcontinent",
+   "role": "base",
+   "cityIds": [
+    "trincomalee-sri-lanka",
+    "batticaloa-sri-lanka"
+   ],
+   "area": "Arugam Bay and Trincomalee; Trincomalee is the city in the data",
+   "summary": "The other half of Sri Lanka's two monsoons: dry from March to September while the south coast is wet. Arugam Bay for world-class surf, Trincomalee for whales.",
+   "months": [
+    "avoid",
+    "avoid",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "avoid",
+    "avoid",
+    "avoid"
+   ],
+   "notes": [
+    {
+     "months": [
+      10,
+      11,
+      12,
+      1,
+      2
+     ],
+     "kind": "avoid",
+     "reason": "north-east monsoon on the east coast"
+    },
+    {
+     "months": [
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "kind": "best",
+     "reason": "dry; surf at Arugam Bay, whales off Trincomalee"
+    },
+    {
+     "months": [
+      3,
+      9
+     ],
+     "kind": "good",
+     "reason": "edges of the dry season"
+    }
+   ],
+   "stay": {
+    "minWeeks": 3,
+    "idealWeeks": 8,
+    "maxWeeks": 20,
+    "why": "Pairs with the south coast: east in summer, south in winter"
+   },
+   "cost": {
+    "min": 700,
+    "max": 1200,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Assumed as for the south coast"
+   },
+   "entry": {
+    "summary": "Digital Nomad Visa launched 2026: up to 1 yr, renewable annually, ~USD2,000/mo foreign income (+USD500/dependant), ~USD500 fee, health insurance; no local income. ETA tourist visa otherwise",
+    "source": "https://www.immigration.gov.lk/content/files/visa/digital_nomad/Digital%20Nomad%20Visa%20Category.pdf",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 7,
+     "name": "Arugam Bay surf season (Jul–Sep)",
+     "kind": "season"
+    },
+    {
+     "month": 6,
+     "name": "Whale watching off Trincomalee (Jun–Sep)",
+     "kind": "nature"
+    }
+   ],
+   "airport": "CMB",
+   "seasons": [
+    {
+     "kind": "avoid",
+     "tourism": "low",
+     "from": "10-15",
+     "to": "02-28",
+     "title": "NE monsoon — avoid",
+     "notes": "Oct–Feb. North-east monsoon on the east coast; be on the south coast instead."
+    },
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "03-01",
+     "to": "09-30",
+     "title": "Dry peak",
+     "notes": "Mar–Sep. Arugam Bay surf Jul–Sep, Trincomalee whales Jun–Sep."
+    }
+   ]
   }
  ]
 }

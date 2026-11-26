@@ -65,7 +65,7 @@ export function useLocaleData() {
       const profile = profiles.get(anchorOf(locale));
       const year = localeYear(locale, profile, comfort);
       const cap = visa.data && visa.passports.length ? entryCap(locale, visa.data, visa.passports) : null;
-      return { locale, year, windows: stayWindows(locale, year, cap?.days), cap, profile };
+      return { locale, year, windows: stayWindows(locale, year, cap?.days, new Date().getMonth() + 1), cap, profile };
     });
   }, [seasonality, profiles, visa.data, visa.passports]);
 

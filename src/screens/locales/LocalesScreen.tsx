@@ -1,14 +1,18 @@
 import { useMemo, useState } from "react";
 import { Page, PageHeader, SectionHeader, Segmented, Select, cx } from "../../ui";
 import { FIT_LABEL, type FitLevel } from "../../lib/rotation";
-import { monthName, spanMonths } from "../../lib/season";
+import { monthName } from "../../lib/season";
 import {
   LOCALE_DATA,
   anchorOf,
   bestForMonth,
   fitRank,
   meanOf,
+  SEASON_LABEL,
+  spanSegments,
   weeksText,
+  windowSegments,
+  windowText,
   type LocaleRole,
 } from "../../lib/locales";
 import { LOCALE_METRICS, useLocaleData, type LocaleView } from "./useLocaleData";
@@ -18,6 +22,8 @@ import "./locales.css";
 
 type RoleFilter = "all" | LocaleRole;
 type SortKey = "region" | "score" | "meridian" | "month";
+
+const pct = (x: number) => `${(x * 100).toFixed(3)}%`;
 
 export const ROLE_LABEL: Record<LocaleRole, string> = { base: "Base", hub: "Hub", destination: "Destination" };
 const LEVELS: FitLevel[] = ["great", "good", "fair", "poor", "avoid", "unknown"];
@@ -144,10 +150,9 @@ export default function LocalesScreen() {
           {shown.map((v) => {
             const { locale, year, windows } = v;
             const main = windows[0];
-            const ideal = new Set(main ? spanMonths(main.stay) : []);
-            const runs = new Set(windows.flatMap((w) => spanMonths(w.run)));
             const header = sort === "region" && locale.region !== lastRegion ? locale.region : null;
             lastRegion = locale.region;
+            const start = months[0].month;
             return (
               <div key={locale.id} className="loc-group" role="rowgroup">
                 {header && (
@@ -164,30 +169,51 @@ export default function LocalesScreen() {
                       {locale.scores && <span className="loc-score">{locale.scores.overall.toFixed(1)}</span>}
                     </span>
                   </button>
-                  {months.map(({ month }, i) => {
-                    const f = year[month - 1];
-                    const ev = locale.events?.filter((e) => e.month === month) ?? [];
-                    const isIdeal = ideal.has(month);
-                    const inRun = runs.has(month);
-                    const prevIdeal = i > 0 && ideal.has(months[i - 1].month);
-                    const nextIdeal = i < 11 && ideal.has(months[i + 1].month);
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        role="cell"
-                        className={cx("loc-cell", `rotation-fit--${f.level}`, `rotation-fit--${f.level}`, month === focus && "loc-cell--focus")}
-                        title={`${monthName(month, "long")}: ${FIT_LABEL[f.level]}. ${f.why}${f.comfort !== undefined ? ` · Comfort ${f.comfort}` : ""}${f.disagrees ? " (comfort disagrees)" : ""}${ev.length ? ` · ${ev.map((e) => e.name).join(", ")}` : ""}${isIdeal ? " · ideal stay" : ""}`}
-                        onClick={() => setOpen(locale.id)}
-                      >
-                        {f.source === "personal" && <span className="loc-mark loc-mark--personal" aria-hidden="true" />}
-                        {f.disagrees && <span className="loc-mark loc-mark--disagree" aria-hidden="true" />}
-                        {ev.length > 0 && <span className="loc-ev" aria-hidden="true" />}
-                        {inRun && !isIdeal && <span className="loc-run" aria-hidden="true" />}
-                        {isIdeal && <span className={cx("loc-bar", !prevIdeal && "loc-bar--start", !nextIdeal && "loc-bar--end")} aria-hidden="true" />}
-                      </button>
-                    );
-                  })}
+                  <div className="loc-track">
+                    <div className="loc-lane loc-lane--seasons" aria-hidden="true">
+                      {(locale.seasons ?? []).flatMap((w, k) =>
+                        windowSegments(w, start).map((g, j) => (
+                          <span
+                            key={`${k}-${j}`}
+                            className={cx("loc-season", `loc-season--${w.kind}`, w.tourism && `loc-season--t-${w.tourism}`)}
+                            style={{ left: pct(g.left), width: pct(g.width) }}
+                            title={`${w.title} · ${SEASON_LABEL[w.kind]}${w.tourism ? ` · tourism: ${w.tourism}` : ""}${w.notes ? `\n${w.notes}` : ""}`}
+                          >
+                            <span className="loc-season-text">
+                              {w.title}
+                              {w.tourism === "high" && <span className="loc-season-crowd"> · busy</span>}
+                            </span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                    <div className="loc-lane loc-lane--ideal" aria-hidden="true">
+                      {main &&
+                        spanSegments(main.stay, start).map((g, j) => (
+                          <span key={j} className="loc-ideal" style={{ left: pct(g.left), width: pct(g.width) }} title={`Ideal stay: ${windowText(main)}`} />
+                        ))}
+                    </div>
+                    <div className="loc-cells">
+                      {months.map(({ month }, i) => {
+                        const f = year[month - 1];
+                        const ev = locale.events?.filter((e) => e.month === month) ?? [];
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            role="cell"
+                            className={cx("loc-cell", `rotation-fit--${f.level}`, `rotation-fit--${f.level}`, month === focus && "loc-cell--focus")}
+                            title={`${monthName(month, "long")}: ${FIT_LABEL[f.level]}. ${f.why}${f.tourism ? ` · tourism: ${f.tourism}` : ""}${f.comfort !== undefined ? ` · Comfort ${f.comfort}` : ""}${f.disagrees ? " (comfort disagrees)" : ""}${ev.length ? ` · ${ev.map((e) => e.name).join(", ")}` : ""}`}
+                            onClick={() => setOpen(locale.id)}
+                          >
+                            {f.source === "personal" && <span className="loc-mark loc-mark--personal" aria-hidden="true" />}
+                            {f.disagrees && <span className="loc-mark loc-mark--disagree" aria-hidden="true" />}
+                            {ev.length > 0 && <span className="loc-ev" aria-hidden="true" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <div className="loc-stay" role="cell">
                     {main ? (
                       <>
@@ -212,12 +238,12 @@ export default function LocalesScreen() {
             </span>
           ))}
           <span className="loc-legend-item">
-            <span className="loc-legend-bar" />
-            Ideal stay
+            <span className="loc-season loc-season--peak loc-legend-season" />
+            Your Travel Seasons window (peak, shoulder, avoid)
           </span>
           <span className="loc-legend-item">
-            <span className="loc-legend-run" />
-            Other good months
+            <span className="loc-legend-bar" />
+            Ideal stay
           </span>
           <span className="loc-legend-item">
             <span className="loc-ev loc-ev--static" />
@@ -235,7 +261,8 @@ export default function LocalesScreen() {
           )}
         </div>
         <p className="loc-note">
-          Each month reads {unlocked ? "your own windows first, then " : ""}the research, then the Comfort Index where the research is silent.
+          Each month reads {unlocked ? "your rotation’s own windows, then " : ""}your Travel Seasons windows, then the research, then the Comfort Index. The
+          top lane shows your windows on their dates; “busy” marks high tourist season.
           {!comfortLoaded && " Comfort is still loading."} Stay lengths are the research’s, cut to the good months
           {signedInVisa ? " and your passport’s day limit." : "; sign in to cut them to your passport’s day limit."}
         </p>

@@ -145,33 +145,61 @@
   all: unset;
   box-sizing: border-box;
   position: relative;
-  min-height: 40px;
-  margin: 3px 1px;
+  min-height: 30px;
+  margin: 0 1px 5px;
   cursor: pointer;
 }
 .loc-cell--focus { outline: 1px solid var(--rule); outline-offset: 1px; }
 .loc-cell:hover { filter: brightness(0.94); }
 
-/* Ideal stay: a solid ink bar across the bottom of the months, capped at the ends. */
-.loc-bar {
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  bottom: 4px;
-  height: 6px;
-  background: var(--ink);
+/* A row: two lanes on exact dates above the month cells, like a timeline. */
+.loc-track {
+  grid-column: 2 / 14;
+  display: grid;
+  grid-template-rows: 18px 6px auto;
+  row-gap: 3px;
+  padding-top: 6px;
+  min-width: 0;
 }
-.loc-bar--start { left: 4px; border-top-left-radius: 3px; border-bottom-left-radius: 3px; }
-.loc-bar--end { right: 4px; border-top-right-radius: 3px; border-bottom-right-radius: 3px; }
-.loc-run {
+.loc-lane { position: relative; }
+.loc-cells { display: grid; grid-template-columns: repeat(12, 1fr); }
+
+/* Your Travel Seasons windows: a paper bar edged in the season's colour, titled. */
+.loc-season {
   position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 6px;
-  height: 2px;
-  background: var(--ink);
-  opacity: 0.45;
+  top: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 4px 0 5px;
+  margin: 0 1px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--season, var(--border-strong));
+  font-size: 10px;
+  line-height: 1;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
+.loc-season--peak { --season: var(--div-pos-3); }
+.loc-season--shoulder { --season: var(--div-0); border-left-color: var(--subtle); }
+.loc-season--avoid { --season: var(--div-neg-3); color: var(--muted); }
+.loc-season--t-high { background: var(--surface-2); }
+.loc-season-text { overflow: hidden; text-overflow: ellipsis; }
+.loc-season-crowd { color: var(--accent-text); }
+
+/* The ideal stay: one continuous ink bar on its own lane. */
+.loc-ideal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: 0 2px;
+  background: var(--ink);
+  border-radius: 3px;
+}
+
 .loc-ev {
   position: absolute;
   top: 4px;
@@ -217,7 +245,7 @@
 }
 .loc-legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .loc-legend-bar { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: var(--ink); }
-.loc-legend-run { display: inline-block; width: 18px; height: 2px; background: var(--ink); opacity: 0.45; }
+.loc-legend-season { position: static; display: inline-block; width: 22px; height: 12px; margin: 0; }
 .loc-note { font-size: var(--text-xs); color: var(--muted); margin: var(--space-2) 0 var(--space-6); max-width: 72ch; }
 .loc-sources { margin-top: var(--space-5); }
 
@@ -292,6 +320,12 @@
   .loc-cal { --loc-name: 128px; --loc-stay: 60px; }
   .loc-mhead-long { display: none; }
   .loc-mhead-short { display: inline; }
-  .loc-cell { min-height: 34px; margin: 2px 0; }
+  .loc-cell { min-height: 28px; margin: 0 0 4px; }
+  .loc-season-text { display: none; }
   .loc-name-sub .loc-score { display: none; }
 }
+
+.loc-seasons { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.loc-seasons li { display: grid; grid-template-columns: 70px 1fr; gap: var(--space-2); align-items: start; }
+.loc-seasons p { margin: 2px 0 0; font-size: var(--text-xs); }
+.loc-season--static { position: static; height: 18px; justify-content: center; }
