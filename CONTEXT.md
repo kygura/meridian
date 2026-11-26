@@ -422,17 +422,18 @@ and on any 401, and never holds sign-in state or share links.
 ### Locales (ADR 0022)
 
 **Locale**:
-A researched place to live in or pass through on the rotation: a base, a hub or a destination,
+A place to live in or pass through on the rotation: a base, a hub or a destination,
 covering one or more Cities (the first is the anchor), with a stay range and entry route
 (`data/locales.json`). Its months are scored from Meridian's own data (the anchor's Comfort Index,
-seasonal hazards, measured tourist seasons); the owner's research rides along as notes. Not a
+seasonal hazards, measured tourist seasons); the Field Check rides along unscored. Not a
 commitment; a Rotation Stay is the commitment.
 _Avoid_: destination (alone), location, place (see City, Open Place)
 
-**Travel Seasons**:
-The owner's dated windows for a locale (peak, shoulder or avoid, with a tourist season), from their
-Notion database of that name. Shown as notes beside Meridian's reading; they do not score.
-_Avoid_: Season (that's a Trip's months)
+**Field Check** (of a Locale, ADR 0024):
+An independent, sourced verification of a locale: month ratings with reasons, nine 1–10 scores
+against fixed anchors, cost, stay length, entry route, caveats and sources. Its weighted overall
+ranks locales within their role. It does not set a month's fit.
+_Avoid_: notes, research (alone)
 
 **Hub** (of a Locale):
 A locale held for a few days between bases, such as Bangkok or Istanbul. Becomes a Pass-through.

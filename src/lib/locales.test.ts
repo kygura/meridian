@@ -13,8 +13,10 @@ import {
   localeYear,
   monthRuns,
   percentileOf,
+  researchRanks,
+  researchScore,
+  SCORE_WEIGHTS,
   rangeSegments,
-  seasonFor,
   spanSegments,
   stayFromLocale,
   stayWindows,
@@ -46,7 +48,9 @@ const make = (over: Partial<Locale> = {}): Locale => ({
   cityIds: ["chiang-mai-thailand"],
   summary: "",
   months: R("gaaafffffgbb"),
-  notes: [{ months: [2, 3, 4], kind: "avoid", reason: "burning season" }],
+  monthNotes: [{ months: [2, 3, 4], kind: "avoid", reason: "burning season" }],
+  scores: { climate: 5, air: 5, cost: 5, safety: 5, health: 5, internet: 5, food: 5, nomad: 5, longstay: 5 },
+  sources: [],
   stay: { minWeeks: 4, idealWeeks: 12, maxWeeks: 26, why: "" },
   ...over,
 });
@@ -63,25 +67,26 @@ describe("dataset", () => {
       expect(l.stay.minWeeks).toBeLessThanOrEqual(l.stay.idealWeeks);
       expect(l.stay.idealWeeks).toBeLessThanOrEqual(l.stay.maxWeeks);
       for (const id of l.cityIds) expect(cities[id], `${l.id}: ${id}`).toBeTruthy();
-      for (const n of l.notes) for (const m of n.months) expect(m >= 1 && m <= 12).toBe(true);
+      for (const n of l.monthNotes) for (const m of n.months) expect(m >= 1 && m <= 12).toBe(true);
+      // Every month is explained by a note of its own rating.
+      for (let m = 1; m <= 12; m++) expect(l.monthNotes.some((n) => n.months.includes(m) && n.kind === l.months[m - 1]), `${l.id} month ${m}`).toBe(true);
+      for (const v of Object.values(l.scores)) expect(v >= 1 && v <= 10, `${l.id} score ${v}`).toBe(true);
+      expect(Object.keys(l.scores).sort()).toEqual(Object.keys(SCORE_WEIGHTS).sort());
+      expect(l.sources.length, `${l.id} sources`).toBeGreaterThan(0);
     }
     expect(new Set(LOCALES.map((l) => l.id)).size).toBe(LOCALES.length);
   });
 });
 
-describe("localeMonth: Meridian's data scores, the notes do not", () => {
+describe("localeMonth: Meridian's data scores, the field check does not", () => {
   const l = make();
 
-  it("scores from the Comfort Index and carries the research as an unscored note", () => {
+  it("scores from the Comfort Index and carries the field check unscored", () => {
     const m = localeMonth(l, 3, { comfort: C("GGGGGGGGGGGG") });
     expect(m).toMatchObject({ level: "great", source: "comfort", comfort: 90 });
-    expect(m.note).toMatchObject({ level: "avoid", text: "burning season", from: "research" });
-    expect(m.noteDisagrees).toBe(true);
-  });
-
-  it("prefers the Travel Seasons window as the note", () => {
-    const s = make({ seasons: [{ kind: "peak", tourism: "high", from: "11-01", to: "02-14", title: "Dry peak" }] });
-    expect(localeMonth(s, 1, { comfort: C("oooooooooooo") }).note).toMatchObject({ text: "Dry peak", from: "seasons", level: "great" });
+    expect(m.research).toMatchObject({ level: "avoid", text: "burning season" });
+    expect(m.researchDiffers).toBe(true);
+    expect(localeMonth(l, 12, { comfort: C("GGGGGGGGGGGG") }).researchDiffers).toBe(false);
   });
 
   it("lowers a month a hazard reaches: one level at watch, to avoid at caution", () => {
@@ -99,7 +104,7 @@ describe("localeMonth: Meridian's data scores, the notes do not", () => {
     expect(localeMonth(l, 3, { profile, comfort: C("pppppppppppp") })).toMatchObject({ level: "great", source: "personal", why: "Your peak: festival" });
   });
 
-  it("is unknown without comfort data, whatever the notes say", () => {
+  it("is unknown without comfort data, whatever the field check says", () => {
     expect(localeMonth(l, 12)).toMatchObject({ level: "unknown", source: "none" });
   });
 
@@ -247,7 +252,7 @@ describe("bestForMonth", () => {
 
 describe("stayFromLocale", () => {
   const great = { comfort: C("GGGGGGGGGGGG") };
-  it("makes an idea stay with the window's next occurrence and the research's budget", () => {
+  it("makes an idea stay with the window's next occurrence and the field check's budget", () => {
     const l = localeById("chiang-mai")!;
     const [w] = stayWindows(l, year(l, great));
     const place = { cityId: "chiang-mai-thailand", name: "Chiang Mai", country: "Thailand", iata: "CNX", lat: 18.79, lng: 98.98 };
@@ -268,24 +273,26 @@ describe("stayFromLocale", () => {
   });
 });
 
-describe("Travel Seasons windows (notes)", () => {
-  const l = make({
-    seasons: [
-      { kind: "peak", tourism: "high", from: "11-01", to: "02-14", title: "Dry peak" },
-      { kind: "avoid", tourism: "low", from: "02-15", to: "04-30", title: "Burning season" },
-    ],
-  });
-
+describe("day windows", () => {
   it("counts a window's days in a month, wrapping the new year", () => {
     expect(daysInMonth({ from: "11-01", to: "02-14" }, 12)).toBe(31);
     expect(daysInMonth({ from: "11-01", to: "02-14" }, 2)).toBe(14);
     expect(daysInMonth({ from: "03-25", to: "04-10" }, 4)).toBe(10);
   });
+});
 
-  it("matches a month to the window covering at least half of it, avoid winning ties", () => {
-    expect(seasonFor(l, 1)?.title).toBe("Dry peak");
-    expect(seasonFor(l, 2)?.title).toBe("Burning season");
-    expect(seasonFor(l, 6)).toBeUndefined();
+describe("field check rank", () => {
+  it("weights sum to one, so the overall stays on the 1–10 scale", () => {
+    expect(Object.values(SCORE_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
+    expect(researchScore(make())).toBe(5);
+  });
+
+  it("ranks within a role, best first", () => {
+    const hi = make({ id: "hi", name: "Hi", scores: { ...make().scores, climate: 9 } });
+    const lo = make({ id: "lo", name: "Lo" });
+    const hub = make({ id: "hub", name: "Hub", role: "hub" });
+    const r = researchRanks([lo, hi, hub]);
+    expect([r.get("hi"), r.get("lo"), r.get("hub")]).toEqual([1, 2, 1]);
   });
 });
 

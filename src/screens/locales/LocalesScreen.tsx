@@ -9,6 +9,7 @@ import {
   bestForMonth,
   fitRank,
   meanOf,
+  researchScore,
   rangeSegments,
   spanSegments,
   weekRange,
@@ -24,7 +25,7 @@ import "../rotation/rotation.css";
 import "./locales.css";
 
 type RoleFilter = "all" | LocaleRole;
-type SortKey = "region" | "meridian" | "beauty" | "cost" | "month";
+type SortKey = "region" | "rank" | "meridian" | "beauty" | "cost" | "month";
 
 export const ROLE_LABEL: Record<LocaleRole, string> = { base: "Base", hub: "Hub", destination: "Destination" };
 const RAMP: FitLevel[] = ["avoid", "poor", "fair", "good", "great"];
@@ -51,7 +52,7 @@ function todayX(now = new Date()): number {
 function monthTitle(month: number, f: LocaleMonth): string {
   const parts = [`${monthName(month, "long")}: ${FIT_LABEL[f.level]}`, f.why];
   if (f.tourism === "high") parts.push("tourist peak");
-  if (f.note) parts.push(`your notes: ${f.note.text}${f.noteDisagrees ? " (disagree)" : ""}`);
+  if (f.research) parts.push(`field check: ${f.research.text}${f.researchDiffers ? " (differs)" : ""}`);
   return parts.join(" · ");
 }
 
@@ -82,6 +83,8 @@ export default function LocalesScreen() {
     switch (sort) {
       case "region":
         return [...list].sort((a, b) => order.indexOf(a.locale.region) - order.indexOf(b.locale.region) || byName(a, b));
+      case "rank":
+        return [...list].sort((a, b) => researchScore(b.locale) - researchScore(a.locale) || byName(a, b));
       case "meridian":
         return [...list].sort((a, b) => byScore(a, b) || byName(a, b));
       case "beauty":
@@ -147,6 +150,7 @@ export default function LocalesScreen() {
             options={[
               { value: "region", label: "Region" },
               { value: "month", label: `Best in ${monthName(focus, "long")}` },
+              { value: "rank", label: "Field check rank" },
               { value: "meridian", label: "Meridian score" },
               { value: "beauty", label: "Most beautiful" },
               { value: "cost", label: "Most affordable" },
@@ -333,8 +337,8 @@ export default function LocalesScreen() {
           months a seasonal hazard reaches it. A place in Meridian’s top {100 - BEAUTY_UNLOCK}% for Beauty that is never
           comfortable gets a base window on its most tolerable months, drawn dashed{unlocked ? "; your rotation’s own windows come first" : ""}. Tourist peaks are
           measured visitor nights. Stay lengths are cut to the run of good months
-          {signedInVisa ? " and your passport’s day limit" : "; sign in to cut them to your passport’s day limit"}. Your notes
-          and Travel Seasons are in each locale, not in the score.{!comfortLoaded && " Climate data is loading."}
+          {signedInVisa ? " and your passport’s day limit" : "; sign in to cut them to your passport’s day limit"}. The field
+          check’s month ratings and rank are in each locale, not in the fit.{!comfortLoaded && " Climate data is loading."}
         </p>
       </section>
 
@@ -377,7 +381,7 @@ export default function LocalesScreen() {
       </section>
 
       <p className="loc-note loc-sources">
-        {roleCount(views)} Places researched {LOCALE_DATA.checked}; climate, air, hazards, crowds and metrics are Meridian’s own.
+        {roleCount(views)} Field check {LOCALE_DATA.checked}: each place verified against current sources and ranked within its role. Fit, climate, air, hazards, crowds and metrics are Meridian’s own.
       </p>
 
       {openView && <LocaleSheet view={openView} metrics={metrics} unlocked={unlocked} onClose={() => setOpen(null)} />}
