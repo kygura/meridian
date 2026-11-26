@@ -431,7 +431,8 @@ _Avoid_: destination (alone), location, place (see City, Open Place)
 
 **Field Check** (of a Locale, ADR 0024):
 An independent, sourced verification of a locale: month ratings with reasons, nine 1–10 scores
-against fixed anchors, cost, stay length, entry route, caveats and sources. Its weighted overall
+against fixed anchors, dated seasons (peak, shoulder, avoid) tiling the year, cost, stay length,
+entry route, caveats and sources. Its weighted overall
 ranks locales within their role. It does not set a month's fit.
 _Avoid_: notes, research (alone)
 

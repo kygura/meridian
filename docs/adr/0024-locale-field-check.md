@@ -16,7 +16,7 @@ ADR 0022 shipped locales drafted from the owner's earlier agentic research and T
 - caveats where the data was thin or changing
 - the list of sources the agent actually opened
 
-Agents whose first pass leaned on recalled normals were sent back to open climate, air, rent and safety sources. Travel Seasons, the old scores, the asymmetry rank and the corrections field are gone.
+Agents whose first pass leaned on recalled normals were sent back to open climate, air, rent and safety sources. The old scores, the asymmetry rank and the corrections field are gone. Travel Seasons are replaced by the Field Check's own dated **seasons**: 3 to 6 windows per place (peak, shoulder or avoid, with a tourist level), tiling the year with no gaps or overlaps, each with the figure that sets its dates. Boundaries sit on a sourced date where one exists, such as Seoul's average jangma onset (25 June), Bangkok's Thai Meteorological Department seasons, Nicoya's dry season from about 7 November, and the Weather Spark season edges for Buenos Aires and Queenstown. Elsewhere they sit on month edges. Tourist levels are mostly the agents' judgement from holiday calendars, which the caveats say. A window's kind agrees with the month ratings, except where a sourced date splits a month: late September in Taipei and Tokyo, and November in Nicoya. Seasons are shown in the sheet and do not score.
 
 **Scores on fixed anchors.** Researchers working in parallel drift apart when they score by feel, so every score is measured against an anchor written into the brief:
 
