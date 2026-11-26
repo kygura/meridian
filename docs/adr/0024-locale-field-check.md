@@ -54,3 +54,11 @@ Rejected:
 - **Letting the agents rank the places directly.** Each agent saw four places, so their rankings could not be compared across agents.
 - **Scoring months from the Field Check.** See ADR 0022.
 - **Keeping the earlier research alongside the Field Check as "notes".** The owner asked that it not be cited.
+
+## Amendment, 2026-11-26: the Canaries, island by island
+
+The single "Canary Islands" locale averaged seven islands with different climates, services and access, and in practice described Gran Canaria. It is replaced by one locale per island (Gran Canaria, Tenerife, Lanzarote, Fuerteventura, La Palma, La Gomera, El Hierro) in a "Canary Islands" region of their own. Each had its own Field Check agent, briefed to use AEMET station normals and to name the station in every month note. Six are bases and El Hierro is a destination, because it has one weekday coworking, few mid-term rentals and specialist care only by transfer to Tenerife.
+
+Each island's anchor city is the Meridian point nearest the station its ratings came from, so the Comfort Index and the Field Check read the same climate: Las Palmas; Tenerife south (TFS) with Santa Cruz as a second city; Arrecife; the Fuerteventura airport point; the La Palma airport point; the El Hierro airport point. La Gomera had no city, so San Sebastián de La Gomera was added to `worldcities.csv`, with a minimal `city-data.json` entry (country and NUTS-2 region only, no internet tiles yet).
+
+Known gaps: AEMET publishes 1991-2020 normals for only some of these stations (several agents found only 1981-2010), the west of La Palma, Valle Gran Rey and Corralejo have no station normals, and no source gave monthly wind or calima counts per island. Each locale's caveats say which.
