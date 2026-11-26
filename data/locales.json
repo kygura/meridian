@@ -2532,15 +2532,15 @@
     "medell-n-colombia"
    ],
    "area": "El Poblado for nomad density, Laureles for a local feel",
-   "summary": "A mountain city at about 1,500 m with a daytime range of 24-28 C all year, strong nomad infrastructure in El Poblado and Laureles, good private hospitals and a two-year nomad visa. The trade-offs are two rainy seasons (March-May and September-November), February-March valley inversions that push PM2.5 up, and daily street-crime precautions.",
+   "summary": "A mountain city at about 1,500 m with steady 25 C highs and 17 C lows all year, strong nomad infrastructure in El Poblado and Laureles, good private hospitals and a two-year nomad visa. The trade-offs are heavy cloud and rain in every month (wettest April-May and September-November), a March inversion season with poor air, and daily street-crime precautions.",
    "months": [
     "best",
     "good",
     "fair",
     "fair",
     "fair",
+    "fair",
     "good",
-    "best",
     "good",
     "fair",
     "fair",
@@ -2553,33 +2553,45 @@
       1
      ],
      "kind": "best",
-     "reason": "driest stretch, around 70-80 mm rain and 28 C highs; Christmas lights run to early January"
+     "reason": "clearest month (about 19% clear skies), about 110 mm rain over 17 wet days, highs near 25 C"
     },
     {
      "months": [
       2,
-      6,
-      8,
       12
      ],
      "kind": "good",
-     "reason": "drier months (about 80-130 mm); February has valley temperature inversions with elevated PM2.5, August has Feria de las Flores crowds and higher prices, December has Alumbrados crowds"
+     "reason": "the driest stretch (about 115-160 mm, 16-20 wet days); February can still carry inversion-related PM2.5, December has Alumbrados crowds and higher prices"
     },
     {
      "months": [
-      7
+      7,
+      8
      ],
-     "kind": "best",
-     "reason": "mid-year dry spell, about 100 mm rain, breezy, 27-28 C highs"
+     "kind": "good",
+     "reason": "mid-year easing (about 190-210 mm, 22-24 wet days) with cleaner air than March; August adds Feria de las Flores crowds and prices"
     },
     {
      "months": [
-      3,
+      3
+     ],
+     "kind": "fair",
+     "reason": "worst air of the year (March 2020 averaged 41.9 ug/m3 PM2.5, unhealthy for sensitive groups) and about 140 mm rain over 20 wet days"
+    },
+    {
+     "months": [
       4,
       5
      ],
      "kind": "fair",
-     "reason": "first rainy season, about 150-230 mm a month with near-daily afternoon storms; March also carries the worst inversion-related PM2.5"
+     "reason": "first rainy peak, about 235-265 mm and 24-26 wet days, 94-95% cloud cover"
+    },
+    {
+     "months": [
+      6
+     ],
+     "kind": "fair",
+     "reason": "still wet, about 215 mm over 23 wet days"
     },
     {
      "months": [
@@ -2588,13 +2600,13 @@
       11
      ],
      "kind": "fair",
-     "reason": "second rainy season, October is the wettest (about 230 mm), landslide risk on hillsides and slow traffic"
+     "reason": "second rainy peak, about 230-260 mm and 24-26 wet days; October is the cloudiest month (95%)"
     }
    ],
    "scores": {
-    "climate": 5.0,
-    "air": 6.6,
-    "cost": 7.2,
+    "climate": 4.0,
+    "air": 5.8,
+    "cost": 6.0,
     "safety": 5.5,
     "health": 8.0,
     "internet": 7.5,
@@ -2606,35 +2618,30 @@
     "minWeeks": 6,
     "idealWeeks": 12,
     "maxWeeks": 26,
-    "why": "Stable 24-28 C climate and a visa that allows up to 2 years; plan around the Dec-Feb and Jun-Aug dry windows"
+    "why": "Stable, mild temperatures year-round and a visa that allows up to 2 years; rain is never absent, so plan around Dec-Feb and Jul-Aug"
    },
    "cost": {
-    "min": 1100,
-    "max": 1900,
+    "min": 1400,
+    "max": 2200,
     "currency": "EUR",
     "per": "month",
-    "note": "furnished 1-bed in El Poblado/Laureles (about USD 600-1,000), food, local transport and coworking; insurance excluded"
+    "note": "furnished 1-bed (El Poblado asking median about COP 5.2M, roughly USD 1,500; Laureles cheaper), food, transport, leisure and coworking; insurance excluded"
    },
    "entry": {
-    "summary": "Visa-free tourist entry for US/EU/UK passports: 90 days, extendable once by 90 more, capped at 180 days per calendar year. Digital Nomad Visa (type V): up to 2 years, remote work for foreign employers or clients only, income of at least 3x the monthly minimum wage (about COP 5.25M, roughly USD 1,400-1,700 depending on FX) shown for the prior 3 months, plus health insurance; fee roughly USD 230 and a few weeks to process. Tax residency is triggered at more than 183 days in any 365-day period.",
+    "summary": "Visa-exempt tourist entry (including remote workers paid from abroad): generally 90 days, extendable to a maximum of 180 days per calendar year. Digital Nomad Visa (V): up to 2 years, bank statements showing income of at least 3x the monthly minimum wage (SMLMV) over the last 3 months (about COP 5.25M, reported), a letter from the foreign employer or clients, health insurance; no paid work for Colombia-based clients. Dependants can be included.",
     "source": "https://cancilleria.gov.co/atencion-y-servicio-al-ciudadano/tramites-y-servicios/visa/tipos-de-visa",
     "checked": "2026-11"
    },
    "events": [
     {
      "month": 3,
-     "name": "Peak inversion/PM2.5 period (Feb-Mar)",
+     "name": "Worst PM2.5 month (inversions)",
      "kind": "season"
     },
     {
      "month": 4,
-     "name": "Rainy season peak (Apr-May)",
+     "name": "First rainy season peak (Apr-May)",
      "kind": "season"
-    },
-    {
-     "month": 7,
-     "name": "Colombiamoda fashion week",
-     "kind": "festival"
     },
     {
      "month": 8,
@@ -2643,7 +2650,7 @@
     },
     {
      "month": 10,
-     "name": "Second rainy season peak",
+     "name": "Second rainy season peak (Sep-Nov)",
      "kind": "season"
     },
     {
@@ -2653,13 +2660,14 @@
     }
    ],
    "airport": "MDE",
-   "caveats": "Peso thresholds shift each January with the minimum wage, and commercial guides quote different USD equivalents; confirm with Cancilleria before applying. Annual PM2.5 of about 13.4 ug/m3 (2025) comes from press coverage of the IQAir report, not the report itself, and I found no city monthly breakdown. Safety score reflects petty theft, phone snatching and drink-spiking risks in nightlife areas. Rain figures are approximate long-term normals.",
+   "caveats": "Rainfall and cloud figures are Weather Spark's reanalysis model, which shows rain in every month; local station data may be drier in Dec-Feb. IQAir's Medellin page only showed 2019-2020 annual means (19.9 and 19.1 ug/m3) and a live reading of 17.5; a press report seen in search results gave 13.4 ug/m3 for 2025, which I could not open. Rent figures are listing asking prices from aggregators, not signed rents. Tax residency threshold, visa fee and processing time were not verified from an official page. Safety score reflects petty theft, phone snatching and drink-spiking risks.",
    "sources": [
     "https://cancilleria.gov.co/atencion-y-servicio-al-ciudadano/tramites-y-servicios/visa/tipos-de-visa",
-    "https://nexo.legal/digital-nomad-colombia-visa-complete-guide/",
-    "https://colombiamove.com/blog/extend-colombia-tourist-stay-90-to-180-days/",
-    "https://m.colombiaone.com/wordpress/c/6/i/213912/global-pollution-rankings-2025-where-does-colombia-stand",
-    "https://www.iqair.com/colombia/antioquia/medellin"
+    "https://weatherspark.com/y/22535/Average-Weather-in-Medell%C3%ADn-Colombia-Year-Round",
+    "https://www.iqair.com/colombia/antioquia/medellin",
+    "https://wake.com.co/living/blog/cost-of-living-in-el-poblado/",
+    "https://colombiabasics.com/medellin/cost-of-living-medellin",
+    "https://www.clickcasa.co/medellin/rent-data/poblado"
    ]
   },
   {
@@ -2671,7 +2679,7 @@
    "cityIds": [
     "buenos-aires-argentina"
    ],
-   "summary": "A large, walkable European-style capital with excellent food, wine, theatre and private healthcare, fibre-grade internet and a 180-day nomad visa. Autumn (April-May) and spring (October-November) are excellent; January-February are hot and humid, June-August are cool and damp, and prices in dollars have been much less of a bargain since the peso strengthened.",
+   "summary": "A large, walkable European-style capital with excellent food, wine, theatre and private healthcare, fast fibre internet and, reportedly, a 180-day nomad visa. Autumn (April-May) and spring (October-November) are excellent; January-February are hot and humid, June-August are cool and damp, and dollar prices vary widely with the peso.",
    "months": [
     "fair",
     "fair",
@@ -2693,7 +2701,7 @@
       2
      ],
      "kind": "fair",
-     "reason": "hot and humid, highs about 30 C with heatwaves above 35 C and many locals away"
+     "reason": "warm and muggy, highs about 27-28 C, lows about 21 C, 9-10 wet days and about 100-115 mm rain; February is the muggiest month"
     },
     {
      "months": [
@@ -2702,7 +2710,7 @@
       12
      ],
      "kind": "good",
-     "reason": "March is still warm and humid (highs near 26 C), September is mild but windy (19 C), December warms toward 28 C with storms"
+     "reason": "March is warm and humid (highs 25 C, about 115 mm over 9 wet days), September is mild (18 C) with spring showers, December warms to 27 C with 10 wet days"
     },
     {
      "months": [
@@ -2712,7 +2720,7 @@
       11
      ],
      "kind": "best",
-     "reason": "highs of 19-26 C, April-May mostly dry and sunny, October-November spring with jacarandas in bloom from late October"
+     "reason": "highs of 18-24 C and lows 12-17 C; April-May have the fewest wet days of these months (6.5-8 wet days), October-November are spring with jacarandas from late October"
     },
     {
      "months": [
@@ -2721,39 +2729,44 @@
       8
      ],
      "kind": "fair",
-     "reason": "cool and damp, highs 14-17 C, lows near 7 C, and many flats are poorly heated"
+     "reason": "cool season, highs 14-16 C and lows 8-10 C, about 50-58 mm rain over 6 wet days, and many flats are poorly heated"
     }
    ],
    "scores": {
     "climate": 6.0,
-    "air": 7.0,
-    "cost": 6.8,
+    "air": 6.8,
+    "cost": 7.4,
     "safety": 5.5,
     "health": 8.5,
     "internet": 8.0,
     "food": 9.0,
     "nomad": 7.5,
-    "longstay": 8.0
+    "longstay": 7.5
    },
    "stay": {
     "minWeeks": 4,
     "idealWeeks": 10,
     "maxWeeks": 24,
-    "why": "Best in two shoulder windows (Apr-May, Oct-Nov); the nomad visa covers 180 days renewable once"
+    "why": "Best in two shoulder windows (Apr-May, Oct-Nov); tourist stay is 3 months plus one extension"
    },
    "cost": {
-    "min": 1200,
-    "max": 2000,
+    "min": 1100,
+    "max": 1800,
     "currency": "EUR",
     "per": "month",
-    "note": "furnished 1-bed in Palermo/Recoleta/Belgrano (about USD 600-1,000), food, transport, coworking; insurance excluded"
+    "note": "furnished 1-bed in Palermo/Recoleta (about USD 600-1,000), food, transport, health plan and leisure, about USD 1,200-2,000 in total; insurance excluded"
    },
    "entry": {
-    "summary": "Visa-free tourist entry for US, EU and UK passports: up to 90 days, extendable once by 90 days at Migraciones (fee reported around USD 50-120 in pesos). Nomad visa (Disposicion DNM 758/2022): 180 days, reported as renewable once for another 180, income must come from outside Argentina; sources disagree on an income minimum (USD 1,500-2,500 cited, no official figure found). Tax residency has no simple 183-day test; foreigners generally become tax resident with permanent residency or around 12 months of stay.",
-    "source": "https://cmexi.cancilleria.gob.ar/es/visa-de-turismo-tourist-visa",
+    "summary": "Tourists staying for leisure get up to 3 months on arrival; one extension can be requested at Migraciones in the 10 days before expiry (late filing within 30 days carries a 50% surcharge; an expired stay cannot be extended). Commercial sources describe a Digital Nomad visa (Disposicion DNM 758/2022) of 180 days, renewable once, for income earned abroad, but Migraciones' tourist page does not mention it and no official income minimum was found. No simple 183-day tax-residence test confirmed.",
+    "source": "https://www.argentina.gob.ar/migraciones/turistas",
     "checked": "2026-11"
    },
    "events": [
+    {
+     "month": 1,
+     "name": "Summer heat and city exodus",
+     "kind": "season"
+    },
     {
      "month": 4,
      "name": "BAFICI film festival",
@@ -2778,22 +2791,15 @@
      "month": 11,
      "name": "Jacaranda bloom (late Oct-Nov)",
      "kind": "nature"
-    },
-    {
-     "month": 1,
-     "name": "Summer heat and city exodus",
-     "kind": "season"
     }
    ],
    "airport": "EZE",
-   "caveats": "Argentine prices move with the peso and inflation; sources disagree widely (rent for a good 1-bed USD 400-900), so the cost band is wide and should be rechecked before booking. The nomad-visa length, renewal and income rules are inconsistently described by commercial sites and I could not read the official Migraciones text. Annual PM2.5 was not confirmed from a primary source (estimated around 12 ug/m3). Banking for foreigners is awkward (cash USD, international transfer services).",
+   "caveats": "IQAir's Buenos Aires page showed only 2019 (12.4 ug/m3) and 2020 (14.2 ug/m3) annual means, so air data is dated. Weather Spark gives no humidity table and its highs run a little below some station normals. The 90-day visa-free length, EU/US/UK eligibility, the nomad-visa terms and the extension fee come from commercial guides, not an opened official page (the official tourist page says 3 months). Costs track the peso: the cost article quoted USD/ARS at about 1,250 in the text and about 1,600 on its ticker, so the dollar cost of local prices is volatile. Rent figures vary by source (USD 500-1,200 for a 1-bed).",
    "sources": [
-    "https://cmexi.cancilleria.gob.ar/es/visa-de-turismo-tourist-visa",
-    "https://www.argentinavisalaw.com/visas/digital-nomad",
-    "https://expatsargentina.com/visas/tourist-visa-extension/",
-    "https://www.argentinavisalaw.com/visas/tourist",
-    "https://www.riotimesonline.com/cost-of-living-buenos-aires-expats-2026/",
-    "https://expatsargentina.com/blog/cost-living-buenos-aires-2026/"
+    "https://www.argentina.gob.ar/migraciones/turistas",
+    "https://weatherspark.com/y/28981/Average-Weather-in-Buenos-Aires-Argentina-Year-Round",
+    "https://www.iqair.com/argentina/buenos-aires/buenos-aires",
+    "https://www.riotimesonline.com/cost-of-living-buenos-aires-expats-2026/"
    ]
   },
   {
@@ -3165,15 +3171,15 @@
     "liberia-costa-rica"
    ],
    "area": "Nicoya Peninsula; Liberia is the airport",
-   "summary": "Pacific-coast surf and wellness towns (Nosara, Santa Teresa, Samara, Tamarindo) with a strong remote-work community, a 12-month nomad visa and a Blue Zone reputation. The dry season (December-March) is excellent, the September-October rains are heavy and some businesses close, and costs, remote logistics and healthcare distance are the main drawbacks.",
+   "summary": "Pacific-coast surf and wellness towns (Nosara, Santa Teresa, Samara, Tamarindo) with a strong remote-work community, a 12-month remote-worker permit and clean air. Only December-February are really comfortable: March-April are very hot, June-October are very wet, and the area is pricey with advanced healthcare hours away.",
    "months": [
     "best",
-    "best",
     "good",
     "fair",
     "fair",
     "fair",
-    "good",
+    "avoid",
+    "fair",
     "fair",
     "avoid",
     "avoid",
@@ -3184,47 +3190,53 @@
     {
      "months": [
       12,
-      1,
-      2
+      1
      ],
      "kind": "best",
-     "reason": "dry, sunny and breezy with highs near 32 C and almost no rain; peak prices"
+     "reason": "dry (about 12-31 mm) and sunny, highs near 32 C, breezy; peak-season prices"
+    },
+    {
+     "months": [
+      2
+     ],
+     "kind": "good",
+     "reason": "almost no rain (about 2 mm) but highs of 34 C"
     },
     {
      "months": [
       3,
-      7
+      4
      ],
-     "kind": "good",
-     "reason": "March is dry but hot (33-34 C highs); July has the veranillo dry spell with brief sun-heavy weeks"
+     "kind": "fair",
+     "reason": "driest and hottest period, average highs 35 C and peaks up to 39 C in April; rains begin late April (about 51 mm)"
     },
     {
      "months": [
-      4,
       5,
-      6,
+      7,
       8,
       11
      ],
      "kind": "fair",
-     "reason": "April is the hottest month (35 C highs) before rains start in May, then the green season brings afternoon storms; November rains taper but roads stay muddy"
+     "reason": "green season, about 215-290 mm in May, July and August with afternoon storms; November is tapering (about 130 mm) but roads are still muddy"
     },
     {
      "months": [
+      6,
       9,
       10
      ],
      "kind": "avoid",
-     "reason": "rainiest months (about 350-400 mm), flooded roads and river crossings, and many businesses closed"
+     "reason": "heaviest rain, about 350-410 mm a month over 26-29 wet days (October is the wettest at about 407 mm), flooded roads and many businesses closed"
     }
    ],
    "scores": {
-    "climate": 4.0,
-    "air": 8.0,
-    "cost": 5.7,
+    "climate": 2.0,
+    "air": 9.0,
+    "cost": 5.3,
     "safety": 6.0,
     "health": 5.0,
-    "internet": 5.5,
+    "internet": 5.0,
     "food": 6.0,
     "nomad": 7.0,
     "longstay": 9.0
@@ -3233,18 +3245,18 @@
     "minWeeks": 6,
     "idealWeeks": 12,
     "maxWeeks": 20,
-    "why": "Dry season fills a 12-16 week window; the visa allows 12 months but the Sep-Oct rains are a poor time to be on the peninsula"
+    "why": "The comfortable window is roughly Dec-Feb; the permit allows 12 months but the Jun-Oct rains are a poor time to be on the peninsula"
    },
    "cost": {
-    "min": 1500,
-    "max": 2300,
+    "min": 1600,
+    "max": 2500,
     "currency": "EUR",
     "per": "month",
-    "note": "1-bed or small house in Santa Teresa/Nosara/Samara (about USD 800-1,300), imported-food premium, car/ATV, coworking desk about USD 250; insurance excluded"
+    "note": "furnished 1-bed near Nosara/Santa Teresa (reported USD 800-1,800, high end near Guiones), food, scooter/car, coworking desk about USD 250; insurance excluded"
    },
    "entry": {
-    "summary": "Visa-free tourist entry for US, EU and UK passports: normally 90 days. Remote-worker stay under Law 10008: income of at least USD 3,000 per month (USD 4,000 with family), health insurance, work only for foreign employers or clients; granted for 12 months and extendable once for 12 more. Sources disagree on the presence needed to extend (180 days in one, 80 in another). Foreign-source income is exempt from Costa Rican income tax.",
-    "source": "https://www.migracion.go.cr/",
+    "summary": "DGME remote-worker stay (Law 10008): income from outside Costa Rica of at least USD 3,000 per month (USD 4,000 to include dependants), shown by bank statements for the previous year, health insurance for renewal, USD 100 application fee; valid one year and renewable for one more, with proof of at least 80 days present in Costa Rica for the renewal (several commercial sites say 180 days; DGME says 80). Applications go through TramiteYa and are decided within 15 calendar days. Visa-free tourist entry for US/EU/UK passports is normally 90 days (not re-verified).",
+    "source": "https://migracion.go.cr/Paginas/Categor%C3%ADa%20Migratorias%20%28Extranjer%C3%ADa%29/Digital-Nomads.aspx",
     "checked": "2026-11"
    },
    "events": [
@@ -3254,19 +3266,14 @@
      "kind": "season"
     },
     {
-     "month": 3,
-     "name": "Semana Santa crowds (Mar/Apr)",
-     "kind": "festival"
-    },
-    {
      "month": 4,
      "name": "Hottest month before the rains",
      "kind": "season"
     },
     {
      "month": 7,
-     "name": "Veranillo dry spell; Guanacaste Day (25 Jul)",
-     "kind": "festival"
+     "name": "Veranillo dry spell (about 215 mm vs 359 mm in June)",
+     "kind": "season"
     },
     {
      "month": 9,
@@ -3275,19 +3282,19 @@
     },
     {
      "month": 10,
-     "name": "Peak rains, many closures",
+     "name": "Peak rains (about 407 mm), many closures",
      "kind": "season"
     }
    ],
    "airport": "LIR",
-   "caveats": "I could not read the official DGME or TramiteYa pages; visa terms come from commercial and press summaries and the renewal presence requirement conflicts (180 vs 80 days). Annual PM2.5 for the Guanacaste coast was not verified (estimated under 10 ug/m3; sugarcane burning and Saharan dust bring brief spikes). Remote beach towns are 1.5-3 hours from Liberia airport and the nearest major hospitals; internet depends on Starlink or local fibre and drops in storms. Homicide rates have risen nationally, mostly organised crime, while tourist towns see mainly theft.",
+   "caveats": "Climate figures are for Nicoya town (Copernicus-based tables and a 30-year normals page); beach towns on the coast run a little cooler and breezier. A Weather Spark page for Nicoya gave much lower rainfall and cooler highs, so sources disagree on magnitude though not on seasonality. IQAir lists a 2025 national mean of 6.1 ug/m3 with only three stations; there is no measured Nicoya Peninsula figure. Rent and budget estimates vary widely between pages (Jobicy's Nosara page gave USD 2,830 per month with USD 1,800 housing; other pages gave USD 1,550-1,650). Safety and healthcare notes (petty theft; advanced care in Nicoya, Liberia or San Jose) rest on one guide plus general knowledge.",
    "sources": [
-    "https://ticotimes.net/?p=157804",
-    "https://www.riotimesonline.com/costa-rica-digital-nomad-visa-2026/",
-    "https://fragomen.com/insights/costa-rica-visa-options-residency-guide.html",
-    "https://www.jobicy.com/cost-of-living/costa-rica/nosara",
-    "https://jobicy.com/cost-of-living/costa-rica/santa-teresa",
-    "https://www.expat.com/en/guide/central-america/costa-rica/37129-digital-nomad-guide-to-living-and-working-in-costa-rica.html"
+    "https://migracion.go.cr/Paginas/Categor%C3%ADa%20Migratorias%20%28Extranjer%C3%ADa%29/Digital-Nomads.aspx",
+    "https://weather-and-climate.com/average-monthly-Rainfall-Temperature-Sunshine,nicoya-guanacaste-cr,Costa-Rica",
+    "https://nomadseason.com/climate/costa-rica/guanacaste/nicoya.html",
+    "https://weatherspark.com/y/14420/Average-Weather-in-Nicoya-Costa-Rica-Year-Round",
+    "https://www.iqair.com/costa-rica",
+    "https://www.jobicy.com/cost-of-living/costa-rica/nosara"
    ]
   },
   {
@@ -3300,18 +3307,18 @@
     "queenstown-new-zealand"
    ],
    "area": "Queenstown, Wanaka, Milford Sound, Fiordland; a car is essential",
-   "summary": "Queenstown, Wanaka and Fiordland offer alpine lakes, hiking, skiing and very safe, fast-connected towns, with remote work for overseas employers allowed on a visitor visa. It is expensive, summer (December-March) is the sweet spot and books out early, and serious hospital care is a few hours away.",
+   "summary": "Queenstown, Wanaka and Fiordland offer alpine lakes, hiking, skiing and very safe, well-connected towns, with remote work for overseas employers allowed on a visitor visa. It is expensive, summer (December-February) is the sweet spot and books out early, and serious hospital care is hours away.",
    "months": [
     "best",
     "best",
-    "best",
     "good",
     "fair",
     "fair",
     "fair",
     "fair",
     "fair",
-    "good",
+    "fair",
+    "fair",
     "good",
     "best"
    ],
@@ -3320,36 +3327,42 @@
      "months": [
       12,
       1,
-      2,
-      3
+      2
      ],
      "kind": "best",
-     "reason": "long days and highs of 19-23 C; Great Walks open; peak prices Dec-Feb, quieter and settled in March"
+     "reason": "longest days (about 15.6 h of daylight at the solstice) and highs of 17-18 C by Weather Spark's model; peak prices"
+    },
+    {
+     "months": [
+      3,
+      11
+     ],
+     "kind": "good",
+     "reason": "highs of 15-16 C, no snow; March is settled and quieter, November has lengthening days and the Great Walks open from late October"
     },
     {
      "months": [
       4,
-      10,
-      11
+      5,
+      9,
+      10
      ],
-     "kind": "good",
-     "reason": "highs 15-18 C; April has autumn colour and the Great Walks season ending 30 Apr; October-November bring lupins, wind and the Great Walks reopening from late October"
+     "kind": "fair",
+     "reason": "cool transition months, highs of 9-13 C, first snow possible in May and light snow into September, shorter days and variable weather"
     },
     {
      "months": [
-      5,
       6,
       7,
-      8,
-      9
+      8
      ],
      "kind": "fair",
-     "reason": "highs 8-13 C, frosts and snow, around 8 hours of daylight in June, Milford Road avalanche closures, and ski-season prices June-September"
+     "reason": "highs of 6-8 C, lows near 0 C, snowfall about 1-1.5 in a month in town, about 8.8 hours of daylight on 21 June, and ski-season prices"
     }
    ],
    "scores": {
-    "climate": 6.0,
-    "air": 8.8,
+    "climate": 4.0,
+    "air": 9.0,
     "cost": 2.8,
     "safety": 9.0,
     "health": 6.0,
@@ -3369,10 +3382,10 @@
     "max": 5000,
     "currency": "EUR",
     "per": "trip",
-    "note": "one person, about 4 weeks: furnished 1-bed in Queenstown/Wanaka (about NZD 490-650 per week off-peak, more in summer and ski season), car hire or campervan, food, a few activities; excludes long-haul flights and insurance"
+    "note": "one person, about 4 weeks: furnished rental (2-bed units seen at NZD 700-785 per week; 1-beds likely lower), car hire or campervan, food, a few activities; excludes long-haul flights and insurance"
    },
    "entry": {
-    "summary": "No dedicated nomad visa. US and EU passports enter on an NZeTA for up to 3 months per visit (UK passports up to 6 months); the International Visitor Levy of NZD 100 is paid with the NZeTA. Immigration NZ allows unlimited remote work on a visitor visa (applied for on or after 27 Jan 2025) if it is for an employer or clients outside New Zealand and does not require being physically present for NZ work. Income is generally not taxed in NZ if you stay under 92 days in 12 months (up to 183 days where a tax treaty applies).",
+    "summary": "No dedicated nomad visa. NZeTA allows up to 3 months per visit (UK citizens 6 months), with no more than 6 months in any 12 months, and requires at least NZD 1,000 a month of funds and onward travel; the International Visitor Levy (NZD 100) is paid with the NZeTA. Immigration NZ allows unlimited remote work on a visitor visa (applied for on or after 27 Jan 2025) for an employer or clients outside New Zealand, and not for NZ clients or work needing physical presence. Tax: income may not be taxed in NZ under 92 days in 12 months, or up to 183 days where a tax treaty applies.",
     "source": "https://www.immigration.govt.nz/visit/checking-or-changing-the-conditions-of-your-visitor-visa-or-nzeta/working-remotely-in-new-zealand-on-a-visitor-visa",
     "checked": "2026-11"
    },
@@ -3393,24 +3406,24 @@
      "kind": "festival"
     },
     {
-     "month": 10,
-     "name": "Great Walks season reopens (late Oct)",
+     "month": 7,
+     "name": "Ski season price spike (Jun-Sep)",
      "kind": "season"
     },
     {
-     "month": 7,
-     "name": "Ski season price spike (Jun-Sep)",
+     "month": 10,
+     "name": "Great Walks season reopens (late Oct)",
      "kind": "season"
     }
    ],
    "airport": "ZQN",
-   "caveats": "The immigration page does not say explicitly whether the remote-work allowance covers NZeTA (visa-waiver) travellers as well as visitor-visa holders; confirm with Immigration NZ before relying on it. I could not verify any change to NZ tax rules for visitors in 2026. Rental prices are asking prices, euro conversion assumes roughly NZD 1 = EUR 0.5 and should be rechecked, and summer rents run well above the off-peak listings found. Winter is rated fair rather than avoid because skiing is the main draw; it is a poor fit for a car-free, long working stay.",
+   "caveats": "Temperatures come from Weather Spark's model (January high 18 C), which looks cooler than some station records for Queenstown town, so summer months may be warmer than shown and shoulder months mildly better. The remote-work page does not say whether the allowance covers NZeTA (visa-waiver) travellers as well as visitor-visa holders; confirm with Immigration NZ. The NZeTA page did not mention the IVL (the NZD 100 figure comes from a search result). IQAir's Queenstown page showed only a live reading of 1.4 ug/m3 and no annual mean, so the air score is an estimate for a low-pollution region; winter woodsmoke was not checked. Rent: the opened realestate.co.nz pages listed 2-bed units at NZD 700-785 per week, and a 1-bed asking range of NZD 490-650 came from search snippets only. Euro conversion assumes roughly NZD 1 = EUR 0.5.",
    "sources": [
     "https://www.immigration.govt.nz/visit/checking-or-changing-the-conditions-of-your-visitor-visa-or-nzeta/working-remotely-in-new-zealand-on-a-visitor-visa",
-    "https://www.immigration.govt.nz/new-zealand-visas/apply-for-a-visa/about-visa/visa-waiver",
     "https://immigration.govt.nz/new-zealand-visas/visas/visa/nzeta",
-    "https://www.mbie.govt.nz/immigration-and-tourism/tourism/tourism-funding/international-visitor-conservation-and-tourism-levy/what-is-the-ivl",
-    "https://www.realestate.co.nz/43031821/residential/rent/3a-643-frankton-road-frankton"
+    "https://weatherspark.com/y/144792/Average-Weather-in-Queenstown-New-Zealand-Year-Round",
+    "https://www.iqair.com/new-zealand/otago/queenstown",
+    "https://www.realestate.co.nz/42985724/residential/rent/1-10-glasgow-street-queenstown"
    ]
   },
   {
