@@ -129,6 +129,17 @@ describe("heat frame by week", () => {
     expect(frameBreakdown([{ score: 1 }], "months", 0)).toBeNull();
   });
 
+  it("carries sunshine into a column's breakdown, as known only when every month has it", () => {
+    const m: FrameMonth[] = Array.from({ length: 12 }, (_, i) => ({ score: 0, tempC: 18, precipMm: i === 6 ? 400 : 10, sunH: i === 2 ? 2 : 8 }));
+    const b = frameBreakdown(m, "months", 2)!;
+    expect(b).toMatchObject({ skyKnown: true, sky: 25, sunH: 2, score: 75 });
+    expect(frameBreakdown(m, "months", 3)).toMatchObject({ skyKnown: true, sky: 0, sunH: 8 });
+    const missing = frameBreakdown(m.map((x, i) => (i === 2 ? { ...x, sunH: undefined } : x)), "months", 2)!;
+    expect(missing).toMatchObject({ skyKnown: false, sky: 0, sunH: undefined, score: 100 });
+    const wk = frameBreakdown(m, "weeks", 5, Array.from({ length: 52 }, () => ({ score: 0, tempC: 18, precipMm: 1, sunH: 4 })))!;
+    expect(wk).toMatchObject({ per: "week", sunH: 4, sky: 12.5 });
+  });
+
   it("labels a best run in weeks by its months", () => {
     const run = bestRun(Array.from({ length: 52 }, (_, i) => (i >= 17 && i <= 22 ? 90 : 10)));
     expect(run).toMatchObject({ start: 17, end: 22 });

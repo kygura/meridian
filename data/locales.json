@@ -9,6 +9,7 @@
   "SE & East Asia",
   "Indian Subcontinent",
   "Southern Europe & Mediterranean",
+  "Canary Islands",
   "Latin America & Atlantic",
   "Pacific & Oceania"
  ],
@@ -2095,162 +2096,6 @@
     "https://expatcenter.eu/en/digital-nomad-visa-portugal/",
     "https://portugeasy.pt/en/immigration-guide/digital-nomad",
     "https://mapping.emergency.copernicus.eu/news/wildfire-in-central-madeira-portugal/"
-   ]
-  },
-  {
-   "id": "canary-islands",
-   "name": "Canary Islands (Las Palmas, Tenerife, La Palma)",
-   "country": "Spain",
-   "region": "Southern Europe & Mediterranean",
-   "role": "base",
-   "cityIds": [
-    "las-palmas-spain",
-    "santa-cruz-de-tenerife-spain"
-   ],
-   "area": "Las Palmas for nomad infrastructure, Tenerife for landscape, La Palma for stars",
-   "summary": "The year-round mild-weather fallback: Las Palmas de Gran Canaria has 19-27 C highs all year, almost no summer rain, fibre internet and the largest nomad scene in the islands, with Tenerife and La Palma for landscape. Rents are lower than the mainland hubs; drawbacks are Saharan dust episodes and island distance.",
-   "months": [
-    "good",
-    "good",
-    "best",
-    "best",
-    "best",
-    "best",
-    "good",
-    "good",
-    "good",
-    "best",
-    "best",
-    "good"
-   ],
-   "monthNotes": [
-    {
-     "months": [
-      3,
-      4,
-      5,
-      6,
-      10,
-      11
-     ],
-     "kind": "best",
-     "reason": "highs 22-26 C (AEMET, Gran Canaria airport), 0-22 mm rain a month and 0-4 rain days"
-    },
-    {
-     "months": [
-      12,
-      1,
-      2
-     ],
-     "kind": "good",
-     "reason": "highs 21-22 C but lows 15-16 C, the year's rain (24-31 mm on 3-4.5 days) and more cloud; winter-sun peak season for visitors"
-    },
-    {
-     "months": [
-      7,
-      8,
-      9
-     ],
-     "kind": "good",
-     "reason": "highs 27 C, lows 21-22 C and humidity about 66-68% at the airport station (cooler by about 2-3 C in the city); dry, trade-wind breezes; August holiday prices"
-    }
-   ],
-   "scores": {
-    "climate": 10.0,
-    "air": 7.0,
-    "cost": 6.4,
-    "safety": 8.0,
-    "health": 7.5,
-    "internet": 8.0,
-    "food": 7.5,
-    "nomad": 8.0,
-    "longstay": 8.5
-   },
-   "stay": {
-    "minWeeks": 6,
-    "idealWeeks": 13,
-    "maxWeeks": 26,
-    "why": "Viable in any month, with city, beach and coworking in Las Palmas; ferry and flight links are the limit"
-   },
-   "cost": {
-    "min": 1300,
-    "max": 2100,
-    "currency": "EUR",
-    "per": "month",
-    "note": "idealista Las Palmas shows 1-beds near Las Canteras at about EUR780-850 (unfurnished/basic), furnished mid-term usually higher; plus food, transport and coworking; insurance excluded"
-   },
-   "entry": {
-    "summary": "Spain telework (digital nomad) visa for people working remotely for non-Spanish companies: income of at least 200% of the monthly minimum wage (EUR2,849 gross/month in 2026), a degree or 3 years' relevant experience, health insurance covering public-system risks, a clean 5-year criminal record and an NIE; Spanish clients limited to 20% of activity. Visa valid 1 year; people already in Spain can obtain a residence permit of up to 3 years. EU citizens need no visa. US and UK passport holders get 90 days in any 180 across the whole Schengen area, shared with other Schengen countries. The EES biometric border system has been fully live since April 2026; ETIAS is not yet in operation and no start date is published (2027 widely reported). The Canaries are in the Schengen area and the same nomad visa applies; the islands use IGIC (7% general rate) rather than mainland VAT, and the 183-day Spanish tax residency rule applies.",
-    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
-    "checked": "2026-11"
-   },
-   "events": [
-    {
-     "month": 2,
-     "name": "Carnival in Las Palmas and Santa Cruz (Feb-Mar)",
-     "kind": "festival"
-    },
-    {
-     "month": 3,
-     "name": "Saharan dust (calima) episodes, mainly winter and summer",
-     "kind": "season"
-    },
-    {
-     "month": 8,
-     "name": "Peak holiday prices",
-     "kind": "season"
-    },
-    {
-     "month": 11,
-     "name": "Atlantic Rally (ARC) departs Las Palmas",
-     "kind": "festival"
-    }
-   ],
-   "airport": "LPA",
-   "seasons": [
-    {
-     "kind": "shoulder",
-     "tourism": "high",
-     "from": "12-01",
-     "to": "02-28",
-     "title": "Winter-sun season",
-     "why": "Highs 21-22 C but lows 15-16 C and the year's rain (24-31 mm on 3-4.5 days); northern Europeans fill the islands"
-    },
-    {
-     "kind": "peak",
-     "tourism": "shoulder",
-     "from": "03-01",
-     "to": "06-30",
-     "title": "Dry spring",
-     "why": "Highs 22-25 C, rain drops from 12 mm (Mar) to 0 (Jun), 184-308 sunshine hours; Easter is the busy spell"
-    },
-    {
-     "kind": "shoulder",
-     "tourism": "high",
-     "from": "07-01",
-     "to": "09-15",
-     "title": "Hot dry summer",
-     "why": "Highs about 27 C, lows 21-22 C (airport station), no rain; school-holiday demand peaks in July-August"
-    },
-    {
-     "kind": "peak",
-     "tourism": "shoulder",
-     "from": "09-16",
-     "to": "11-30",
-     "title": "Warm autumn",
-     "why": "Oct-Nov highs 24-26 C with only 16-22 mm rain; quieter before the winter season starts"
-    }
-   ],
-   "caveats": "No city PM2.5 annual mean was found for Las Palmas (EEA-based tables omit the Canaries; IQAir's page showed 5 ug/m3 on the day only); the air score is an estimate from Spain-wide levels with 1 point off for calima. Climate is the airport station (about 2-3 C hotter in summer than the seafront; a reanalysis estimate for the city gives highs of 18-24.5 C), so the best/good split between months is a judgement call. The IGIC rate, calima timing and Atlantic Rally were not verified from a source. Rents are listing asking prices, mostly unfurnished or short-let. The north of Tenerife and La Palma are cooler and wetter. Season tourism levels are judgement from school-holiday and festival timing, not a sourced visitor count.",
-   "sources": [
-    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
-    "https://www.thelocal.es/20260216/confirmed-the-financial-requirements-for-spains-digital-nomad-visa-in-2026",
-    "https://www.aemet.es/en/serviciosclimaticos/datosclimatologicos/valoresclimatologicos_gran-canaria-aeropuerto.csv?k=coo&l=C649I",
-    "https://climanote.app/spain/las-palmas-de-gran-canaria/",
-    "https://en.climate-data.org/europe/spain/canary-islands/las-palmas-de-gran-canaria-583/",
-    "https://www.iqair.com/spain/canary-islands/las-palmas-de-gran-canaria",
-    "https://whichcity.eu/measures/environment-pm25-annual-mean/",
-    "https://www.idealista.com/en/alquiler-viviendas/las-palmas-de-gran-canaria-las-palmas/"
    ]
   },
   {
@@ -4717,6 +4562,1260 @@
     "https://www.weather2travel.com/climate-guides/sri-lanka/trincomalee.php",
     "https://en.climate-data.org/asia/sri-lanka/eastern/trincomalee-4028/",
     "https://reliefweb.int/report/sri-lanka/sri-lanka-tropical-cyclone-ditwah-flash-update-2-30-november-6-pm-local-time"
+   ]
+  },
+  {
+   "id": "gran-canaria",
+   "name": "Gran Canaria (Las Palmas)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "las-palmas-spain"
+   ],
+   "area": "Las Palmas (Las Canteras / Guanarteme / Santa Catalina) for coworking, the nomad scene, the city and an urban beach; the south (Maspalomas, Playa del Ingles, Mogan) for guaranteed sun but a resort setting with a thin mid-term rental and coworking scene.",
+   "summary": "Gran Canaria is the Canaries' easiest base for a remote worker: a real city of about 380,000 with Spain's public and private health system, near-universal fibre and 5G, several coworkings, a standing nomad meetup scene and a mild 21-28 C range all year. The trade-offs are the summer 'panza de burro' cloud and trade winds on the north-east coast (the south is sunnier and drier), occasional Saharan calima, and a tight, rising rental market after the 2025 holiday-let law. Pick Las Palmas for a 3-12 month stay; pick the south only if sun matters more than city life.",
+   "months": [
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good",
+    "best",
+    "good"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "best",
+     "reason": "Gran Canaria Aeropuerto (C649I, Gando, 24 m, east coast): mean max 21.1-21.3 C, min 15.2-15.3 C, 20-23 mm, 2.7-2.8 rain days, 186-189 sun h. Mild and dry enough to work from a terrace; the winter calima peak and Carnaval noise in Las Palmas (22 Jan-28 Feb 2027) are the only drawbacks."
+    },
+    {
+     "months": [
+      3,
+      4
+     ],
+     "kind": "best",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 22.2-22.9 C, min 15.7-16.6 C, 12 mm in March and 5 mm in April, 1-2 rain days, 232-234 sun h. The most settled stretch before the summer cloud banks form."
+    },
+    {
+     "months": [
+      5,
+      6
+     ],
+     "kind": "good",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 24.0-25.6 C, min 17.8-19.5 C, under 1 mm rain, 267-273 sun h. Warm and dry, but panza de burro (low trade-wind stratocumulus over the north and north-east, usually clearing by midday) starts to grey out Las Palmas mornings; the south stays clear."
+    },
+    {
+     "months": [
+      7,
+      8
+     ],
+     "kind": "good",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 27.2-27.8 C, min 21.0-21.9 C, 0-0.6 mm rain, 301-304 sun h, 64-66% humidity. Hot at the airport/east coast, breezy and often cloudy on the Las Palmas seafront (the airport reads hotter and sunnier than the city); school-holiday crowds, ferries and flights are the busiest and priciest of the year."
+    },
+    {
+     "months": [
+      9,
+      10
+     ],
+     "kind": "good",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 26.3-27.2 C, min 20.3-21.6 C (the warmest nights of the year in September), 5 mm in September and 21 mm in October, 2.8 rain days in October, 214-249 sun h. Humid-warm, first Atlantic fronts from October."
+    },
+    {
+     "months": [
+      11
+     ],
+     "kind": "best",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 24.3 C, min 18.4 C, 17 mm, 3.4 rain days, 180 sun h. Summer heat gone, sea still about 21-22 C, and the winter-season flight schedule and crowds have not fully arrived."
+    },
+    {
+     "months": [
+      12
+     ],
+     "kind": "good",
+     "reason": "Gran Canaria Aeropuerto (C649I): mean max 22.3 C, min 16.5 C, 28.7 mm (the wettest month), 4.0 rain days, 183 sun h. Still mild, but the rainiest and dullest month; Christmas-New Year peak prices for flights and short lets."
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 7.0,
+    "cost": 5.9,
+    "safety": 7.0,
+    "health": 8.5,
+    "internet": 9.0,
+    "food": 8.0,
+    "nomad": 8.5,
+    "longstay": 7.0
+   },
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 13,
+    "maxWeeks": 26,
+    "why": "Base: a full city with coworking, community, hospitals and a year-round workable climate; 13 weeks fits the Schengen 90 days, and the Spanish telework visa allows 6-12+ months. Month-to-month rentals are scarce and pricey, so under 4 weeks is better spent in a short-let or hotel."
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2200,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Furnished 1-bed mid-term in Las Canteras/Guanarteme/Santa Catalina about 900-1,400 EUR (city average asking rent roughly 13-14 EUR/m2; listings seen from 750 EUR for a 30 m2 studio to 1,500 EUR for a seafront studio), food and going out about 500-700, transport 30-60 (guagua 1.40 EUR/trip), coworking about 100-150 (not verified). Health insurance excluded; Spanish visa-grade private cover about 60-120 EUR is extra."
+   },
+   "entry": {
+    "summary": "Spain-wide rules. EU/EEA citizens: free movement, register after 3 months. US and UK passports: visa-free 90 days in any 180 across Schengen (Entry/Exit System in operation since April 2026; ETIAS not yet required and its start date is unconfirmed, expected 2027). Longer: Spain's international teleworker (digital nomad) visa/residence permit for non-EU remote workers employed by or freelancing for non-Spanish companies: needs 3 months of existing work relationship with the foreign company, a degree or 3 years of experience, Spanish-recognised health insurance with no copays, and income of at least 200% of the minimum wage (EUR 2,849 a month in 2026 spread over 12 months, or EUR 2,442 over the 14 statutory payments; +916 EUR for the first dependant, +306 EUR for each further one); a consular visa is valid up to 1 year (applications in person by appointment from 1 Sept 2026 at some consulates) and a residence permit applied for from inside Spain can run up to 3 years, renewable. Tax: staying more than 183 days in a calendar year generally makes you Spanish tax resident (not re-verified against AEAT this session).",
+    "source": "https://www.exteriores.gob.es/Consulados/washington/en/ServiciosConsulares/Paginas/Consular/Telework-visa.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 1,
+     "name": "Carnaval de Las Palmas de Gran Canaria 2027 opens (22 Jan; theme 'La Musica'; runs to 28 Feb with Drag and Reina galas, Gran Cabalgata and Entierro de la Sardina)",
+     "kind": "festival"
+    },
+    {
+     "month": 2,
+     "name": "Carnaval de Las Palmas continues; Martes de Carnaval is a local holiday on 9 Feb 2027; programme ends 28 Feb",
+     "kind": "festival"
+    },
+    {
+     "month": 6,
+     "name": "Noche de San Juan on Las Canteras beach (23 Jun) and the city's founding anniversary fiestas (24 Jun, founded 1478)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Peak summer: trade winds, panza de burro on the north-east coast, busiest holiday season",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "Fiesta del Pino in Teror (Romeria 7 Sep, Virgen del Pino day 8 Sep)",
+     "kind": "festival"
+    },
+    {
+     "month": 12,
+     "name": "Winter transatlantic flights start (Air Transat Toronto/Montreal weekly from 12 Dec 2026 to 4 Apr 2027) and winter high season",
+     "kind": "season"
+    }
+   ],
+   "airport": "LPA",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "04-30",
+     "title": "Mild winter and spring",
+     "why": "AEMET Gran Canaria Aeropuerto: mean max 21-24 C, 12-29 mm and 2-4 rain days per month, 180-234 sun h; winter is also the tourist high season (Carnaval 22 Jan-28 Feb 2027)."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "05-01",
+     "to": "06-30",
+     "title": "Panza de burro starts",
+     "why": "Max 24-26 C and under 1 mm rain at the airport, but morning low cloud over Las Palmas and the north; the south stays clear."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "08-31",
+     "title": "Hot, windy, busy summer",
+     "why": "Mean max 27-28 C and min 21-22 C at the airport, 300+ sun h, nil rain; trade winds and cloud on the north coast; Spanish and European school holidays."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "09-01",
+     "to": "10-31",
+     "title": "Warm, humid early autumn",
+     "why": "Mean max 26-27 C, min 20-22 C (warmest nights in September), 5 mm in September and 21 mm in October with the first Atlantic fronts."
+    }
+   ],
+   "caveats": "Climate: AEMET's own page for Gran Canaria Aeropuerto (C649I) loaded with the 1981-2010 table; the 1991-2020 monthly figures used here are from a reproduction of the AEMET table on Spanish Wikipedia (Las Palmas de Gran Canaria article), not read directly on aemet.es. The AEMET pages for Las Palmas-Tafira (C658X, 269 m, an inland-hillside station) and Maspalomas (C689E) returned no normals, so there is no verified city-seafront table: the airport is on the east coast about 18 km from the city and reads hotter and sunnier than the Las Palmas seafront in summer; ratings are for Las Palmas, with no figure found for how much cloudier. South side: only an old rainfall series (Maspalomas-San Fernando, 1963-1990, 93 mm a year, 0 mm June-August, from the Servicio Hidraulico via Wikipedia) was found; it is clearly drier and sunnier but temperatures are not verified. Calima: a CSIC-cited study says dust intrusions touch about 40% of days in the Canaries and the strongest episodes cluster in winter; I could not obtain AEMET monthly counts for Gran Canaria. Air: no verified Las Palmas annual PM2.5; IQAir puts the Canaries at about 1.4 times the WHO 5 ug/m3 guideline (roughly 7), the air score allows for a higher urban figure and calima spikes. Rent: idealista pages were blocked; the 13-13.8 EUR/m2 city figure and 15.9 EUR/m2 provincial figure come from secondary reports of idealista data, and enalquiler's averages were inconsistent (959, 1,332 and 1,813 EUR for different filters). Housing: Ley 6/2025 on tourist use of dwellings (in force 13 Dec 2025) restricts new holiday lets and bans whole-building pseudo-hotels; its effect on furnished mid-term lets in Las Palmas was not established, but 2026 reports show the Canaries' holiday-let supply falling and rents rising about 7% year on year, so expect tight supply and landlords asking for annual contracts. Health: Hospital Universitario de Gran Canaria Dr. Negrin (public, tertiary, regional reference for heart and bone-marrow transplant and congenital cardiac surgery; ranked 25th in Spain in the MRS ranking, first in the Canaries) and Hospital Universitario Insular (public, mother-child, central Las Palmas); private options include Hospital San Roque and Hospital Perpetuo Socorro. Serious care does not require leaving the island. Internet: Canarias-wide figures only (FTTH above 91% of homes, 1 Gbps networks 90.6%, 5G 99.1%; Gran Canaria and Tenerife highest); no Las Palmas municipal figure was opened. Getting there: LPA has intercontinental flights only from Canada and Africa; Europe and mainland flights were not enumerated, Binter connects LPA to the other islands and Madrid, and Fred Olsen's Agaete-Santa Cruz de Tenerife crossing takes about 1h20 (Naviera Armas also sails Las Palmas-Tenerife); timetables were not verified. Safety: Las Palmas city's crime rate is below Madrid, Barcelona, Valencia and Palma per the city council's reading of the Interior Ministry Q3 2025 Balance, but Gran Canaria crime rose about 2.8% in the first nine months of 2025 and the province ranks high on sexual offences per capita; petty theft near Santa Catalina and Las Canteras at night is the usual issue. Not verified this session: coworking prices, Binter/ferry timetables, Almendros en Flor and Maspalomas Carnaval dates, the 24 June fiesta programme.",
+   "sources": [
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C649I&k=coo",
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C658X&k=coo",
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C689E&k=coo",
+    "https://es.wikipedia.org/wiki/Las_Palmas_de_Gran_Canaria",
+    "https://es.wikipedia.org/wiki/Maspalomas",
+    "https://www.exteriores.gob.es/Consulados/washington/en/ServiciosConsulares/Paginas/Consular/Telework-visa.aspx",
+    "https://www.idealista.com/en/news/lifestyle-in-spain/2025/10/31/870228-living-in-las-palmas-de-gran-canaria-a-tropical-nomad-lifestyle",
+    "https://www.lavozdelanzarote.com/en/ekonomus/economy/canaries-reach-almost-total-5g-coverage-and-exceed-90-access-to-ultra-fast-networks_243306_102.html",
+    "https://rtvc.es/presentacion-fechas-carnaval-las-palmas-de-gran-canaria-2027/",
+    "https://www.iqair.com/air-quality/canary-islands",
+    "https://diariodeavisos.elespanol.com/2026/07/canarias-registra-al-menos-146-dias-con-calima-al-ano-casi-5-meses/",
+    "https://rtvc.es/las-palmas-de-gran-canaria-baja-tasas-criminalidad-diciembre-2025/",
+    "https://www.aferry.com/en-us/santa-cruz-de-tenerife-agaete/",
+    "https://www.travelweek.ca/news/airlines/air-transat-adds-canary-islands-and-expands-yqb-winter-network/",
+    "https://www.euronews.com/travel/2026/07/08/etias-after-ees-chaos-will-europes-new-20-travel-authorisation-system-be-delayed",
+    "https://boe.es/buscar/pdf/2025/BOE-A-2025-26358-consolidado.pdf",
+    "https://www3.gobiernodecanarias.org/noticias/tag/hospital-universitario-de-gran-canaria-dr-negrin/",
+    "https://enalquiler.com/precios/precio-alquiler-vivienda-las-palmas-de-gran-canaria_31-37-33788-0.html",
+    "https://cuantomecuesta.com/es/alquilar-las-palmas/",
+    "https://www.expatica.com/es/cost-of-living/las-palmas-de-gran-canaria/",
+    "https://grancanaria.com/turismo/en/the-island/municipios-de-gran-canaria/visit-teror/fiestas-and-information"
+   ]
+  },
+  {
+   "id": "tenerife",
+   "name": "Tenerife (south coast: Los Cristianos / El Médano)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "tenerife-spain",
+    "santa-cruz-de-tenerife-spain"
+   ],
+   "area": "Base on the dry south coast: El Médano for kitesurf, wind and a small nomad scene, or Los Cristianos/Costa Adeje for coworking, services and hospitals (TFS airport). Use La Laguna/Santa Cruz (TFN) only if you want a university city and can live with a cooler, cloudier, wetter climate.",
+   "summary": "Tenerife's south coast has a mild, sunny, dry climate all year (mean max 22 °C in January, 28 °C in August, about 130 mm of rain a year at Tenerife Sur airport), a mature tourist infrastructure, private hospitals and coworking in Adeje, Los Cristianos and El Médano. The main reasons to skip it are tight and rising rents for mid-term furnished flats and a resort feel in the Adeje/Arona strip. The north (La Laguna, Puerto de la Cruz) is greener, cheaper and far cloudier, with 520 mm of rain a year at Tenerife Norte airport (632 m).",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "good"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ],
+     "kind": "best",
+     "reason": "Tenerife Sur Aeropuerto (C429I, AEMET 1981-2010): mean max 23.1/23.1/23.9/25.4 °C, min 15.6-18.8 °C, rain 15/7/1/0 mm on 1.9/1.1/0.3/0.0 days, 226-259 sun hours/month. North for comparison: Tenerife Norte (C447A, 632 m) max 18.2-22.2 °C, 61/39/19/11 mm on 6.8-2.4 days; Santa Cruz (C449C) max 22.1-26.2 °C, 38/12/4/1 mm."
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "Tenerife Sur Aeropuerto (C429I): Oct max 26.8/min 20.0 °C, 12 mm, 1.6 rain days, 214 sun h; Nov max 24.8/min 18.2 °C, 26 mm, 1.9 rain days, 193 sun h. Heat has eased and the winter tourist peak has not started. North for comparison: Tenerife Norte (C447A) Oct 22.5 °C, 47 mm, 6.5 days; Nov 19.6 °C, 81 mm, 8.3 days."
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "Tenerife Sur Aeropuerto (C429I): max 21.7/22.0 °C, min 15.2/15.0 °C, 17/20 mm on 1.8/2.2 days, 193/195 sun h. Comfortable by day, cool evenings, sea about 18-19 °C; winter is the main season for calima and Atlantic storms. North for comparison: Santa Cruz (C449C) max 21.0/21.2 °C, 32/35 mm, 4.2/3.8 days; Tenerife Norte (C447A, 632 m) max 16.0/16.7 °C, min 10.0-10.2 °C, 80/70 mm, 7.7/7.4 days, 150/168 sun h."
+    },
+    {
+     "months": [
+      7,
+      8,
+      9
+     ],
+     "kind": "good",
+     "reason": "Tenerife Sur Aeropuerto (C429I): max 27.7/28.4/27.9 °C, min 20.2-21.1 °C, 0/1/4 mm, 277-295 sun h in Jul-Aug, humidity 65-68%. Hot and dry with steady trade winds on the south coast; Cabildo wildfire prealerta/alert measures were in force through summer 2026 and heat episodes occur. North for comparison: Tenerife Norte (C447A) max 24.7/25.7/24.9 °C, 6/5/16 mm; Santa Cruz (C449C) max 28.7/29.0/28.1 °C."
+    },
+    {
+     "months": [
+      12
+     ],
+     "kind": "good",
+     "reason": "Tenerife Sur Aeropuerto (C429I): max 22.8/min 16.5 °C, 30 mm on 3.5 rain days (wettest month of the year there), 195 sun h. Christmas and New Year raise prices. North for comparison: Tenerife Norte (C447A, 632 m) max 17.1/min 11.5 °C, 82 mm on 8.8 days, 137 sun h; Santa Cruz (C449C) 43 mm, 5.4 days."
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 8.5,
+    "cost": 5.7,
+    "safety": 7.5,
+    "health": 7.5,
+    "internet": 7.0,
+    "food": 7.0,
+    "nomad": 7.0,
+    "longstay": 7.5
+   },
+   "stay": {
+    "minWeeks": 6,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Base: mild climate in every month, hospitals, coworking and direct flights. Rents for furnished mid-term flats are tight and many listings are seasonal with minimum stays, so 6+ weeks is easier to secure than short stays; beyond 13 weeks you need residence or an EU passport."
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2300,
+    "currency": "EUR",
+    "per": "month",
+    "note": "South coast: furnished 1-bed about 1,000-1,500 EUR/month in mid-term listings (Los Cristianos examples 1,150-1,500), plus food, transport and utilities; coworking excluded (about 205-250 EUR/month for a flexible desk). Rents in Santa Cruz de Tenerife province rose 13.8% between end-2025 and Q3 2026 (average 1,240 EUR/month). North (La Laguna/Santa Cruz) is cheaper: about 14 EUR/m2, roughly 760-840 EUR for 60 m2 on idealista figures reported for Sept 2026."
+   },
+   "entry": {
+    "summary": "EU citizens need no visa. US and UK passport holders get 90 days in any 180 across the Schengen area (Canaries are in Schengen). Spain's telework visa: income of at least 200% of the monthly minimum wage (about 2,849 EUR gross/month in 2026), a degree or 3 years' experience, employer or client outside Spain (Spanish clients at most 20% of activity), company at least 1 year old, public-system-equivalent health insurance, apostilled FBI-type record check. Visa valid 1 year; people already legally in Spain may apply for a remote-work residence permit up to 3 years. Spanish tax residency starts at 183 days in a calendar year.",
+    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 1,
+     "name": "Santa Cruz Carnival opening gala (22 Jan 2027, moved from 8 Jan)",
+     "kind": "festival"
+    },
+    {
+     "month": 1,
+     "name": "Winter storms and snow can close Teide roads and cable car (Jan-Mar)",
+     "kind": "nature"
+    },
+    {
+     "month": 2,
+     "name": "Santa Cruz de Tenerife Carnival, street programme 19-28 Feb 2027 (delayed two weeks from the usual early-February slot)",
+     "kind": "festival"
+    },
+    {
+     "month": 2,
+     "name": "Calima (Saharan dust) episodes most intense in winter",
+     "kind": "nature"
+    },
+    {
+     "month": 6,
+     "name": "El Médano trade-wind season begins (strongest Jul-Aug)",
+     "kind": "season"
+    },
+    {
+     "month": 8,
+     "name": "Wildfire alert measures in force island-wide (2023 fire area still restricted)",
+     "kind": "season"
+    }
+   ],
+   "airport": "TFS",
+   "seasons": [
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "01-01",
+     "to": "02-28",
+     "why": "South-coast max 21.7-22.0 °C, cool evenings (15 °C min), winter storms and calima episodes; Teide roads close in snow/ice; Santa Cruz carnival and peak winter tourism raise prices."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "06-30",
+     "why": "Max 23-25 °C, under 15 mm a month and under 2 rain days at Tenerife Sur; Easter is the busy spell, May-June is quiet."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "09-30",
+     "why": "Max 27.7-28.4 °C, almost no rain, strong trade winds at El Médano; Spanish and European school holidays; wildfire alert measures in Jul-Sep."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "10-01",
+     "to": "11-30",
+     "why": "Max 26.8 °C falling to 24.8 °C, 12-26 mm, under 2 rain days; the winter charter peak starts in December."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "12-01",
+     "to": "12-31",
+     "why": "Wettest month on the south coast (30 mm, 3.5 rain days) with Christmas and New Year high season."
+    }
+   ],
+   "caveats": "Climate figures are AEMET normals for 1981-2010, the period AEMET's station pages currently publish for these three stations; 1991-2020 values were not available there. Tenerife Norte airport sits at 632 m and represents La Laguna's upland climate, not the coast at Puerto de la Cruz (no station checked). Rent: no idealista municipal series could be opened (403 on idealista); the cost range blends listing examples and secondary reports and is soft. Hospital del Sur (public, Granadilla de Abona area) is a district hospital whose expansion is still at design stage; tertiary public care is at HUNSC (Candelaria) and HUC (La Laguna), each about an hour by motorway; private options are Quirónsalud Costa Adeje, Hospiten Sur (Playa de las Américas) and Vithas/Quirónsalud in the north; hospital service levels were taken from search summaries, not verified on the hospitals' own pages. Internet: no island-level fibre coverage figure found; coworking listings say fibre in Adeje and El Médano, but some older El Médano houses only have 4G, so test before committing; 5G is reported in Santa Cruz and the big southern resorts. Air: 7.2 ug/m3 is the IQAir 2025 Canary Islands figure, not a Tenerife station mean; calima days (about 20-30 a year on Gran Canaria/Tenerife per a secondary source, winter-biased for the strongest events) justify the 0.5 deduction. Wind: kitesurf sites cite roughly 210+ windy days a year at El Médano, strongest Jul-Aug; no AEMET wind normals were checked. The 2025 Canary vacation-rental law (Ley 6/2025, 10 Dec 2025, BOE 23 Dec 2025) caps holiday lets at 10% of dwellings per municipality; its effect on mid-term rents is not yet clear and the housing shortage predates it. Santa Cruz carnival dates for 2027 differed between sources (Coso/queen gala dates conflicting); confirm with the official programme. ETIAS/EES status was not re-verified this session; check the EU pages before travel. Flight and ferry details (Binter, Fred. Olsen, Armas) were not verified; TFS handled about 14M passengers in 2025 (12.8M international) and TFN 7.2M (almost all domestic), so TFS is the base for European direct flights.",
+   "sources": [
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C429I&k=coo",
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C447A",
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C449C",
+    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "https://www.boe.es/boe/dias/2025/12/23/pdfs/BOE-A-2025-26358.pdf",
+    "https://rtvc.es/el-alquiler-en-canarias-sube-un-881-desde-finales-de-2025-19-octubre-2026/",
+    "https://www.iqair.com/eu/air-quality/canary-islands",
+    "https://www.eldiario.es/canariasahora/tiempo-canarias/hay-mas-calima-canarias-dicen-expertos_1_10957235.html",
+    "https://diariodeavisos.elespanol.com/2026/03/oficial-santa-cruz-retrasa-dos-semanas-carnaval-2027/"
+   ]
+  },
+  {
+   "id": "lanzarote",
+   "name": "Lanzarote (Arrecife)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "arrecife-spain"
+   ],
+   "area": "Arrecife for year-round local life, the cheapest rents, coworkings and a hospital; Costa Teguise or Puerto del Carmen for beach-resort living (and Famara for surf), at higher prices and with more holiday-let churn.",
+   "summary": "Flat, dry, volcanic island with 20-29 C highs all year, almost no rain and a steady north-easterly trade wind that makes July-September breezy rather than oppressive. Arrecife is a small working capital with fibre, a couple of coworkings and the island's only public hospital, but mid-term rents have risen fast and the nomad scene is thin. Pick it for reliable sun and low rain; skip it if you want a large nomad community or dislike constant wind and occasional Saharan dust.",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "good"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ],
+     "kind": "best",
+     "reason": "Lanzarote Aeropuerto (C029O, AEMET 1981-2010): mean max 22.9-26.3 C, min 15.0-18.8 C, 0-12 mm rain on 0-2.4 rain days, 241-297 sun hours; the wind builds from June"
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "Lanzarote Aeropuerto (C029O, AEMET 1981-2010): mean max 26.7 C (Oct) and 24.2 C (Nov), min 19.4 and 17.2 C, 10-15 mm on 1.9-3.0 rain days, 207-235 sun hours; calima heat spikes possible (36 C and PM10 alerts reported in Oct 2026)"
+    },
+    {
+     "months": [
+      12,
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "Lanzarote Aeropuerto (C029O, AEMET 1981-2010): mean max 20.7-21.8 C but min 14.0-15.4 C, 16-29 mm on 2.7-3.8 rain days (Dec is the wettest month), humidity 68-71%; mild but cooler evenings and some grey days"
+    },
+    {
+     "months": [
+      7,
+      8,
+      9
+     ],
+     "kind": "good",
+     "reason": "Lanzarote Aeropuerto (C029O, AEMET 1981-2010): mean max 28.2-29.1 C, min 20.4-21.2 C, 0-2 mm rain, 248-308 sun hours; the NNE trade wind blows hardest (airport average about 13 kt, gusts about 27 kt over the year per Windfinder) and calima heat episodes occur; the leeward south coast (Playa Blanca) and sheltered Arrecife cope better than exposed Famara"
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 7.0,
+    "cost": 5.4,
+    "safety": 8.0,
+    "health": 6.5,
+    "internet": 7.0,
+    "food": 6.5,
+    "nomad": 6.0,
+    "longstay": 8.5
+   },
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 12,
+    "maxWeeks": 26,
+    "why": "Base: livable year-round with fibre and a hospital, but the island is small, the nomad scene thin and furnished mid-term rentals scarce, so 1-3 months at a time suits better than a full year"
+   },
+   "cost": {
+    "min": 1600,
+    "max": 2400,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Rent is the swing factor: Arrecife flat median about EUR1,150 (RealAdvisor), most island listings EUR1,100-1,800 (Feb 2026), small Arrecife flats and studios sometimes under EUR1,000. Plus food, local transport (a car is usual outside Arrecife) and coworking; insurance excluded."
+   },
+   "entry": {
+    "summary": "Spain's teleworker (digital nomad) visa: remote work for non-Spanish employers or clients, funds of at least 200% of the monthly minimum wage (reported as about EUR2,849 gross/month for 2026), visa valid 1 year; people already legally in Spain can apply for a residence permit of up to 3 years; self-employed may serve Spanish clients for no more than 20% of activity. EU citizens need no visa. US and UK passport holders get 90 days in any 180 across the Schengen area (the Canaries are inside it). Spanish tax residency starts at 183 days a year; the islands use IGIC instead of mainland VAT. EES biometric border checks are in operation; ETIAS had no confirmed start date when checked.",
+    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Arrecife Carnival (2026 ran 6-18 Feb; 2027 dates not yet published, Ash Wednesday is 10 Feb 2027) and Los Buches in Teguise",
+     "kind": "festival"
+    },
+    {
+     "month": 5,
+     "name": "IRONMAN Lanzarote, Puerto del Carmen, 15 May 2027 (35th edition; IRONMAN takes over organisation from Club La Santa)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Strongest trade winds (July-September), best for windsurf/kitesurf, tiring for cycling",
+     "kind": "season"
+    },
+    {
+     "month": 8,
+     "name": "Peak holiday demand and prices",
+     "kind": "season"
+    },
+    {
+     "month": 10,
+     "name": "Calima (Saharan dust) heat episodes recur in autumn, winter and spring; Oct 2026 hit 36 C",
+     "kind": "season"
+    }
+   ],
+   "airport": "ACE",
+   "seasons": [
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "12-01",
+     "to": "02-28",
+     "title": "Winter sun",
+     "why": "Highs 20.7-21.8 C, lows 14-15 C, 16-29 mm on 3-4 rain days (Dec wettest) at Lanzarote Aeropuerto; northern-European winter-sun demand and Carnival in Feb"
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "06-30",
+     "title": "Dry spring",
+     "why": "Highs 22.9-26.3 C, 0-12 mm rain and 241-297 sun hours; Easter busy, trade wind rising from June"
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "09-30",
+     "title": "Windy hot summer",
+     "why": "Highs 28.2-29.1 C, almost no rain, strongest NNE trades and calima heat episodes; school-holiday prices peak in July-August"
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "10-01",
+     "to": "11-30",
+     "title": "Warm autumn",
+     "why": "Highs 24.2-26.7 C, 10-15 mm rain on 2-3 days; quieter than summer, occasional calima heat"
+    }
+   ],
+   "caveats": "AEMET's published normals for Lanzarote Aeropuerto are the 1981-2010 series (the 1991-2020 table was not found); the airport is a few km inland from Arrecife and a little warmer by day than the seafront. The airport is the only station used; the north (Famara, Haria) is cooler, windier and wetter, and the south coast (Playa Blanca) sunnier and drier, but I found no station figures for them. No annual PM2.5 mean for Arrecife was found (live readings ranged 2-24 ug/m3); the air score is an estimate near 10 ug/m3 with 1 point off for calima, and one April 2026 episode took PM10 above 100 ug/m3 at Arrecife. No source gave a monthly calima frequency. Monthly wind speeds were not available, only the annual average. Rent: idealista and fotocasa blocked or showed stale data, so figures come from RealAdvisor, Engel & Voelkers and local press; furnished mid-term supply is thin and about 60% of one portal's listings were seasonal lets. The Canary holiday-let law (Ley 6/2025, in force from 13 Dec 2025) regulates tourist lets and may free some stock for residential use, but I found no evidence of its effect on Lanzarote. Hospital: Molina Orosa is the island's public hospital; I could not confirm a published referral protocol, but the highest-complexity cases are transferred to Gran Canaria (or Tenerife) hospitals, with the regional medical air ambulance (SUC) doing transfers. Private clinics were not verified. Fibre: only dated Movistar and press material found, plus a 2026 nomad guide saying FTTH is standard in Arrecife, Costa Teguise, Puerto del Carmen and Playa Blanca; 5G coverage not checked. Inter-island: Corralejo-Playa Blanca ferry (Fred. Olsen, Naviera Armas, Balearia) about 25-35 minutes; timetable and Arrecife-Gran Canaria ferry and Binter flight details not verified. Tourism levels are judgement from school-holiday and event timing. Dates for fiestas patronales (San Ginés in Arrecife in August, Virgen de los Volcanes in September) were not verified. The 2026 Spain nomad-visa income figure (EUR2,849) is from press; the official page states only 200% of the minimum wage.",
+   "sources": [
+    "https://www.aemet.es/en/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?k=coo&l=C029O",
+    "https://es.windfinder.com/windstatistics/lanzarote",
+    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "https://www.lavozdelanzarote.com/en/ekonomus/housing/x-ray-of-the-housing-crisis-in-lanzarote-60-of-seasonal-rental-and-exorbitant-prices_241038_102.html",
+    "https://realadvisor.es/es/precios-viviendas/municipio-arrecife",
+    "https://www.engelvoelkers.com/es/en/properties-prices/rent/canary-islands/arrecife",
+    "https://www.lavozdelanzarote.com/en/news/people/the-haze-episode-makes-lanzarote-unbreathable-and-plummets-the-air-quality_242806_102.html",
+    "https://www.boe.es/boe/dias/2025/12/23/pdfs/BOE-A-2025-26358.pdf",
+    "https://www.finishers.com/es/evento/ironman-de-lanzarote",
+    "https://www.festivalesdeespana.com/festival/carnaval-de-arrecife-arrecife/2026",
+    "https://www.aferry.com/corralejo-playa-blanca/",
+    "https://www.hellocanaryislands.com/remote-working-spaces/lanzarote/arrecife",
+    "https://www3.gobiernodecanarias.org/noticias/hemeroteca/el-avion-medicalizado-del-servicio-de-urgencias-canario-realizo-559-traslados-en-los-seis-primeros-meses-de-2026/",
+    "https://rtvc.es/crece-la-presion-asistencial-en-los-hospitales-de-gran-canaria-y-lanzarote/",
+    "https://bandaancha.eu/foros/cableando-ftth-arrecife-lanzarote-1726395",
+    "https://www.iqair.com/spain/canarias/arrecife"
+   ]
+  },
+  {
+   "id": "fuerteventura",
+   "name": "Fuerteventura (Corralejo)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "el-matorral-spain"
+   ],
+   "area": "Corralejo in the north for coworkings, a surf/kite scene and the Lanzarote ferry; Puerto del Rosario or Caleta de Fuste for the hospital and airport; Costa Calma/Jandía only if you want wind sports and accept thin services.",
+   "summary": "A dry, almost rainless, windy island (98 mm a year, about 2,840 sunshine hours at the airport station) with 20-28 °C daytime highs all year and a steady trade wind in summer. Corralejo has a real surf and remote-work scene with several coworkings, but rents are not cheap, a car is close to essential, and anything serious medically can mean a transfer to Gran Canaria. Pick it for sun, space and wind sports; skip it if you need a city, nightlife or deep specialist care.",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "best",
+    "best",
+    "good"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      1,
+      2,
+      12
+     ],
+     "kind": "good",
+     "reason": "AEMET Fuerteventura Aeropuerto (C249I, 1981-2010): mean max 20.6/21.0/22.0 °C, min 14.7/14.8/15.9 °C; the wettest months but only 14/16/26 mm and 2.5/2.4/3.2 rain days; 186-190 sun h. Cool breezy evenings, and calima (Saharan dust) episodes occur in winter, e.g. the record Feb 2020 event."
+    },
+    {
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ],
+     "kind": "best",
+     "reason": "C249I mean max 22.2/22.9/24.1/25.8 °C, min 15.5-19.1 °C, rain 12/5/1/0 mm (1.9/1.0/0.2/0.0 days), 233-285 sun h. Trade winds build from late spring; Jun is already windy but dry and not hot."
+    },
+    {
+     "months": [
+      7,
+      8,
+      9
+     ],
+     "kind": "good",
+     "reason": "C249I mean max 27.3/27.8/27.5 °C, min 20.8/21.5/21.2 °C, humidity 69-72%, 0-2 mm rain, 246-294 sun h, 11-12 cloudless days in Jul/Aug. Hot-ish with persistent NNE trade wind (annual average 12 kt, gusts 25 kt at the airport, windiest in summer); the wind keeps it comfortable but is tiring and blows sand; peak holiday crowds and prices. North coast (Corralejo) is a little cooler and windier than the airport."
+    },
+    {
+     "months": [
+      10,
+      11
+     ],
+     "kind": "best",
+     "reason": "C249I mean max 26.1/24.0 °C, min 19.8/17.7 °C, rain 8/13 mm (1.7/2.2 days), 227/203 sun h; warm sea, lighter wind, rain still low; calima is possible."
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 7.5,
+    "cost": 5.7,
+    "safety": 8.0,
+    "health": 5.5,
+    "internet": 6.5,
+    "food": 6.5,
+    "nomad": 6.5,
+    "longstay": 6.5
+   },
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 10,
+    "maxWeeks": 26,
+    "why": "Liveable in any month with several coworkings and colivings in Corralejo; limits are sparse services outside the north, car dependence, tight mid-term rentals and no major specialist care on the island."
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2300,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Corralejo furnished 1-bed about EUR1,000-1,400 (listings seen EUR1,200-1,400 furnished; portal-based average about EUR20-21/m2), plus food, utilities, coworking (~EUR100-200) and a car or scooter; health insurance excluded. Rent data is thin and mostly seasonal listings."
+   },
+   "entry": {
+    "summary": "EU citizens need no visa. US and UK passport holders get 90 days in any 180 across the whole Schengen area (the Canaries are in Schengen), shared with other Schengen stays. Spain's telework visa for people employed by or contracting with non-Spanish companies requires funds of 200% of the monthly minimum wage (about EUR2,849 gross/month in 2026), a degree or 3 years' relevant experience, and for self-employed no more than 20% of activity for Spanish clients; it is valid 1 year, and people already in Spain can apply for a permit of up to 3 years. The 183-day rule sets Spanish tax residency; the Canaries use IGIC instead of VAT.",
+    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Puerto del Rosario Carnival (2026: 6-22 Feb, Grand Cabalgata 21 Feb; 2027 dates not yet confirmed)",
+     "kind": "festival"
+    },
+    {
+     "month": 3,
+     "name": "Gran Tarajal Carnival (2026 edition postponed by storm to 5-14 Mar)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "PWA Windsurf Grand Slam at Sotavento, Playa Barca (2026: 17-26 Jul) and GWA Wingfoil World Cup (27 Jul-1 Aug)",
+     "kind": "season"
+    },
+    {
+     "month": 9,
+     "name": "Fiestas and Romeria-Ofrenda of the Virgen de la Peña, Vega de Rio Palmas, Betancuria (third week of Sept; 2026: 17-20 Sept)",
+     "kind": "festival"
+    }
+   ],
+   "airport": "FUE",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "06-30",
+     "title": "Spring, before the big winds",
+     "why": "Mean max 22-26 °C, rain 12 mm in Mar falling to 0 mm in Jun (C249I); lighter crowds than winter and summer."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "09-30",
+     "title": "Trade-wind summer",
+     "why": "Mean max 27-28 °C, humidity 69-72%, persistent NNE wind (airport average 12 kt, gusts 25 kt); Spanish and European school holidays."
+    },
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "10-01",
+     "to": "11-30",
+     "title": "Warm autumn",
+     "why": "Mean max 26.1 °C in Oct and 24.0 °C in Nov, 8-13 mm rain, lighter wind; busier at half-term."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "12-01",
+     "to": "02-28",
+     "title": "Winter sun",
+     "why": "Mean max 20.6-22 °C, min 14.7-15.9 °C, the wettest months at 14-26 mm and 2.4-3.2 rain days; calima risk; peak northern-European winter-sun demand."
+    }
+   ],
+   "caveats": "AEMET's published normals page for C249I shows 1981-2010 values, not 1991-2020, so figures are the older period and recent years run warmer. Station is at the airport (25 m, east coast near Puerto del Rosario); Corralejo (north) and Jandía/Costa Calma (south-west, windier) differ slightly and I found no AEMET table for them. I could not find monthly wind-speed or monthly calima frequency figures; the wind and calima statements come from an annual windfinder average and general sources. IQAir had no Fuerteventura-specific annual PM2.5; the air score assumes about 8-10 ug/m3 from the Canary regional figure (about 1.4x the WHO guideline in 2025) and a Lanzarote report that Fuerteventura/Lanzarote have the worst dust records in the archipelago, with particle averages 23% above 2012-2019 in 2023. Rent figures come from enalquiler/fotocasa listings and Engel & Voelkers (about EUR20.2-20.7/m2, updated Nov 2026), not an idealista median. Health: Hospital General de Fuerteventura (Puerto del Rosario) is the island's public hospital; complex trauma and other cases are routinely airlifted to Gran Canaria (Insular/Negrin) by the SUC helicopter, which has a Fuerteventura base, while the hospital has added vascular, aortic and radiotherapy services; no official transfer criteria found, and I did not verify private clinics. Internet: a commercial coverage guide says Corralejo has good fibre and 4G/5G while fibre in Costa Calma/Morro Jable is still being developed; no CNMC data checked. Ley 6/2025 (in force 13 Dec 2025) caps holiday lets at 10% of housing per municipality, which may free some supply for residential and mid-term rentals but town-level effects were not verified. Getting there: FUE has direct European flights and Binter inter-island links (Gran Canaria is the main hub); ferries run Corralejo-Playa Blanca (20+ daily, 25-35 min) and Morro Jable/Puerto del Rosario-Las Palmas (Fred. Olsen, Armas; about 2 h from Morro Jable), per aggregator pages, so confirm timetables with operators.",
+   "sources": [
+    "https://www.aemet.es/en/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C249I",
+    "https://www.windfinder.com/windstatistics/fuerteventura",
+    "https://www3.gobiernodecanarias.org/noticias/hemeroteca/ocho-heridos-cinco-de-ellos-graves-al-ser-atropellados-por-un-vehiculo-en-una-terraza-en-fuerteventura/",
+    "https://rtvc.es/el-helicoptero-medicalizado-del-suc-en-fuerteventura-entra-en-servicio-inmediato-27-marzo-2026/",
+    "https://rtvc.es/aneurisma-de-aorta-abdominal-fuerteventura/",
+    "https://www.engelvoelkers.com/es/en/properties-prices/rent/canary-islands/corralejo",
+    "https://www.enalquiler.com/alquiler_piso_la-oliva/alquiler-piso-con-1-habitacion-corralejo_7146702.html",
+    "https://fotocasa.es/en/rental/intermediate-floors/la-oliva/corralejo/l",
+    "https://www.boe.es/boe/dias/2025/12/23/pdfs/BOE-A-2025-26358.pdf",
+    "https://rtvc.es/canarias-redefine-el-alquiler-vacacional-13-noviembre-2025/",
+    "https://www.lavozdelanzarote.com/en/news/more-news/haze-episodes-make-lanzarote-an-increasingly-unbreathable-island_227306_102.html",
+    "https://www.iqair.com/as/air-quality/canary-islands",
+    "https://acp.copernicus.org/articles/24/12031/2024/acp-24-12031-2024.pdf",
+    "https://kompara.es/segunda-residencia/ubicacion/internet-islas-baleares-canarias-segunda-residencia",
+    "https://freakingnomads.com/workspace/conomad",
+    "https://www.outsite.co/blog/digital-nomad-guide-to-fuerteventura",
+    "https://www.ferryhopper.com/en/blog/featured/ferries-canary-islands-2026",
+    "https://armastrasmediterranea.com/en/routes-timetables/ferry-corralejo-playa-blanca",
+    "https://www.aena.es/es/aerolineas/aeropuertos-y-destinos/nuestros-aeropuertos/fuerteventura.html",
+    "https://www.puertodelrosario.org/wp-content/uploads/PROGRAMA-CARNAVAL-2026.pdf",
+    "https://rtvc.es/romeria-ofrenda-virgen-pena-reunir-fuerteventura-vega-rio-palmas-18-septiembre-2026/",
+    "https://www.windsurf.co.uk/?p=115049",
+    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx"
+   ]
+  },
+  {
+   "id": "la-palma",
+   "name": "La Palma (Los Llanos de Aridane / Aridane valley)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "sta-cruz-de-la-palma-la-palma-island-spain"
+   ],
+   "area": "Los Llanos de Aridane or Tazacorte on the sunnier west side for shops, services and sun; Santa Cruz de La Palma (east) for a quieter, greener, wetter base. Rental stock is very thin everywhere.",
+   "summary": "A steep, green, very quiet island with some of the clearest skies in Europe (Starlight reserve, Roque de los Muchachos observatory), mild 21-27 C highs and almost no summer rain. The catch for a remote worker is practical: a tight rental market since the 2021 Tajogaite eruption, a small nomad scene, no verified coworking, and serious hospital care that can mean a transfer to Tenerife.",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good",
+    "fair"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ],
+     "kind": "best",
+     "reason": "La Palma Aeropuerto (AEMET C139E, 33 m, east coast; 1981-2010 normals): highs 21.2-24.1 C, lows 15.7-19.2 C, rain 33/18/7/2 mm on 3.9/2.7/1.3/0.4 days, 174-192 h sun a month; trade-wind season starting, clean air"
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "La Palma Aeropuerto (AEMET C139E, 33 m, east coast; 1981-2010 normals): highs 20.6-20.7 C, lows 15.3-15.5 C but 49-57 mm on 4-5 rain days and only 141-146 h sun; the west side (Los Llanos) is usually less cloudy than this east-coast station but no west-side normals were found"
+    },
+    {
+     "months": [
+      7,
+      8,
+      9,
+      10
+     ],
+     "kind": "good",
+     "reason": "La Palma Aeropuerto (AEMET C139E, 33 m, east coast; 1981-2010 normals): highs 25.5-26.6 C, lows 20-21 C, humidity 73%, dry July-Sept (1-12 mm) with 209-222 h sun in Jul-Aug; October brings 41 mm on 5.2 days; warm and sticky, calima possible, summer holiday prices in Jul-Aug"
+    },
+    {
+     "months": [
+      11
+     ],
+     "kind": "good",
+     "reason": "La Palma Aeropuerto (AEMET C139E, 33 m, east coast; 1981-2010 normals): high 23.5 C, low 18.3 C, 70 mm on 6.8 rain days and 140 h sun; still mild but the wet season has begun"
+    },
+    {
+     "months": [
+      12
+     ],
+     "kind": "fair",
+     "reason": "La Palma Aeropuerto (AEMET C139E, 33 m, east coast; 1981-2010 normals): 80 mm on 7.9 rain days (the wettest month), 138 h sun, highs 21.8 C; regular grey, wet spells and Christmas-season prices"
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 8.0,
+    "cost": 6.9,
+    "safety": 8.0,
+    "health": 5.0,
+    "internet": 6.0,
+    "food": 6.5,
+    "nomad": 4.0,
+    "longstay": 8.0
+   },
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 10,
+    "maxWeeks": 26,
+    "why": "Base for a quiet, outdoors-focused stay of 6+ weeks if you can secure housing; limited by the thin rental market, small community, hospital transfers to Tenerife for complex care and a flight/ferry-only connection to the mainland."
+   },
+   "cost": {
+    "min": 1250,
+    "max": 1900,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Estimate: furnished 1-bed in the Aridane valley or Santa Cruz roughly EUR 700-1,000 (portal median for flats in Los Llanos about EUR 911; a furnished 2-bed seen at EUR 800), plus food, local transport (a car is almost essential) and any coworking/desk; insurance excluded. Few mid-term listings exist, so expect to pay more or rely on holiday lets."
+   },
+   "entry": {
+    "summary": "Spain-wide rules apply (La Palma is in Schengen). Telework visa for remote workers employed by or freelancing for non-Spanish companies: funds of 200% of the monthly minimum wage (SMI; check the current euro figure with the consulate), a degree or 3 years' relevant experience, a clean record; Spanish clients limited to 20% of activity (not applicable to EU citizens). The visa is valid 1 year; people already legally in Spain can apply for a residence permit of up to 3 years. EU citizens need no visa. US and UK passport holders get 90 days in any 180 across Schengen, shared with other Schengen countries. Canary Islands use IGIC instead of mainland VAT; Spanish tax residency applies from 183 days.",
+    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 2,
+     "name": "Los Indianos, Santa Cruz de La Palma (Carnival Monday; 16 Feb 2026 drew a reported 70,000+; next falls on Mon 8 Feb 2027, calculated from Easter 28 Mar 2027)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Bajada de la Virgen de las Nieves (every 5 years; last July 2025, descent 12 Jul; next 2030)",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "Día de Las Nieves, 5 August (annual patron-day fiestas)",
+     "kind": "festival"
+    }
+   ],
+   "airport": "SPC",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "shoulder",
+     "from": "03-01",
+     "to": "06-30",
+     "title": "Dry, mild spring",
+     "why": "Highs 21-24 C, 33 mm falling to 2 mm and 174-192 h sun a month at La Palma Aeropuerto"
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "07-01",
+     "to": "10-31",
+     "title": "Warm, dry summer and early autumn",
+     "why": "Highs 25.5-26.6 C, 73% humidity, 1-12 mm Jul-Sep; rain returns in October (41 mm); Jul-Aug holiday crowds"
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "02-28",
+     "title": "Mild wet winter",
+     "why": "49-80 mm a month on 4-8 rain days, 138-146 h sun; December is the wettest (80 mm); winter-sun and Christmas visitors"
+    }
+   ],
+   "caveats": "Thin data: (1) AEMET's published normals page for La Palma Aeropuerto only shows 1981-2010, not 1991-2020; the airport is on the east coast at 33 m, so figures are a proxy for Los Llanos (about 340 m, west). No verified west-side normals; expect the west to be sunnier and drier in winter but a few degrees cooler inland. (2) Rent: portal figures conflict (Fotocasa EUR 440 average for Nov 2025 and 15.40 EUR/m2 in Nov 2026; RealAdvisor median EUR 911); idealista blocked fetching, no real 1-bed furnished listings were confirmed; the cost range is an estimate. (3) Housing: post-eruption shortage and 2026 protests reported; Canary holiday-let law (Ley 6/2025, in force 13 Dec 2025) and later amendments reportedly affect La Palma, details unverified. (4) Puerto Naos/La Bombilla: access is gradually reopening in phases by CO2 level (463 homes authorized in Puerto Naos and 3 in La Bombilla as of April 2024; 2026 reports mention further approvals, 42 businesses reopened in April 2026 and gas-extraction systems being installed); it is not fully open, so do not plan to live there. (5) Air quality PM2.5 and municipality fibre coverage were not found; national fibre coverage is about 96% of homes and 5G is widespread per the 2026 ministry report, but La Palma coverage is uneven. (6) Calima: AEMET and CSIC sources say intense episodes concentrate in winter; frequency figures vary by study. (7) Flights (Aena, Nov 2026): Binter/Iberia/Vueling/Canaryfly to Gran Canaria, Tenerife, Madrid, Barcelona; Condor, Eurowings, Discover, easyJet, Edelweiss, Transavia, TUI, Luxair and others to Germany, Switzerland, Benelux, Denmark, UK (Gatwick), Poland; schedules are seasonal. Ferries Santa Cruz de La Palma to Los Cristianos (Tenerife), about 2.5 h, Fred. Olsen and Naviera Armas; timetables disagree across aggregator sites. (8) Hospital General de La Palma (Breña Alta) has ICU, dialysis and the main specialties; the regional referral hospital is Hospital Universitario de Canarias (Tenerife); private options on the island were not verified. Several items above came from search snippets, not pages opened.",
+   "sources": [
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C139E&k=can",
+    "https://www.aena.es/es/la-palma/aerolineas-y-destinos/destinos-aeropuerto.html",
+    "https://fotocasa.es/en/rental/apartments/los-llanos-de-aridane/all-zones/l",
+    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "https://www3.gobiernodecanarias.org/sanidad/scs/scs/lp/at_especializada/hospital.jsp",
+    "https://rtvc.es/autorizan-el-regreso-a-74-nuevas-viviendas-de-puerto-naos/"
+   ]
+  },
+  {
+   "id": "la-gomera",
+   "name": "La Gomera (Valle Gran Rey / San Sebastián)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "base",
+   "cityIds": [
+    "san-sebasti-n-de-la-gomera-spain"
+   ],
+   "area": "Valle Gran Rey for sun, beach and the small long-stay community; San Sebastián de La Gomera for the ferry, hospital, shops and the island's only coworking/coliving.",
+   "summary": "A small, steep, quiet island of about 22,000 people with a mild, dry coast, Garajonay laurel forest above it and a slow village rhythm. It suits someone who wants calm, hiking and low costs for one to three months, but it is thin on coworking, specialist medicine, flights and mid-term rentals, and everything off-island goes through Tenerife.",
+   "months": [
+    "best",
+    "best",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "good",
+    "best",
+    "best"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      1,
+      2,
+      3,
+      4
+     ],
+     "kind": "best",
+     "reason": "San Sebastián de La Gomera (AEMET OpenData 1991-2020, 15 m): mean max 21.4-22.3 °C, min 16.2-17.3 °C, 9-22 mm and only 1.4-2.9 rain days a month, RH 67-70%. Airport station (219 m) is cooler: max about 20.6 °C in Jan/Feb. Saharan dust (calima) is most frequent Dec-Mar, so some hazy, warm days. The north-side valleys and Garajonay are cloudier and wetter than the south-west coast these ratings are for."
+    },
+    {
+     "months": [
+      5,
+      6
+     ],
+     "kind": "best",
+     "reason": "San Sebastián: mean max 23.3 °C (May) and 25.2 °C (Jun), min 18.6-20.3 °C, rain 1.1 and 0.5 mm, 0.3 and 0.1 rain days. Dry, warm, not yet hot; trade-wind cloud is usual on the north side."
+    },
+    {
+     "months": [
+      7,
+      8,
+      9
+     ],
+     "kind": "good",
+     "reason": "San Sebastián: mean max 26.8 / 27.9 / 27.4 °C, min 21.8-22.7 °C, RH 70-73%, rain 0.4-2.2 mm. Warm and humid nights, and wildfire risk peaks in the dry months (the 2012 fire burned in August). Airport station (219 m) peaks at 27.3 °C max in August. Local fiestas and Spanish holiday crowds in Aug."
+    },
+    {
+     "months": [
+      10
+     ],
+     "kind": "good",
+     "reason": "San Sebastián: mean max 26.5 °C, min 21.4 °C, 19.2 mm over 2.1 rain days. Still hot at the coast and the first autumn storms and rain arrive; Fiestas de Octubre in the capital bring crowds."
+    },
+    {
+     "months": [
+      11,
+      12
+     ],
+     "kind": "best",
+     "reason": "San Sebastián: mean max 24.6 °C (Nov) and 22.8 °C (Dec), min 19.5 and 17.4 °C; wettest months of the year but only 35.0 and 32.9 mm over 2.5 and 3.1 rain days. Calima episodes start to cluster from December."
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 7.5,
+    "cost": 6.0,
+    "safety": 8.0,
+    "health": 4.0,
+    "internet": 6.0,
+    "food": 5.5,
+    "nomad": 4.0,
+    "longstay": 8.0
+   },
+   "stay": {
+    "minWeeks": 4,
+    "idealWeeks": 8,
+    "maxWeeks": 16,
+    "why": "Base for 1-3 months: quiet, sunny, cheap and walkable, but the island has about 22,000 people, one coworking/coliving in the capital, limited mid-term rentals and no specialist hospital. Beyond about four months the isolation and the cross-island drives (Valle Gran Rey to San Sebastián is a winding road of roughly an hour) tend to wear."
+   },
+   "cost": {
+    "min": 1500,
+    "max": 2100,
+    "currency": "EUR",
+    "per": "month",
+    "note": "Rent for a furnished 1-bed in Valle Gran Rey or San Sebastián (about 700-1,000), food and eating out about 600-700, a car or taxis and bus about 100-250, utilities, SIM and a coworking desk in San Sebastián about 150-250. Health insurance excluded. Rent figure is an estimate from thin listing data (see caveats)."
+   },
+   "entry": {
+    "summary": "Spain-wide rules. EU/EEA citizens can live and work freely (register with the foreigners' office/obtain a residence certificate after 3 months). US and UK citizens can stay 90 days in any 180 visa-free in the Schengen area (check current EES/ETIAS requirements before travel). The Spanish teleworker (digital nomad) route: a visa valid up to 1 year, or, for people already legally in Spain (including on a 90-day visa-free stay), a residence permit applied for directly in Spain, valid up to 3 years. Requirements per Spain's foreign ministry: employment or contracts with companies outside Spain (at least 3 months of relationship, to continue at least 1 year), a degree or 3 years' experience, income of 200% of the minimum wage (EUR 2,849 a month for 2026 spread over 12 months, or EUR 2,442 over the 14 statutory payments; plus EUR 916 for a first dependant and EUR 306 for each further one), no criminal record, health insurance with full public-system cover, and Spanish social-security registration. Self-employed applicants may take at most 20% of their work from Spanish clients. Not open to EU citizens. Tax residency generally arises after more than 183 days in Spain in a calendar year (general rule, not confirmed on the page opened; take tax advice).",
+    "source": "https://www.exteriores.gob.es/Consulados/washington/en/ServiciosConsulares/Paginas/Consular/Telework-visa.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 1,
+     "name": "Fiesta de la Virgen de los Reyes, Valle Gran Rey (about 6-7 January)",
+     "kind": "festival"
+    },
+    {
+     "month": 1,
+     "name": "Garajonay laurel forest at its mistiest; best walks in clear spells",
+     "kind": "nature"
+    },
+    {
+     "month": 2,
+     "name": "Carnaval in San Sebastián and across the island (dates move with Easter)",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Fiestas del Carmen (about 16 July; Valle Gran Rey, San Sebastián, Playa de Santiago; Vallehermoso 17-23 July)",
+     "kind": "festival"
+    },
+    {
+     "month": 9,
+     "name": "Fiestas del Paso, Alajeró (1-15 September); Colombinas in San Sebastián (early September)",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Fiestas de Octubre / Virgen de Guadalupe, San Sebastián (programme from 1 October)",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Bajada de la Virgen de Guadalupe (Fiestas Lustrales, every 5 years): last held October 2023, next listed for October 2028",
+     "kind": "festival"
+    },
+    {
+     "month": 11,
+     "name": "Fiestas Lustrales / Guadalupe celebrations in Valle Gran Rey (listed 4-13 November in a past edition; check year)",
+     "kind": "festival"
+    }
+   ],
+   "airport": "TFS",
+   "seasons": [
+    {
+     "kind": "peak",
+     "tourism": "high",
+     "from": "11-01",
+     "to": "04-30",
+     "title": "Winter sun",
+     "why": "San Sebastián mean max 21.4-24.6 °C and 9-35 mm a month with 1.4-3.1 rain days; busiest for British and German winter visitors, with Christmas and Easter peaks; calima most frequent Dec-Mar."
+    },
+    {
+     "kind": "peak",
+     "tourism": "low",
+     "from": "05-01",
+     "to": "06-30",
+     "title": "Dry early summer",
+     "why": "Mean max 23.3-25.2 °C, under 1.2 mm rain, quiet between the winter and summer holiday seasons."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "07-01",
+     "to": "09-30",
+     "title": "Hot dry summer",
+     "why": "Mean max 26.8-27.9 °C, min 21.8-22.7 °C, almost no rain (0.4-2.2 mm); wildfire risk and Spanish August holidays and fiestas."
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "10-01",
+     "to": "10-31",
+     "title": "Autumn turn",
+     "why": "Mean max 26.5 °C, 19.2 mm over 2.1 rain days as the first storms arrive; Fiestas de Octubre in the capital."
+    }
+   ],
+   "caveats": "AEMET's own 1991-2020 normals table is empty for both La Gomera stations (airport C329B and San Sebastián C329Z), so the monthly figures are from the Wikipedia climate tables that cite AEMET OpenData (San Sebastián, 15 m) and the airport station (219 m, annual about 181 mm, 19.9 rain days, RH 67%); there is no official station in Valle Gran Rey. Valle Gran Rey is the drier, sunnier south-west and generally warmer in winter than the north; aggregator figures for it conflict (one gives January max 17 °C and 70 mm, which looks too cool and wet), so treat it as unmeasured. Air score: no annual PM2.5 mean was found; IQAir snapshots of 5-16 µg/m³ suggest a clean island background, and calima episodes cluster in winter (Dec-Mar) per AEMET-linked studies. Rent: no idealista/fotocasa figures could be opened (idealista blocked; Fotocasa article had no Gomera figures); RealAdvisor shows a median flat rent of about EUR 1,034 for San Sebastián (Oct 2026, range 506-2,189) and listings for mid-term furnished flats in Valle Gran Rey were not priced, so the EUR 700-1,000 rent band is an estimate. Canary law 6/2025 (published 12 Dec 2025 in the regional gazette, 23 Dec in the BOE) restricts holiday lets and sets an 80% minimum residential use in the 'green islands' including La Gomera; its effect on mid-term furnished rentals is not yet measurable and a later decree-law amended it. Housing is tight and small. Health: Hospital Nuestra Señora de Guadalupe (San Sebastián) is a small public hospital with MRI and an on-island chemotherapy unit; specialist and major care are referred to Hospital Universitario Nuestra Señora de Candelaria in Santa Cruz de Tenerife (by ferry to Los Cristianos, or by helicopter in emergencies), and a day hospital tender (EUR 1.1m) is pending. Valle Gran Rey has only a health centre and is a long road trip from the hospital. Internet: Telefónica's 2016-17 subsidised FTTH project lists Valle Gran Rey (about 33 localities) among completed deployments, with 300 Mbps symmetric advertised; WiFi Gomera advertises 1 Gbps symmetric. No measured speeds found, mobile 4G is decent in towns but weak in valleys and 5G is limited, and an island-wide power outage occurred in January 2026; test the connection before committing. Getting there: Tenerife South (TFS) is the realistic gateway, then TITSA bus 40 to Los Cristianos and a Fred. Olsen or Baleària ferry (about 50 minutes, one-way fares about EUR 40-46 in 2026; Naviera Armas was named by one aggregator, others show Baleària on the route, so check operators). La Gomera Airport (GMZ) has only Binter flights to Tenerife North and Gran Canaria (two daily each as of 2019; current schedule not confirmed), and no direct flights to mainland Spain or abroad; from San Sebastián the bus to Valle Gran Rey takes well over an hour. Bajada date for 2028 comes from one tourism listing only; confirm with the Cabildo or the Cofradía. Garajonay: the August 2012 fire burned roughly 3,000-3,600 ha (sources disagree), about 10% of the island and 18-20% of the national park; I found no 2025-26 fire reports.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/San_Sebasti%C3%A1n_de_La_Gomera",
+    "https://en.wikipedia.org/wiki/La_Gomera",
+    "https://en.wikipedia.org/wiki/La_Gomera_Airport",
+    "https://www.aemet.es/en/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?k=coo&l=C329B",
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C329Z&k=coo",
+    "https://weather2travel.com/la-gomera/valle-gran-rey/climate",
+    "https://www.exteriores.gob.es/Consulados/washington/en/ServiciosConsulares/Paginas/Consular/Telework-visa.aspx",
+    "https://diariodeavisos.elespanol.com/2026/10/hospital-del-sur-tenerife-pacientes-la-gomera/",
+    "https://diariodeavisos.elespanol.com/canariasenred/de-los-cristianos-a-san-sebastian-de-la-gomera-guia-practica-para-cruzar-entre-islas/",
+    "https://www.telefonica.com/es/sala-comunicacion/telefonica-ha-desplegado-redes-de-banda-ancha-de-alta-velocidad-en-la-gomera-y-el-hierro",
+    "https://nomad.watch/cities/ES/la-gomera/scores",
+    "https://realadvisor.es/es/precios-viviendas/municipio-san-sebastian-de-la-gomera",
+    "https://diariodeavisos.elespanol.com/2026/07/alquiler-canarias-municipios-mas-caros-junio-2026/",
+    "https://www.hellocanaryislands.com/events/la-gomera/bajada-de-la-virgen-de-guadalupe",
+    "https://www.airbnb.com/valle-gran-rey-spain/stays/monthly"
+   ]
+  },
+  {
+   "id": "el-hierro",
+   "name": "El Hierro (Valverde)",
+   "country": "Spain",
+   "region": "Canary Islands",
+   "role": "destination",
+   "cityIds": [
+    "el-hierro-island-spain"
+   ],
+   "area": "Valverde for the hospital, shops and the island's only listed coworking; the warmer east coast (Tamaduste/airport side) or the El Golfo valley (Frontera) if you want sun and a quieter setting. A car is essential.",
+   "summary": "El Hierro is the smallest, quietest and least developed Canary island: a UNESCO biosphere reserve with hiking, diving at La Restinga and very mild weather in every month. It is a good place for a few focused weeks, but it is thin as a base: one small coworking, very few mid-term rentals, patchy 5G, and any serious medical care means transfer to Tenerife.",
+   "months": [
+    "good",
+    "good",
+    "best",
+    "best",
+    "best",
+    "best",
+    "best",
+    "good",
+    "good",
+    "good",
+    "good",
+    "good"
+   ],
+   "monthNotes": [
+    {
+     "months": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ],
+     "kind": "best",
+     "reason": "Ratings are for the east coast near Valverde (AEMET Hierro Aeropuerto C929I, 32 m, 1981-2010 normals): mean max 21.4 C in Mar rising to 25.0 C in Jul, mean min 16.7-20.5 C, rain 25 mm in Mar falling to 0-2 mm May-Jul, 0-2.8 rain days a month, 192-243 sun hours. Valverde town (about 606 m) runs several degrees cooler and cloudier with the NE trades."
+    },
+    {
+     "months": [
+      1,
+      2
+     ],
+     "kind": "good",
+     "reason": "C929I airport: mean max 20.9 C (Jan) and 20.8 C (Feb), min 16.4-16.6 C, 28-38 mm rain over 2.7-3.1 rain days, only 145-157 sun hours. Mild but greyer; Valverde at about 600 m is cooler and often under cloud, and winter calima peaks (3-4 days) are tied to DANA lows."
+    },
+    {
+     "months": [
+      8,
+      9,
+      10
+     ],
+     "kind": "good",
+     "reason": "C929I: warmest of the year, mean max 26.1 C (Aug) and 26.5 C (Sep), mean min 20.9-21.7 C, humidity 76-77%, 0-3 mm rain (Oct 14 mm over 2.5 rain days), 194-239 sun hours. Warm and humid rather than hot; summer calima episodes last 6-8 days and Spanish holiday crowds fill August."
+    },
+    {
+     "months": [
+      11,
+      12
+     ],
+     "kind": "good",
+     "reason": "C929I: mean max 23.7 C (Nov) and 22.2 C (Dec), min 17.8-19.5 C, wettest months at 37-44 mm over 3.3-4.6 rain days, and the lowest sunshine of the year (139-152 h). Still mild by European standards; upland Valverde is cooler and wetter."
+    }
+   ],
+   "scores": {
+    "climate": 10,
+    "air": 8.5,
+    "cost": 6.4,
+    "safety": 8.5,
+    "health": 3.5,
+    "internet": 5.5,
+    "food": 6.0,
+    "nomad": 3.5,
+    "longstay": 8.5
+   },
+   "stay": {
+    "minWeeks": 1,
+    "idealWeeks": 2,
+    "maxWeeks": 4,
+    "why": "Better as a destination than a base: one small coworking open weekdays 08:30-15:30, very few long-let listings, 5G coverage below 25% in Valverde, and specialist care means a transfer to Tenerife. A self-sufficient worker with a car and a monthly rental can stay longer."
+   },
+   "cost": {
+    "min": 900,
+    "max": 2000,
+    "currency": "EUR",
+    "per": "trip",
+    "note": "One visit of 1-3 weeks: self-catering apartment or rural house, a rental car (essential), food and a few days at the coworking; excludes flights to the Canaries. Staying longer than about 6 weeks works out near EUR1,600-1,900 a month (about EUR600-850 for a rent that is hard to find, EUR210 coworking, car, food). This is an estimate; no nightly-rate data was verified."
+   },
+   "entry": {
+    "summary": "EU/EEA citizens need no visa and can stay and work freely. US and UK passport holders get 90 days in any 180 across the whole Schengen area (the Canaries are in Schengen; EES biometric checks apply at the border). Spain's teleworking (digital nomad) visa suits remote workers for non-Spanish companies: income of at least 200% of the monthly minimum wage, a degree or 3 years of comparable experience, one-year visa validity, and a residence permit of up to 3 years if applied for from inside Spain; Spanish clients are capped at 20% of professional activity. The 183-day Spanish tax-residency rule applies. The Canaries use IGIC (7% general rate) instead of mainland VAT.",
+    "source": "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "checked": "2026-11"
+   },
+   "events": [
+    {
+     "month": 1,
+     "name": "Three Kings parade, Valverde (5-6 Jan)",
+     "kind": "festival"
+    },
+    {
+     "month": 2,
+     "name": "Valverde Carnaval (20-22 Feb in 2026; moves with Easter) and El Pinar Carnaval (27 Feb-8 Mar 2026)",
+     "kind": "festival"
+    },
+    {
+     "month": 4,
+     "name": "Fiesta de los Pastores, La Dehesa (El Pinar)",
+     "kind": "festival"
+    },
+    {
+     "month": 5,
+     "name": "San Isidro festivities, Valverde",
+     "kind": "festival"
+    },
+    {
+     "month": 7,
+     "name": "Bajada de la Virgen de los Reyes (first Saturday of July, every 4 years: last 5 Jul 2025, next 2029, date pending confirmation)",
+     "kind": "festival"
+    },
+    {
+     "month": 8,
+     "name": "San Lorenzo and Candelaria (Frontera) and Chinchorro (Timijiraque) festivities",
+     "kind": "festival"
+    },
+    {
+     "month": 10,
+     "name": "Sea temperature peaks near 24 C (Sep-Oct), best time for diving at La Restinga",
+     "kind": "nature"
+    }
+   ],
+   "airport": "VDE",
+   "seasons": [
+    {
+     "kind": "shoulder",
+     "tourism": "low",
+     "from": "11-01",
+     "to": "02-28",
+     "title": "Mild, greyer winter",
+     "why": "Wettest stretch at the airport station: 28-44 mm a month over 2.7-4.6 rain days and only 139-157 sun hours; max still 21-24 C"
+    },
+    {
+     "kind": "peak",
+     "tourism": "low",
+     "from": "03-01",
+     "to": "07-31",
+     "title": "Dry and sunny",
+     "why": "Rain falls from 25 mm in March to 0-2 mm May-Jul; 192-243 sun hours a month and mean max 21.4-25.0 C"
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "high",
+     "from": "08-01",
+     "to": "09-15",
+     "title": "Warm, humid and busy",
+     "why": "Mean max 26.1-26.5 C, humidity 76-77%, Spanish holiday peak and summer calima episodes of 6-8 days"
+    },
+    {
+     "kind": "shoulder",
+     "tourism": "shoulder",
+     "from": "09-16",
+     "to": "10-31",
+     "title": "Warm sea, first showers",
+     "why": "Sea near 24 C and mean max 25.6 C, but October rain returns (14 mm over 2.5 days) and calima is possible"
+    }
+   ],
+   "caveats": "Climate normals: AEMET only publishes the 1981-2010 period for Hierro Aeropuerto (C929I, 32 m), not 1991-2020; ratings use it for the east coast. Valverde town (about 606 m) has a mean near 17 C (Climates to Travel) and is cooler and cloudier, so winter days there are noticeably less pleasant than the airport figures; no AEMET highland normals were opened. The north/west (El Golfo, Frontera) was not given separate normals. Calima: the AEMET-linked material found says intense episodes cluster in winter (3-4 days) and last 6-8 days in summer, and radar work says eastern islands are hit most; no El Hierro-specific frequency was found. Air: no El Hierro annual PM2.5 figure found; IQAir gives the Canaries as a whole at about 1.4x the WHO guideline (roughly 7 ug/m3), used as a proxy. Rent: idealista and fotocasa had too few listings for an average (e.g. a furnished 1-bed finca in Valverde at EUR690, a 1-bed rural house in Mocanal at EUR560, a 2-bed flat at EUR850-1,050); seasonal lets run higher. Ley 6/2025 (in force 13 Dec 2025) limits holiday lets, but no El Hierro mid-term effect was verified. Internet: no municipality-level fibre figure found; a 2025 summary cited 5G coverage under 25% in Valverde and 48% island-wide, and the island depends on limited submarine links (a Canalink cable from Tamaduste to Tenerife is planned, no date). Health: the public Hospital Insular Nuestra Senora de los Reyes (Valverde) has 7 resident and 15 visiting outpatient specialties, a new MRI (July 2026) and an oncology clinic, but serious cases go to Tenerife (Candelaria is the reference hospital) by medical helicopter or plane; no private hospital was found. La Restinga and other ports are seeing heavy cayuco arrivals in late 2026 (a field hospital was set up at San Andres in November 2026 and emergency staff are stretched); this has not changed tourist safety in sources found, but recorded offences rose 17.4% in 2025 (Nomad Watch citing local press). Ferry (Fred. Olsen Express and Naviera Armas, Los Cristianos to La Estaca, about 2 h 20-30) and Binter schedules come from aggregators; check the operators. There are no direct international flights; connect via Tenerife Norte or Gran Canaria. Cost per trip is an estimate. Whether 24 September is also an island holiday for the Virgen de los Reyes was seen only in a snippet and is not listed above.",
+   "sources": [
+    "https://www.aemet.es/es/serviciosclimaticos/datosclimatologicos/valoresclimatologicos?l=C929I&k=coo",
+    "https://climatestotravel.com/climate/canary-islands/el-hierro",
+    "https://www.spain.info/es/agenda/bajada-virgen-reyes/",
+    "https://nomad.watch/cities/ES/el-hierro/scores",
+    "https://www.exteriores.gob.es/Consulados/nuevayork/en/ServiciosConsulares/Paginas/Consular/Visado-de-teletrabajo.aspx",
+    "https://rtvc.es/el-hierro-desplegara-fibra-optica-submarina-conectar-con-la-palma-y-tenerife-24-marzo-2026/"
    ]
   }
  ]

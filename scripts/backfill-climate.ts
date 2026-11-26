@@ -1,4 +1,4 @@
-// Backfills data/climate-normals.json (monthly PM2.5, weekly normals, and fresh monthly
+// Backfills data/climate-normals.json (monthly PM2.5 and sunshine, weekly normals, and fresh monthly
 // weather) for every city in the dataset, one 0.25 degree climate cell at a time.
 //
 //   npm run backfill:climate                       # fill as much as the quota allows, then stop
@@ -20,6 +20,8 @@ import { getDataPath } from "../server/lib/paths.ts";
 import {
   AIR_WEIGHT,
   AIR_WINDOW,
+  SKY_WEIGHT,
+  SKY_WINDOW,
   WEATHER_WEIGHT,
   WEATHER_WINDOW,
   limitsFromEnv,
@@ -68,16 +70,17 @@ async function main() {
   const file = load();
   file.weatherWindow = WEATHER_WINDOW;
   file.airWindow = AIR_WINDOW;
+  file.skyWindow = SKY_WINDOW;
   const plan = planBackfill(cities, file.cells, { seedIds: seedIds(), firstIds: new Set((str("first") ?? "").split(",").filter(Boolean)) });
   const limits = limitsFromEnv();
   const cellCount = new Set(cities.map((c) => cellKeyFor(c.lat, c.lng))).size;
-  const fullCost = plan.reduce((s, p) => s + (p.needsWeather ? WEATHER_WEIGHT : 0) + (p.needsAir ? AIR_WEIGHT : 0), 0);
+  const fullCost = plan.reduce((s, p) => s + (p.needsWeather ? WEATHER_WEIGHT : 0) + (p.needsAir ? AIR_WEIGHT : 0) + (p.needsSky ? SKY_WEIGHT : 0), 0);
 
   console.log(`[climate] ${cities.length} cities in ${cellCount} climate cells; ${Object.keys(file.cells).length} cells on file; ${plan.length} with a gap`);
-  console.log(`[climate] a cell costs ~${WEATHER_WEIGHT} (weather) + ~${AIR_WEIGHT} (air) weighted calls; the gaps cost ~${Math.round(fullCost)}`);
-  console.log(`[climate] our limits: ${limits.hourly}/hour, ${limits.daily}/day => about ${Math.floor(limits.daily / (WEATHER_WEIGHT + AIR_WEIGHT))} cells/day, ~${Math.ceil(fullCost / limits.daily)} days for everything`);
+  console.log(`[climate] a cell costs ~${WEATHER_WEIGHT} (weather) + ~${AIR_WEIGHT} (air) + ~${SKY_WEIGHT} (sky) weighted calls; the gaps cost ~${Math.round(fullCost)}`);
+  console.log(`[climate] our limits: ${limits.hourly}/hour, ${limits.daily}/day => about ${Math.floor(limits.daily / (WEATHER_WEIGHT + AIR_WEIGHT + SKY_WEIGHT))} cells/day, ~${Math.ceil(fullCost / limits.daily)} days for everything`);
   if (flag("dry-run")) {
-    for (const p of plan.slice(0, 15)) console.log(`  next: ${p.rep.name}, ${p.rep.country} (cell ${p.key}, ${p.cityCount} cities) weather=${p.needsWeather} air=${p.needsAir}`);
+    for (const p of plan.slice(0, 15)) console.log(`  next: ${p.rep.name}, ${p.rep.country} (cell ${p.key}, ${p.cityCount} cities) weather=${p.needsWeather} air=${p.needsAir} sky=${p.needsSky}`);
     return;
   }
 

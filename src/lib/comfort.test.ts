@@ -6,9 +6,15 @@ import {
   breakdownRows,
   comfortBreakdown,
   comfortScore,
+  climateYear,
   desertPenalty,
+  desertShare,
   annualRain,
   monthOfWeek,
+  SKY_FREE_H,
+  SKY_MAX_H,
+  SKY_MAX_PENALTY,
+  skyPenalty,
   tempComfort,
   weekOfDayOfYear,
   weeklyComfortBreakdown,
@@ -68,6 +74,32 @@ describe("desert", () => {
     const rows = breakdownRows(b, 18, 0);
     expect(rows.at(-1)).toMatchObject({ key: "desert", text: "−45", note: "25 mm of rain a year" });
     expect(breakdownRows(comfortBreakdown(18, 0, undefined, 800), 18, 0).some((r) => r.key === "desert")).toBe(false);
+  });
+  it("spares mild ocean deserts and keeps hot and continental ones (ADR 0025)", () => {
+    const year = (t: number[], p: number[]) => climateYear(t.map((tempC, i) => ({ tempC, precipMm: p[i] })))!;
+    // Monthly means (C) and rain (mm), Open-Meteo 2015-2024 as Meridian stores them.
+    const arrecife = year([17.2, 17.1, 17.7, 18.8, 20, 21.3, 22.6, 23.6, 23.2, 22.4, 20.3, 18.5], [6, 14, 6, 5, 3, 2, 0, 1, 8, 16, 10, 6]);
+    const fuerteventura = year([17.6, 17.7, 18.4, 19.7, 21, 22.4, 24.1, 25, 24, 23, 20.8, 18.7], [5, 9, 5, 5, 2, 1, 0, 1, 9, 12, 8, 5]);
+    const cairo = year([14, 15.4, 18, 21.5, 25, 27.5, 28.5, 28.4, 26.7, 24, 19.5, 15.6], [5, 4, 4, 1, 0, 0, 0, 0, 0, 1, 3, 6]);
+    const dubai = year([19.5, 20.5, 23, 27, 31, 33.5, 35.5, 35.5, 33, 29.5, 25, 21], [12, 25, 18, 7, 1, 0, 0, 0, 0, 1, 3, 13]);
+    const gobi = year([-15, -11, -3, 6, 13, 19, 21, 19, 13, 4, -6, -13], [1, 1, 3, 4, 10, 25, 35, 30, 12, 4, 2, 1]);
+    expect(desertShare(arrecife.warmestC, arrecife.coldestC)).toBe(0);
+    expect(comfortBreakdown(17.2, 6, undefined, arrecife).desert).toBe(0);
+    expect(comfortScore(17.2, 6, undefined, arrecife)).toBe(100);
+    const f = desertShare(fuerteventura.warmestC, fuerteventura.coldestC);
+    expect(f).toBeCloseTo(0.25, 5);
+    expect(comfortBreakdown(17.6, 5, undefined, fuerteventura).desert).toBeCloseTo(desertPenalty(fuerteventura.precipMm) * 0.25, 5);
+    expect(desertShare(cairo.warmestC, cairo.coldestC)).toBe(1);
+    expect(comfortScore(18, 4, undefined, cairo)).toBeLessThanOrEqual(55);
+    expect(desertShare(dubai.warmestC, dubai.coldestC)).toBe(1);
+    expect(desertShare(gobi.warmestC, gobi.coldestC)).toBe(1);
+  });
+  it("explains a scaled desert term in its row, and applies in full without temperatures", () => {
+    const y = { precipMm: 60, warmestC: 25, coldestC: 17.6 };
+    const b = comfortBreakdown(18, 5, undefined, y);
+    expect(breakdownRows(b, 18, 5).at(-1)?.note).toBe("60 mm of rain a year; a mild ocean climate (warmest month 25°C) keeps 25% of the penalty");
+    expect(comfortBreakdown(18, 5, undefined, { precipMm: 40 }).desert).toBe(45);
+    expect(climateYear([{ tempC: null, precipMm: 1 }, ...Array.from({ length: 11 }, () => ({ tempC: 20, precipMm: 1 }))])).toEqual({ precipMm: 12 });
   });
   it("sums a year from 12 months or 52 weeks, and refuses gaps", () => {
     expect(annualRain(Array(12).fill(10))).toBe(120);
@@ -144,5 +176,51 @@ describe("week calendar", () => {
     expect(monthOfWeek(10)).toBe(3);
     expect(monthOfWeek(27)).toBe(7);
     expect(monthOfWeek(52)).toBe(12);
+  });
+});
+
+describe("sky term (ADR 0026)", () => {
+  it("is free at 6 h of sun a day, full at 2 h, linear between", () => {
+    expect([SKY_FREE_H, SKY_MAX_H, SKY_MAX_PENALTY]).toEqual([6, 2, 25]);
+    expect(skyPenalty(6)).toBe(0);
+    expect(skyPenalty(9)).toBe(0);
+    expect(skyPenalty(4)).toBe(12.5);
+    expect(skyPenalty(2)).toBe(25);
+    expect(skyPenalty(1)).toBe(25);
+    expect(skyPenalty(0)).toBe(25);
+  });
+
+  it("takes nothing off when the sunshine is unknown, and says so in the breakdown", () => {
+    for (const none of [undefined, null, Number.NaN]) {
+      const b = comfortBreakdown(18, 0, undefined, undefined, none);
+      expect(b).toMatchObject({ sky: 0, skyKnown: false, score: 100 });
+    }
+    expect(comfortScore(18, 0, undefined, undefined, 1.5)).toBe(75);
+    expect(weeklyComfortBreakdown(18, 0, undefined, undefined, 4)).toMatchObject({ sky: 12.5, skyKnown: true, score: 88 }); // 87.5 rounds up; weekly sunH is already per day
+  });
+
+  it("adds a Sky row after Air only when sunshine is known", () => {
+    const withSun = breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 1.5), 18, 10, undefined, "mm a month", 1.5);
+    expect(withSun.map((r) => r.key)).toEqual(["temp", "rain", "air", "sky"]);
+    expect(withSun[3]).toMatchObject({ label: "Sky", points: -25, text: "−25", note: "1.5 h of sun a day" });
+    expect(breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 2), 18, 10, undefined, "mm a month", 2)[3]!.note).toBe("2 h of sun a day");
+    expect(breakdownRows(comfortBreakdown(18, 10, undefined, undefined, 8), 18, 10, undefined, "mm a month", 8)[3]).toMatchObject({ text: "0", note: "8 h of sun a day" });
+    const without = breakdownRows(comfortBreakdown(18, 10), 18, 10);
+    expect(without.map((r) => r.key)).toEqual(["temp", "rain", "air"]);
+    expect(breakdownRows(comfortBreakdown(18, 10), 18, 10, undefined, "mm a month", 3).some((r) => r.key === "sky")).toBe(false); // a figure without a known breakdown never shows
+  });
+
+  it("puts Lima's garua winter at 80 or below, while the Canaries stay as they were", () => {
+    const lima = [23, 23.5, 23, 21.5, 19.5, 18, 17, 16.5, 17, 18, 19.5, 21.5].map((tempC) => ({ tempC, precipMm: 1 }));
+    const year = climateYear(lima)!;
+    const jul = lima[6]!;
+    expect(comfortBreakdown(jul.tempC, jul.precipMm, undefined, year).score).toBe(100); // 0025: the desert term is gone, the sky is not seen
+    expect(comfortScore(jul.tempC, jul.precipMm, undefined, year, 1.5)).toBeLessThanOrEqual(80);
+    // a sunny Lima summer month is not hurt
+    expect(comfortScore(lima[1]!.tempC, 1, undefined, year, 7.5)).toBe(comfortScore(lima[1]!.tempC, 1, undefined, year));
+    // Canary-like: mild, dry, sunny (8 h)
+    const arrecife = { precipMm: 80, warmestC: 23.6, coldestC: 17.1 };
+    expect(comfortScore(17.2, 6, undefined, arrecife, 8)).toBe(100);
+    expect(comfortBreakdown(17.2, 6, undefined, arrecife, 8).sky).toBe(0);
   });
 });

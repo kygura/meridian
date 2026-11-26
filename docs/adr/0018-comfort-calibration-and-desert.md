@@ -13,3 +13,5 @@ The index read Egypt, the Gulf and Spain's interior as pleasant when a visitor w
 Effect at country level (means over covered cities): Egypt peaks at 46 (December) and is 0 from May to September; the UAE peaks at 54, Bahrain 59, Oman 52, Saudi Arabia 19; coastal Peru at 57. Places with real rain keep their scores: Morocco and Spain still reach 100, Portugal and Greece 99.
 
 Stored scores are not trusted: the seed and the runtime cache are re-scored from temperature, rain and air whenever they load, and climate cells are scored on decode, so a formula change reaches every city without a refetch. Tests pin the curve, the desert scale and real-climate anchors (Cairo, Manama, Madrid, Bangkok).
+
+Amended by ADR 0025: the desert penalty is scaled down for mild ocean climates (warmest month mean under 28 °C and a small seasonal swing), so dry Atlantic islands are no longer scored as deserts.

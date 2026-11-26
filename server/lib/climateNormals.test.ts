@@ -111,6 +111,29 @@ describe("record encode / decode", () => {
     expect(m[0]!.score).toBe(100);
   });
 
+  it("scores a cell with sunshine lower, and a cell without `s` exactly as before", () => {
+    const wet = [10, 10, 10, 10, 10, 10, 400, 10, 10, 10, 10, 10];
+    const base = { m: { t: Array(12).fill(180), p: wet } };
+    const sunny = decodeMonths({ m: { ...base.m, s: Array(12).fill(80) } })!;
+    const dull = decodeMonths({ m: { ...base.m, s: [15, ...Array(11).fill(80)] } })!;
+    const none = decodeMonths(base)!;
+    expect(none[0]).not.toHaveProperty("sunH");
+    expect(none[0]!.score).toBe(100);
+    expect(sunny[0]).toMatchObject({ sunH: 8, score: none[0]!.score });
+    expect(dull[0]).toMatchObject({ sunH: 1.5, score: 75 });
+    expect(dull[1]!.score).toBe(none[1]!.score);
+    expect(decodeMonths({ ...base, m: { ...base.m, s: undefined } })).toEqual(none);
+  });
+
+  it("scores weeks with per-day sunshine and leaves cells without `s` untouched", () => {
+    const w = { t: Array(52).fill(180), p: Array(52).fill(0) };
+    const none = decodeWeeks({ w })!;
+    const dull = decodeWeeks({ w: { ...w, s: Array(52).fill(40) } })!;
+    expect(none[0]).not.toHaveProperty("sunH");
+    expect(dull[0]).toMatchObject({ sunH: 4 });
+    expect(dull[0]!.score).toBe(88); // 100 - 12.5, rounded
+  });
+
   it("round-trips a weekly profile to 52 weeks with rain per 7 days", () => {
     const temp = series([2020, 2021], () => 22);
     const rain = series([2020, 2021], () => 1);
@@ -137,6 +160,9 @@ describe("file format", () => {
     const back = parseClimateFile(text)!;
     expect(back.cells).toEqual(f.cells);
     expect(back.airWindow).toBe("2023-2025");
+    expect(back.skyWindow).toBeUndefined(); // older files and files without one stay valid
+    f.skyWindow = "2022-2024";
+    expect(parseClimateFile(serializeClimateFile(f))!.skyWindow).toBe("2022-2024");
     expect(Object.keys(back.cells)).toEqual(["-3,4", "10,20"]);
   });
   it("refuses a file of the wrong shape", () => {
